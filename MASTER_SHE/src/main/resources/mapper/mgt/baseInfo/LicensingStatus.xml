@@ -1,0 +1,231 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.baseInfo.mapper.LicensingStatusMapper">
+
+    
+    <select id= "getLicensingStatusList" resultType= "com.she.mgt.model.LicensingStatus">
+        select *
+           , case
+                    when dbo.GET_USER_NM(a.updateUserId) = '' then dbo.GET_USER_NM(a.createUserId)
+                    else dbo.GET_USER_NM(a.updateUserId) end    as writer_user_nm
+           , case when a.update_dt is null then convert(date, a.create_dt) else convert(date, a.update_dt) end   as writer_dt 
+             from (
+             select
+                 a.lcn_board_no            as lcnBoardNo
+                ,a.lcn_board_grp_no        as lcnBoardGrpNo
+                , ROW_NUMBER() OVER (PARTITION BY a.lcn_board_grp_no ORDER BY a.create_dt desc) as dataBoard
+                ,a.kind_cd                as kindCd
+                ,b.code_nm                as roomTp
+                ,dept.dept_nm             as deptNm
+                ,a.plant_cd                as plant_cd
+                ,c.code_nm                 as plantNm
+                ,a.title                as title
+                ,a.rev_num                as revNum
+                ,a.rev_ymd                as revYmd
+                ,a.contents                as contents
+                ,a.rev_contents            as revContents
+                ,a.use_yn                as useYn
+                ,a.del_yn                as delYn
+                ,a.ref_office            as refOffice
+                ,a.ref_law                as refLaw   
+                ,a.ref_desc                as refDesc             
+                ,a.create_user_id        as createUserId
+                ,cu.user_nm                 as createUserNm
+                ,convert(CHAR(10), a.create_dt, 23) as create_dt
+                ,a.update_user_id as updateUserId
+                ,convert(CHAR(10), a.update_dt, 23) as update_dt
+            from mgt_lcn_board a
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_DOCU_KND01')  b on a.kind_cd = b.code
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD')  c on a.plant_cd = c.code
+            inner join com_dept dept on dept.dept_cd = a.dept_cd
+            inner join com_user cu  on a.create_user_id = cu.user_id
+            left outer join com_user uu  on a.update_user_id = uu.user_id
+            ) A 
+            where dataBoard = '1'
+            <if test= "toDate != null and !toDate.equals('') and fromDate != null and !fromDate.equals('')">
+            and convert(datetime, create_dt) between convert(datetime, #{fromDate}) and convert(datetime, #{toDate})+1            
+            </if>        
+            <if test= "kindCd != null and !kindCd.equals('')">
+            and a.kindCd     = #{kindCd}
+            </if>            
+            <if test= "plantCd != null and !plantCd.equals('')">
+            and a.plant_cd     = #{plantCd}
+            </if>                        
+            <if test= "title != null and !title.equals('')">
+            and a.title like '%' + #{title} + '%'
+            </if> 
+            order by writer_dt desc, plant_cd, create_dt desc
+    </select>
+    
+    <select id= "getLicensingStatusRevisionList" resultType= "com.she.mgt.model.LicensingStatus">
+     select * from (
+            select
+                 a.lcn_board_no            as lcnBoardNo
+                ,a.lcn_board_grp_no        as lcnBoardGrpNo
+                , ROW_NUMBER() OVER (PARTITION BY a.lcn_board_grp_no ORDER BY a.create_dt desc) as dataBoard
+                ,a.kind_cd                as kindCd
+                ,b.code_nm                as roomTp
+                ,dept.dept_nm             as deptNm
+                ,a.plant_cd                as plantCd
+                ,b.code_nm                 as plantNm
+                ,a.title                as title
+                ,a.rev_num                as revNum
+                ,a.rev_ymd                as revYmd
+                ,a.contents                as contents
+                ,a.rev_contents            as revContents
+                ,a.use_yn                as useYn
+                ,a.del_yn                as delYn
+                ,a.ref_office            as refOffice
+                ,a.ref_law                as refLaw                     
+                ,a.ref_desc                as refDesc  
+                ,a.create_user_id        as createUserId
+                ,cu.user_nm                as createUserNm
+                ,a.create_dt            as createDt
+                ,a.update_user_id        as updateUserId
+                ,uu.user_nm                as updateUserNm
+                ,a.update_dt            as updateDt
+            from mgt_lcn_board a
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_DOCU_KND01')  b on a.kind_cd = b.code
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD')  c on a.plant_cd = c.code
+            inner join com_dept dept on dept.dept_cd = a.dept_cd
+            inner join com_user cu  on a.create_user_id = cu.user_id
+            left outer join com_user uu  on a.update_user_id = uu.user_id
+            ) A 
+            where lcnBoardNo != '1' 
+            and lcnBoardGrpNo = (select lcn_board_grp_no from mgt_lcn_board where lcn_board_no = #{lcnBoardNo} )
+            order by lcnBoardNo desc
+    </select>
+        
+        
+    
+    <select id= "getLicensingStatus" resultType= "com.she.mgt.model.LicensingStatus">
+            select 
+                 a.lcn_board_no            as lcnBoardNo
+                ,a.lcn_board_grp_no        as lcnBoardGrpNo
+                , ROW_NUMBER() OVER (PARTITION BY a.lcn_board_grp_no ORDER BY a.create_dt desc) as dataBoard
+                ,a.kind_cd                as kindCd
+                ,b.code_nm                as roomTp
+                ,dept.dept_nm             as deptNm
+                ,a.dept_cd                as deptCd
+                ,a.plant_cd                as plantCd
+                ,c.code_nm                 as plantNm
+                ,a.title                as title
+                ,a.rev_num                as revNum
+                ,a.rev_ymd                as revYmd
+                ,a.contents                as contents
+                ,a.rev_contents            as revContents
+                ,a.use_yn                as useYn
+                ,a.del_yn                as delYn
+                ,a.ref_office            as refOffice
+                ,a.ref_law                as refLaw               
+                ,a.ref_desc                as refDesc        
+                ,a.create_user_id        as createUserId
+                ,cu.user_nm                as createUserNm
+                ,convert(varchar(10), a.create_dt, 120) as createDt
+                ,a.update_user_id        as updateUserId
+                ,uu.user_nm                as updateUserNm
+                ,convert(varchar(10), a.update_dt, 120) as updateDt
+            from  
+            mgt_lcn_board a
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_DOCU_KND01')  b on a.kind_cd = b.code
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD')  c on a.plant_cd = c.code
+            inner join com_dept dept on dept.dept_cd = a.dept_cd
+            inner join com_user cu  on a.create_user_id = cu.user_id
+            left outer join com_user uu  on a.update_user_id = uu.user_id
+            where 1=1
+        <if test= "lcnBoardNo != null and !lcnBoardNo.equals('')">
+        and lcn_board_no = #{lcnBoardNo}
+        </if>
+        
+    </select>
+        
+    <insert id= "insertLicensingStatus" parameterType= "com.she.mgt.model.LicensingStatus" >
+        <selectKey keyProperty="lcnBoardNo" resultType="int" order="BEFORE">
+            select next value for seq_mgt_lcn_board  as lcnBoardNo
+        </selectKey>
+        /* LicensingStatusMapper.insertLicensingStatus [LicensingStatus.xml] */
+        insert into mgt_lcn_board
+               (
+                   lcn_board_no
+                 , lcn_board_grp_no
+                 , kind_cd
+                 , title
+                 , rev_num
+                 , rev_ymd
+                 , contents
+                 , rev_contents
+                 , use_yn
+                 , del_yn
+                 , plant_cd
+                 , dept_cd
+                 , ref_office
+                 , ref_law
+                 , ref_desc
+                 , create_user_id
+                 , create_dt
+               )
+               values
+               (
+                   #{lcnBoardNo}
+        <choose>
+            <when test="lcnBoardGrpNo == 0">
+                 , #{lcnBoardNo}
+            </when>
+            <otherwise>
+                 , #{lcnBoardGrpNo}
+            </otherwise>
+        </choose>
+                 , #{kindCd}
+                 , #{title}
+        <choose>
+            <when test="lcnBoardGrpNo == 0">
+                 , 1
+            </when>
+            <otherwise>
+                 , #{revNum}
+            </otherwise>
+        </choose>
+                 , convert(varchar(10), getdate(), 120)
+                 , #{contents}
+                 , #{revContents}
+                 , 'Y'
+                 , 'N'
+                 , #{plantCd}
+                 , #{deptCd}
+                 , #{refOffice}
+                 , #{refLaw}
+                 , #{refDesc}
+                 , #{createUserId}
+                 , getDate()
+        )
+    </insert>
+    
+    <update id = "updateLicensingStatus" parameterType= "com.she.mgt.model.LicensingStatus" >
+        /* LicensingStatusMapper.updateLicensingStatus [LicensingStatus.xml] */
+        update mgt_lcn_board set
+            kind_cd = #{kindCd}, 
+            dept_cd = #{deptCd},
+            title = #{title}, 
+            ref_office = #{refOffice},
+            ref_law =  #{refLaw},
+            ref_desc = #{refDesc},
+            contents = #{contents},
+            rev_num = #{revNum},
+            update_user_id = #{updateUserId},
+            update_dt = getDate()
+        where lcn_board_no = #{lcnBoardNo}
+    </update>
+    
+    <delete id = "deleteLicensingStatus" parameterType = "int">
+    /* LicensingStatusMapper.deleteLicensingStatus [LicensingStatus.xml] */
+        delete from mgt_lcn_board where lcn_board_grp_no = (select distinct lcn_board_grp_no from mgt_lcn_board
+                                                            where lcn_board_no = #{lcnBoardNo})
+    </delete>
+    
+    <delete id = "revDeleteLicensingStatus" parameterType = "com.she.mgt.model.LicensingStatus">
+    /* LicensingStatusMapper.revdelLicensingStatus [LicensingStatus.xml] */
+        DELETE mgt_lcn_board 
+        WHERE lcn_board_no = #{lcnBoardNo}
+    </delete>
+</mapper>

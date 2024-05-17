@@ -1,0 +1,67 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.baseinfo.mapper.OccurrFormMapper">
+
+    <select id= "checkOccurrForm" resultType= "HashMap">
+        /* OccurrFormMapper.checkOccurrForm [OccurrForm.xml] */
+        select 1
+            ,'code' as gubun
+        from com_code_master ccm
+        where 1=1
+        and ccm.code_group_cd = #{codeGroupCd}
+        and ccm.code = #{code}
+        union all
+        select 1
+            ,'name' as gubun
+        where exists(select 1
+                    from com_code_master ccm
+                    where 1=1
+                    and ccm.code_group_cd = #{codeGroupCd}
+                    and ccm.code_nm = #{codeNm}
+                    and ccm.code not in (#{code}))
+    </select>
+
+    <select id= "checkOccurrAtt" resultType= "HashMap">
+        /* OccurrFormMapper.checkOccurrAtt [OccurrForm.xml] */
+        select 1
+            ,'code' as gubun
+        from com_code_master ccm
+        where 1=1
+        and ccm.code_group_cd = #{codeGroupCd}
+        and ccm.code = #{code}
+        union all
+        select 1
+            ,'name' as gubun
+        where exists(select 1
+                    from com_code_master ccm
+                    where 1=1
+                    and ccm.code_group_cd = #{codeGroupCd}
+                    and ccm.code_nm = #{codeNm}
+                    and ccm.code not in (#{code}))
+    </select>
+    
+    <select id= "checkOccurrAtts" resultType= "HashMap">
+        /* OccurrFormMapper.checkOccurrAtts [OccurrForm.xml] */
+        select mm.code
+              ,count(1) count
+          from com_code_domain d
+         inner join com_code_group cg       
+            on d.code_domain_cd = cg.code_domain_cd
+         inner join com_code_master cm
+            on cg.code_group_cd = cm.code_group_cd
+         inner join com_code_group mg
+            on d.code_domain_cd = mg.code_domain_cd
+           and cm.code = mg.code_group_cd
+         inner join com_code_master mm
+            on mg.code_group_cd = mm.code_group_cd  
+         where d.code_domain_cd = #{codeDomainCd}
+           and cg.code_group_cd = #{codeGroupCd}
+           and mm.code in 
+            <foreach collection="code" item="item" open="(" close=")" separator=", ">
+                #{item}
+            </foreach>
+         group by mm.code
+    </select>
+    
+</mapper>

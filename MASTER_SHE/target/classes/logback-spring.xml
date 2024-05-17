@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="10 seconds">
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+
+    <property name="LOG_DIR" value="/sheBackEnd/logs" />
+    <property name="LOG_PATH_NAME" value="${LOG_DIR}" />
+    <property name="FILE_NAME" value="sheBackEndServer" />
+
+    <!-- #########################  console로 log 남기기  #########################  -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>
+                    ▶ %-5level %d{HH:mm:ss.SSS} [%thread] %logger[%method:%line] - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+
+    <!-- TRACE > DEBUG > INFO > WARN > ERROR, 대소문자 구분 안함 -->
+    <!-- profile 을 읽어서 appender 을 설정할수 있다.(phase별 파일을 안만들어도 되는 좋은 기능) -->
+    <springProfile name="prd">
+        <!-- 개발환경에서는 mybatis의 쿼리와 결과를 확인할 수 있도록 아래 설정을 해줌. -->
+        <!-- <logger name="jdbc" level="OFF"/> -->
+
+        <logger name="jdbc.sqlonly" additivity="false">
+            <level value="DEBUG"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.sqltiming" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.audit" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.resultset" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.resultsettable" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.connection" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <root level="info">
+            <appender-ref ref="console" />
+            <!-- <appender-ref ref="devmssqldb" /> -->
+            <!-- <appender-ref ref="file" /> -->
+        </root>
+    </springProfile>
+    <springProfile name="dev">
+        <!-- 개발환경에서는 mybatis의 쿼리와 결과를 확인할 수 있도록 아래 설정을 해줌. -->
+        <!-- <logger name="jdbc" level="OFF"/> -->
+
+        <logger name="jdbc.sqlonly" additivity="false">
+            <level value="DEBUG"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.sqltiming" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.audit" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.resultset" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.resultsettable" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.connection" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <root level="info">
+            <appender-ref ref="console" />
+            <!-- <appender-ref ref="devmssqldb" /> -->
+            <!-- <appender-ref ref="file" /> -->
+        </root>
+    </springProfile>
+    <springProfile name="local">
+        <!-- 개발환경에서는 mybatis의 쿼리와 결과를 확인할 수 있도록 아래 설정을 해줌. -->
+        <!-- <logger name="jdbc" level="OFF"/> -->
+
+        <logger name="jdbc.sqlonly" additivity="false">
+            <level value="DEBUG"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.sqltiming" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.audit" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.resultset" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.resultsettable" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.connection" additivity="false">
+            <level value="OFF"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <root level="info">
+            <appender-ref ref="console" />
+            <!-- <appender-ref ref="devmssqldb" /> -->
+            <!-- <appender-ref ref="file" /> -->
+        </root>
+    </springProfile>
+
+</configuration>

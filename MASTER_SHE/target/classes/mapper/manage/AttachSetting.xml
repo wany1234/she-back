@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.manage.mapper.AttachSettingMapper">
+
+    <!-- 첨부파일 설정 목록조회 -->
+    <select id="getAttachSettings" resultType="com.she.manage.model.AttachSetting">
+        /* AttachSettingMapper.getAttachSettings [AttachSetting.xml] */
+        select t.task_class_nm, t.task_class_desc, t.accept_ext, t.limit_cnt, t.limit_size            
+            , t.drag_drop_yn, case when t.drag_drop_yn='Y' then '가능' else '불가능' end as drag_drop_yn_nm
+            , t.multiple_sel_yn, case when t.multiple_sel_yn='Y' then '가능' else '불가능' end as multiple_sel_yn_nm
+            , t.preview_yn, case when t.preview_yn='Y' then '예' else '아니오' end as preview_yn_nm
+            , t.picture_explain_yn, case when t.picture_explain_yn='Y' then '예' else '아니오' end as picture_explain_yn_nm
+            , t.encrypt_yn, case when t.encrypt_yn='Y' then '암호화' else '비암호화' end as encrypt_yn_nm
+            , t.use_yn, case when t.use_yn='Y' then '사용' else '미사용' end as use_yn_nm
+            , t.create_user_id, cu.user_nm as create_user_nm, format(t.create_dt, 'yyyy-MM-dd') as create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, format(t.update_dt, 'yyyy-MM-dd') as update_dt
+            , case
+                 when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+                 else dbo.GET_USER_NM(t.update_user_id) end as writer_user_nm
+            , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+        from com_attach_setting t
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left join com_user uu
+        on t.update_user_id = uu.user_id
+        where 1=1
+        <if test="taskClassNm != null and !taskClassNm.equals('')">
+           and t.task_class_nm like '%'+#{taskClassNm}+'%'
+        </if>
+        <if test="taskClassDesc != null and !taskClassDesc.equals('')">
+           and t.task_class_desc like '%'+#{taskClassDesc}+'%'
+        </if>
+        order by writer_dt desc, t.task_class_nm
+    </select>
+    
+    <!-- 첨부파일 설정 상세조회 -->
+    <select id="getAttachSetting" resultType="com.she.manage.model.AttachSetting">
+        /* AttachSettingMapper.getAttachSetting [AttachSetting.xml] */
+        select t.task_class_nm, t.task_class_desc, t.accept_ext, t.limit_cnt, t.limit_size
+            , t.drag_drop_yn, case when t.drag_drop_yn='Y' then '가능' else '불가능' end as drag_drop_yn_nm
+            , t.multiple_sel_yn, case when t.multiple_sel_yn='Y' then '가능' else '불가능' end as multiple_sel_yn_nm
+            , t.preview_yn, case when t.preview_yn='Y' then '예' else '아니오' end as preview_yn_nm
+            , t.picture_explain_yn, case when t.picture_explain_yn='Y' then '예' else '아니오' end as picture_explain_yn_nm
+            , t.encrypt_yn, case when t.encrypt_yn='Y' then '암호화' else '비암호화' end as encrypt_yn_nm
+            , t.use_yn, case when t.use_yn='Y' then '사용' else '미사용' end as use_yn_nm
+            , t.create_user_id, cu.user_nm as create_user_nm, format(t.create_dt, 'yyyy-MM-dd') as create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, format(t.update_dt, 'yyyy-MM-dd') as update_dt
+        from com_attach_setting t
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left join com_user uu
+        on t.update_user_id = uu.user_id
+        where 1=1
+        and t.task_class_nm = #{taskClassNm}
+    </select>
+    
+    <!-- 첨부파일 설정 신규등록 -->
+    <insert id="createAttachSetting" parameterType="com.she.manage.model.AttachSetting">
+        /* AttachSettingMapper.createAttachSetting [AttachSetting.xml] */
+        insert into com_attach_setting (
+            task_class_nm
+            , task_class_desc            
+            , accept_ext            
+            , limit_cnt
+            , limit_size
+            , drag_drop_yn
+            , multiple_sel_yn
+            , preview_yn
+            , picture_explain_yn
+            , encrypt_yn
+            , use_yn
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{taskClassNm}
+            , #{taskClassDesc}            
+            , #{acceptExt}
+            , #{limitCnt}
+            , #{limitSize}
+            , #{dragDropYn}
+            , #{multipleSelYn}
+            , #{previewYn}
+            , #{pictureExplainYn}
+            , #{encryptYn}
+            , #{useYn}
+            , #{createUserId}
+            , GETDATE()
+        )
+    </insert>
+    
+    <!-- 첨부파일 설정 수정 -->
+    <update id="updateAttachSetting" parameterType="com.she.manage.model.AttachSetting">
+        /* AttachSettingMapper.updateAttachSetting [AttachSetting.xml] */
+        update com_attach_setting
+        set task_class_desc = #{taskClassDesc}            
+            , accept_ext = #{acceptExt}
+            , limit_cnt = #{limitCnt}
+            , limit_size = #{limitSize}
+            , drag_drop_yn = #{dragDropYn}
+            , multiple_sel_yn = #{multipleSelYn}
+            , preview_yn = #{previewYn}
+            , picture_explain_yn = #{pictureExplainYn}
+            , encrypt_yn = #{encryptYn}
+            , use_yn = #{useYn}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+        where task_class_nm = #{taskClassNm}
+    </update>
+
+</mapper>

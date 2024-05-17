@@ -1,0 +1,1324 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.vendor.assmnSfhlc.mapper.AssmnSfhlcMapper">
+
+    <select id= "getPlanmgmtLists" resultType= "com.she.vendor.model.AssmnSfhlc">
+        /* AssmnSfhlcMapper.getPlanmgmtLists [AssmnSfhlc.xml] */
+        select
+            distinct
+            pl.vendor_eval_plan_no     -- 협력업체 평가 계획 번호
+           ,pl.plant_cd            -- 사업장
+           ,dbo.GET_CODE_NM(pl.plant_cd, 'COM_PLANT_CD') as plant_nm
+           ,pl.year                -- 대상년도
+           ,pl.eval_cls_cd         -- 평가구분 SAF_SC_EVAL_CLS
+           ,dbo.GET_CODE_NM(pl.eval_cls_cd, 'SAF_SC_EVAL_CLS') as eval_cls_nm
+           ,pl.eval_start_dt       -- 평가계획 시작일
+           ,pl.eval_end_dt         -- 평가계획 종료일
+           ,pl.main_dept_cd        -- 주관부서
+           ,dbo.GET_DEPT_NM(main_dept_cd) as main_dept_nm
+           ,pl.eval_title          -- 평가명
+           ,pl.eval_desc           -- 상세내용
+           ,pl.proc_step_cd        -- 단계 RSA_WORK_RISK_STEP
+           ,dbo.GET_CODE_NM(pl.proc_step_cd, 'RSA_WORK_RISK_STEP') + ' (' + case when pl.step_cd = 'BAPSD' then i.code_nm else dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_STATE', pl.state_cd) end + ')' as step_nm 
+           ,pl.state_cd            -- 상태 COM_STATE
+           ,dbo.GET_CODE_NM(pl.state_cd, 'COM_STATE') as state_nm
+           ,pl.step_cd             -- 결재상태 COM_BIZ_APPR_STEP
+           ,pl.appr_rqst_no        -- 평가계획결재요청번호
+           ,dbo.GET_USER_NM(pl.create_user_id) as create_user_nm -- 등록자ID
+           ,convert(char(10), pl.create_dt, 23) as create_dt -- 등록일
+           ,pl.update_user_id      -- 수정자ID
+           ,pl.update_dt           -- 수정일
+           ,pl.create_dept_nm      -- 등록자부서명
+           ,pl.create_dept_cd      -- 등록자부서코드
+           ,pl.update_dept_nm      -- 수정자부서명
+           ,pl.update_dept_cd      -- 수정자부서코드
+           ,pl.create_position_nm  -- 등록자직위명
+           ,pl.create_position_cd  -- 등록자직위코드
+           ,pl.update_position_nm  -- 수정자직위명
+           ,pl.update_position_cd  -- 수정자직위코드
+           ,STUFF((
+            select ',' + dbo.GET_DEPT_NM(pv.dept_cd) as dept_nm
+            from saf_vendor_eval_plan_vendor pv
+            where pv.vendor_eval_plan_no = pl.vendor_eval_plan_no
+            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as dept_nm
+           ,(select count(*) from saf_vendor_eval_plan_vendor  pv
+           where pv.vendor_eval_plan_no = pl.vendor_eval_plan_no) as vendorCnt
+           ,(select count(*) 
+              from saf_vendor_eval_plan_vendor pv
+             where pv.vendor_eval_plan_no = pl.vendor_eval_plan_no
+               and pv.step_cd != 'BAPSG' ) as assessNCnt
+           ,(select count(*) 
+              from saf_vendor_eval_plan_vendor pv
+             where pv.vendor_eval_plan_no = pl.vendor_eval_plan_no
+               and pv.step_cd != 'BAPSG'
+               and  datediff(day, GETDATE() , pv.eval_end_dt) &lt; 0) as overDateCnt
+           ,(select count(*) 
+              from saf_vendor_eval_plan_vendor pv
+             where pv.vendor_eval_plan_no = pl.vendor_eval_plan_no
+               and pv.step_cd = 'BAPSG' ) as assessYCnt
+         from saf_vendor_eval_plan pl
+         left join saf_vendor_eval_plan_vendor psv on pl.vendor_eval_plan_no = psv.vendor_eval_plan_no
+         left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') i on pl.step_cd = i.code
+         where 1=1
+         <if test="plantCd != null and !plantCd.equals('')">
+           and pl.plant_cd = #{plantCd}
+         </if>
+         <if test="year != null and !year.equals('')">
+           and pl.year = #{year}
+         </if>
+         <if test="evalClsCd != null and !evalClsCd.equals('')">
+           and pl.eval_cls_cd = #{evalClsCd}
+         </if>
+         <if test="evalTitle != null and !evalTitle.equals('')">
+           and pl.eval_title like '%' +  #{evalTitle} + '%'
+         </if>
+         <if test= 'mainDeptCd != null and !mainDeptCd.equals("")'>
+            <choose>
+                <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                    and pl.main_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{mainDeptCd}))
+                </when>
+                <otherwise>
+                    and pl.main_dept_cd = #{mainDeptCd}
+                </otherwise>
+            </choose>
+        </if>
+        <if test= 'deptCd != null and !deptCd.equals("")'>
+            <choose>
+                <when test='deptSubYn2 != null and deptSubYn2.equals("Y")'>
+                    and psv.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+                </when>
+                <otherwise>
+                    and psv.dept_cd = #{deptCd}
+                </otherwise>
+            </choose>
+        </if>
+         <if test="procStepCd != null and !procStepCd.equals('')">
+           and pl.proc_step_cd = #{procStepCd}
+         </if>
+         <if test="stateCd != null and !stateCd.equals('')">
+           and pl.state_cd = #{stateCd}
+         </if>
+          <if test= 'yearChk != null and yearChk.equals("Y")'>
+            and (select count(*) 
+               from saf_vendor_eval_plan pls 
+              where pls.vendor_eval_plan_no = pl.vendor_eval_plan_no
+                and pls.step_cd != 'BAPSG'
+                and  datediff(day, GETDATE() , pls.eval_end_dt) &lt; 0) &gt; 0
+          </if>
+            order by pl.vendor_eval_plan_no desc
+    </select>
+    <select id= "getPlanmgmtInfo" resultType= "com.she.vendor.model.AssmnSfhlc">
+        /* AssmnSfhlcMapper.getPlanmgmtInfo [AssmnSfhlc.xml] */
+        select
+            pl.vendor_eval_plan_no     -- 협력업체 평가 계획 번호
+           ,pl.plant_cd            -- 사업장
+           ,pl.year                -- 대상년도
+           ,pl.eval_cls_cd         -- 평가구분 SAF_SC_EVAL_CLS
+           ,dbo.GET_CODE_NM(pl.eval_cls_cd, 'SAF_SC_EVAL_CLS') as eval_cls_nm
+           ,pl.eval_start_dt       -- 평가계획 시작일
+           ,pl.eval_end_dt         -- 평가계획 종료일
+           ,pl.main_dept_cd        -- 주관부서
+           ,dbo.GET_DEPT_NM(main_dept_cd) as main_dept_nm
+           ,pl.eval_title          -- 평가명
+           ,pl.eval_desc           -- 상세내용
+           ,pl.proc_step_cd        -- 단계 RSA_WORK_RISK_STEP
+           ,dbo.GET_CODE_NM(pl.proc_step_cd, 'RSA_WORK_RISK_STEP') as proc_step_nm
+           ,pl.state_cd            -- 상태 COM_STATE
+           ,dbo.GET_CODE_NM(pl.state_cd, 'COM_STATE') as state_nm
+           ,pl.step_cd             -- 결재상태 COM_BIZ_APPR_STEP
+           ,dbo.GET_CODE_NM(pl.step_cd, 'COM_BIZ_APPR_STEP') as step_nm
+           ,pl.appr_rqst_no        -- 평가계획결재요청번호
+           ,pl.create_user_id      -- 등록자ID
+           ,pl.create_dt           -- 등록일
+           ,pl.update_user_id      -- 수정자ID
+           ,pl.update_dt           -- 수정일
+           ,pl.create_dept_nm      -- 등록자부서명
+           ,pl.create_dept_cd      -- 등록자부서코드
+           ,pl.update_dept_nm      -- 수정자부서명
+           ,pl.update_dept_cd      -- 수정자부서코드
+           ,pl.create_position_nm  -- 등록자직위명
+           ,pl.create_position_cd  -- 등록자직위코드
+           ,pl.update_position_nm  -- 수정자직위명
+           ,pl.update_position_cd  -- 수정자직위코드
+         from saf_vendor_eval_plan pl
+         where 1=1
+         <if test="vendorEvalPlanNo != null and !vendorEvalPlanNo.equals('')">
+           and pl.vendor_eval_plan_no = #{vendorEvalPlanNo}
+         </if>
+    </select>
+    <select id="getAssmnSfhlVendorList" resultType= "com.she.vendor.model.AssmnSfhlcVendorList">
+        /* AssmnSfhlcMapper.getAssmnSfhlVendorList [AssmnSfhlc.xml] */
+        select 
+           pv.eval_plan_vendor_no  -- 대상협력업체번호
+          ,pv.vendor_eval_plan_no  -- 협력업체 평가 계획 번호
+          ,convert(char(10), pv.eval_start_dt, 23) as eval_start_dt -- 평가예정 시작일
+          ,convert(char(10), pv.eval_end_dt, 23) as eval_end_dt -- 평가예정 종료일
+          ,pv.dept_cd              -- 수행부서
+          ,dbo.GET_DEPT_NM(pv.dept_cd) as dept_nm
+          ,pv.rating_cd            -- 등급 SAF_EVAL_RATING 평점별 등급
+          ,dbo.GET_CODE_NM(pv.rating_cd, 'SAF_EVAL_RATING') as rating_nm
+          ,case when datediff(dd, getdate(), pv.eval_finish_dt) &lt; 0 then '완료'
+                else '미완료' end as finishYn
+          ,isnull(pv.cost, 0) as cost  -- 산업안전보건비
+          ,isnull(pv.eval_sum_pnt, 0) as eval_sum_pnt-- 평점
+          ,isnull(pv.eval_all_pnt, 0) as eval_all_pnt-- 총점
+          ,isnull(convert(varchar, pv.eval_sum_pnt), '0') + ' / ' + isnull(convert(varchar, pv.eval_all_pnt), '0') as averageCnt
+          ,pv.vendor_desc          -- 비고
+          ,pv.update_user_id       -- 수정자ID
+          ,pv.update_dt            -- 수정일
+          ,pv.update_dept_nm       -- 수정자부서명
+          ,pv.update_dept_cd       -- 수정자부서코드
+          ,pv.update_position_nm   -- 수정자직위명
+          ,pv.update_position_cd   -- 수정자직위코드
+          ,case when isnull(pv.eval_finish_yn, 'N') = 'N' then '미완료'
+                 else '완료' end as showEvalFinishYn  -- 평가완료 여부 
+          ,convert(char(10), pv.eval_finish_dt, 23) as eval_finish_dt
+          ,pv.proc_step_cd         -- 단계 RSA_WORK_RISK_STEP
+          ,dbo.GET_CODE_NM(pv.proc_step_cd, 'RSA_WORK_RISK_STEP') as proc_step_nm
+          ,pv.state_cd             -- 상태 COM_STATE
+          ,dbo.GET_CODE_NM(pv.state_cd, 'COM_STATE') as state_nm
+          ,pv.step_cd              -- 결재상태 COM_BIZ_APPR_STEP
+          ,dbo.GET_CODE_NM(pv.step_cd, 'COM_BIZ_APPR_STEP') as step_nm
+          ,case when isnull(pv.step_cd, 'BAPSB')  = 'BAPSG' then '완료' else '미완료' end as stepStatus
+          ,pv.vendor_cd
+          ,cvm.vendor_nm
+         from saf_vendor_eval_plan_vendor pv
+         inner join chm_vendor_mst cvm on pv.vendor_cd = cvm.vendor_cd
+        where 1=1
+         <if test="vendorEvalPlanNo != null and !vendorEvalPlanNo.equals('')">
+           and pv.vendor_eval_plan_no = #{vendorEvalPlanNo}
+         </if>
+    </select>
+    <select id="searchAssmnSfhlcItemList" resultType= "com.she.vendor.model.AssmnSfhlcItemList">
+        /* AssmnSfhlcMapper.searchAssmnSfhlcItemList [AssmnSfhlc.xml] */
+        select sseir.vendor_eval_item_rslt_no
+            ,ssei.saf_subcon_eval_item_no
+            ,isnull(sseir.eval_pnt, 0) as eval_pnt
+            ,sseir.remarks
+            ,ssei.subcon_eval_item_nm
+            ,ssei.subcon_eval_item_stnd
+            ,ssei.subcon_eval_item_pnt
+            ,ssei.subcon_eval_att_cd
+            ,ssei.subcon_eval_cls_cd
+        from saf_subcon_eval_item ssei
+        left outer join saf_vendor_eval_item_rslt sseir
+        on sseir.saf_subcon_eval_item_no = ssei.saf_subcon_eval_item_no
+        and sseir.eval_plan_vendor_no = #{evalPlanVendorNo}
+        left outer join saf_subcon_eval_result sser
+        on sseir.vendor_eval_item_rslt_no = sser.saf_subcon_eval_result_no
+        where ssei.use_yn = 'Y'
+        <if test="evalClsCd != null and !evalClsCd.equals('')">
+        and ssei.subcon_eval_cls_cd = #{evalClsCd}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+        and ssei.plant_cd = #{plantCd}
+        </if>
+    </select>
+    <insert id= "createAssmnSfhlc" parameterType= "com.she.vendor.model.AssmnSfhlc">
+        /* AssmnSfhlcMapper.createAssmnSfhlc [AssmnSfhlc.xml] */
+       <selectKey keyProperty= "vendorEvalPlanNo" resultType= "int" order= "BEFORE">
+          select next value for seq_saf_vendor_eval_plan as vendor_eval_plan_no
+        </selectKey>
+        insert into saf_vendor_eval_plan
+        (
+            vendor_eval_plan_no
+           ,plant_cd
+           ,year
+           ,eval_cls_cd
+           ,eval_start_dt
+           ,eval_end_dt
+           ,main_dept_cd
+           ,eval_title
+           ,eval_desc
+           ,proc_step_cd
+           ,state_cd
+           ,step_cd
+           ,create_user_id
+           ,create_dt
+           ,create_dept_nm
+           ,create_dept_cd
+           ,create_position_nm
+           ,create_position_cd
+        )
+        values
+        (
+             #{vendorEvalPlanNo}
+            ,#{plantCd}
+            ,#{year}
+            ,#{evalClsCd}
+            ,#{evalStartDt}
+            ,#{evalEndDt}
+            ,#{mainDeptCd}
+            ,#{evalTitle}
+            ,#{evalDesc}
+            ,'RWRS1'
+            ,#{stateCd}
+            ,#{stepCd}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23)
+            ,#{createDeptNm}
+            ,#{createDeptCd}
+            ,#{createPositionNm}
+            ,#{createPositionCd}
+        )
+    </insert>
+    <update id= "updateAssmnSfhlc" parameterType= "com.she.vendor.model.AssmnSfhlc">
+        /* AssmnSfhlcMapper.updateAssmnSfhlc [AssmnSfhlc.xml] */
+       update saf_vendor_eval_plan set
+         plant_cd = #{plantCd},
+         year = #{year},
+         eval_cls_cd = #{evalClsCd},
+         eval_start_dt = #{evalStartDt},
+         eval_end_dt = #{evalEndDt},
+         main_dept_cd = #{mainDeptCd},
+         eval_title = #{evalTitle},
+         eval_desc = #{evalDesc},
+         state_cd = 'STATE2',
+         update_user_id = #{updateUserId},
+         update_dt = convert(char(10), getDate(), 23),
+         update_dept_nm = #{updateDeptNm},
+         update_dept_cd = #{updateDeptCd},
+         update_position_nm = #{updatePositionNm},
+         update_position_cd = #{updatePositionCd}
+       where vendor_eval_plan_no = #{vendorEvalPlanNo}
+    </update>
+    <insert id= "createAssmnSfhlcVendor" parameterType= "com.she.vendor.model.AssmnSfhlcVendorList">
+        /* AssmnSfhlcMapper.createAssmnSfhlcVendor [AssmnSfhlc.xml] */
+       <selectKey keyProperty= "evalPlanVendorNo" resultType= "int" order= "BEFORE">
+          select next value for seq_saf_vendor_eval_plan_vendor as eval_plan_vendor_no
+        </selectKey>
+        insert into saf_vendor_eval_plan_vendor
+        (
+            eval_plan_vendor_no
+           ,vendor_eval_plan_no
+           ,vendor_cd
+           ,eval_start_dt
+           ,eval_end_dt
+           ,dept_cd
+           ,eval_finish_yn
+           ,eval_finish_dt
+           ,eval_sum_pnt
+           ,eval_all_pnt
+           ,rating_cd
+           ,vendor_desc
+           ,update_user_id
+           ,update_dt
+           ,update_dept_nm
+           ,update_dept_cd
+           ,update_position_nm
+           ,update_position_cd
+           ,proc_step_cd
+           ,state_cd
+           ,step_cd
+           ,cost_ref_yn
+           ,cost
+        )
+        values
+        (
+            #{evalPlanVendorNo}
+           ,#{vendorEvalPlanNo}
+           ,#{vendorCd}
+           ,#{evalStartDt}
+           ,#{evalEndDt}
+           ,#{deptCd}
+           ,#{evalFinishYn}
+           ,#{evalFinishDt}
+           ,#{evalSumPnt}
+           ,#{evalAllPnt}
+           ,#{ratingCd}
+           ,#{vendorDesc}
+           ,#{updateUserId}
+           ,convert(char(10), getDate(), 23)
+           ,#{updateDeptNm}
+           ,#{updateDeptCd}
+           ,#{updatePositionNm}
+           ,#{updatePositionCd}
+           ,'RWRS2'
+           ,'STATE1'
+           ,'BAPSB'
+           ,#{costRefYn}
+           ,#{cost}
+        )
+    </insert>
+    <insert id= "createAssmnSfhlcItemList" parameterType= "com.she.vendor.model.AssmnSfhlcItemList">
+        /* AssmnSfhlcMapper.createAssmnSfhlcItemList [AssmnSfhlc.xml] */
+        <selectKey keyProperty= "vendorEvalItemRsltNo" resultType= "int" order= "BEFORE">
+          select next value for seq_saf_vendor_eval_item_rslt as vendor_eval_item_rslt_no
+        </selectKey>
+       insert into saf_vendor_eval_item_rslt
+            (
+             vendor_eval_item_rslt_no
+             ,eval_plan_vendor_no
+             ,vendor_eval_plan_no
+             ,saf_subcon_eval_item_no
+             ,eval_pnt
+             ,subcon_eval_item_pnt
+             ,subcon_eval_item_nm
+             ,subcon_eval_item_stnd
+             ,subcon_eval_cls_cd
+             ,subcon_eval_att_cd
+             ,remarks
+            )
+        values
+            (
+             #{vendorEvalItemRsltNo}
+             ,#{evalPlanVendorNo}
+             ,#{vendorEvalPlanNo}
+             ,#{safSubconEvalItemNo}
+             ,#{evalPnt}
+             ,#{subconEvalItemPnt}
+             ,#{subconEvalItemNm}
+             ,#{subconEvalItemStnd}
+             ,#{subconEvalClsCd}
+             ,#{subconEvalAttCd}
+             ,#{remarks}
+            )
+    </insert>
+    <delete id="deleteAssmnSfhlcVendor">
+        /* AssmnSfhlcMapper.deleteAssmnSfhlcVendor [AssmnSfhlc.xml] */
+        delete saf_vendor_eval_plan_vendor where vendor_eval_plan_no = #{vendorEvalPlanNo}
+    </delete>
+    <delete id="deleteAssmnSfhlcItemList">
+        /* AssmnSfhlcMapper.deleteAssmnSfhlcItemList [AssmnSfhlc.xml] */
+        delete saf_vendor_eval_item_rslt where eval_plan_vendor_no = #{evalPlanVendorNo}
+    </delete>
+    <delete id="deleteAssmnSfhlc">
+        /* AssmnSfhlcMapper.deleteAssmnSfhlc [AssmnSfhlc.xml] */
+        delete saf_vendor_eval_plan where vendor_eval_plan_no = #{vendorEvalPlanNo}
+        delete saf_vendor_eval_plan_vendor where vendor_eval_plan_no = #{vendorEvalPlanNo}
+        delete saf_subcon_eval_item_result where saf_subcon_eval_result_no = #{vendorEvalPlanNo}
+    </delete>
+    <select id ="getPlanmgmtStatus" resultType="int">
+        /* AssmnSfhlcMapper.getPlanmgmtStatus [AssmnSfhlc.xml] */
+        select
+         count(*)
+          from saf_vendor_eval_plan_vendor pv 
+          where pv.state_cd != 'STATE1'
+          and pv.vendor_eval_plan_no = #{vendorEvalPlanNo}
+    </select>
+    <delete id="deleteAssmnSfhlcVendorEach">
+        /* AssmnSfhlcMapper.deleteAssmnSfhlcVendorEach [AssmnSfhlc.xml] */
+        delete saf_vendor_eval_plan_vendor 
+         where vendor_eval_plan_no = #{vendorEvalPlanNo} 
+           and eval_plan_vendor_no = #{evalPlanVendorNo}
+    </delete>
+    <update id="updateAppr" >
+        /* AssmnSfhlcMapper.updateAppr [AssmnSfhlc.xml] */
+        UPDATE saf_vendor_eval_plan
+        SET  appr_rqst_no = #{apprRqstNo}
+        <if test="apprStepCd != null and !apprStepCd.equals('')">
+        ,step_cd = #{apprStepCd}
+        </if>
+        <if test='apprStepCd.equals("BAPSA")'>
+            ,state_cd = 'STATE3'
+        </if>
+        <if test='apprStepCd.equals("BAPSG")'>
+            ,state_cd = 'STATE4'
+        </if>
+        <if test='apprStepCd.equals("BAPSD")'>
+            ,state_cd = 'STATE2'
+        </if>
+        where vendor_eval_plan_no = #{vendorEvalPlanNo}
+    </update>
+    <select id="getPlanmgmtVendorList" resultType= "com.she.vendor.model.AssmnSfhlcVendorList">
+        /* AssmnSfhlcMapper.getPlanmgmtVendorList [AssmnSfhlc.xml] */
+        select 
+            pv.vendor_cd
+           ,cvm.vendor_nm
+           ,convert(char(10), pv.eval_start_dt, 23 ) as eval_start_dt
+           ,convert(char(10), pv.eval_end_dt, 23 ) as eval_end_dt
+           ,dbo.GET_DEPT_NM(pv.dept_cd) as dept_nm
+           ,pv.vendor_desc
+           ,case when isnull(pv.eval_finish_yn, 'N') = 'N' then '미완료' else '완료' end as eval_finish_yn
+           ,convert(char(10), pv.eval_finish_dt, 23) as eval_finish_dt 
+           ,convert(varchar, isnull(pv.eval_sum_pnt, 0)) + ' / ' + convert(varchar, isnull(pv.eval_all_pnt, 0)) as averageCnt
+           ,dbo.GET_CODE_NM(pv.rating_cd, 'SAF_EVAL_RATING') as rating_nm -- 등급명
+           ,format(isnull(pv.cost, 0), '##,##0') as cost
+          from saf_vendor_eval_plan_vendor pv
+          inner join chm_vendor_mst cvm on pv.vendor_cd = cvm.vendor_cd
+         where vendor_eval_plan_no = #{vendorEvalPlanNo}
+        <if test="apprFlag != null and !apprFlag.equals('')">
+            <choose>
+                <when test= "'vendorCnt'.equals(apprFlag)">
+                    -- 대상협력업체
+                </when>
+                <when test= "'assessNCnt'.equals(apprFlag)">
+                    -- 평가미완료
+                    and step_cd != 'BAPSG'
+                    and isnull(eval_finish_yn, 'N') = 'N'
+                </when>
+                <when test= "'overDateCnt'.equals(apprFlag)">
+                    -- 평가기한초과
+                    and step_cd != 'BAPSG'
+                    and datediff(day, GETDATE() , eval_end_dt) &lt; 0
+                </when>
+                <when test= "'assessYCnt'.equals(apprFlag)">
+                    -- 평가완료
+                    and step_cd = 'BAPSG'
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="procStepCd != null and !procStepCd.equals('')">
+            and pv.proc_step_cd = #{procStepCd}
+        </if>
+    </select>
+    <select id="getResultList" resultType="com.she.vendor.model.AssmnSfhlcVendorList">
+        /* AssmnSfhlcMapper.getResultList [AssmnSfhlc.xml] */
+            select 
+                pl.plant_cd
+               ,dbo.GET_CODE_NM(pl.plant_cd, 'COM_PLANT_CD') as plant_nm
+               ,pl.eval_cls_cd  -- 평가구분
+               ,dbo.GET_CODE_NM(pl.eval_cls_cd, 'SAF_SC_EVAL_CLS') as eval_cls_nm -- 평가구분명
+               ,pl.eval_title  -- 평가명
+               ,pv.vendor_cd
+               ,cvm.vendor_nm  -- 업체명
+               ,pv.eval_plan_vendor_no -- 대상협력업체번호
+               ,pv.vendor_eval_plan_no -- 협력업체 평가 계획 번호
+               ,pv.vendor_cd       -- 업체코드
+               ,convert(char(10), pv.eval_start_dt, 23) as eval_start_dt -- 평가예정 시작일
+               ,convert(char(10), pv.eval_end_dt, 23) as eval_end_dt -- 평가예정 종료일
+               ,convert(char(10), pv.eval_start_dt, 23) + ' ~ ' + convert(char(10), pv.eval_end_dt, 23) as evalDate 
+               ,pv.dept_cd -- 수행부서
+               ,dbo.GET_DEPT_NM(pv.dept_cd) as dept_nm  -- 수행부서명
+               ,dbo.GET_DEPT_NM(pl.main_dept_cd) as main_dept_nm  -- 주관부서명
+               ,pv.proc_step_cd    -- 단계코드
+               ,dbo.GET_CODE_NM(pv.proc_step_cd, 'RSA_WORK_RISK_STEP') as proc_step_nm -- 단계명
+               ,pv.state_cd    -- 상태코드
+               ,dbo.GET_CODE_NM(pv.state_cd, 'COM_STATE') as state_nm -- 상태명
+               ,pv.step_cd -- 결재상태코드
+               ,dbo.GET_CODE_NM(pv.proc_step_cd, 'RSA_WORK_RISK_STEP') + ' (' + case when pv.step_cd = 'BAPSD' then dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP', pv.step_cd) else dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_STATE', pv.state_cd) end + ')' as step_nm 
+               ,pv.appr_rqst_no    -- 결재번호
+               ,pv.rating_cd   -- 등급코드
+               ,dbo.GET_CODE_NM(pv.rating_cd, 'SAF_EVAL_RATING') as rating_nm -- 등급명
+               ,case when isnull(pv.cost_ref_yn, 'N') = 'N' then '미반영' else '반영' end as cost_ref_yn
+               ,format(isnull(pv.cost, 0), '##,##0') as cost -- 산업안전보건비
+               ,pv.vendor_desc -- 비고
+               ,pv.eval_finish_yn  -- 평가완료여부
+               ,convert(char(10), pv.eval_finish_dt, 23) as eval_finish_dt -- 평가완료일
+               ,pv.update_user_id  -- 수정자ID
+               ,dbo.GET_USER_NM(pv.update_user_id) as update_user_nm -- 수정자명
+               ,convert(char(10), pv.update_dt, 23) as update_dt --수정일
+               ,pv.update_dept_nm --수정자부서명
+               ,pv.update_dept_cd --수정자부서코드
+               ,pv.update_position_nm --수정자직위명
+               ,pv.update_position_cd --수정자직위코드
+               ,isnull(pv.eval_sum_pnt, 0) as eval_sum_pnt -- 평점
+               ,isnull(pv.eval_all_pnt, 0) as eval_all_pnt-- 총점
+             from saf_vendor_eval_plan_vendor pv
+            inner join saf_vendor_eval_plan pl on pv.vendor_eval_plan_no = pl.vendor_eval_plan_no
+            inner join chm_vendor_mst cvm on pv.vendor_cd = cvm.vendor_cd
+            where pl.step_cd = 'BAPSG'
+            <if test="plantCd != null and !plantCd.equals('')">
+                and pl.plant_cd = #{plantCd}
+            </if>
+            <if test="evalClsCd != null and !evalClsCd.equals('')">
+                and pl.eval_cls_cd = #{evalClsCd}
+            </if>
+            <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
+                and pv.eval_end_dt between #{startDt} and #{endDt}
+            </if>
+            <if test="evalTitle != null and !evalTitle.equals('')">
+                and pl.eval_title like '%' + #{evalTitle} + '%'
+            </if>
+            <if test="vendorNm != null and !vendorNm.equals('')">
+                and cvm.vendor_nm like '%' +  #{vendorNm} + '%'
+            </if>
+            <if test="procStepCd != null and !procStepCd.equals('')">
+                and pv.proc_step_cd = #{procStepCd}
+            </if>
+            <if test="stateCd != null and !stateCd.equals('')">
+                and pv.state_cd = #{stateCd}
+            </if>
+            <if test="costRefYn != null and !costRefYn.equals('')">
+                and pv.cost_ref_yn = #{costRefYn}
+            </if>
+            <if test= 'deptCd != null and !deptCd.equals("")'>
+                <choose>
+                    <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                        and pv.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+                    </when>
+                    <otherwise>
+                        and pv.dept_cd = #{deptCd}
+                    </otherwise>
+                </choose>
+            </if>
+            order by pv.eval_plan_vendor_no desc
+    </select>
+    <select id="getResultmgmtInfo" resultType= "com.she.vendor.model.AssmnSfhlcVendorList">
+        /* AssmnSfhlcMapper.getResultmgmtInfo [AssmnSfhlc.xml] */
+        select  
+            pl.main_dept_cd-- 주관부서
+           ,pl.vendor_eval_plan_no
+           ,pv.eval_plan_vendor_no
+           ,pl.year
+           ,dbo.GET_DEPT_NM(pl.main_dept_cd) as main_dept_nm    -- 주관부서명
+           ,pv.dept_cd -- 수행부서
+           ,dbo.GET_DEPT_NM(pv.dept_cd) as dept_nm  -- 수행부서명
+           ,convert(char(10), pl.create_dt, 23) as create_dt    -- 작성일
+           ,dbo.GET_USER_NM(pl.create_user_id) as create_user_nm    -- 작성자
+           ,pl.plant_cd
+           ,dbo.GET_CODE_NM(pl.plant_cd, 'COM_PLANT_CD') as plant_nm
+           ,convert(char(10), pv.eval_start_dt,23) as eval_start_dt
+           ,convert(char(10), pv.eval_end_dt,23) as eval_end_dt
+           ,pl.eval_cls_cd
+           ,dbo.GET_CODE_NM(pl.eval_cls_cd, 'SAF_SC_EVAL_CLS') as eval_cls_nm
+           ,pl.eval_title
+           ,pv.vendor_cd
+           ,cvm.vendor_nm
+           ,isnull(pv.eval_sum_pnt, 0) as eval_sum_pnt -- 평점
+           ,isnull(pv.eval_all_pnt, 0) as eval_all_pnt -- 총점
+           ,pv.vendor_desc
+           ,pv.rating_cd
+           ,dbo.GET_CODE_NM(pv.rating_cd, 'SAF_EVAL_RATING') as rating_nm
+           ,isnull(pv.cost_ref_yn, 'N') as cost_ref_yn-- 산업안전보건비 반영여부
+           ,isnull(pv.cost, 0) as cost --산업안전보건비
+           ,convert(char(10), pv.eval_finish_dt, 23) as eval_finish_dt -- 평가일
+           ,pv.appr_rqst_no -- 결재요청번호
+           ,pv.step_cd
+           ,dbo.GET_CODE_NM(pv.step_cd, 'COM_BIZ_APPR_STEP') as step_nm
+          from saf_vendor_eval_plan_vendor pv
+          inner join saf_vendor_eval_plan pl on pl.vendor_eval_plan_no = pv.vendor_eval_plan_no
+          inner join chm_vendor_mst cvm on pv.vendor_cd = cvm.vendor_cd
+          where pv.eval_plan_vendor_no = #{evalPlanVendorNo}
+    </select>
+    <update id= "updateAssmnSfhlcVendor" parameterType= "com.she.vendor.model.AssmnSfhlcVendorList">
+        /* AssmnSfhlcMapper.updateAssmnSfhlcVendor [AssmnSfhlc.xml] */
+       update saf_vendor_eval_plan_vendor set
+                rating_cd = #{ratingCd}
+               ,eval_sum_pnt = #{evalSumPnt}
+               ,eval_all_pnt = #{evalAllPnt}
+               ,eval_finish_dt = #{evalFinishDt}
+               ,cost_ref_yn = #{costRefYn}
+               ,vendor_desc = #{vendorDesc}
+               ,cost = #{cost}
+               ,state_cd = 'STATE2'
+       where eval_plan_vendor_no = #{evalPlanVendorNo}
+    </update>
+    <update id="updateResultAppr" >
+        /* AssmnSfhlcMapper.updateResultAppr [AssmnSfhlc.xml] */
+        UPDATE saf_vendor_eval_plan_vendor
+        SET  appr_rqst_no = #{apprRqstNo}
+        <if test="apprStepCd != null and !apprStepCd.equals('')">
+        ,step_cd = #{apprStepCd}
+        </if>
+        <if test='apprStepCd.equals("BAPSA")'>
+            ,state_cd = 'STATE3'
+        </if>
+        <if test='apprStepCd.equals("BAPSG")'>
+            ,eval_finish_yn = 'Y'
+            ,state_cd = 'STATE4'
+        </if>
+        <if test='apprStepCd.equals("BAPSD")'>
+            ,state_cd = 'STATE2'
+        </if>
+        where eval_plan_vendor_no = #{evalPlanVendorNo}
+    </update>
+    <select id="getAssmnSfhlcStatus" resultType="hashMap">
+        /* AssmnSfhlcMapper.getAssmnSfhlcStatus [AssmnSfhlc.xml] */
+        with rr as (
+              select 
+                 p.code as plant_cd
+                ,dbo.GET_CODE_NM(p.code, 'COM_PLANT_CD') as plant_nm
+                ,'전월누적 협력업체(건수)' as gubun
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-01') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon1
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-02') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon2
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-03') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon3
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-04') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon4
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-05') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon5
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-06') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon6
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-07') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon7
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-08') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon8
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-09') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon9
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-10') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon10
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-11') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon11
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-12') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon12
+                <!-- ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-12') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y')))
+                 as total -->
+                ,'' as total
+                ,1 as sortOrder
+                from com_code_master p
+                left join saf_vendor_eval_plan pl 
+                on pl.plant_cd = p.code
+                where code_group_cd = 'COM_PLANT_CD'
+                 and code != '0000'
+                 
+                 group by p.code, pl.plant_cd
+                 union all
+              select 
+                 p.code as plant_cd
+                ,dbo.GET_CODE_NM(p.code, 'COM_PLANT_CD') as plant_nm
+                ,'신규 협력업체(건수)' as gubun
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-01') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon1
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-02') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon2
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-03') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon3
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-04') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon4
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-05') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon5
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-06') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon6
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-07') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon7
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-08') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon8
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-09') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon9
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-10') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon10
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-11') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon11
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-12') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))) as mon12
+                ,convert(varchar, (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 4) = #{year} and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = pl.plant_cd and cvm.use_yn = 'Y'))) as total
+                ,2 as sortOrder
+                from com_code_master p
+                left join saf_vendor_eval_plan pl 
+                on pl.plant_cd = p.code
+                where code_group_cd = 'COM_PLANT_CD'
+                 and code != '0000'
+                 group by p.code, pl.plant_cd
+             union all
+              select 
+                 p.code as plant_cd
+                ,dbo.GET_CODE_NM(p.code, 'COM_PLANT_CD') as plant_nm
+                ,'전체 협력업체(건수)' as gubun
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-01') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-01') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon1
+                
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-02') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-02') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon2
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-03') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-03') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon3
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-04') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-04') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon4
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-05') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-05') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon5
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-06') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-06') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon6
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-07') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-07') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon7
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-08') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-08') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon8
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-09') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-09') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon9
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-10') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-10') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon10
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-11') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-11') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon11
+                ,convert(varchar, (
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-12') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))+
+                   (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-12') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                 )) as mon12
+                <!-- ,convert(varchar, (
+                  (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where (convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-12') or substring(convert(char(10), cvm.create_dt, 23), 1, 4) = #{year}) and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where scvp.plant_cd = p.code and cvm.use_yn = 'Y'))
+                )) as total -->
+                , '' as total
+                ,3 as sortOrder
+                from com_code_master p
+                left join saf_vendor_eval_plan pl 
+                on pl.plant_cd = p.code
+                where code_group_cd = 'COM_PLANT_CD'
+                 and code != '0000'
+                 group by p.code, pl.plant_cd
+             union all
+              select 
+                 p.code as plant_cd
+                ,dbo.GET_CODE_NM(p.code, 'COM_PLANT_CD') as plant_nm
+                ,'평가대상 업체(건수)' as gubun
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '01' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon1
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '02' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon2
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '03' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon3
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '04' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon4
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '05' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon5
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '06' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon6
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '07' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon7
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '08' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon8
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '09' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon9
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '10' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon10
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '11' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon11
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '12' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')) as mon12
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG'))
+                as total
+                ,4 as sortOrder
+                from com_code_master p
+                left join saf_vendor_eval_plan pl 
+                on pl.plant_cd = p.code
+                where code_group_cd = 'COM_PLANT_CD'
+                 and code != '0000'
+                 group by p.code, pl.plant_cd
+             union all
+              select 
+                 p.code as plant_cd
+                ,dbo.GET_CODE_NM(p.code, 'COM_PLANT_CD') as plant_nm
+                ,'평가완료 업체(건수)' as gubun
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '01' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon1
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '02' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon2
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '03' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon3
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '04' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon4
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '05' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon5
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '06' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon6
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '07' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon7
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '08' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon8
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '09' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon9
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '10' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon10
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '11' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon11
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '12' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) as mon12
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')) 
+                 as total 
+                ,5 as sortOrder
+                from com_code_master p
+                left join saf_vendor_eval_plan pl 
+                on pl.plant_cd = p.code
+                where code_group_cd = 'COM_PLANT_CD'
+                 and code != '0000'
+                 group by p.code, pl.plant_cd
+             union all
+                 select 
+                 p.code as plant_cd
+                ,dbo.GET_CODE_NM(p.code, 'COM_PLANT_CD') as plant_nm
+                ,'평가 실시율(%)' as gubun
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '01' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '01' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon1
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '02' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '02' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon2
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '03' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '03' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon3
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '04' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '04' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon4
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '05' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '05' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon5
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '06' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '06' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon6
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '07' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '07' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon7
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '08' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '08' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon8
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '09' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '09' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon9
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '10' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '10' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon10
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '11' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '11' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon11
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '12' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_end_dt, 23), 6, 2) = '12' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon12
+                ,format(round(dbo.GET_DIVIDE(
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+                (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as total
+                ,6 as sortOrder
+                from com_code_master p
+                left join saf_vendor_eval_plan pl 
+                on pl.plant_cd = p.code
+                where code_group_cd = 'COM_PLANT_CD'
+                 and code != '0000'
+                 group by p.code, pl.plant_cd
+             union all
+                 select 
+                 p.code as plant_cd
+                ,dbo.GET_CODE_NM(p.code, 'COM_PLANT_CD') as plant_nm
+                ,'산업안전보건비 반영(건수)' as gubun
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '01' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon1
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '02' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon2
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '03' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon3
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '04' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon4
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '05' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon5
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '06' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon6
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '07' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon7
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '08' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon8
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '09' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon9
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '10' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon10
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '11' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon11
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '12' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG')) as mon12
+                ,convert(varchar, (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'))
+                as total
+                ,7 as sortOrder
+                from com_code_master p
+                left join saf_vendor_eval_plan pl 
+                on pl.plant_cd = p.code
+                where code_group_cd = 'COM_PLANT_CD'
+                 and code != '0000'
+                 group by p.code, pl.plant_cd
+             union all
+                 select 
+                 p.code as plant_cd
+                ,dbo.GET_CODE_NM(p.code, 'COM_PLANT_CD') as plant_nm
+                ,'산업안전보건비 반영율(%)' as gubun
+                ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '01' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '01' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon1
+                ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '02' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '02' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                )*100, 2),'0.00') as mon2
+                ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '03' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '03' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon3
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '04' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '04' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon4
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '05' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '05' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon5
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '06' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '06' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon6
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '07' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '07' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon7
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '08' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '08' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon8
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '09' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '09' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon9
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '10' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '10' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon10
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '11' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '11' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon11
+                 ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '12' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.update_dt, 23), 6, 2) = '12' and spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00') as mon12
+                ,format(round(dbo.GET_DIVIDE(
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+                  (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where spl.plant_cd = pl.plant_cd and substring(convert(char(10), pv.update_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+                 )*100, 2),'0.00' ) as total
+                ,8 as sortOrder
+                from com_code_master p
+                left join saf_vendor_eval_plan pl 
+                on pl.plant_cd = p.code
+                where code_group_cd = 'COM_PLANT_CD'
+                 and code != '0000'
+                 group by p.code, pl.plant_cd
+     ) 
+     select * from rr
+     <if test="plantCd != null and !plantCd.equals('')">
+     where rr.plant_cd = #{plantCd}
+     </if>
+     <if test='allSearchYn != null and allSearchYn.equals("Y")'>
+       union all 
+       select
+        'total' as plant_cd
+       ,'합계' as plant_nm
+       ,'전체 협력업체(건수)' as gubun
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-01') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-01') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon1
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-02') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-02') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon2
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-03') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-03') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon3
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-04') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-04') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon4
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-05') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-05') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon5
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-06') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-06') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon6
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-07') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-07') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon7
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-08') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-08') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon8
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-09') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-09') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon9
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-10') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-10') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon10
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-11') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-11') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon11
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-12') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))+
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-12') and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as mon12
+       ,convert(varchar, (
+           (select count(*) from com_vendor_mst cvm inner join chm_origin co on cvm.origin_cd = co.origin_cd where (convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-12') or substring(convert(char(10), cvm.create_dt, 23), 1, 4) = #{year}) and cvm.vendor_cd in (select scvm.vendor_cd from com_vendor_mst scvm left join com_vendor_plant scvp on scvp.vendor_cd = scvm.vendor_cd where cvm.use_yn = 'Y' and scvp.plant_cd !=0000))
+       )) as total
+       ,9 as plant_nm
+       union all
+       select 
+       'total' as plant_cd
+       ,'합계' as plant_nm
+       ,'평가 실시율(%)' as gubun
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '01' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '01' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon1
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '02' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '02' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon2
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '03' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '03' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon3
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '04' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '04' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon4
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '05' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '05' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon5
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '06' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '06' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon6
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '07' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '07' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon7
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '08' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '08' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon8
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '09' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '09' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon9
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '10' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '10' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon10
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '11' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '11' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon11
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '12' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '12' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon12
+       ,format(round(dbo.GET_DIVIDE(
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG'),
+       (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and spl.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as total
+       ,10 as sortOrder
+       union all
+       select 
+       'total' as plant_cd
+       ,'합계' as plant_nm
+       ,'산업안전보건비 반영율(%)' as gubun
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '01' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '01' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon1
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '02' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '02' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon2
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '03' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '03' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon3
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '04' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '04' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon4
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '05' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '05' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon5
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '06' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '06' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon6
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '07' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '07' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon7
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '08' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '08' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon8
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '09' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '09' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon9
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '10' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '10' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon10
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '11' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '11' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon11
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '12' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 6, 2) = '12' and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as mon12
+       ,format(round(dbo.GET_DIVIDE(
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.cost_ref_yn = 'Y' and pv.step_cd = 'BAPSG'),
+           (select count(*) from saf_vendor_eval_plan_vendor pv inner join saf_vendor_eval_plan spl on pv.vendor_eval_plan_no = spl.vendor_eval_plan_no where substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year} and pv.step_cd = 'BAPSG')
+       )*100, 2),'0.00') as total
+       ,11 as sortOrder
+     </if>
+     order by rr.plant_nm, rr.sortOrder
+    </select>
+    <select id="getAssmnSfhlcResultStatusPopupList" resultType="hashMap">
+        /* AssmnSfhlcMapper.getAssmnSfhlcResultStatusPopupList [AssmnSfhlc.xml] */
+        select 
+           STUFF((
+              select ',' + ccm.code_nm
+              from com_vendor_plant cvp
+              inner join dbo.LANG_CODE_MASTER('kr', 'COM_PLANT_CD') ccm
+                  on ccm.code = cvp.plant_cd
+              where cvp.vendor_cd = cvm.vendor_cd
+              FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as plant_nms
+          ,dbo.GET_CODE_NM(cvm.vendor_type_cd, 'COM_VENDOR_TYPE') as vendor_type_nm
+          ,dbo.GET_CODE_NM(cvm.vendor_att_cd, 'COM_VENDOR_ATT') as vendor_att_nm
+          ,co.origin_nm_kr
+          ,cvm.vendor_nm
+          ,cvm.biz_num
+          ,cvm.vendor_tel
+          ,cvm.charger_nm
+          ,cvm.vendor_addr
+          , case when dbo.GET_USER_NM(cvm.update_user_id) = '' then dbo.GET_USER_NM(cvm.create_user_id)
+              else dbo.GET_USER_NM(cvm.update_user_id) end as writer_user_nm
+          , case when cvm.update_dt is null then convert(date, cvm.create_dt) else convert(date, cvm.update_dt) end   as writer_dt
+        from com_vendor_mst cvm
+          inner join chm_origin co
+          on cvm.origin_cd = co.origin_cd
+          where 1=1
+          and cvm.use_yn = 'Y'
+          <if test='searchFlag != null and searchFlag.equals("1")'>
+            <choose>
+                <when test='monFlag.equals("100")'>
+                    -- 전체
+                    and convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-12')
+                </when>
+                <otherwise>
+                    -- 전월누적 협력업체(건수)
+                    and convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-' + #{monFlag})
+                </otherwise>
+            </choose>
+          </if>
+          <if test='searchFlag != null and searchFlag.equals("2")'>
+            <choose>
+                <when test='monFlag.equals("100")'>
+                    -- 전체
+                    and substring(convert(char(10), cvm.create_dt, 23), 1, 4) = #{year}
+                </when>
+                <otherwise>
+                    -- 신규 협력업체(건수)
+                    and substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-' + #{monFlag})      
+                </otherwise>
+            </choose>
+          </if>
+          <if test='searchFlag != null and searchFlag.equals("3")'>
+            <choose>
+                <when test='monFlag.equals("100")'>
+                    -- 전체
+                    and (convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-' + #{monFlag}) or substring(convert(char(10), cvm.create_dt, 23), 1, 4) = #{year})
+                </when>
+                <otherwise>
+                    -- 전체 협력업체(건수)
+                    and (convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-' + #{monFlag}) or substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-' + #{monFlag}))      
+                </otherwise>
+            </choose>
+          </if>
+          <if test='searchFlag != null and searchFlag.equals("9")'>
+            <choose>
+                <when test='monFlag.equals("100")'>
+                    -- 전체
+                    and (convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-' + #{monFlag}) or substring(convert(char(10), cvm.create_dt, 23), 1, 4) = #{year})
+                </when>
+                <otherwise>
+                    -- 전체 협력업체(건수)
+                    and (convert(char(10), cvm.create_dt, 23) &lt; concat(#{year}, '-' + #{monFlag}) or substring(convert(char(10), cvm.create_dt, 23), 1, 7) = concat(#{year}, '-' + #{monFlag}))      
+                </otherwise>
+            </choose>
+          </if>
+          <if test='plantCd != null and !plantCd.equals("total")'>
+          -- 사업자
+          and vendor_cd in 
+          (select scvm.vendor_cd
+          from com_vendor_mst scvm
+          left join com_vendor_plant scvp
+          on scvp.vendor_cd = scvm.vendor_cd
+          where plant_cd = #{plantCd}
+          )
+          </if>
+          order by cvm.sort_order
+    </select>
+    <select id="getAssmnSfhlcStatusPopupList" resultType="hashMap">
+        /* AssmnSfhlcMapper.getAssmnSfhlcStatusPopupList [AssmnSfhlc.xml] */
+         select 
+              dbo.GET_CODE_NM(pl.plant_cd, 'COM_PLANT_CD') as plant_nm
+             ,dbo.GET_CODE_NM(pl.eval_cls_cd, 'SAF_SC_EVAL_CLS') as eval_cls_nm -- 평가구분명
+             ,pl.eval_title  -- 평가명
+             ,cvm.vendor_nm  -- 업체명
+             ,convert(char(10), pv.eval_start_dt, 23) + ' ~ ' + convert(char(10), pv.eval_end_dt, 23) as eval_date 
+             ,dbo.GET_DEPT_NM(pv.dept_cd) as dept_nm  -- 수행부서명
+             ,dbo.GET_DEPT_NM(pl.main_dept_cd) as main_dept_nm  -- 주관부서명
+             ,dbo.GET_CODE_NM(pv.state_cd, 'COM_STATE') as state_nm -- 상태명
+             ,dbo.GET_CODE_NM(pv.step_cd, 'COM_BIZ_APPR_STEP') as step_nm -- 결재상태
+             ,case when isnull(pv.cost_ref_yn, 'N') = 'N' then '미반영' else '반영' end as cost_ref_yn
+             ,format(isnull(pv.cost, 0), '##,##0') as cost -- 산업안전보건비
+             ,pv.update_user_id  -- 수정자ID
+             ,dbo.GET_USER_NM(pv.update_user_id) as update_user_nm -- 수정자명
+             ,convert(char(10), pv.update_dt, 23) as update_dt --수정일
+             ,isnull(pv.eval_sum_pnt, 0) as eval_sum_pnt -- 평점
+             ,isnull(pv.eval_all_pnt, 0) as eval_all_pnt-- 총점
+           from saf_vendor_eval_plan_vendor pv
+          inner join saf_vendor_eval_plan pl on pv.vendor_eval_plan_no = pl.vendor_eval_plan_no
+          inner join chm_vendor_mst cvm on pv.vendor_cd = cvm.vendor_cd
+          where 1=1
+              and pv.proc_step_cd = 'RWRS2'
+           <if test='searchFlag != null and searchFlag.equals("4")'>
+               <choose>
+                    <when test='monFlag.equals("100")'>
+                        and substring(convert(char(10), pv.eval_end_dt, 23), 1, 4) = #{year}
+                    </when>
+                    <otherwise>
+                        -- 평가대상 업체(건수)
+                        and substring(convert(char(10), pv.eval_end_dt, 23), 1, 7) = concat(#{year}, '-' + #{monFlag})
+                        
+                    </otherwise>
+               </choose>  
+                        and pl.step_cd = 'BAPSG'
+           </if>
+           <if test='searchFlag != null and (searchFlag.equals("5") or searchFlag.equals("6") or searchFlag.equals("10"))'>
+               <choose>
+                    <when test='monFlag.equals("100")'>
+                        and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year}
+                        and pv.step_cd = 'BAPSG'
+                    </when>
+                    <otherwise>
+                        -- 평가완료 업체(건수), 평가 실시율(%)
+                        and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 7) = concat(#{year}, '-' + #{monFlag})
+                        and pv.step_cd = 'BAPSG'
+                    </otherwise>
+               </choose>  
+           </if>
+           <if test='searchFlag != null and (searchFlag.equals("7") or searchFlag.equals("8") or searchFlag.equals("11"))'>
+               <choose>
+                    <when test='monFlag.equals("100")'>
+                        and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 4) = #{year}
+                        and pv.cost_ref_yn = 'Y'
+                    </when>
+                    <otherwise>
+                        -- 산업안전보건비 반영(건수), 산업안전보건비 반영율(%)
+                        and substring(convert(char(10), pv.eval_finish_dt, 23), 1, 7) = concat(#{year}, '-' + #{monFlag})
+                        and pv.cost_ref_yn = 'Y'
+                    </otherwise>
+               </choose>  
+               and pv.step_cd = 'BAPSG'
+           </if>
+            <if test='plantCd != null and !plantCd.equals("total") and (!searchFlag.equals("10") or !searchFlag.equals("11"))'>
+              and pl.plant_cd = #{plantCd}
+            </if>
+          order by pv.eval_plan_vendor_no desc
+    </select>
+    
+    <select id="getPlanEvalItemList" resultType="com.she.vendor.model.AssmnSfhlcItemList">
+            /* AssmnSfhlcMapper.getPlanEvalItemList [AssmnSfhlc.xml] */
+            select 
+                <choose>
+                    <when test='type != null and type.equals("result")'>
+                       vendor_eval_item_rslt_no
+                       ,eval_plan_vendor_no
+                       ,eval_pnt
+                       ,remarks ,
+                    </when>
+                    <otherwise>
+                        distinct
+                    </otherwise>
+                </choose>                
+                 vendor_eval_plan_no
+                 ,saf_subcon_eval_item_no
+                 ,subcon_eval_item_pnt
+                 ,subcon_eval_item_nm
+                 ,subcon_eval_item_stnd
+                 ,subcon_eval_cls_cd
+                 ,subcon_eval_att_cd
+             from saf_vendor_eval_item_rslt
+             where 1=1
+             <if test="vendorEvalPlanNo !=null and vendorEvalPlanNo gt 0">
+             and vendor_eval_plan_no = #{vendorEvalPlanNo}
+             </if>
+             <if test="evalPlanVendorNo !=null and evalPlanVendorNo gt 0">
+             and eval_plan_vendor_no = #{evalPlanVendorNo}
+             </if>
+    </select>
+    <delete id="deletePlanEvalItemList">
+        /* AssmnSfhlcMapper.deletePlanEvalItemList [AssmnSfhlc.xml] */
+            delete from saf_vendor_eval_item_rslt where vendor_eval_plan_no = #{vendorEvalPlanNo}    
+    </delete>
+    <update id="updateVendorEvalItemRslt"  parameterType= "com.she.vendor.model.AssmnSfhlcItemList">
+        /* AssmnSfhlcMapper.updateVendorEvalItemRslt [AssmnSfhlc.xml] */
+         update saf_vendor_eval_item_rslt
+             set eval_pnt = #{evalPnt}
+             ,remarks = #{remarks}
+         where vendor_eval_item_rslt_no = #{vendorEvalItemRsltNo}
+    </update>
+</mapper>

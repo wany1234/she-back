@@ -1,0 +1,110 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.psm.processFacility.mapper.PowerMachineMapper">
+
+    <!-- 동력기계 조회 -->
+    <select id= "getPowerMachines" resultType= "com.she.psm.model.PowerMachine">
+        select sfm.saf_facility_cd
+            ,(select count(*) 
+            from saf_facility_pwr_info s
+            where s.saf_facility_cd = sfm.saf_facility_cd) as count
+            ,sfm.facility_nm
+            ,sfm.process_cd
+            ,cp.process_nm
+            ,sfm.plant_cd
+            ,plant.code_nm as plant_nm
+            ,sfm.rev_num
+            ,sfpi.spec_info
+            ,sfpi.mat_quality
+            ,sfpi.motor_vol
+            ,sfpi.protect_type
+            ,sfpi.invertor_nm
+            , case
+                 when dbo.GET_USER_NM(sfm.update_user_id) = '' then dbo.GET_USER_NM(sfm.create_user_id)
+                 else dbo.GET_USER_NM(sfm.update_user_id) end    as writer_user_nm
+            , case when sfm.update_dt is null then convert(date, sfm.create_dt) else convert(date, sfm.update_dt) end   as writer_dt
+        from saf_facility_mst sfm
+        left outer join saf_facility_pwr_info sfpi
+        on sfm.saf_facility_cd = sfpi.saf_facility_cd
+        inner join com_code_master plant
+        on plant.code_group_cd = 'COM_PLANT_CD'
+        and sfm.plant_cd = plant.code
+        inner join com_process cp
+        on sfm.process_cd = cp.process_cd
+        where 1=1
+        and sfm.facility_psm_cd = 'FPSM1'
+        and sfm.saf_facility_cd like '%' + #{safFacilityCd} + '%'
+        and sfm.facility_nm like '%' + #{facilityNm} + '%'
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and sfm.plant_cd = #{plantCd}
+        </if>
+        <if test= "processCd != null and !processCd.equals('')">
+        and sfm.process_cd = #{processCd}
+        </if>
+        order by writer_dt desc
+    </select>
+    
+    <select id= "getPowerMachine" resultType= "com.she.psm.model.PowerMachine">
+        select sfm.saf_facility_cd
+            ,sfm.facility_nm
+            ,sfm.process_cd
+            ,cp.process_nm
+            ,sfm.plant_cd
+            ,plant.code_nm as plant_nm
+            ,sfpi.spec_info
+            ,sfpi.mat_quality
+            ,sfpi.motor_vol
+            ,sfpi.protect_type
+            ,sfpi.invertor_nm
+            ,sfpi.chng_num
+        from saf_facility_mst sfm
+        inner join saf_facility_pwr_info sfpi
+        on sfm.saf_facility_cd = sfpi.saf_facility_cd
+        inner join com_code_master plant
+        on plant.code_group_cd = 'COM_PLANT_CD'
+        and sfm.plant_cd = plant.code
+        inner join com_process cp
+        on sfm.process_cd = cp.process_cd
+        LEFT OUTER JOIN saf_chng_ref_work scrw
+                        ON scrw.ref_table_nm = 'saf_facility_pwr_info'
+                            AND scrw.ref_table_id = sfm.saf_facility_cd
+        where 1=1
+        and sfm.saf_facility_cd = #{safFacilityCd}
+    </select>
+    
+    <insert id= "createPowerMachine" parameterType= "com.she.psm.model.PowerMachine">
+        insert into saf_facility_pwr_info
+            (saf_facility_cd
+            ,spec_info
+            ,mat_quality
+            ,motor_vol
+            ,protect_type
+            ,invertor_nm
+            ,chng_num) 
+        values
+            (#{safFacilityCd}
+            ,#{specInfo}
+            ,#{matQuality}
+            ,#{motorVol}
+            ,#{protectType}
+            ,#{invertorNm}
+            ,#{chngNum})
+    </insert>
+    
+    <update id= "updatePowerMachine" parameterType= "com.she.psm.model.PowerMachine">
+        update saf_facility_pwr_info
+            set spec_info = #{specInfo}
+                ,mat_quality = #{matQuality}
+                ,motor_vol = #{motorVol}
+                ,protect_type = #{protectType}
+                ,invertor_nm = #{invertorNm}
+                ,chng_num = #{chngNum}
+            where saf_facility_cd = #{safFacilityCd}
+        update saf_facility_mst
+            set update_user_id = #{createUserId},
+                update_dt = GETDATE()
+        where saf_facility_cd = #{safFacilityCd}
+    </update>
+    
+</mapper>

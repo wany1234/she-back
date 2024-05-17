@@ -1,0 +1,768 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.gas.mapper.EmissionsMapper">
+    <!-- 매개변수와 배출량 목록 조회 -->
+    <select id= "getDisByMonthEt" resultType= "com.she.env.gas.model.Emissions">
+        /* EmissionsMapper.getDisByMonthEt [Emissions.xml] */
+        -- 배출량 시뮬레이션
+        SELECT
+              isnull(m01, 0) + isnull(m02, 0)  + isnull(m03, 0)  + isnull(m04, 0)  + isnull(m05, 0)  + isnull(m06, 0)  +
+              isnull(m07, 0)  + isnull(m08, 0)  + isnull(m09, 0)  + isnull(m10, 0)  + isnull(m11, 0)  + isnull(m12, 0)   as useByYear -- tj
+              ,isnull(m01, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as one
+              ,isnull(m02, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as two
+              ,isnull(m03, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as three
+              ,isnull(m04, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as four
+              ,isnull(m05, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as five
+              ,isnull(m06, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as six
+              ,isnull(m07, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as seven
+              ,isnull(m08, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as eight
+              ,isnull(m09, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as nine
+              ,isnull(m10, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as ten
+              ,isnull(m11, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as eleven
+              ,isnull(m12, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as twelve
+              ,pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000) * pa_cal_coe_p * pa_oxi_coe as tCO2eq
+              ,isnull(m01, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m02, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m03, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as qone
+              ,isnull(m04, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m05, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m06, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as qtwo
+              ,isnull(m07, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m08, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m09, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as qthree
+              ,isnull(m10, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m11, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m12, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as qfour
+              ,(isnull(m01, 0) + isnull(m02, 0)  + isnull(m03, 0)  + isnull(m04, 0)  + isnull(m05, 0)  + isnull(m06, 0)  +
+              isnull(m07, 0)  + isnull(m08, 0)  + isnull(m09, 0)  + isnull(m10, 0)  + isnull(m11, 0)  + isnull(m12, 0)) / 0.041868 as toe
+              ,isnull(m01, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m02, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m03, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m04, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m05, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m06, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              +isnull(m07, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m08, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m09, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              +isnull(m10, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m11, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m12, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as alltCo2Eq --전체 tco2eq
+
+              ,(isnull(m01, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m02, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m03, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m04, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m05, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m06, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              +isnull(m07, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m08, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m09, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              +isnull(m10, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m11, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m12, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe) * pa_cal_coe_t / 1000 as tj --tj
+
+              ,plant_cd -- 사업장
+              ,plant_nm as plant_nm -- 사업장명
+              ,dept_nm -- 부서명
+              ,process_nm -- 공정명
+              ,ghgFcltNm  --배출활동명
+              ,fclt_nm -- 자체시설명
+              ,ngms_fceq_num -- ngms일련번호
+              ,pActDataNm -- 중분류
+              ,act_data_nm -- 활동자료명
+              ,unit_nm -- 단위
+              ,paTierNm -- 적용tier
+              ,ghg_fclt_cd
+              ,erp_code
+              ,process_cd
+              ,dept_cd
+              ,chg_reason
+              ,create_dt
+              ,pa_emi_coe_co2 -- 배출계수
+              ,pa_emi_coe_ch4
+              ,pa_emi_coe_n20
+              ,pa_cal_coe_p -- 순발열량
+              ,pa_cal_coe_t
+              ,pa_oxi_coe -- 산화율
+              ,pa_gwp_co2 -- gwp
+              ,pa_gwp_ch4
+              ,pa_gwp_n2o
+              ,update_dt
+              ,actNm
+              ,ghg_out_act_cd
+              ,ghg_act_da_cd
+              ,ghg_fclt_no
+              ,year
+              ,sim_yn
+              ,fclt_calc_no
+              ,pa_tier
+              ,ghg_unit_cd
+          FROM (
+            SELECT
+                gf.plant_cd -- 사업장
+                ,plant.code_nm as plant_nm -- 사업장명
+                ,cd.dept_nm -- 부서명
+                ,cp.process_nm -- 공정명
+                ,ghgfcltNm.attr1 as ghgFcltNm  --배출활동명
+                ,gf.fclt_nm -- 자체시설명
+                ,gf.ngms_fceq_num -- ngms일련번호
+                ,parent.act_data_nm as pActDataNm -- 중분류
+                ,adc.act_data_nm -- 활동자료명
+                ,unit.unit_nm -- 단위
+                ,tier.code_nm as paTierNm -- 적용tier
+                ,gf.ghg_fclt_cd
+                ,gf.erp_code
+                ,gf.process_cd
+                ,gf.dept_cd
+                ,gf.chg_reason
+                ,gf.create_dt
+                ,isnull(md.pa_emi_coe_co2, 0) as pa_emi_coe_co2 -- 배출계수
+                ,isnull(md.pa_emi_coe_ch4, 0) as pa_emi_coe_ch4
+                ,isnull(md.pa_emi_coe_n20, 0) as pa_emi_coe_n20
+                ,isnull(md.pa_cal_coe_p, 0) as pa_cal_coe_p -- 순발열량
+                ,isnull(md.pa_cal_coe_t, 0) as pa_cal_coe_t
+                ,isnull(md.pa_oxi_coe, 0) as pa_oxi_coe -- 산화율
+                ,isnull(md.pa_gwp_co2, 0) as pa_gwp_co2 -- gwp
+                ,isnull(md.pa_gwp_ch4, 0) as pa_gwp_ch4
+                ,'m'+substring(rpt.yearmon,6,2) as mon
+                ,gadr.act_vol
+                ,isnull(md.pa_gwp_n2o, 0) as pa_gwp_n2o
+                ,md.update_dt
+                ,ccm.code_nm as actNm
+                ,md.ghg_out_act_cd
+                ,md.ghg_act_da_cd
+                ,md.ghg_fclt_no
+                ,md.year
+                ,md.sim_yn
+                ,md.fclt_calc_mtd_no as fclt_calc_no
+                ,md.pa_tier
+                ,md.ghg_unit_cd
+            FROM ghg_act_da_rpt rpt
+                INNER JOIN ghg_act_da_rslt gadr
+                on rpt.ghg_act_da_rpt_no = gadr.ghg_act_da_rpt_no
+                and rpt.step_cd = '0002'
+                INNER JOIN (select *, 'N' as sim_yn
+                            from ghg_fclt_calc_mtd_year
+                            where CONCAT(year,ghg_fclt_no,ghg_out_act_cd,ghg_act_da_cd) NOT IN (SELECT CONCAT(year,ghg_fclt_no,ghg_out_act_cd,ghg_act_da_cd) from ghg_fclt_calc_mtd_year_et)
+                            union all
+                            select *, 'Y' as sim_yn
+                            from ghg_fclt_calc_mtd_year_et) md
+                 on gadr.ghg_fclt_no = md.ghg_fclt_no
+                 and gadr.ghg_act_da_cd = md.ghg_act_da_cd
+                 and gadr.ghg_out_act_cd = md.ghg_out_act_cd
+                INNER JOIN ghg_fclt gf
+                 on gf.ghg_fclt_no = md.ghg_fclt_no
+                INNER JOIN act_data_categorys adc
+                 on adc.act_data_cd = md.ghg_act_da_cd
+                INNER JOIN act_data_categorys parent
+                 on parent.act_data_cd = adc.p_act_data_cd
+                LEFT OUTER JOIN com_code_master ccm
+                 on ccm.code_group_cd = 'GHG_ACT_DATA'
+                 and ccm.code = md.ghg_out_act_cd
+                INNER JOIN  com_code_master ghgfcltNm
+                 on ghgfcltNm.code_group_cd = 'GHG_ACT_CD'
+                 and ghgfcltNm.code = ccm.attr1
+                INNER JOIN com_code_master plant
+                 on plant.code_group_cd = 'COM_PLANT_CD'
+                 and plant.code = gf.plant_cd
+                INNER JOIN  com_code_master tier
+                 on tier.code_group_cd = 'APPLY_TIER'
+                 and tier.code = md.pa_tier
+                LEFT OUTER JOIN gas_unit unit
+                 on unit.unit_cd = md.ghg_unit_cd
+                INNER JOIN com_dept cd
+                 on cd.dept_cd = gf.dept_cd
+                INNER JOIN com_process cp
+                 on cp.process_cd = gf.process_cd
+            WHERE 1=1
+            <if test= "plantCd != null and !plantCd.equals('')">
+              and gf.plant_cd = #{plantCd}
+            </if>
+            <if test= "year != null and !year.equals('')">
+              and md.year = #{year}
+            </if>
+          ) as result
+            PIVOT (
+                sum(act_vol) for mon in([m01],[m02],[m03],[m04],[m05],[m06],[m07],[m08],[m09],[m10],[m11],[m12])
+          ) as result_pivot
+    </select>
+
+    <select id= "getDisByMonth" resultType ="com.she.env.gas.model.Emissions">
+        /* EmissionsMapper.getDisByMonth [Emissions.xml] */
+        SELECT
+              isnull(m01, 0) + isnull(m02, 0)  + isnull(m03, 0)  + isnull(m04, 0)  + isnull(m05, 0)  + isnull(m06, 0)  +
+              isnull(m07, 0)  + isnull(m08, 0)  + isnull(m09, 0)  + isnull(m10, 0)  + isnull(m11, 0)  + isnull(m12, 0)   as useByYear -- tj
+              ,isnull(m01, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as one
+              ,isnull(m02, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as two
+              ,isnull(m03, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as three
+              ,isnull(m04, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as four
+              ,isnull(m05, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as five
+              ,isnull(m06, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as six
+              ,isnull(m07, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as seven
+              ,isnull(m08, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as eight
+              ,isnull(m09, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as nine
+              ,isnull(m10, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as ten
+              ,isnull(m11, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as eleven
+              ,isnull(m12, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as twelve
+              ,pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000) * pa_cal_coe_p * pa_oxi_coe as tCO2eq
+              ,isnull(m01, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m02, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m03, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as qone
+              ,isnull(m04, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m05, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m06, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as qtwo
+              ,isnull(m07, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m08, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m09, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as qthree
+              ,isnull(m10, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m11, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m12, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as qfour
+              ,(isnull(m01, 0) + isnull(m02, 0)  + isnull(m03, 0)  + isnull(m04, 0)  + isnull(m05, 0)  + isnull(m06, 0)  +
+              isnull(m07, 0)  + isnull(m08, 0)  + isnull(m09, 0)  + isnull(m10, 0)  + isnull(m11, 0)  + isnull(m12, 0)) / 0.041868 as toe
+              ,isnull(m01, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m02, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m03, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m04, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m05, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m06, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              +isnull(m07, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m08, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m09, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              +isnull(m10, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m11, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m12, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe as alltCo2Eq --전체 tco2eq
+
+              ,(isnull(m01, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m02, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m03, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m04, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m05, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m06, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              +isnull(m07, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m08, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m09, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              +isnull(m10, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m11, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe
+              + isnull(m12, 0) * (pa_emi_coe_co2 + (pa_emi_coe_ch4 * pa_gwp_ch4 / 1000) + (pa_emi_coe_n20 * pa_gwp_n2o / 1000)) * pa_cal_coe_p * pa_oxi_coe) * pa_cal_coe_t / 1000 as tj --tj
+
+              ,plant_cd -- 사업장
+              ,plant_nm as plant_nm -- 사업장명
+              ,dept_nm -- 부서명
+              ,process_nm -- 공정명
+              ,ghgFcltNm  --배출활동명
+              ,fclt_nm -- 자체시설명
+              ,ngms_fceq_num -- ngms일련번호
+              ,pActDataNm -- 중분류
+              ,act_data_nm -- 활동자료명
+              ,unit_nm -- 단위
+              ,paTierNm -- 적용tier
+              ,ghg_fclt_cd
+              ,erp_code
+              ,process_cd
+              ,dept_cd
+              ,chg_reason
+              ,create_dt
+              ,pa_emi_coe_co2 -- 배출계수
+              ,pa_emi_coe_ch4
+              ,pa_emi_coe_n20
+              ,pa_cal_coe_p -- 순발열량
+              ,pa_cal_coe_t
+              ,pa_oxi_coe -- 산화율
+              ,pa_gwp_co2 -- gwp
+              ,pa_gwp_ch4
+              ,pa_gwp_n2o
+              ,update_dt
+              ,actNm
+              ,ghg_out_act_cd
+              ,ghg_act_da_cd
+              ,ghg_fclt_no
+              ,year
+          FROM (
+            SELECT
+                gf.plant_cd -- 사업장
+                ,plant.code_nm as plant_nm -- 사업장명
+                ,cd.dept_nm -- 부서명
+                ,cp.process_nm -- 공정명
+                ,ghgfcltNm.attr1 as ghgFcltNm  --배출활동명
+                ,gf.fclt_nm -- 자체시설명
+                ,gf.ngms_fceq_num -- ngms일련번호
+                ,parent.act_data_nm as pActDataNm -- 중분류
+                ,adc.act_data_nm -- 활동자료명
+                ,unit.unit_nm -- 단위
+                ,tier.code_nm as paTierNm -- 적용tier
+                ,gf.ghg_fclt_cd
+                ,gf.erp_code
+                ,gf.process_cd
+                ,gf.dept_cd
+                ,gf.chg_reason
+                ,gf.create_dt
+                ,isnull(md.pa_emi_coe_co2, 0) as pa_emi_coe_co2 -- 배출계수
+                ,isnull(md.pa_emi_coe_ch4, 0) as pa_emi_coe_ch4
+                ,isnull(md.pa_emi_coe_n20, 0) as pa_emi_coe_n20
+                ,isnull(md.pa_cal_coe_p, 0) as pa_cal_coe_p -- 순발열량
+                ,isnull(md.pa_cal_coe_t, 0) as pa_cal_coe_t
+                ,isnull(md.pa_oxi_coe, 0) as pa_oxi_coe -- 산화율
+                ,isnull(md.pa_gwp_co2, 0) as pa_gwp_co2 -- gwp
+                ,isnull(md.pa_gwp_ch4, 0) as pa_gwp_ch4
+                ,'m'+substring(rpt.yearmon,6,2) as mon
+                ,gadr.act_vol
+                ,isnull(md.pa_gwp_n2o, 0) as pa_gwp_n2o
+                ,md.update_dt
+                ,ccm.code_nm as actNm
+                ,md.ghg_out_act_cd
+                ,md.ghg_act_da_cd
+                ,md.ghg_fclt_no
+                ,md.year
+            FROM ghg_act_da_rpt rpt
+                INNER JOIN ghg_act_da_rslt gadr
+                 on rpt.ghg_act_da_rpt_no = gadr.ghg_act_da_rpt_no
+                 and rpt.step_cd = '0002'
+                INNER JOIN ghg_fclt_calc_mtd_year md
+                 on gadr.ghg_fclt_no = md.ghg_fclt_no
+                 and gadr.ghg_act_da_cd = md.ghg_act_da_cd
+                 and gadr.ghg_out_act_cd = md.ghg_out_act_cd
+                INNER JOIN ghg_fclt gf
+                 on gf.ghg_fclt_no = md.ghg_fclt_no
+                INNER JOIN act_data_categorys adc
+                 on adc.act_data_cd = md.ghg_act_da_cd
+                INNER JOIN act_data_categorys parent
+                 on parent.act_data_cd = adc.p_act_data_cd
+                LEFT OUTER JOIN com_code_master ccm
+                 on ccm.code_group_cd = 'GHG_ACT_DATA'
+                 and ccm.code = md.ghg_out_act_cd
+                INNER JOIN  com_code_master ghgfcltNm
+                 on ghgfcltNm.code_group_cd = 'GHG_ACT_CD'
+                 and ghgfcltNm.code = ccm.attr1
+                INNER JOIN com_code_master plant
+                 on plant.code_group_cd = 'COM_PLANT_CD'
+                 and plant.code = gf.plant_cd
+                INNER JOIN  com_code_master tier
+                 on tier.code_group_cd = 'APPLY_TIER'
+                 and tier.code = md.pa_tier
+                LEFT OUTER JOIN gas_unit unit
+                 on unit.unit_cd = md.ghg_unit_cd
+                INNER JOIN com_dept cd
+                 on cd.dept_cd = gf.dept_cd
+                INNER JOIN com_process cp
+                 on cp.process_cd = gf.process_cd
+            where 1=1
+            <if test= "plantCd != null and !plantCd.equals('')">
+              and gf.plant_cd = #{plantCd}
+            </if>
+            <if test= "year != null and !year.equals('')">
+              and md.year = #{year}
+            </if>
+          ) as result
+            PIVOT (
+                sum(act_vol) for mon in([m01],[m02],[m03],[m04],[m05],[m06],[m07],[m08],[m09],[m10],[m11],[m12])
+          ) as result_pivot
+    </select>
+
+    <select id="getDisByMon" resultType="com.she.env.gas.model.Emissions">
+        /* EmissionsMapper.getDisByMon [Emissions.xml] */
+            select
+                md.fclt_calc_no
+                ,gf.ghg_fclt_cd
+                ,gf.fclt_nm
+                ,gf.ngms_fceq_num
+                ,gf.erp_code
+                ,gf.plant_cd
+                ,gf.process_cd
+                ,gf.dept_cd
+                ,dy.year
+                ,dy.ghg_fclt_no
+                ,dy.ghg_out_act_cd
+                ,dy.ghg_act_da_cd
+                ,md.ghg_unit_cd
+                ,md.pa_tier
+                ,md.pa_emi_coe_co2
+                ,md.pa_emi_coe_ch4
+                ,md.pa_emi_coe_n20
+                ,md.pa_cal_coe_p
+                ,md.pa_cal_coe_t
+                ,md.pa_oxi_coe
+                ,md.pa_gwp_co2
+                ,md.pa_gwp_ch4
+                ,md.pa_gwp_n2o
+                ,adc.act_data_nm
+                ,ccm.code_nm as actNm
+            from ghg_fclt_calc_mtd_year_et md
+            inner join ghg_fclt_out_act_da_year dy
+            on dy.year = md.year
+            and dy.ghg_fclt_no = md.ghg_fclt_no
+            and dy.ghg_act_da_cd = md.ghg_act_da_cd
+            and dy.ghg_out_act_cd = md.ghg_out_act_cd
+            inner join ghg_fclt gf
+            on gf.ghg_fclt_no = dy.ghg_fclt_no
+            inner join act_data_categorys adc
+            on adc.act_data_cd = dy.ghg_act_da_cd
+            inner join com_code_master ccm
+            on ccm.code_group_cd = 'GHG_ACT_DATA'
+            and ccm.code = dy.ghg_out_act_cd
+
+            where dy.ghg_fclt_no = #{ghgFcltNo}
+            and dy.year = #{year}
+            and dy.ghg_out_act_cd = #{ghgOutActCd}
+            and dy.ghg_act_da_cd = #{ghgActDaCd}
+    </select>
+
+    <insert id="insertDisByMonth" parameterType="com.she.env.gas.model.Emissions">
+        /* EmissionsMapper.insertDisByMonth [Emissions.xml] */
+        <selectKey keyProperty="fcltCalcNo" resultType="int" order="BEFORE">
+            select next value for seq_ghg_fclt_calc as fclt_calc_no
+        </selectKey>
+        insert into ghg_fclt_calc_mtd_year_et
+                    (
+                        fclt_calc_no
+                        , year
+                        , ghg_fclt_no
+                        , ghg_out_act_cd
+                        , ghg_act_da_cd
+                        , ghg_unit_cd
+                        , pa_tier
+                        , pa_emi_coe_co2
+                        , pa_emi_coe_ch4
+                        , pa_emi_coe_n20
+                        , pa_cal_coe_p
+                        , pa_cal_coe_t
+                        , pa_oxi_coe
+                        , pa_gwp_co2
+                        , pa_gwp_ch4
+                        , pa_gwp_n2o
+                        , create_user_id
+                        , create_dt
+                    )
+                    values
+                    (
+                        #{fcltCalcNo}
+                        , #{year}
+                        , #{ghgFcltNo}
+                        , #{ghgOutActCd}
+                        , #{ghgActDaCd}
+                        , #{ghgUnitCd}
+                        , #{paTier}
+                        , #{paEmiCoeCo2}
+                        , #{paEmiCoeCh4}
+                        , #{paEmiCoeN20}
+                        , #{paCalCoeP}
+                        , #{paCalCoeT}
+                        , #{paOxiCoe}
+                        , #{paGwpCo2}
+                        , #{paGwpCh4}
+                        , #{paGwpN2o}
+                        , #{createUserId}
+                        , getDate()
+                    )
+    </insert>
+
+    <update id ="updateDisByMonth" parameterType="com.she.env.gas.model.Emissions">
+        /* EmissionsMapper.updateDisByMonth [Emissions.xml] */
+        update ghg_fclt_calc_mtd_year_et
+            set pa_tier = #{paTier}
+                ,pa_emi_coe_co2 = #{paEmiCoeCo2}
+                ,pa_emi_coe_ch4 = #{paEmiCoeCh4}
+                ,pa_emi_coe_n20 = #{paEmiCoeN20}
+                ,ghg_unit_cd = #{ghgUnitCd}
+                ,pa_cal_coe_p = #{paCalCoeP}
+                ,pa_cal_coe_t = #{paCalCoeT}
+                ,pa_oxi_coe = #{paOxiCoe}
+                ,pa_gwp_co2 = #{paGwpCo2}
+                ,pa_gwp_ch4 = #{paGwpCh4}
+                ,pa_gwp_n2o = #{paGwpN2o}
+                ,update_user_id = #{updateUserId}
+                ,update_dt = getDate()
+            where fclt_calc_no = #{fcltCalcNo}
+    </update>
+
+    <select id="getGhgFcltCalMtdSeq" resultType="int">
+        /* EmissionsMapper.getGhgFcltCalMtdSeq [Emissions.xml] */
+        Select next value for seq_ghg_fclt_calc_mtd_year
+    </select>
+
+    <update id="acceptDisByMonth" parameterType="com.she.env.gas.model.Emissions">
+        /* EmissionsMapper.acceptDisByMonth [Emissions.xml] */
+        Merge into ghg_fclt_calc_mtd_year a
+              Using (Select *
+                       From ghg_fclt_calc_mtd_year_et
+                      Where fclt_calc_no = #{fcltCalcNo}) b
+                 On a.year = b.year
+                And a.ghg_fclt_no = b.ghg_fclt_no
+                And a.ghg_out_act_cd = b.ghg_out_act_cd
+                And a.ghg_act_da_cd = b.ghg_act_da_cd
+               When matched then
+                     Update
+                        Set pa_tier = #{paTier}
+                           ,pa_emi_coe_co2 = #{paEmiCoeCo2}
+                           ,pa_emi_coe_ch4 = #{paEmiCoeCh4}
+                           ,pa_emi_coe_n20 = #{paEmiCoeN20}
+                           ,ghg_unit_cd = #{ghgUnitCd}
+                           ,pa_cal_coe_p = #{paCalCoeP}
+                           ,pa_cal_coe_t = #{paCalCoeT}
+                           ,pa_oxi_coe = #{paOxiCoe}
+                           ,pa_gwp_co2 = #{paGwpCo2}
+                           ,pa_gwp_ch4 = #{paGwpCh4}
+                           ,pa_gwp_n2o = #{paGwpN2o}
+                           ,update_user_id = #{updateUserId}
+                           ,update_dt = getDate()
+               When not matched then
+                     Insert (fclt_calc_mtd_no
+                            ,year
+                            ,ghg_fclt_no
+                            ,ghg_out_act_cd
+                            ,ghg_act_da_cd
+                            ,ghg_unit_cd
+                            ,pa_tier
+                            ,pa_emi_coe_co2
+                            ,pa_emi_coe_ch4
+                            ,pa_emi_coe_n20
+                            ,pa_cal_coe_p
+                            ,pa_cal_coe_t
+                            ,pa_oxi_coe
+                            ,pa_gwp_co2
+                            ,pa_gwp_ch4
+                            ,pa_gwp_n2o
+                            ,create_user_id
+                            ,create_dt)
+                     Values (#{fcltCalcMtdNo}
+                            ,#{year}
+                            ,#{ghgFcltNo}
+                            ,#{ghgOutActCd}
+                            ,#{ghgActDaCd}
+                            ,#{ghgUnitCd}
+                            ,#{paTier}
+                            ,#{paEmiCoeCo2}
+                            ,#{paEmiCoeCh4}
+                            ,#{paEmiCoeN20}
+                            ,#{paCalCoeP}
+                            ,#{paCalCoeT}
+                            ,#{paOxiCoe}
+                            ,#{paGwpCo2}
+                            ,#{paGwpCh4}
+                            ,#{paGwpN2o}
+                            ,#{createUserId}
+                            ,getDate());
+    </update>
+
+    <delete id="deleteSimulation">
+        /* EmissionsMapper.deleteSimulation [Emissions.xml] */
+        Delete from ghg_fclt_calc_mtd_year_et
+         Where fclt_calc_no = #{fcltCalcNo}
+    </delete>
+
+    <select id="getActDataStatus" resultType="HashMap">
+        /* EmissionsMapper.getActDataStatus [Emissions.xml] */
+        <!-- 보안취약점 점검에서 예외처리가 안 될 경우 SP로 사용 -->
+        <!--EXEC SP_GET_ACT_DATA_STATUS #{plantCd}, #{fromYear}, #{toYear}, #{mColStr}-->
+          ;with ac as(
+              select plant_cd, year, prev_amount, amount, est_emissions
+              from ghg_alloc_mgt
+          ), his as(
+              select plant_cd, left(tr_ymd,4) as tr_ymd, format(isnull(sum(purchases),0) - isnull(sum(sales),0),'##0.##') as ps
+              from ghg_emstr_his
+              group by plant_cd, left(tr_ymd,4)
+          ), rpt as(
+              select
+                  rpt.plant_cd
+                  ,dbo.GET_CODE_NM(rpt.plant_cd,'com_plant_cd')  as plant_nm
+                  ,left(yearmon,4) as year
+                  <foreach collection="mCols" item="item">
+                  ,format(sum(case when RIGHT(rpt.yearmon,2) = #{item} then rslt.cal_out_vol end), '##0.##') as m${item}
+                  </foreach>
+                  ,isnull(sum(rslt.cal_out_vol),0) as tSum
+              from ghg_act_da_rpt rpt
+              inner join ghg_act_da_rslt rslt
+              on rpt.ghg_act_da_rpt_no = rslt.ghg_act_da_rpt_no
+              where rpt.step_cd = '0002'
+              group by rpt.plant_cd, left(yearmon,4)
+          )
+          select
+               dbo.GET_CODE_NM(ac.plant_cd,'com_plant_cd') as plant_nm
+              , ac.plant_cd, ac.year, ac.prev_amount, ac.amount
+              , format(isnull((rpt.tSum
+                <foreach collection="mCols" item="item" open="+" separator="+">
+                case when m${item} is null then est_emissions else 0 end
+                </foreach>
+                ),0), '##0.##') as tSum
+              , his.ps
+              ,format((ac.prev_amount + ac.amount - (rpt.tSum
+                <foreach collection="mCols" item="item" open="+" separator="+" close=")">
+                    case when m${item} is null then est_emissions else 0 end
+                </foreach>
+                + ps), '##0.##') as rsdl
+              ,est_emissions
+              <foreach collection="mCols" item="item">
+              ,m${item}
+              </foreach>
+          from ac
+          inner join his
+          on ac.plant_cd = his.plant_cd and ac.year = his.tr_ymd
+          inner join rpt
+          on ac.plant_cd = rpt.plant_cd and ac.year = rpt.year
+          where 1=1
+          <if test="plantCd !=null and !plantCd.equals('')">
+          and ac.plant_cd = #{plantCd}
+          </if>
+          <if test="fromYear !=null and !fromYear.equals('') and toYear !=null and !toYear.equals('')">
+          and ac.year between #{fromYear} and #{toYear}
+          </if>
+
+    </select>
+
+    <select id="getSpecSheet" resultType="HashMap">
+        /* EmissionsMapper.getSpecSheet [Emissions.xml] */
+        SET ANSI_WARNINGS OFF
+        SET ARITHIGNORE ON
+        SET ARITHABORT OFF
+        select
+            left(yearmon,4) as year
+            ,rslt.ghg_out_act_cd -- 배출활동코드
+            ,dbo.GET_CODE_NM(rslt.ghg_out_act_cd,'GHG_ACT_DATA') as ghg_out_act_nm
+            ,max(gf.ngms_fceq_num) as ngms_fceq_num  -- 일련번호
+            ,max(gf.erp_code) as erp_code  -- 코드
+            ,max(gf.fclt_nm) as fclt_nm  -- 배출시설명
+            ,max(gf.s_fclt_yn) as s_fclt_yn
+            ,format(isnull(sum(rslt.ems_co2),0),'##0.##')as ems_co2
+            ,format(isnull(sum(rslt.ems_ch4),0),'##0.##') as ems_ch4
+            ,format(isnull(sum(rslt.ems_n2o),0),'##0.##') as ems_n2o
+            ,format(isnull(sum(rslt.ems_hfcs),0),'##0.##') as ems_hfcs
+            ,format(isnull(sum(rslt.ems_pfcs),0),'##0.##') as ems_pfcs
+            ,format(isnull(sum(rslt.ems_sf6),0),'##0.##') as ems_sf6
+            ,format(isnull(case when rslt.ghg_out_act_cd != '6001' and rslt.ghg_out_act_cd != '6002' then
+             (sum(rslt.ems_co2) + sum(rslt.ems_ch4) + sum(rslt.ems_n2o)
+                + sum(rslt.ems_hfcs) + sum(rslt.ems_pfcs) + sum(rslt.ems_sf6)) end,0),'##0.##') sT1
+            ,format(isnull(case when rslt.ghg_out_act_cd = '6001' or rslt.ghg_out_act_cd = '6002' then
+             (sum(rslt.ems_co2) + sum(rslt.ems_ch4) + sum(rslt.ems_n2o)
+                + sum(rslt.ems_hfcs) + sum(rslt.ems_pfcs) + sum(rslt.ems_sf6)) end,0),'##0.##') sT2
+            ,format(isnull((sum(rslt.ems_co2) + sum(rslt.ems_ch4) + sum(rslt.ems_n2o)
+                + sum(rslt.ems_hfcs) + sum(rslt.ems_pfcs) + sum(rslt.ems_sf6)),0),'##0.##') sT
+            ,isnull(sum(rslt.energy_usage),0) as energy_usage
+            ,isnull(sum(rslt.elec_usage),0) as elec_usage
+            ,isnull(sum(rslt.steam_usage),0) as steam_usage
+            ,isnull(sum(rslt.cal_ener_use_vol),0) as cal_ener_use_vol
+            ,IIF(
+                    (
+                        select count(*)
+                        from ghg_act_da_rslt rt
+                        inner join ghg_act_da_rpt gt
+                        on gt.ghg_act_da_rpt_no = rt.ghg_act_da_rpt_no
+                        inner join ghg_fclt gff
+                        on rt.ghg_fclt_no = gff.ghg_fclt_no
+                        where 1=1
+                        and gt.step_cd = '0002'
+                        and left(yearmon,4) = left(${year},4) - 1
+                        and rt.ghg_out_act_cd =  rslt.ghg_out_act_cd                        
+                        and rt.ghg_fclt_no = rslt.ghg_fclt_no ) >  0
+                    ,   
+                        CONVERT(varchar,format(
+                            (
+	                            isnull((sum(rslt.ems_co2) + sum(rslt.ems_ch4) + sum(rslt.ems_n2o)
+	                            +  sum(rslt.ems_hfcs) + sum(rslt.ems_pfcs) + sum(rslt.ems_sf6)),0) 
+
+                            - 
+	                            (
+		                            select isnull((sum(rt.ems_co2) + sum(rt.ems_ch4) + sum(rt.ems_n2o)
+		                            + sum(rt.ems_hfcs) + sum(rt.ems_pfcs) + sum(rt.ems_sf6)),0)   
+		                            from ghg_act_da_rslt rt
+		                            inner join ghg_act_da_rpt gt
+		                            on gt.ghg_act_da_rpt_no = rt.ghg_act_da_rpt_no
+		                            inner join ghg_fclt gf
+		                            on rt.ghg_fclt_no = gf.ghg_fclt_no
+		                            where 1=1
+		                            and gt.step_cd = '0002'
+		                            <if test="year !=null and !year.equals('')">
+	                                  and left(yearmon,4) = left(${year},4) - 1
+	                                </if>
+		                            and rt.ghg_out_act_cd =  rslt.ghg_out_act_cd
+		                            and rt.ghg_fclt_no = rslt.ghg_fclt_no 
+		                            group by
+		                            left(yearmon,4), rt.ghg_out_act_cd, rt.ghg_fclt_no
+	                            ) 
+                            ) 
+                            /
+                            (
+	                            select isnull((sum(rt.ems_co2) + sum(rt.ems_ch4) + sum(rt.ems_n2o)
+	                            + sum(rt.ems_hfcs) + sum(rt.ems_pfcs) + sum(rt.ems_sf6)),0)   
+	                            from ghg_act_da_rslt rt
+	                            inner join ghg_act_da_rpt gt
+	                            on gt.ghg_act_da_rpt_no = rt.ghg_act_da_rpt_no
+	                            inner join ghg_fclt gf
+	                            on rt.ghg_fclt_no = gf.ghg_fclt_no
+	                            where 1=1
+	                            and gt.step_cd = '0002'
+	                            <if test="year !=null and !year.equals('')">
+						          and left(yearmon,4) = left(${year},4) - 1
+						        </if>	                            
+	                            and rt.ghg_out_act_cd =  rslt.ghg_out_act_cd
+	                            and rt.ghg_fclt_no = rslt.ghg_fclt_no 
+	                            group by
+	                            left(yearmon,4), rt.ghg_out_act_cd, rt.ghg_fclt_no
+                            ) * 100 
+                        ,'##,##0.##')) , 'N/A') as deviationByST
+        from ghg_act_da_rpt rpt
+        inner join ghg_act_da_rslt rslt
+        on rpt.ghg_act_da_rpt_no = rslt.ghg_act_da_rpt_no
+        inner join ghg_fclt gf
+        on rslt.ghg_fclt_no = gf.ghg_fclt_no
+        where 1=1
+        and rpt.step_cd = '0002'
+        <if test="plantCd !=null and !plantCd.equals('')">
+        and rpt.plant_cd = #{plantCd}
+        </if>
+        <if test="year !=null and !year.equals('')">
+        and left(yearmon,4) = left(${year},4)
+        </if>
+        group by
+        <if test="plantCd !=null and !plantCd.equals('')">
+        rpt.plant_cd,
+        </if>
+        left(yearmon,4), rslt.ghg_out_act_cd, rslt.ghg_fclt_no
+        union all
+        select
+            ''
+            ,'합계'
+            ,''
+            ,''
+            ,''
+            ,''
+            ,''
+            ,format(isnull(sum(rslt.ems_co2),0),'##0.##') as ems_co2
+            ,format(isnull(sum(rslt.ems_ch4),0),'##0.##') as ems_ch4
+            ,format(isnull(sum(rslt.ems_n2o),0),'##0.##') as ems_n2o
+            ,format(isnull(sum(rslt.ems_hfcs),0),'##0.##') as ems_hfcs
+            ,format(isnull(sum(rslt.ems_pfcs),0),'##0.##') as ems_pfcs
+            ,format(isnull(sum(rslt.ems_sf6),0),'##0.##') as ems_sf6
+            ,format(isnull(case when max(rslt.ghg_out_act_cd) != '6001' and max(rslt.ghg_out_act_cd) != '6002' then
+             (sum(rslt.ems_co2) + sum(rslt.ems_ch4) + sum(rslt.ems_n2o)
+                + sum(rslt.ems_hfcs) + sum(rslt.ems_pfcs) + sum(rslt.ems_sf6)) end,0),'##0.##') sT1
+            ,format(isnull(case when max(rslt.ghg_out_act_cd) = '6001' or max(rslt.ghg_out_act_cd) = '6002' then
+             (sum(rslt.ems_co2) + sum(rslt.ems_ch4) + sum(rslt.ems_n2o)
+                + sum(rslt.ems_hfcs) + sum(rslt.ems_pfcs) + sum(rslt.ems_sf6)) end,0),'##0.##') sT2
+            ,format(isnull((sum(rslt.ems_co2) + sum(rslt.ems_ch4) + sum(rslt.ems_n2o)
+                + sum(rslt.ems_hfcs) + sum(rslt.ems_pfcs) + sum(rslt.ems_sf6)),0),'##0.##') sT
+            ,isnull(sum(rslt.energy_usage),0) as energy_usage
+            ,isnull(sum(rslt.elec_usage),0) as elec_usage
+            ,isnull(sum(rslt.steam_usage),0) as steam_usage
+            ,isnull(sum(rslt.cal_ener_use_vol),0) as cal_ener_use_vol
+            ,''
+        from ghg_act_da_rpt rpt
+        inner join ghg_act_da_rslt rslt
+        on rpt.ghg_act_da_rpt_no = rslt.ghg_act_da_rpt_no
+        inner join ghg_fclt gf
+        on rslt.ghg_fclt_no = gf.ghg_fclt_no
+        where 1=1
+        and rpt.step_cd = '0002'
+        <if test="plantCd !=null and !plantCd.equals('')">
+        and rpt.plant_cd = #{plantCd}
+        </if>
+        <if test="year !=null and !year.equals('')">
+        and left(yearmon,4) = left(${year},4)
+        </if>
+        group by
+        <if test="plantCd !=null and !plantCd.equals('')">
+        rpt.plant_cd,
+        </if>
+         left(yearmon,4)
+    </select>
+
+</mapper>

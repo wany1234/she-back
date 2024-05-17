@@ -1,0 +1,35 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.project.mapper.ProjectMapper">
+
+    <select id= "getProjectMaster" resultType= "com.she.safety.model.ProjectMaster">
+        /* ProjectMapper.getProjectMaster [Project.xml] */
+        SELECT cp.plant_cd
+              ,cp.project_name
+              ,cp.project_address
+              ,cp.project_number
+              ,cp.project_code
+              ,cp.from_date
+              ,cp.to_date
+              ,cp.cost
+              ,cp.description
+              ,CASE WHEN cp.use_yn = 'Y' THEN '사용'
+                ELSE '미사용'
+                END AS use_yn
+              ,cp.create_user_id
+              ,createUser.user_nm AS create_user_nm
+              ,cp.create_dt
+              ,cp.update_user_id
+              ,updateUser.user_nm AS update_user_nm
+              ,cp.update_dt
+        FROM com_project AS cp
+        INNER JOIN com_user AS createUser
+        ON cp.create_user_id = createUser.user_id
+        LEFT OUTER JOIN com_user AS updateUser
+        ON cp.update_user_id = updateUser.user_id
+        WHERE 1=1
+        AND cp.plant_cd = #{plantCd}
+    </select>
+
+</mapper>

@@ -1,0 +1,136 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.mgtLaw.mapper.SheLawCheckMapper">
+    <select id= "getSheLawChecks" resultType= "com.she.mgt.model.MgtSheLawChk">
+        select 
+            l.she_law_chk_no
+            ,l.law_class_cd
+            ,c.code_nm as law_class_nm
+            ,l.law_kind_cd
+            ,c2.code_nm as law_kind_nm
+            ,l.prom_ymd
+            ,l.enf_ymd
+            ,l.chk_title
+            ,l.ref_johang
+            ,l.law_content
+            ,l.chk_result
+            ,l.step_cd
+            ,c3.code_nm as step_nm
+            ,l.create_user_id
+            ,l.create_dt
+            ,l.update_user_id
+            ,l.update_dt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+        from mgt_she_law_chk l
+        left outer join com_code_master c on c.code_group_cd = 'MGT_LAW_CLASS' and l.law_class_cd = c.code
+        left outer join com_code_master c2 on c2.code_group_cd = 'MGT_LAW_KIND' and l.law_kind_cd = c2.code
+        left outer join com_code_master c3 on c3.code_group_cd = 'SAF_PROCESS_STEP' and l.step_cd = c3.code
+        left outer join com_user cu on l.create_user_id = cu.user_id
+        left outer join com_user uu on l.update_user_id = uu.user_id
+        where 1=1
+        <if test='lawClassCd != null and lawClassCd != ""'>
+        and l.law_class_cd = #{lawClassCd}
+        </if>
+        <if test='lawKindCd != null and lawKindCd != ""'>
+        and l.law_kind_cd = #{lawKindCd}
+        </if>
+        <if test='stepCd != null and stepCd != ""'>
+        and l.step_cd = #{stepCd}
+        </if>
+        <if test='fromYmd != null and fromYmd != "" and toYmd != null and toYmd != ""'>
+        and l.create_dt between convert(datetime, #{fromYmd}) and convert(datetime, #{toYmd})+0.99999
+        </if>
+        order by l.she_law_chk_no
+    </select>
+
+    <select id= "getSheLawCheck" parameterType= "int" resultType= "com.she.mgt.model.MgtSheLawChk">
+        select 
+            l.she_law_chk_no
+            ,l.law_class_cd
+            ,c.code_nm as law_class_nm
+            ,l.law_kind_cd
+            ,c2.code_nm as law_kind_nm
+            ,l.prom_ymd
+            ,l.enf_ymd
+            ,l.chk_title
+            ,l.ref_johang
+            ,l.law_content
+            ,l.chk_result
+            ,l.step_cd
+            ,c3.code_nm as step_nm
+            ,l.create_user_id
+            ,l.create_dt
+            ,l.update_user_id
+            ,l.update_dt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+        from mgt_she_law_chk l
+        left outer join com_code_master c on c.code_group_cd = 'MGT_LAW_CLASS' and l.law_class_cd = c.code
+        left outer join com_code_master c2 on c2.code_group_cd = 'MGT_LAW_KIND' and l.law_kind_cd = c2.code
+        left outer join com_code_master c3 on c3.code_group_cd = 'SAF_PROCESS_STEP' and l.step_cd = c3.code
+        left outer join com_user cu on l.create_user_id = cu.user_id
+        left outer join com_user uu on l.update_user_id = uu.user_id
+        where 1=1
+        and l.she_law_chk_no = #{sheLawChkNo}
+    </select>
+
+    <insert id= "createSheLawCheck" parameterType= "com.she.mgt.model.MgtSheLawChk">
+        <selectKey keyProperty= "sheLawChkNo" resultType= "int" order= "BEFORE">
+            select next value for seq_mgt_she_law_chk
+        </selectKey>
+        insert into mgt_she_law_chk
+        ( 
+            she_law_chk_no
+            ,law_class_cd
+            ,law_kind_cd
+            ,prom_ymd
+            ,enf_ymd
+            ,chk_title
+            ,ref_johang
+            ,law_content
+            ,chk_result
+            ,step_cd
+            ,create_user_id
+            ,create_dt
+        )
+        VALUES
+        ( 
+            #{sheLawChkNo}
+            ,#{lawClassCd}
+            ,#{lawKindCd}
+            ,#{promYmd}
+            ,#{enfYmd}
+            ,#{chkTitle}
+            ,#{refJohang}
+            ,#{lawContent}
+            ,#{chkResult}
+            ,#{stepCd}
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>
+
+    <update id= "updateSheLawCheck" parameterType= "com.she.mgt.model.MgtSheLawChk">
+        update mgt_she_law_chk
+        SET law_class_cd = #{lawClassCd}
+            ,law_kind_cd = #{lawKindCd}
+            ,prom_ymd = #{promYmd}
+            ,enf_ymd = #{enfYmd}
+            ,chk_title = #{chkTitle}
+            ,ref_johang = #{refJohang}
+            ,law_content = #{lawContent}
+            ,chk_result = #{chkResult}
+            ,step_cd = #{stepCd}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where she_law_chk_no = #{sheLawChkNo}
+    </update>
+    
+    <delete id= "deleteSheLawCheck">
+        delete from mgt_she_law_chk
+        where she_law_chk_no = #{sheLawChkNo}
+    </delete>
+
+</mapper>

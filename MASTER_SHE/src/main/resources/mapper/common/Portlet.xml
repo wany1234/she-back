@@ -1,0 +1,796 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.common.mapper.PortletMapper">
+
+    <select id="getDailyWorkStatus" resultType="HashMap">
+        /* PortletMapper.getDailyWorkStatus [Portlet.xml] */
+        with A as (
+            select swk.wkod_kind_cd
+            from saf_wkod_master swm
+            inner join saf_wkod_kind swk
+            on swk.wkod_no = swm.wkod_no
+            where swm.wkod_step_cd = 'WKS04'
+              and work_ymd = format(getdate(), 'yyyy-MM-dd')
+        )
+        , B as (
+            select substring(c.code_nm, 1, case when charindex('(', c.code_nm) = 0 then len(c.code_nm) else charindex('(', c.code_nm) - 1 end) as code_nm
+                ,c.attr2
+                ,(select count(*)
+                  from A
+                  where A.wkod_kind_cd = c.code
+                    and c.attr1 = 'WKKDN') as countNomal
+                ,(select count(*)
+                  from A
+                  where A.wkod_kind_cd = c.code
+                    and c.attr1 = 'WKKDS') as countSpecial
+            from com_code_master c
+            where c.code_group_cd = 'SAF_WKOD_KIND'
+              and c.use_yn = 'Y'
+        )
+        select code_nm, attr2
+            ,sum(countNomal) as countNomal
+            ,sum(countSpecial) as countSpecial
+        from B
+        group by code_nm, attr2
+    </select>
+
+    <select id="getDailyWorkStatusLocation" resultType="HashMap">
+        /* PortletMapper.getDailyWorkStatusLocation [Portlet.xml] */
+        /* 원본
+        select swm.locate_pnt_x
+            ,swm.locate_pnt_y
+            ,c.code
+            ,c.code_nm
+            ,c.attr1
+            ,c.attr2
+            ,swm.work_title
+            ,swm.subconn_nm
+            ,swm.wkod_no
+            ,swm.wkod_step_cd
+        from saf_wkod_master swm
+        inner join saf_wkod_kind swk
+        on swk.wkod_no = swm.wkod_no
+        inner join com_code_master c
+        on c.code_group_cd = 'SAF_WKOD_KIND'
+        and c.code = swk.wkod_kind_cd
+        where swm.wkod_step_cd = 'WKS04'
+           and work_ymd = format(getdate(), 'yyyy-MM-dd')
+         */
+         select swm.locate_pnt_x
+                ,swm.locate_pnt_y
+                ,c.code
+                ,c.code_nm
+                ,c.attr1
+                ,c.attr2
+                ,swm.work_title
+                ,swm.subconn_nm
+                ,swm.wkod_no
+                ,swm.wkod_step_cd
+            from saf_wkod_master swm
+            inner join saf_wkod_kind swk
+            on swk.wkod_no = swm.wkod_no
+            inner join com_code_master c
+            on c.code_group_cd = 'SAF_WKOD_KIND'
+            and c.code = swk.wkod_kind_cd
+            where swm.wkod_step_cd = 'WKS04'
+                and swm.locate_pnt_x != 0
+                and swm.locate_pnt_y != 0
+                and swm.map_no = #{mapNo}
+                and work_ymd = format(getdate(), 'yyyy-MM-dd')
+    </select>
+
+    <select id="getPlanStatus" resultType="HashMap">
+        /* PortletMapper.getPlanStatus [Portlet.xml] */
+        /*
+              변경관리
+               - 완료예정일 3일전부터
+               - 변경관리 담당업무 완료예정일 안내
+
+              안전점검
+               - 계획일 3일전부터
+               - 안전점검 일정안내
+
+              설비점검
+               - 계획일 30일전부터
+               - 설비점검 일정안내
+
+              시설점검
+               - 계획일 3일전부터
+               - 시설점검 일정안내
+
+              개선관리
+               - 조치결과쪽 완료예정일 1일전부터
+               - 개선조치 지연안내
+
+              교육
+               - 교육시작일로 부터 7일전부터
+               - SHE 교육실시 안내
+
+              위험성평가
+               - 평가기간 종료 7일전부터
+               - 위험성평가 지연안내
+
+              무재해
+               - 사업장 무재해 예정일 30일전부터
+               - 부서 무재해 예정일 30일전부터
+        */
+        select '일정 안내(본인작성)' as content
+            ,mc.title
+            ,mc.start_dt as dt
+            ,mc.start_dt as startDate
+            ,mc.end_dt as endDate
+        from mgt_calendar mc
+        where mc.create_user_id = #{userId}
+        union all
+        select '일정 안내(참여)' as content
+            ,mc.title
+            ,mc.start_dt as dt
+            ,mc.start_dt as startDate
+            ,mc.end_dt as endDate
+        from mgt_calendar mc
+        where 1=1
+        and exists(select 1
+                    from mgt_calendar_psn mcp
+                    where mc.mgt_calendar_no = mcp.mgt_calendar_no
+                      and mcp.user_id = #{userId})
+        union all
+        select '변경관리 담당업무 완료예정일 안내' as content
+            ,sc.chng_contents as title
+            ,a.end_sch_dt as dt
+            ,a.end_sch_dt as startDate
+            ,a.end_sch_dt as endDate
+        from saf_chng_chk_itm_rslt a
+        inner join saf_chng sc
+        on a.saf_chng_no = sc.saf_chng_no
+        where a.mgr_id = #{userId}
+           AND sc.chng_step_cd = 'CGSP3'
+           AND isnull(a.end_dt, '') = ''
+        --and a.end_dt between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+3,getdate()), 'yyyy-MM-dd') -- 3일전부터
+        union all
+        select '안전점검 일정안내' as content
+            ,a.check_title as title
+            ,format(a.check_ymd, 'yyyy-MM-dd') as dt
+            ,format(a.check_ymd, 'yyyy-MM-dd') as startDate
+            ,format(a.check_ymd, 'yyyy-MM-dd') as endDate
+        from saf_check_schedule a
+        inner join saf_check_inspector b
+        on a.saf_check_no = b.saf_check_no
+        where b.user_id = #{userId}
+           AND isnull(a.no_plan_yn, 'N') ='N'
+        --and a.check_ymd between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+3,getdate()), 'yyyy-MM-dd') -- 3일전부터
+        union all
+        select '설비점검 일정안내' as content
+            ,b.saf_facil_chk_title + ' ' + c.facility_nm as title
+            ,a.chk_ymd as dt
+            ,a.chk_ymd as startDate
+            ,a.chk_ymd as endDate
+        from saf_facil_chk_rslt a
+        inner join saf_facil_chk_plan b
+        on a.saf_facil_chk_no = b.saf_facil_chk_no
+        inner join saf_facility_mst c
+        on a.saf_facility_cd = c.saf_facility_cd
+        where a.user_id = #{userId}
+        --and a.chk_sch_ymd between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+30,getdate()), 'yyyy-MM-dd') -- 30일전부터
+        union all
+        select '시설점검 일정안내' as content
+            ,a.facility_check_nm as title
+            ,a.facility_check_ymd as dt
+            ,a.facility_check_ymd as startDate
+            ,a.facility_check_ymd as endDate
+        from com_facility_check_schedule a
+        inner join com_facility_check_inspector b
+        on a.com_facility_check_no = b.com_facility_check_no
+        where b.user_id = #{userId}
+        --and a.facility_check_ymd between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+3,getdate()), 'yyyy-MM-dd') -- 3일전부터
+        union all
+        select '개선조치 지연안내' as content
+            ,a.impr_title as title
+            ,a.act_limit_ymd as dt
+            ,a.act_limit_ymd as startDate
+            ,a.act_limit_ymd as endDate
+        from saf_impr_act a
+        where a.act_user_id = #{userId}
+          and a.act_class_cd = 'ACL02'
+          and a.del_yn != 'Y'
+        --and a.act_limit_ymd between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+1,getdate()), 'yyyy-MM-dd') -- 1일전부터
+        union all
+        select 'SHE 교육 실시 안내' as content
+            ,a.edu_nm as title
+            ,a.edu_s_ymd as dt
+            ,a.edu_s_ymd as startDate
+            ,a.edu_e_ymd as endDate
+        from saf_edu_mst a
+        inner join saf_edu_dtl_psn b
+        on a.saf_edu_mst_no = b.saf_edu_mst_no
+        where b.user_id = #{userId}
+        and a.process_step_cd ='SES02'
+        --and a.edu_s_ymd between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+7,getdate()), 'yyyy-MM-dd') -- 7일전부터
+        union all
+        select '위험성평가 지연안내' as content
+            ,a.assess_nm as title
+            ,format(a.assess_start_date, 'yyyy-MM-dd') as dt
+            ,format(a.assess_start_date, 'yyyy-MM-dd') as startDate
+            ,format(a.assess_end_date, 'yyyy-MM-dd') as endDate
+        from rsa_risk_assess_plan a
+        where a.user_id = #{userId}
+        --and format(a.assess_start_date, 'yyyy-MM-dd') between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+7,getdate()), 'yyyy-MM-dd') -- 7일전부터
+        union all
+        select '사업장 무재해달성 예정안내' as content
+            ,plant.code_nm  as title
+            ,a.end_sch_ymd as dt
+            ,a.end_sch_ymd as startDate
+            ,a.end_sch_ymd as endDate
+        from saf_no_accident a
+        inner join com_code_master plant
+        on a.plant_cd = plant.code
+        and plant.code_group_cd = 'COM_PLANT_CD'
+        where a.plant_cd = (select plant_cd
+                            from com_user cu
+                            inner join com_dept cd
+                            on cu.dept_cd = cd.dept_cd
+                            where user_id = #{userId})
+        --and a.end_sch_ymd between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+30,getdate()), 'yyyy-MM-dd') -- 예정일 30일전부터
+        and a.use_yn='Y' and close_yn='N'
+        union all
+        select '부서 무재해달성 예정안내' as content
+            ,b.dept_nm as title
+            ,a.end_sch_ymd as dt
+            ,a.end_sch_ymd as startDate
+            ,a.end_sch_ymd as endDate
+        from saf_no_accident_dept a
+        inner join com_dept b
+        on a.dept_cd = b.dept_cd
+        where a.dept_cd = (select dept_cd
+                            from com_user cu
+                            where user_id = #{userId})
+        --and a.end_sch_ymd between format(getdate(), 'yyyy-MM-dd') and format(dateadd(day,+30,getdate()), 'yyyy-MM-dd') -- 예정일 30일전부터
+        and a.use_yn='Y' and close_yn='N'
+    </select>
+
+    <select id="getNoAccidentStatus" resultType= "com.she.safety.model.NoAccident">
+        /* PortletMapper.getNoAccidentStatus [Portlet.xml] */
+        select plant.code as plant_cd
+            ,plant.code_nm as plant_nm
+            ,a.saf_no_accident_no
+            ,a.multiple                                                                                 -- 목표배수
+            ,a.stnd_days                                                                                -- 기준일수
+            ,a.target_days                                                                              -- 목표일수
+            ,datediff(dd, a.start_ymd ,convert(char(10), getdate(), 23))  as current_total_days                     --시작일기준 현재일수
+            ,datediff(dd, a.start_ymd ,convert(char(10), getdate(), 23)) % a.stnd_days as total_days    -- 현재일수
+            ,a.target_days - datediff(dd, a.start_ymd ,convert(char(10), getdate(), 23)) as d_day       -- d-day
+            ,(select count(*)
+              from saf_accident sa
+              where sa.no_accident_yn = 'Y'
+              and plant.code = sa.plant_cd) as accident_cnt
+        from com_code_master plant
+        left outer join saf_no_accident a
+        on plant.code = a.plant_cd
+        and a.use_yn='Y'
+        and a.close_yn='N'
+        where plant.code_group_cd = 'COM_PLANT_CD'
+        and plant.code not in ('0000')
+        -- 기존코드 and plant.code not in ('0000', '1000')
+        order by plant.code
+    </select>
+
+    <!-- 공사&작업허가서 현황 -->
+    <select id="getConstWkodStatus" resultType="HashMap">
+        /* PortletMapper.getConstWkodStatus [Portlet.xml] */
+        /*  공사건수 (1)
+             공사기간 안에 포함이 되면 카운트
+             d-2, d-1, d-day, d+1, d+2
+
+             작업허가건수 (2)
+             작업일자에 따른 작업허가 건수 카운트
+             d-2, d-1, d-day, d+1, d+2
+
+             작업자건수 (3)
+             작업일자에 따른 작업자 카운트
+             d-2, d-1, d-day, d+1, d+2
+         */
+        <!-- 보안취약점 점검에서 예외처리가 안 될 경우 SP로 사용 -->
+         <!-- EXEC SP_GET_CONST_WKOD_STATUS #{plantCd}, #{startYmd}, #{endYmd}, #{searchDateStr} -->
+         with a AS
+         (
+             SELECT convert(date, #{startYmd}) d
+                 UNION ALL
+             SELECT dateadd(day,1,d)
+                 FROM a
+                 WHERE dateadd(day,1,d) &lt;= convert(date, #{endYmd})
+         )
+         select  *
+         from (
+             select a.d, count(sc.const_no) as cnt
+                 ,'공사' as gubun
+             from a
+             left outer join saf_const sc
+             on a.d between sc.const_start_ymd and sc.const_end_ymd
+             and sc.plant_cd = #{plantCd}
+			 and sc.const_step_cd != 'CONS1'
+             group by a.d
+             union all
+             select a.d, count(swm.wkod_no) as cnt
+                 ,'작업허가' as gubun
+             from a
+             left outer join saf_wkod_master swm
+             on  a.d = swm.work_ymd
+             and swm.plant_cd = #{plantCd}
+			 and ('' = isnull(swm.del_yn, '') or swm.del_yn = 'N')
+			 and swm.wkod_step_cd !='WKS01'
+			 and swm.wkod_step_cd !='WKS06'
+             group by a.d
+             union all
+             select a.d, count(swcw.subconn_worker_no) as cnt
+                 ,'출입인원' as gubun
+             from a
+             left outer join saf_wkod_master swm
+             on a.d = swm.work_ymd
+             and swm.plant_cd = #{plantCd}
+             left outer join saf_wkod_subconn_worker swcw
+             on swm.wkod_no = swcw.wkod_no
+			 and ('' = isnull(swm.del_yn, '') or swm.del_yn = 'N')
+			 and swm.wkod_step_cd !='WKS01'
+			 and swm.wkod_step_cd !='WKS06'
+             group by a.d
+             ) r
+         pivot
+         (
+             sum(cnt)
+             for d in
+             <foreach collection= "searchDates" item= "searchDate" separator= "," open= "(" close= ")" >
+             [${searchDate}]
+             </foreach>
+         ) piv
+    </select>
+
+    <!-- 나의 할 일(요청한 문서) -->
+    <select id="getRequestCnt" resultType="HashMap">
+        /* PortletMapper.getRequestCnt [Portlet.xml] */
+         with   curline as (
+                           select   appr_rqst_no
+                                  , max(line_seq_no) as max_line_seq_no
+                                  , appr_step_cd
+                             from com_appr_rqst_line
+                            where appr_step_cd is not null
+                            group by appr_rqst_no, appr_step_cd
+                          )
+             , maxline as (
+                           select   appr_rqst_no
+                                  , max(line_seq_no) as max_line_seq_no
+                             from com_appr_rqst_line
+                            group by appr_rqst_no
+                          )
+             , apprline as (
+                            select   case when curline.max_line_seq_no = maxline.max_line_seq_no
+                                          then curline.max_line_seq_no
+                                          when maxline.max_line_seq_no > curline.max_line_seq_no
+                                          then case when curline.appr_step_cd = 'APSPA' then curline.max_line_seq_no + 1
+                                                    else curline.max_line_seq_no
+                                                end
+                                      end max_line_seq_no
+                                   , curline.appr_rqst_no
+                              from curline, maxline
+                             where curline.appr_rqst_no = maxline.appr_rqst_no
+                           )
+                            select   count(*) as requestCnt
+                              from com_appr_rqst_line arl
+                             inner join apprline
+                                on arl.appr_rqst_no = apprline.appr_rqst_no
+                               and arl.line_seq_no = apprline.max_line_seq_no
+                             inner join com_appr_rqst ar
+                                on arl.appr_rqst_no = ar.appr_rqst_no
+                             inner join com_appr_biz ab
+                                on ar.appr_biz_no = ab.appr_biz_no
+                              left outer join com_code_master cm1
+                                on cm1.code = arl.appr_type_cd
+                               and cm1.code_group_cd = 'COM_APPR_TYPE'
+                              left outer join com_code_master cm2
+                                on cm2.code = arl.appr_step_cd
+                               and cm2.code_group_cd = 'COM_APPR_STEP'
+                              left outer join com_code_master cm3
+                                on cm3.code = ar.biz_appr_step_cd
+                               and cm3.code_group_cd = 'COM_BIZ_APPR_STEP'
+                             inner join com_user cu
+                                on cu.user_id = arl.appr_user_id
+                              left outer join com_dept dept
+                                on dept.dept_cd = arl.appr_user_dept_cd
+                             inner join (select appr_rqst_no
+                                             from com_appr_rqst_line
+                                            where appr_user_id = #{userId}
+                                              and line_seq_no = 0
+                                              and appr_type_cd = 'APTP0') a
+                                on a.appr_rqst_no = ar.appr_rqst_no
+                             where 1=1
+                               and ar.biz_appr_step_cd != 'BAPST'
+
+
+                               and ar.biz_appr_step_cd = 'BAPSA'
+                            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(from) and @org.apache.commons.lang3.StringUtils@isNotBlank(to)">
+                               and convert(date, ar.create_dt) between convert(date, #{from}) and convert(date, #{to})
+                            </if>
+    </select>
+    <!-- 나의 할 일(결재할 문서) -->
+    <select id="getApprCnt" resultType="HashMap">
+        /* PortletMapper.getApprCnt [Portlet.xml] */
+        select   count(*) as apprCnt
+          from com_appr_rqst_line arl
+         inner join com_appr_rqst ar
+            on arl.appr_rqst_no = ar.appr_rqst_no
+         inner join com_appr_biz ab
+            on ar.appr_biz_no = ab.appr_biz_no
+         inner join com_appr_rqst_line reqarl
+            on ar.appr_rqst_no = reqarl.appr_rqst_no
+           and reqarl.appr_type_cd = 'APTP0'
+         inner join com_code_master cm
+            on arl.appr_type_cd = cm.code
+           and cm.code_group_cd = 'COM_APPR_TYPE'
+         inner join com_dept dept
+            on dept.dept_cd = reqarl.appr_user_dept_cd
+         inner join com_user cu
+            on cu.user_id = reqarl.appr_user_id
+         inner join com_code_master cm2
+            on cm2.code = ar.biz_appr_step_cd
+           and cm2.code_group_cd = 'COM_BIZ_APPR_STEP'
+         where 1=1
+
+           and arl.appr_user_id = #{userId}
+
+           and exists (select 1
+                         from com_appr_rqst_line
+                        where appr_rqst_no = ar.appr_rqst_no
+                          and line_seq_no = arl.line_seq_no - 1
+                          and appr_step_cd = 'APSPA')
+
+           and arl.appr_step_cd is null
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(from) and @org.apache.commons.lang3.StringUtils@isNotBlank(to)">
+           and convert(date, ar.create_dt) between convert(date, #{from}) and convert(date, #{to})
+        </if>
+    </select>
+    <!-- 나의 할 일(승인한 문서) -->
+    <select id="getApprdCnt" resultType="HashMap">
+        /* PortletMapper.getApprdCnt [Portlet.xml] */
+        select   count(*) as apprdCnt
+          from com_appr_rqst_line arl
+         inner join com_appr_rqst ar
+            on arl.appr_rqst_no = ar.appr_rqst_no
+         inner join com_appr_biz ab
+            on ar.appr_biz_no = ab.appr_biz_no
+         inner join com_appr_rqst_line reqarl
+            on ar.appr_rqst_no = reqarl.appr_rqst_no
+           and reqarl.appr_type_cd = 'APTP0'
+         inner join com_code_master cm
+            on arl.appr_type_cd = cm.code
+           and cm.code_group_cd = 'COM_APPR_TYPE'
+         inner join com_dept dept
+            on dept.dept_cd = reqarl.appr_user_dept_cd
+         inner join com_user cu
+            on cu.user_id = reqarl.appr_user_id
+         inner join com_code_master cm2
+            on cm2.code = ar.biz_appr_step_cd
+           and cm2.code_group_cd = 'COM_BIZ_APPR_STEP'
+         where 1=1
+
+           and arl.appr_user_id = #{userId}
+
+           and exists (select 1
+                         from com_appr_rqst_line
+                        where appr_rqst_no = ar.appr_rqst_no
+                          and line_seq_no = arl.line_seq_no - 1
+                          and appr_step_cd = 'APSPA')
+
+           and arl.appr_step_cd is not null
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(from) and @org.apache.commons.lang3.StringUtils@isNotBlank(to)">
+           and convert(date, ar.create_dt) between convert(date, #{from}) and convert(date, #{to})
+        </if>
+    </select>
+    <!-- 나의 할 일(반려한 문서) -->
+    <select id="getReturnCnt" resultType="HashMap">
+        /* PortletMapper.getReturnCnt [Portlet.xml] */
+        select   count(*) as returnCnt
+          from com_appr_rqst_line arl
+         inner join com_appr_rqst ar
+            on arl.appr_rqst_no = ar.appr_rqst_no
+         inner join com_appr_biz ab
+            on ar.appr_biz_no = ab.appr_biz_no
+         inner join com_appr_rqst_line reqarl
+            on ar.appr_rqst_no = reqarl.appr_rqst_no
+           and reqarl.appr_type_cd = 'APTP0'
+         inner join com_code_master cm
+            on arl.appr_type_cd = cm.code
+           and cm.code_group_cd = 'COM_APPR_TYPE'
+         inner join com_dept dept
+            on dept.dept_cd = reqarl.appr_user_dept_cd
+         inner join com_user cu
+            on cu.user_id = reqarl.appr_user_id
+         inner join com_code_master cm2
+            on cm2.code = ar.biz_appr_step_cd
+           and cm2.code_group_cd = 'COM_BIZ_APPR_STEP'
+         where 1=1
+
+           and arl.appr_user_id = #{userId}
+           and ar.biz_appr_step_cd != 'BAPST'
+           and ar.biz_appr_step_cd = 'BAPSD'
+
+           and exists (select 1
+                         from com_appr_rqst_line
+                        where appr_rqst_no = ar.appr_rqst_no
+                          and line_seq_no = arl.line_seq_no - 1
+                          and appr_step_cd = 'APSPA')
+
+           and arl.appr_step_cd is not null
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(from) and @org.apache.commons.lang3.StringUtils@isNotBlank(to)">
+           and convert(date, ar.create_dt) between convert(date, #{from}) and convert(date, #{to})
+        </if>
+    </select>
+
+    <!-- SHE지수 결과 현황 조회 -->
+    <select id= "getSHEs" resultType= "com.she.mgt.model.MgtMrDeptCalc">
+        /* PortletMapper.getSHEs [Portlet.xml] */
+        /*
+                년도(금년, 전년) * 부서
+        */
+        with depttreeUnder as (
+            select cd.dept_cd
+                ,cd.dept_nm
+                ,cd.p_dept_cd
+                ,cd.dept_lvl
+            from com_dept cd
+            where 1=1
+                    and cd.dept_cd = #{deptCd}
+           and cd.use_yn = 'Y'
+            union all
+            select cdd.dept_cd
+                ,cdd.dept_nm
+                ,cdd.p_dept_cd
+                ,cdd.dept_lvl
+            from com_dept cdd
+            inner join depttreeUnder
+            on cdd.p_dept_cd = depttreeUnder.dept_cd
+        ), depttreeUpper as (
+            select cd.dept_cd
+                ,cd.dept_nm
+                ,cd.p_dept_cd
+                ,cd.dept_lvl
+            from com_dept cd
+            where 1=1
+                    and cd.dept_cd = #{deptCd}
+           and cd.use_yn = 'Y'
+            union all
+            select cdd.dept_cd
+                ,cdd.dept_nm
+                ,cdd.p_dept_cd
+                ,cdd.dept_lvl
+            from com_dept cdd
+            inner join depttreeUpper
+            on depttreeUpper.p_dept_cd = cdd.dept_cd
+        ), list AS (
+            select m.plant_cd,
+                   m.biz_tgt_year,
+                   m.dept_cd,
+                   m.she_index_tgt,
+                   sum(s.she_index_val) as she_index_sum,
+                   sum(case when m.month1 = s.month  then s.she_index_val else 0 end)  as she_index_val_month1,
+                   sum(case when m.month2 = s.month  then s.she_index_val else 0 end)  as she_index_val_month2,
+                   sum(case when m.month3 = s.month  then s.she_index_val else 0 end)  as she_index_val_month3,
+                   sum(case when m.month4 = s.month  then s.she_index_val else 0 end)  as she_index_val_month4,
+                   sum(case when m.month5 = s.month  then s.she_index_val else 0 end)  as she_index_val_month5,
+                   sum(case when m.month6 = s.month  then s.she_index_val else 0 end)  as she_index_val_month6,
+                   sum(case when m.month7 = s.month  then s.she_index_val else 0 end)  as she_index_val_month7,
+                   sum(case when m.month8 = s.month  then s.she_index_val else 0 end)  as she_index_val_month8,
+                   sum(case when m.month9 = s.month  then s.she_index_val else 0 end)  as she_index_val_month9,
+                   sum(case when m.month10 = s.month then s.she_index_val else 0 end)  as she_index_val_month10,
+                   sum(case when m.month11 = s.month then s.she_index_val else 0 end)  as she_index_val_month11,
+                   sum(case when m.month12 = s.month then s.she_index_val else 0 end)  as she_index_val_month12
+            from  (
+
+                    select t.plant_cd,
+                           t.year,
+                           t.year               as biz_tgt_year,
+                           t.dept_cd,
+                           t.she_index_tgt,
+                           '01' month1,
+                           '02' month2,
+                           '03' month3,
+                           '04' month4,
+                           '05' month5,
+                           '06' month6,
+                           '07' month7,
+                           '08' month8,
+                           '09' month9,
+                           '10' month10,
+                           '11' month11,
+                           '12' month12
+                    from   mgt_mr_plan_dept t   inner join mgt_mr_plan          md  on  t.plant_cd          = md.plant_cd
+                                                                                    and t.year              = md.year
+                                                left outer join com_code_master cm  on  cm.code             = t.p_step_cd
+                                                                                    and cm.code_group_cd    = 'COM_PROCESS_STEP'
+
+                    where md.p_step_cd  = 'PSEND'
+                      and t.year in (#{curentYear}, #{preYear})
+                      and t.plant_cd = #{plantCd}
+                    ) m left outer join (
+                                            select t.plant_cd,
+                                                   t.year,
+                                                   t.year                           as biz_tgt_year,
+                                                   t.month,
+                                                   r.dept_cd,
+                                                   t.appr_rqst_no                   as appr_rqst_no,
+                                                   c4.code                          as appr_step_cd,
+                                                   r.she_index_val
+                                            from   mgt_mr_rslt      t   inner join mgt_mr_rslt_dept     r   on  t.plant_cd          = r.plant_cd
+                                                                                                            and t.year              = r.year
+                                                                                                            and t.month             = r.month
+                                                                        left outer join com_appr_rqst   c3  on  t.appr_rqst_no      = c3.appr_rqst_no
+                                                                        left outer join com_code_master c4  on  c4.code_group_cd    = 'COM_BIZ_APPR_STEP'
+                                                                                                            and c3.biz_appr_step_cd = c4.code
+                                            where 1=1
+                                            ) s on  m.plant_cd = s.plant_cd
+                                                and m.year     = s.year
+                                                and m.dept_cd  = s.dept_cd
+            where     s.appr_step_cd = 'BAPSG'
+            group by  m.plant_cd,
+                      m.biz_tgt_year,
+                      m.dept_cd,
+                      m.she_index_tgt
+        ), depttree as (
+            select depttreeUpper.dept_cd
+                ,depttreeUpper.dept_nm
+                ,depttreeUpper.p_dept_cd
+                ,depttreeUpper.dept_lvl
+            from depttreeUpper
+            inner join list
+            on depttreeUpper.dept_cd = list.dept_cd
+            union
+            select depttreeUnder.dept_cd
+                ,depttreeUnder.dept_nm
+                ,depttreeUnder.p_dept_cd
+                ,depttreeUnder.dept_lvl
+            from depttreeUnder
+            inner join list
+            on depttreeUnder.dept_cd = list.dept_cd
+        ), a AS
+        (
+            SELECT convert(numeric, #{preYear}) as year
+                ,'SHE 지수 전년' as gubun
+                ,depttree.dept_cd
+                ,depttree.dept_nm
+                ,depttree.dept_lvl
+            from depttree
+             UNION ALL
+            SELECT convert(numeric, year + 1)
+                ,'SHE 지수 금년' as gubun
+                ,dept_cd
+                ,dept_nm
+                ,dept_lvl
+              FROM a
+             WHERE year + 1 &lt;= #{curentYear}
+        )
+        select
+            a.year,
+            a.gubun,
+            a.dept_cd,
+            a.dept_nm,
+            list.she_index_tgt,
+            list.she_index_sum,
+            --case when isnull(convert(varchar, list.she_index_tgt), '') = '' then '-'
+            --     else convert(varchar, list.she_index_tgt)
+            --end as she_index_tgt,
+            list.she_index_val_month1,
+            list.she_index_val_month2,
+            list.she_index_val_month3,
+            list.she_index_val_month4,
+            list.she_index_val_month5,
+            list.she_index_val_month6,
+            list.she_index_val_month7,
+            list.she_index_val_month8,
+            list.she_index_val_month9,
+            list.she_index_val_month10,
+            list.she_index_val_month11,
+            list.she_index_val_month12
+        from a
+        left outer join list
+        on a.dept_cd = list.dept_cd
+        and a.year = list.biz_tgt_year
+        order by a.dept_lvl, a.dept_cd, a.year
+    </select>
+
+    <!-- 요청/조치사항 현황 -->
+    <select id= "getImprActStatus" resultType= "hashmap">
+        with t as (
+            select c.code, c.code_nm, c.sort_order
+                , sum(case when t.impr_step_cd in ('IMST2', 'IMST3', 'IMST4', 'IMST5') then 1 else 0 end) as request_count
+                , sum(case when t.impr_step_cd = 'IMST5' then 1 else 0 end) as complete_count
+            from com_code_master c
+            left outer join saf_impr_act t
+            on c.code = t.impr_class_cd
+            and t.del_yn != 'Y'
+            and convert(datetime, t.impr_rqst_ymd) between convert(datetime, #{fromDate}) and convert(datetime, #{toDate})+0.99999
+            <if test= "depts != null and depts.length > 0">
+                and t.act_dept_cd in
+                <foreach collection= "depts" item= "dept" separator= "," open= "(" close= ")" >
+                #{dept}
+                </foreach>
+            </if>
+            <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(plantCd)">
+                and t.plant_cd = #{plantCd}
+            </if>
+            where c.use_yn = 'Y'
+            and c.code_group_cd = 'SAF_IMPR_CLASS'
+            and c.code not in ('ICL07', 'ICL09')
+            group by c.code, c.code_nm, c.sort_order
+        )
+        select code, code_nm
+            , request_count
+            , complete_count
+            , format(round(case when request_count = 0 then 0.00 else convert(numeric(9, 2), complete_count)/convert(numeric(9, 2), request_count)*100 end, 2, 0), '#0') as action_rate
+        from t
+        order by sort_order
+    </select>
+
+    <!-- 무재해 현황 -->
+    <select id= "getNoAccident" resultType= "hashmap">
+        with t as (
+            select max(isnull(t.mh_use_yn, 'N')) as mh_use_yn
+                , max(isnull(t.target_mh, 0)) as target_mh
+                , max(isnull(t.init_mh, 0))+sum(isnull(d.real_mh, 0)) as real_mh
+                , max(isnull(t.day_use_yn, 'N')) as day_use_yn
+                , max(isnull(t.target_days, 0)) as target_days
+                , max(isnull(t.init_days, 0))+sum(isnull(d.real_days, 0)) as real_days
+            from saf_no_accident t
+            left outer join saf_no_accident_day d
+            on convert(datetime, d.ymd) between convert(datetime, t.start_ymd) and convert(datetime, #{dataDate})+0.99999
+            where t.use_yn = 'Y'
+        )
+        select mh_use_yn, target_mh, real_mh
+            , format(round(case when target_mh = 0 then 0.00 else real_mh/target_mh*100 end, 2, 0), '#0.00') mh_rate
+            , day_use_yn, target_days, real_days
+            , format(round(case when target_days = 0 then 0.00 else real_days/target_days*100 end, 2, 0), '#0.00') days_rate
+        from t
+    </select>
+
+    <!-- 공지사항 최근 5 항목 -->
+    <select id= "getRecentNotices" resultType= "hashmap">
+        select top 5 t.notice_no
+            , '['+c.code_nm+']'+t.notice_title as notice_title
+            , format(t.create_dt, 'yyyy-MM-dd') as create_dt
+        from com_notice t
+        inner join com_code_master c
+        on c.code_group_cd = 'COM_NOTICE_CLASS'
+        and t.com_notice_class_cd = c.code
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left outer join com_user uu
+        on t.update_user_id = uu.user_id
+        where 1=1
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(plantCd)">
+        and (t.com_notice_class_cd='ALL' or t.plant_cd = #{plantCd})
+        </if>
+        order by t.create_dt desc
+    </select>
+
+
+
+    <!-- 팝업공지이고, 오늘이 공지기간에 포함된 경우의 공지사항 목록 조회 -->
+    <select id= "getOpenNotices" resultType= "hashmap">
+        select t.notice_no
+            , '['+c.code_nm+'] '+t.notice_title as notice_title
+            , t.notice_contents
+        from com_notice t
+        inner join com_code_master c on c.code_group_cd = 'COM_NOTICE_CLASS' and t.com_notice_class_cd = c.code
+        left outer join com_user cu on t.create_user_id = cu.user_id
+        left outer join com_user uu on t.update_user_id = uu.user_id
+        where convert(varchar(10), getdate(), 23) between t.popup_start_ymd and t.popup_end_ymd
+        and t.popup_yn = 'Y'
+        order by t.create_dt desc
+    </select>
+
+    <delete id="deleteUserPortlet" parameterType="String">
+        delete
+        from com_user_portlet
+        where 1 = 1
+        and user_id = #{userId}
+    </delete>
+
+
+</mapper>

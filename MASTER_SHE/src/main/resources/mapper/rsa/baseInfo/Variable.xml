@@ -1,0 +1,179 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.rsa.baseInfo.mapper.VariableMapper">
+
+    <!-- 변수 목록 조회 -->
+    <select id= "getVariables" resultType= "com.she.rsa.model.Variable">
+        /* VariableMapper.getVariables [Variable.xml] */
+        SELECT rv.var_id
+              ,rv.var_nm_kr
+              ,rv.var_nm_en
+              ,concat(rv.var_nm_kr, '(', rv.var_nm_en, ')') as var_nm
+              ,rv.use_yn
+              ,rv.create_user_id
+              ,createUser.user_nm as create_user_nm
+              ,rv.create_dt
+              ,rv.update_user_id
+              ,updateUser.user_nm as update_user_nm
+              ,rv.update_dt
+              ,case
+                when rv.use_yn = 'Y' then '사용'
+                  else '미사용'
+              end as use_yn_nm
+          FROM rsa_variable rv
+          LEFT OUTER JOIN com_user createUser
+            ON rv.create_user_id = createUser.user_id
+          LEFT OUTER JOIN com_user updateUser
+            ON rv.update_user_id = updateUser.user_id
+         WHERE 1=1
+        <if test= "useYn != null and !useYn.equals('')">
+           AND rv.use_yn = #{useYn}
+        </if>
+    </select>
+
+    <select id= "getVariable" resultType= "com.she.rsa.model.Variable">
+        /* VariableMapper.getVariable [Variable.xml] */
+        SELECT rv.var_id
+              ,rv.var_nm_kr
+              ,rv.var_nm_en
+              ,rv.use_yn
+              ,rv.create_user_id
+              ,rv.create_dt
+              ,rv.update_user_id
+              ,rv.update_dt
+          FROM rsa_variable rv
+         WHERE rv.var_id = #{varId}
+    </select>
+
+    <insert id= "createVariable" parameterType= "com.she.rsa.model.Variable">
+        /* VariableMapper.createVariable [Variable.xml] */
+        <selectKey keyProperty= "varId" resultType= "int" order= "BEFORE">
+            SELECT next value for seq_rsa_variable as varId
+        </selectKey>
+        INSERT INTO rsa_variable
+             (var_id
+             ,var_nm_kr
+             ,var_nm_en
+             ,use_yn
+             ,create_user_id
+             ,create_dt)
+        VALUES
+             (#{varId}
+             ,#{varNmKr}
+             ,#{varNmEn}
+             ,#{useYn}
+             ,#{createUserId}
+             ,convert(char(10), getDate(), 23))
+    </insert>
+
+    <update id= "updateVariable" parameterType= "com.she.rsa.model.Variable">
+        /* VariableMapper.updateVariable [Variable.xml] */
+        UPDATE rsa_variable
+           SET var_nm_kr = #{varNmKr}
+              ,var_nm_en = #{varNmEn}
+              ,use_yn = #{useYn}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = convert(char(10), getDate(), 23)
+         WHERE var_id = #{varId}
+    </update>
+
+    <select id= "getCheckVariables" resultType= "HashMap">
+        /* VariableMapper.getCheckVariables [Variable.xml] */
+        SELECT count(*) as cnt
+              ,'varNmKr' as gubun
+          FROM rsa_variable
+         WHERE var_nm_kr = #{varNmKr}
+        <if test= "varId != null and varId > 0">
+           AND var_id not in (#{varId})
+        </if>
+         UNION ALL
+        SELECT count(*) as cnt
+              ,'varNmEn' as gubun
+          FROM rsa_variable
+         WHERE var_nm_en = #{varNmEn}
+        <if test= "varId != null and varId > 0">
+           AND var_id not in (#{varId})
+        </if>
+    </select>
+
+    <select id="getVariableUseGuidewords" resultType="com.she.rsa.model.VariableUseGuideword">
+        /* VariableMapper.getVariableUseGuidewords [Variable.xml] */
+        SELECT rvug.var_id
+              ,rvug.guideword_cd
+              ,guideword.code_nm as guideword_nm
+              ,rvug.use_yn
+          FROM rsa_variable_use_guideword rvug
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_GUIDEWORD') guideword
+            ON rvug.guideword_cd = guideword.code
+         WHERE rvug.var_id = #{varId}
+    </select>
+
+    <insert id= "createVariableUseGuideword" parameterType= "com.she.rsa.model.VariableUseGuideword">
+        /* VariableMapper.createVariableUseGuideword [Variable.xml] */
+        INSERT INTO rsa_variable_use_guideword
+             (var_id
+             ,guideword_cd
+             ,use_yn)
+        VALUES
+             (#{varId}
+             ,#{guidewordCd}
+             ,#{useYn})
+    </insert>
+
+    <update id= "updateVariableUseGuideword" parameterType= "com.she.rsa.model.VariableUseGuideword">
+        /* VariableMapper.updateVariableUseGuideword [Variable.xml] */
+        UPDATE rsa_variable_use_guideword
+           SET use_yn = #{useYn}
+         WHERE var_id = #{varId}
+           AND guideword_cd = #{guidewordCd}
+    </update>
+
+    <select id="getVariableUseGuidewordPosibleCauses" resultType="com.she.rsa.model.VariableUseGuidewordPosibleCause">
+        /* VariableMapper.getVariableUseGuidewordPosibleCauses [Variable.xml] */
+        SELECT rvugpc.posible_cause_no
+              ,rvugpc.var_id
+              ,rvugpc.guideword_cd
+              ,guideword.code_nm as guideword_nm
+              ,rvugpc.posible_cause_nm
+          FROM rsa_variable_guideword_posible_cause rvugpc
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_GUIDEWORD') guideword
+            ON rvugpc.guideword_cd = guideword.code
+         WHERE rvugpc.var_id = #{varId}
+           AND rvugpc.guideword_cd = #{guidewordCd}
+    </select>
+
+    <insert id= "createVariableUseGuidewordPosibleCause" parameterType= "com.she.rsa.model.VariableUseGuidewordPosibleCause">
+        /* VariableMapper.createVariableUseGuidewordPosibleCause [Variable.xml] */
+        <selectKey keyProperty= "posibleCauseNo" resultType= "int" order= "BEFORE">
+            SELECT next value for seq_rsa_variable_guideword_posible_cause as posibleCauseNo
+        </selectKey>
+        INSERT INTO rsa_variable_guideword_posible_cause
+             (posible_cause_no
+             ,var_id
+             ,guideword_cd
+             ,posible_cause_nm)
+        VALUES
+             (#{posibleCauseNo}
+             ,#{varId}
+             ,#{guidewordCd}
+             ,#{posibleCauseNm})
+    </insert>
+
+    <delete id= "deleteVariableUseGuidewordPosibleCause">
+        /* VariableMapper.deleteVariableUseGuidewordPosibleCause [Variable.xml] */
+        DELETE rsa_variable_guideword_posible_cause
+         WHERE var_id = #{varId}
+           AND guideword_cd = #{guidewordCd}
+    </delete>
+
+    <select id= "getGuidewordCds" resultType= "String">
+        /* VariableMapper.getGuidewordCds [Variable.xml] */
+        SELECT code + '_use'
+          FROM com_code_master guide
+         WHERE guide.code_group_cd = 'RSA_GUIDEWORD'
+          AND guide.use_yn = 'Y'
+    </select>
+
+
+</mapper>

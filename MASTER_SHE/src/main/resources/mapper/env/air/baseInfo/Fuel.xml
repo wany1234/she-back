@@ -1,0 +1,142 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.air.baseInfo.mapper.FuelMapper">
+    <select id= "getFuels" resultType= "com.she.env.air.model.Fuel">
+        /* FuelMapper.getFuels [Fuel.xml] */
+       SELECT t.eair_fuel_cd
+             ,t.eair_fuel_nm
+             ,t.plant_cd as plantCd
+             ,plant.code_nm as plantNm
+             ,t.env_unit_cd
+             ,c.code_nm as env_unit_nm
+             ,sulfur_content
+             ,cal_val
+             ,cal_val_unit_cd
+             ,capvol.code_nm as cal_val_unit_nm
+             ,sems_cd
+             ,t.remark
+             ,t.sort_order
+             ,t.use_yn
+             ,case when t.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+             ,t.create_user_id
+             ,cu.user_nm as create_user_nm
+             ,t.create_dt
+             ,t.update_user_id
+             ,uu.user_nm as update_user_nm
+             ,t.update_dt
+             , case
+                  when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+                  else dbo.GET_USER_NM(t.update_user_id) end    as writer_user_nm
+             , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+         FROM eair_fuel t
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+           ON t.plant_cd = plant.code
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_FUEL_UNIT') c
+           ON t.env_unit_cd = c.code
+         LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_CAL_VAL_UNIT') capvol
+           ON capvol.code = t.cal_val_unit_cd
+        INNER JOIN com_user cu
+           ON t.create_user_id = cu.user_id
+         LEFT OUTER JOIN com_user uu
+           ON t.update_user_id = uu.user_id
+        WHERE 1=1
+        <if test= "useYn != null and !useYn.equals('')">
+          AND t.use_yn = #{useYn}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+          AND t.plant_cd = #{plantCd}
+        </if>
+        <if test="eairFuelNm != null and !eairFuelNm.equals('')">
+            AND t.eair_fuel_nm like '%' + #{eairFuelNm} + '%'
+        </if>
+        ORDER BY writer_dt desc, t.plant_cd, t.sort_order
+    </select>
+
+    <select id= "getFuel" resultType= "com.she.env.air.model.Fuel">
+        /* FuelMapper.getFuel [Fuel.xml] */
+        SELECT t.eair_fuel_cd
+              ,t.eair_fuel_nm
+              ,t.plant_cd as plantCd
+              ,t.env_unit_cd
+              ,t.sulfur_content
+              ,t.cal_val
+              ,t.cal_val_unit_cd
+              ,t.sems_cd
+              ,t.remark
+              ,t.sort_order
+              ,t.use_yn
+              ,t.create_user_id
+              ,t.create_dt
+              ,t.update_user_id
+              ,t.update_dt
+          FROM eair_fuel t
+         WHERE t.eair_fuel_cd = #{eairFuelCd}
+    </select>
+
+    <insert id= "createFuel" parameterType= "com.she.env.air.model.Fuel">
+        /* FuelMapper.createFuel [Fuel.xml] */
+        <selectKey keyProperty= "eairFuelCd" resultType= "String" order= "BEFORE">
+            SELECT convert(varchar(5), replicate('0', 5-len(convert(varchar(5), next value for seq_eair_fuel)))
+                + convert(varchar(5), (SELECT current_value FROM sys.sequences WHERE lower(name)='seq_eair_fuel'))) as eair_fuel_cd
+          </selectKey>
+        INSERT INTO eair_fuel
+            (eair_fuel_cd
+            ,eair_fuel_nm
+            ,plant_cd
+            ,env_unit_cd
+            ,sulfur_content
+            ,cal_val
+            ,cal_val_unit_cd
+            ,sems_cd
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+        VALUES
+            (#{eairFuelCd}
+            ,#{eairFuelNm}
+            ,#{plantCd}
+            ,#{envUnitCd}
+            ,#{sulfurContent}
+            ,#{calVal}
+            ,#{calValUnitCd}
+            ,#{semsCd}
+            ,#{remark}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+
+    <update id= "updateFuel" parameterType= "com.she.env.air.model.Fuel">
+        /* FuelMapper.updateFuel [Fuel.xml] */
+        UPDATE eair_fuel
+           SET eair_fuel_nm = #{eairFuelNm}
+              ,plant_cd = #{plantCd}
+              ,env_unit_cd = #{envUnitCd}
+              ,sulfur_content = #{sulfurContent}
+              ,cal_val = #{calVal}
+              ,cal_val_unit_cd = #{calValUnitCd}
+              ,sems_cd = #{semsCd}
+              ,remark = #{remark}
+              ,sort_order = #{sortOrder}
+              ,use_yn = #{useYn}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE eair_fuel_cd = #{eairFuelCd}
+    </update>
+
+    <select id="checkFuel" resultType="int">
+        /* FuelMapper.checkFuel [Fuel.xml] */
+        SELECT count(*)
+        FROM eair_fuel
+        WHERE 1=1
+        AND plant_cd = #{plantCd}
+        AND eair_fuel_nm = #{eairFuelNm}
+        <if test="eairFuelCd!= null and !eairFuelCd.equals('')">
+            AND eair_fuel_cd not in (#{eairFuelCd})
+        </if>
+    </select>
+</mapper>

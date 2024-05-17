@@ -1,0 +1,979 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.rsa.planmgmt.mapper.PlanmgmtMapper">
+    <!-- 평가계획 목록 조회 -->
+    <select id= "getPlanmgmtLists" resultType= "com.she.rsa.model.Planmgmt">
+        /* PlanmgmtMapper.getPlanmgmtLists [Planmgmt.xml] */
+        select 
+            rw.assess_plan_no   --위험성평가계획번호
+           ,rw.proc_step_cd -- 단계 RSA_WORK_RISK_STEP
+           ,rw.state_cd -- 상태 COM_STATE
+           ,concat(dbo.GET_CODE_NM(rw.proc_step_cd, 'RSA_WORK_RISK_STEP'),' (', case when rw.step_cd = 'BAPSD' then i.code_nm else dbo.GET_CODE_NM(rw.state_cd, 'COM_STATE') end , ')') as stateNm
+           ,rw.plant_cd         --사업장
+           ,dbo.GET_CODE_NM(rw.plant_cd, 'COM_PLANT_CD') as plantNm
+           ,rw.risk_type        --위험성구분(작업:work, 공정:proc)
+           ,rw.assess_year      --대상년도
+           ,rw.assess_type_cd   --기법(KRAS/JSA/CHARM/HAZOP/...) RSA_ASSESS_TYPE
+           ,dbo.GET_CODE_NM(rw.assess_type_cd, 'RSA_ASSESS_TYPE') as assess_type_nm
+           ,rw.reg_regdem       --구분(정기/수시) RSA_REG_REGDEM
+           ,dbo.GET_CODE_NM(rw.reg_regdem, 'RSA_REG_REGDEM') as reg_regdem_nm
+           ,convert(char(10),rw.assess_start_dt,23) as assess_start_dt --평가기간 시작일
+           ,convert(char(10),rw.assess_end_dt,23) as assess_end_dt --평가기간 종료일
+           ,rw.assess_nm        --평가명
+           ,rw.assess_desc      --상세내용
+           ,rw.step_cd          --단계(상태) COM_BIZ_APPR_STEP
+           ,rw.p_appr_rqst_no   --평가계획결재요청번호
+           ,rw.create_user_id
+           ,dbo.GET_USER_NM(rw.create_user_id) as create_user_nm
+           ,convert(char(10),rw.create_dt,23) as create_dt
+           ,rw.update_user_id
+           ,dbo.GET_USER_NM(rw.update_user_id) as update_user_nm
+           ,convert(char(10),rw.update_dt,23) as update_dt
+           ,rw.create_dept_nm
+           ,rw.create_dept_cd
+           ,rw.update_dept_nm
+           ,rw.update_dept_cd
+           ,rw.create_position_nm
+           ,rw.create_position_cd
+           ,rw.update_position_nm
+           ,rw.update_position_cd
+           ,rw.main_dept_cd
+           ,dbo.GET_DEPT_NM(rw.main_dept_cd) as mainDeptNm
+           ,isnull(i.code_nm, '결재요청전') as pApprRqstNm
+           ,isnull(h.appr_rqst_no, '0') as pApprRqstNo
+           ,(select count(*) from rsa_work_risk_assess_dept rd where rd.assess_plan_no = rw.assess_plan_no ) as deptCnt
+           ,(select count(*) 
+               from rsa_work_risk_assess_dept rd 
+              where rd.assess_plan_no = rw.assess_plan_no
+                and rd.step_cd = 'BAPSG' ) as deptYCnt
+           ,(select count(*) 
+               from rsa_work_risk_assess_dept rd 
+              where rd.assess_plan_no = rw.assess_plan_no
+                and rd.step_cd != 'BAPSG' )as deptNCnt
+            ,(select count(*) 
+               from rsa_work_risk_assess_dept rd 
+              where rd.assess_plan_no = rw.assess_plan_no
+                and rd.step_cd != 'BAPSG'
+                and  datediff(day, GETDATE() , rd.assess_end_dt) &lt; 0) as overDateCnt
+          from rsa_work_risk_assess_plan rw
+          left outer join com_appr_rqst h on rw.p_appr_rqst_no = h.appr_rqst_no
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') i on rw.step_cd = i.code
+        where 1=1
+        <if test= "riskType != null and !riskType.equals('')">
+          and rw.risk_type = #{riskType}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+          and rw.plant_cd = #{plantCd}
+        </if>
+        <if test= "assessYear != null and !assessYear.equals('')">
+          and rw.assess_year = #{assessYear}
+        </if>
+        <if test= "assessTypeCd != null and !assessTypeCd.equals('')">
+          and rw.assess_type_cd = #{assessTypeCd}
+        </if>
+        <if test= "regRegdemCd != null and !regRegdemCd.equals('')">
+          and rw.reg_regdem = #{regRegdemCd}
+        </if>
+        <if test= "assessNm != null and !assessNm.equals('')">
+          and rw.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= 'yearChk != null and yearChk.equals("Y")'>
+            and (select count(*) 
+               from rsa_work_risk_assess_dept rd 
+              where rd.assess_plan_no = rw.assess_plan_no
+                and rd.step_cd != 'BAPSG'
+                and  datediff(day, GETDATE() , rd.assess_end_dt) &lt; 0) &gt; 0
+        </if>
+        <if test= "stateCd != null and !stateCd.equals('')">
+           and rw.state_cd = #{stateCd} 
+        </if>
+        <if test= 'mainDeptCd != null and !mainDeptCd.equals("")'>
+            <choose>
+                <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                    and rw.main_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{mainDeptCd}))
+                </when>
+                <otherwise>
+                    and rw.main_dept_cd = #{mainDeptCd}
+                </otherwise>
+            </choose>
+        </if>
+        order by rw.create_dt desc
+    </select>
+    
+    <select id= "getPlanmgmtInfo" resultType= "com.she.rsa.model.Planmgmt">
+        /* PlanmgmtMapper.getPlanmgmtInfo [Planmgmt.xml] */
+        select 
+            rw.assess_plan_no   --위험성평가계획번호
+           ,rw.plant_cd         --사업장
+           ,rw.risk_type        --위험성구분(작업:work, 공정:proc)
+           ,rw.assess_year      --대상년도
+           ,rw.assess_type_cd   --기법(KRAS/JSA/CHARM/HAZOP/...) RSA_ASSESS_TYPE
+           ,rw.reg_regdem as reg_regdem_cd       --구분(정기/수시) RSA_REG_REGDEM
+           ,convert(char(10),rw.assess_start_dt,23) as assess_start_dt --평가기간 시작일
+           ,convert(char(10),rw.assess_end_dt,23) as assess_end_dt --평가기간 종료일
+           ,rw.assess_nm        --평가명
+           ,rw.assess_desc      --상세내용
+           ,rw.step_cd          --단계(상태) COM_BIZ_APPR_STEP
+           ,rw.p_appr_rqst_no   --평가계획결재요청번호
+           ,rw.create_user_id
+           ,convert(char(10),rw.create_dt,23) as create_dt
+           ,rw.update_user_id
+           ,convert(char(10),rw.update_dt,23) as update_dt
+           ,rw.create_dept_nm
+           ,rw.create_dept_cd
+           ,rw.update_dept_nm
+           ,rw.update_dept_cd
+           ,rw.create_position_nm
+           ,rw.create_position_cd
+           ,rw.update_position_nm
+           ,rw.update_position_cd
+           ,rw.main_dept_cd
+           ,dbo.GET_DEPT_NM(rw.main_dept_cd) as mainDeptNm
+           ,isnull(i.code_nm, '결재요청전') as pApprRqstNm
+           ,isnull(h.appr_rqst_no, '0') as pApprRqstNo
+          from rsa_work_risk_assess_plan rw
+          left outer join com_appr_rqst h on rw.p_appr_rqst_no = h.appr_rqst_no
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') i on rw.step_cd = i.code
+        where 1=1
+        and rw.assess_plan_no = #{assessPlanNo}
+    </select>
+    
+    <select id="getPlanmgmtDeptList" resultType= "com.she.rsa.model.PlanmgmtDeptList">
+        /* PlanmgmtMapper.getPlanmgmtDeptList [Planmgmt.xml] */
+        select
+            assess_dept_no
+           ,assess_plan_no
+           ,dept_cd
+           ,dbo.GET_DEPT_NM(dept_cd) as dept_nm
+           ,step_cd
+           ,convert(char(10), assess_start_dt, 23) as assess_start_dt
+           ,convert(char(10), assess_end_dt, 23) as assess_end_dt
+           ,assess_desc
+           ,case when assess_finish_yn = 'N' then '미완료' else '완료' end assess_finish_yn
+           ,case when isnull(assess_finish_yn, 'N') = 'N' then '미완료'
+                 else '완료' end as showAssessFinishYn 
+           ,convert(char(10), assess_finish_dt, 23) as assess_finish_dt
+          from rsa_work_risk_assess_dept 
+         where assess_plan_no = #{assessPlanNo}
+        <if test="apprFlag != null and !apprFlag.equals('')">
+            <choose>
+                <when test= "'deptCnt'.equals(apprFlag)">
+                    -- 대상부서
+                </when>
+                <when test= "'deptNCnt'.equals(apprFlag)">
+                    -- 평가미완료
+                    and step_cd != 'BAPSG'
+                    and isnull(assess_finish_yn, 'N') = 'N'
+                </when>
+                <when test= "'overDateCnt'.equals(apprFlag)">
+                    -- 평가기한초과
+                    and step_cd != 'BAPSG'
+                    and datediff(day, GETDATE() , assess_end_dt) &lt; 0
+                </when>
+                <when test= "'deptYCnt'.equals(apprFlag)">
+                    -- 평가완료
+                    and step_cd = 'BAPSG'
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <insert id= "createPlanmgmt" parameterType= "com.she.rsa.model.Planmgmt">
+        /* PlanmgmtMapper.createPlanmgmt [Planmgmt.xml] */
+       <selectKey keyProperty= "assessPlanNo" resultType= "int" order= "BEFORE">
+          select next value for seq_rsa_work_risk_assess_plan as assess_plan_no
+        </selectKey>
+        insert into rsa_work_risk_assess_plan
+        (
+             assess_plan_no          -- 위험성평가계획번호
+            ,plant_cd               -- 사업장
+            ,risk_type              -- 위험성구분(작업:work, 공정:proc)
+            ,assess_year            -- 대상년도
+            ,assess_type_cd         -- 기법RSA_ASSESS_TYPE
+            ,reg_regdem             -- 구분RSA_REG_REGDEM
+            ,assess_start_dt        -- 평가기간 시작일
+            ,assess_end_dt          -- 평가기간 종료일
+            ,assess_nm              -- 평가명
+            ,main_dept_cd           -- 주간부서
+            ,assess_desc            -- 상세내용
+            ,step_cd                -- 단계COM_BIZ_APPR_STEP
+            ,create_user_id         -- 등록자ID
+            ,create_dt              -- 등록일
+            ,create_dept_nm         -- 등록자부서명
+            ,create_dept_cd         -- 등록자부서코드
+            ,create_position_nm     -- 등록자직위명
+            ,create_position_cd     -- 등록자직위코드
+            ,proc_step_cd
+            ,state_cd
+                        
+        )
+        values
+        (
+             #{assessPlanNo}
+            ,#{plantCd}
+            ,#{riskType}             
+            ,#{assessYear}         
+            ,#{assessTypeCd}      
+            ,#{regRegdemCd}          
+            ,#{assessStartDt}     
+            ,#{assessEndDt}       
+            ,#{assessNm}         
+            ,#{mainDeptCd}  
+            ,#{assessDesc}         
+            ,#{stepCd}           
+            ,#{createUserId}      
+            ,  getDate()
+            ,#{createDeptNm}      
+            ,#{createDeptCd}    
+            ,#{createPositionCd}
+            ,#{createPositionNm}
+            ,'RWRS1'
+            <if test="stateNm != null and !stateNm.equals('')">
+            ,#{stateNm}  
+            </if>     
+            <if test="stateNm == null or stateNm.equals('')">
+            ,'STATE2'  
+            </if>  
+        )
+    </insert>
+    <update id= "updatePlanmgmt" parameterType= "com.she.rsa.model.Planmgmt">
+        /* PlanmgmtMapper.updatePlanmgmt [Planmgmt.xml] */
+        update rsa_work_risk_assess_plan
+           set  risk_type = #{riskType}             -- 위험성구분(작업:work, 공정:proc)
+               ,assess_year = #{assessYear}           -- 대상년도
+               ,assess_type_cd = #{assessTypeCd}        -- 기법RSA_ASSESS_TYPE
+               ,reg_regdem = #{regRegdemCd}            -- 구분RSA_REG_REGDEM
+               ,assess_start_dt = #{assessStartDt}       -- 평가기간 시작일
+               ,assess_end_dt = #{assessEndDt}         -- 평가기간 종료일
+               ,assess_nm = #{assessNm}             -- 평가명
+               ,main_dept_cd = #{mainDeptCd}        -- 주간부서
+               ,assess_desc = #{assessDesc}           -- 상세내용
+               ,update_user_id = #{updateUserId}        -- 등록자ID
+               ,update_dt = getDate()             -- 등록일
+               ,update_dept_nm = #{updateDeptNm}        -- 등록자부서명
+               ,update_dept_cd = #{updateDeptCd}        -- 등록자부서코드
+               ,update_position_nm = #{updatePositionCd}    -- 등록자직위명
+               ,update_position_cd = #{updatePositionNm}
+          where assess_plan_no = #{assessPlanNo}
+    </update>
+    <delete id= "deletePlanmgmtDept">
+        /* PlanmgmtMapper.deletePlanmgmtDept [Planmgmt.xml] */
+        delete rsa_work_risk_assess_dept
+         where assess_dept_no = #{assessDeptNo}
+    </delete>
+    <insert id ="createPlanmgmtDept" parameterType= "com.she.rsa.model.PlanmgmtDeptList">
+        /* PlanmgmtMapper.createPlanmgmtDept [Planmgmt.xml] */
+        <selectKey keyProperty= "assessDeptNo" resultType= "int" order= "BEFORE">
+          select next value for seq_rsa_work_risk_assess_dept as assess_dept_no
+        </selectKey>
+        insert into rsa_work_risk_assess_dept
+        (
+            assess_dept_no
+           ,assess_plan_no
+           ,dept_cd
+           ,step_cd
+           ,dept_reader_id
+           ,assess_start_dt
+           ,assess_end_dt
+           ,assess_desc
+           ,assess_finish_yn
+           ,proc_step_cd
+           ,state_cd
+        )
+        values
+        (
+             #{assessDeptNo}
+            ,#{assessPlanNo}
+            ,#{deptCd}
+            ,  'BAPSB'                    
+            ,#{deptReaderId}         
+            ,#{assessStartDt}     
+            ,#{assessEndDt}       
+            ,#{assessDesc}         
+            ,#{assessFinishYn}      
+            ,'RWRS2'
+            ,'STATE1'          
+        )
+    </insert>
+    <update id ="updatePlanmgmtDept" parameterType= "com.she.rsa.model.PlanmgmtDeptList">
+        /* PlanmgmtMapper.updatePlanmgmtDept [Planmgmt.xml] */
+        update rsa_work_risk_assess_dept
+           set assess_start_dt = #{assessStartDt}
+              ,assess_end_dt = #{assessEndDt}
+              ,assess_desc = #{assessDesc}
+              ,dept_reader_id =#{deptReaderId}
+              ,state_cd = #{stateCd}
+         where assess_plan_no = #{assessPlanNo}
+           and assess_dept_no = #{assessDeptNo}
+    </update>
+    <update id="updateAppr" >
+        /* PlanmgmtMapper.updateAppr [Planmgmt.xml] */
+        UPDATE rsa_work_risk_assess_plan
+        SET  p_appr_rqst_no = #{apprRqstNo}
+        <if test="apprStepCd != null and !apprStepCd.equals('')">
+        ,step_cd = #{apprStepCd}
+        </if>
+        <if test='apprStepCd.equals("BAPSA")'>
+            ,state_cd = 'STATE3'
+        </if>
+        <if test='apprStepCd.equals("BAPSG")'>
+            ,state_cd = 'STATE4'
+        </if>
+        where assess_plan_no = #{assessPlanNo}
+    </update>
+    <select id= "getResultmgmtLists" resultType= "com.she.rsa.model.PlanmgmtDeptList">
+        /* PlanmgmtMapper.getResultmgmtLists [Planmgmt.xml] */
+        select
+             rd.assess_plan_no
+            ,(select count(*) from saf_impr_act sia where sia.ref_table_id = rd.assess_dept_no
+              and sia.impr_class_cd = iif(#{riskType} = 'work', 'ICL41', 'ICL42')) as requestCnt
+            ,(select count(*)
+               from saf_impr_act sia where sia.ref_table_id = rd.assess_dept_no 
+               and sia.impr_class_cd = iif(#{riskType} = 'work', 'ICL41', 'ICL42')
+               and sia.impr_step_cd != 'IMST5'
+               and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+               ) as incompletCnt
+            ,(select count(*)
+               from saf_impr_act sia where sia.ref_table_id = rd.assess_dept_no 
+               and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
+               and sia.act_class_cd = 'ACL02'
+               and sia.impr_class_cd = iif(#{riskType} = 'work', 'ICL41', 'ICL42')
+               and sia.impr_step_cd != 'IMST5'
+               ) as overdueCnt
+            ,(select count(*) from saf_impr_act sia where sia.ref_table_id = rd.assess_dept_no 
+               and sia.impr_class_cd = iif(#{riskType} = 'work', 'ICL41', 'ICL42')
+               and sia.impr_step_cd = 'IMST5'
+               ) as completCnt
+            ,rd.assess_dept_no 
+            ,rw.plant_cd
+            ,rd.proc_step_cd -- 단계 RSA_WORK_RISK_STEP
+            ,rd.state_cd -- 상태 COM_STATE
+            ,dbo.GET_CODE_NM(rd.proc_step_cd, 'RSA_WORK_RISK_STEP') + ' ('+ case when rd.step_cd = 'BAPSD' then i.code_nm else dbo.GET_CODE_NM(rd.state_cd, 'COM_STATE') end + ')' as stateNm
+            ,rd.step_cd
+            ,dbo.GET_CODE_NM(rw.plant_cd, 'COM_PLANT_CD') as plantNm
+            ,dbo.GET_DEPT_NM(rd.dept_cd) as deptNm
+            ,rw.assess_type_cd   --기법(KRAS/JSA/CHARM/HAZOP/...) RSA_ASSESS_TYPE
+            ,dbo.GET_CODE_NM(rw.assess_type_cd, 'RSA_ASSESS_TYPE') as assess_type_nm
+            ,rw.assess_nm
+            ,rw.reg_regdem       --구분(정기/수시) RSA_REG_REGDEM
+            ,dbo.GET_CODE_NM(rw.reg_regdem, 'RSA_REG_REGDEM') as reg_regdem_nm
+            ,rw.assess_year      --대상년도
+            ,convert(char(10), rd.assess_start_dt, 23) as assess_start_dt
+            ,convert(char(10), rd.assess_end_dt, 23) as assess_end_dt
+            ,isnull(i.code_nm, '결재요청전') as rApprRqstNm
+            ,isnull(h.appr_rqst_no, '0') as rApprRqstNo
+            ,dbo.GET_USER_NM(rw.create_user_id) as createUserNm
+            ,convert(char(10), rw.create_dt, 23) as create_dt
+            ,convert(char(10), rd.assess_finish_dt, 23) as assess_finish_dt
+            ,rw.main_dept_cd
+            ,dbo.GET_DEPT_NM(rw.main_dept_cd) as mainDeptNm
+          from rsa_work_risk_assess_dept rd 
+          left join rsa_work_risk_assess_plan rw on rd.assess_plan_no = rw.assess_plan_no
+          left outer join com_appr_rqst h on rd.r_appr_rqst_no = h.appr_rqst_no
+          left join dbo.LANG_CODE_MASTER('kr', 'COM_BIZ_APPR_STEP') i on rd.step_cd = i.code
+          where rw.step_cd = 'BAPSG'
+          <if test= "riskType != null and !riskType.equals('')">
+            and rw.risk_type = #{riskType}
+          </if>
+          <if test= 'plantCd != null and !plantCd.equals("") and !plantCd.equals("합계")'>
+            and rw.plant_cd = #{plantCd}
+          </if>
+          <if test="assessYear != null and !assessYear.equals('')">            
+              <if test= "monFlag != null and monFlag > 0  and monFlag == 200">
+                  and rw.assess_year &lt; #{assessYear}
+              </if>
+              <if test= "monFlag != null and monFlag > 0  and monFlag == 300">
+                  and rw.assess_year &lt;= #{assessYear}
+              </if>   
+              <if test= "monFlag != null and monFlag > 0  and monFlag != 200 and monFlag != 300">
+                  and rw.assess_year = #{assessYear}
+              </if>    
+              <if test= "monFlag == null or monFlag.equals('')">
+                and rw.assess_year = #{assessYear}
+              </if>
+          </if>
+          
+          <if test= "assessTypeCd != null and !assessTypeCd.equals('')">
+            and rw.assess_type_cd = #{assessTypeCd}
+          </if>
+          <if test= "regRegdemCd != null and !regRegdemCd.equals('')">
+            and rw.reg_regdem = #{regRegdemCd}
+          </if>
+          <if test= "assessNm != null and !assessNm.equals('')">
+            and rw.assess_nm like '%' + #{assessNm} + '%'
+          </if>
+          <if test= "stateCd != null and !stateCd.equals('')">
+             and rd.state_cd = #{stateCd} 
+          </if>
+          <if test= 'yearChk != null and yearChk.equals("Y")'>
+            and  datediff(day, GETDATE() , rd.assess_end_dt) &lt; 0
+            and rd.step_cd != 'BAPSG'
+          </if>
+          <if test= "monFlag != null and monFlag != 0 and monFlag != 100 and monFlag != 200 and monFlag != 300">
+            and substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = #{monFlag}
+          </if>
+          
+          <if test= "gubun != null and !gubun.equals('')">
+            <choose>
+                <when test= "'계획(조직수)'.equals(gubun)">
+                </when>
+                <when test= "'실시(조직수)'.equals(gubun)">
+                  and rd.step_cd = 'BAPSG'
+                </when>
+                <otherwise>
+                  and rd.step_cd = 'BAPSG'
+                </otherwise>
+            </choose>
+          </if>
+          <if test= 'imprChk != null and imprChk.equals("Y")'>
+            and (
+                select count(*) 
+                  from saf_impr_act sia 
+                 where sia.impr_class_cd = iif(#{riskType} = 'work', 'ICL41', 'ICL42')
+                   and sia.ref_table_id = rd.assess_dept_no 
+                   and datediff(day, GETDATE() , sia.act_limit_ymd) &lt; 0) != 0
+          </if>
+          <if test= 'deptCd != null and !deptCd.equals("")'>
+              <choose>
+                  <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                      and rd.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+                  </when>
+                  <otherwise>
+                      and rd.dept_cd = #{deptCd}
+                  </otherwise>
+              </choose>
+          </if>
+          <if test= 'mainDeptCd != null and !mainDeptCd.equals("")'>
+              <choose>
+                  <when test='mainDeptSubYn != null and mainDeptSubYn.equals("Y")'>
+                      and rw.main_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{mainDeptCd}))
+                  </when>
+                  <otherwise>
+                      and rw.main_dept_cd = #{mainDeptCd}
+                  </otherwise>
+              </choose>
+          </if>
+          order by rw.create_dt desc
+    </select>
+    <select id= "getResultmgmtInfo" resultType= "com.she.rsa.model.PlanmgmtDeptList">
+        /* PlanmgmtMapper.getResultmgmtInfo [Planmgmt.xml] */
+        select
+             rd.assess_plan_no
+            ,rd.assess_dept_no 
+            ,rw.plant_cd
+            ,dbo.GET_CODE_NM(rw.plant_cd, 'COM_PLANT_CD') as plantNm
+            ,rd.dept_cd
+            ,rd.dept_reader_id
+            ,dbo.GET_USER_NM(rd.dept_reader_id) as deptReaderNm
+            ,dbo.GET_DEPT_NM(rd.dept_cd) as deptNm
+            ,u.dept_cd as deptReaderDeptCd
+            ,rw.assess_type_cd   --기법(KRAS/JSA/CHARM/HAZOP/...) RSA_ASSESS_TYPE
+            ,dbo.GET_CODE_NM(rw.assess_type_cd, 'RSA_ASSESS_TYPE') as assess_type_nm
+            ,rw.assess_nm
+            ,rw.reg_regdem as reg_regdem_cd       --구분(정기/수시) RSA_REG_REGDEM
+            ,dbo.GET_CODE_NM(rw.reg_regdem, 'RSA_REG_REGDEM') as reg_regdem_nm
+            ,rw.assess_year      --대상년도
+            ,rw.assess_desc
+            ,convert(char(10), rd.assess_start_dt, 23) as assess_start_dt
+            ,convert(char(10), rd.assess_end_dt, 23) as assess_end_dt
+            ,isnull(i.code_nm, '결재요청전') as rApprRqstNm
+            ,isnull(h.appr_rqst_no, '0') as rApprRqstNo
+            ,dbo.GET_USER_NM(rw.create_user_id) as createUserNm
+            ,convert(char(10), rw.create_dt, 23) as create_dt
+            ,rr.assess_rslt_no
+            ,rr.impr_case_cnt
+            ,rr.eval_dt
+            ,rr.assess_rslt_desc
+            ,rw.main_dept_cd
+            ,dbo.GET_DEPT_NM(rw.main_dept_cd) as mainDeptNm
+          from rsa_work_risk_assess_dept rd 
+          left join rsa_work_risk_assess_plan rw on rd.assess_plan_no = rw.assess_plan_no
+          left join rsa_work_risk_assess_rslt rr on rd.assess_dept_no = rr.assess_dept_no
+          left outer join com_appr_rqst h on rd.r_appr_rqst_no = h.appr_rqst_no
+          left join dbo.LANG_CODE_MASTER('kr', 'COM_BIZ_APPR_STEP') i on rd.step_cd = i.code
+          left outer join com_user u on rd.dept_reader_id = u.user_id
+          where 1=1
+            and rd.assess_dept_no = #{assessDeptNo}
+    </select>
+    <select id= "getEstimatorIn" resultType= "com.she.rsa.model.ResultEstimator">
+        /* PlanmgmtMapper.getEstimatorIn [Planmgmt.xml] */
+        select 
+
+             assess_in_rater_no
+             ,assess_dept_no
+             ,dept_cd
+             ,dept_nm
+             ,position_cd
+             ,position_nm
+             ,user_id
+             ,user_nm
+             ,rater_desc
+         from rsa_work_risk_assess_in_rater
+        where assess_dept_no = #{assessDeptNo}
+    </select>
+    <select id= "getEstimatorOut" resultType= "com.she.rsa.model.ResultEstimator">
+        /* PlanmgmtMapper.getEstimatorOut [Planmgmt.xml] */
+        select 
+           assess_ex_rater_no
+           ,assess_dept_no
+           ,company_nm
+           ,position_nm
+           ,user_nm
+           ,rater_desc
+          from rsa_work_risk_assess_ex_rater
+         where assess_dept_no = #{assessDeptNo}
+    </select>
+    <insert id="createAssessRslt" parameterType="com.she.rsa.model.PlanmgmtDeptList">
+        /* PlanmgmtMapper.createResultmgmt [Planmgmt.xml] */
+        <selectKey keyProperty= "assessRsltNo" resultType= "int" order= "BEFORE">
+          select next value for seq_rsa_work_risk_assess_rslt as assess_rslt_no
+        </selectKey>
+        insert into rsa_work_risk_assess_rslt
+               (
+                    assess_rslt_no
+                   ,assess_dept_no
+                   ,impr_case_cnt
+                   ,eval_dt
+                   ,assess_rslt_desc
+                                       
+               )
+               values
+               (
+                    #{assessRsltNo}
+                   ,#{assessDeptNo}
+                   ,#{imprCaseCnt}
+                   ,#{evalDt}
+                   ,#{assessRsltDesc}
+               )
+    </insert>
+    <update id= "updateAssessRslt" parameterType="com.she.rsa.model.PlanmgmtDeptList">
+        /* PlanmgmtMapper.updateAssessRslt [Planmgmt.xml] */
+        update rsa_work_risk_assess_rslt
+           set impr_case_cnt = #{imprCaseCnt}
+              ,eval_dt = #{evalDt}
+              ,assess_rslt_desc = #{assessRsltDesc}
+         where assess_rslt_no = #{assessRsltNo}
+    </update>
+    <delete id="deleteEstimator">
+        /* PlanmgmtMapper.deleteEstimator [Planmgmt.xml] */
+        delete rsa_work_risk_assess_in_rater where assess_dept_no = #{assessDeptNo}
+        delete rsa_work_risk_assess_ex_rater where assess_dept_no = #{assessDeptNo}
+    </delete>
+    <insert id="createInEstimator" parameterType="com.she.rsa.model.ResultEstimator">
+        /* PlanmgmtMapper.createInEstimator [Planmgmt.xml] */
+        <selectKey keyProperty="assessInRaterNo" resultType= "int" order= "BEFORE">
+            select next value for seq_rsa_work_risk_assess_in_rater as assess_in_rater_no
+        </selectKey>
+            insert into rsa_work_risk_assess_in_rater
+            (
+                assess_in_rater_no
+               ,assess_dept_no
+               ,dept_cd
+               ,dept_nm
+               ,position_cd
+               ,position_nm
+               ,user_id
+               ,user_nm
+               ,rater_desc
+                                
+            )
+            values
+            (
+                #{assessInRaterNo}
+               ,#{assessDeptNo}
+               ,#{deptCd}
+               ,#{deptNm}
+               ,#{positionCd}
+               ,#{positionNm}
+               ,#{userId}
+               ,#{userNm}
+               ,#{raterDesc}
+            )
+    </insert>
+    <insert id="createOutEstimator" parameterType="com.she.rsa.model.ResultEstimator">
+        /* PlanmgmtMapper.createOutEstimator [Planmgmt.xml] */
+        <selectKey keyProperty="assessExRaterNo" resultType="int" order="BEFORE">
+            select next value for seq_rsa_work_risk_assess_ex_rater as assess_ex_rater_no
+        </selectKey>
+            insert into rsa_work_risk_assess_ex_rater
+            (
+                assess_ex_rater_no
+               ,assess_dept_no
+               ,company_nm
+               ,position_nm
+               ,user_nm
+               ,rater_desc
+            )
+            values
+            (
+                #{assessExRaterNo}
+               ,#{assessDeptNo}
+               ,#{companyNm}
+               ,#{positionNm}
+               ,#{userNm}
+               ,#{raterDesc}
+            )
+    </insert>
+    <delete id="deleteResultDept">
+        /* PlanmgmtMapper.deleteResultDept [Planmgmt.xml] */
+        delete rsa_work_risk_assess_dept where assess_dept_no = #{assessDeptNo}
+        delete rsa_work_risk_assess_in_rater where assess_dept_no = #{assessDeptNo}
+        delete rsa_work_risk_assess_ex_rater where assess_dept_no = #{assessDeptNo}
+        delete rsa_work_risk_assess_rslt where assess_dept_no = #{assessDeptNo}
+    </delete>
+    <update id="resultUpdateAppr" >
+        /* PlanmgmtMapper.resultUpdateAppr [Planmgmt.xml] */
+        UPDATE rsa_work_risk_assess_dept
+        SET  r_appr_rqst_no = #{apprRqstNo}
+        <if test="apprStepCd != null and !apprStepCd.equals('')">
+        
+        ,step_cd = #{apprStepCd}
+            <if test='apprStepCd.equals("BAPSG")'>
+                ,state_cd = 'STATE4'
+                ,assess_finish_yn = 'Y'
+                ,assess_finish_dt = convert(char(10), getDate(), 23)
+            </if>
+            <if test='apprStepCd.equals("BAPSA")'>
+                ,state_cd = 'STATE3'
+            </if>
+        </if>
+        where assess_dept_no = #{assessDeptNo}
+    </update>
+    <select id="getResultstatusList" resultType="hashMap">
+        /* PlanmgmtMapper.getResultstatusList [Planmgmt.xml] */
+         with plant as (
+             select code as plantCd
+             from com_code_master
+             where code_group_cd = 'COM_PLANT_CD'
+             and code != '0000'
+         ),
+         gubunList as (
+             select p.plantCd
+                     ,g.gubun_type
+                     ,g.gubun
+                     ,g.sort_order
+             from plant p
+             inner join (
+                 select 'assess' as gubun_type
+                         ,'계획(조직수)' as gubun
+                         ,1 as sort_order
+                 union
+                 select 'assess' as gubun_type
+                         ,'실시(조직수)' as gubun
+                         ,2 as sort_order
+                 union
+                 select 'assess' as gubun_type
+                         ,'평가 실시율(%)' as gubun
+                         ,3 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'요청(건수)' as gubun
+                         ,4 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'조치미완료(건수)' as gubun
+                         ,5 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'기한초과(건수)' as gubun
+                         ,6 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'조치완료(건수)' as gubun
+                         ,7 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'개선 조치율(%)' as gubun
+                         ,8 as sort_order
+             ) g on 1=1
+         ),
+         riskList as (
+             select 
+                     rw.plant_cd as plantCd
+                     ,dbo.GET_CODE_NM(rw.plant_cd, 'COM_PLANT_CD') as plant_nm
+                     ,iif(rd.step_cd = 'BAPSG', '실시(조직수)', '계획(조직수)') AS gubun
+                     ,convert(numeric(10),sum(case when rw.assess_year &lt; #{assessYear}  then 1 else 0 end)) as oldCnt
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 1 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon1
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 2 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon2
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 3 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon3
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 4 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon4
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 5 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon5
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 6 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon6
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 7 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon7
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 8 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon8
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 9 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon9
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 10 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon10
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 11 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon11
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), rd.assess_end_dt, 23), 6, 2) = 12 and rw.assess_year = #{assessYear}  then 1 else 0 end)) as mon12
+                     ,convert(numeric(10),sum(case when rw.assess_year = #{assessYear}  then 1 else 0 end)) as total
+                     ,convert(numeric(10),sum(case when rw.assess_year &lt;= #{assessYear}  then 1 else 0 end)) as allCnt
+             from rsa_work_risk_assess_dept rd
+             inner join rsa_work_risk_assess_plan rw on rw.assess_plan_no = rd.assess_plan_no
+             where 1=1
+               and rw.step_cd = 'BAPSG'
+             <if test="riskType != null and !riskType.equals('')">
+               and rw.risk_type =  #{riskType}
+             </if>
+             <if test= "regRegdemCd != null and !regRegdemCd.equals('')">
+               and rw.reg_regdem = #{regRegdemCd}
+             </if>
+             group by rw.plant_cd, iif(rd.step_cd = 'BAPSG', '실시(조직수)', '계획(조직수)')
+         ),
+         impr as (
+             select 
+                     rw.plant_cd as plantCd
+                     ,dbo.GET_CODE_NM(rw.plant_cd, 'COM_PLANT_CD') as plant_nm
+                     ,iif(sia.impr_step_cd = 'IMST5', '조치완료(건수)', iif(datediff(dd, sia.act_limit_ymd, getdate()) > 0 , '기한초과(건수)','조치미완료(건수)')) AS gubun
+                     ,convert(numeric(10),sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) &lt; #{assessYear}  then 1 else 0 end)) as oldCnt
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 1 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon1
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 2 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon2
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 3 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon3
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 4 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon4
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 5 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon5
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 6 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon6
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 7 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon7
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 8 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon8
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 9 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon9
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 10 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon10
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 11 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon11
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 12 and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as mon12
+                     ,convert(numeric(10),sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{assessYear}  then 1 else 0 end)) as total
+                     ,convert(numeric(10),sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) &lt;= #{assessYear}  then 1 else 0 end)) as allCnt
+             from rsa_work_risk_assess_dept rd
+             inner join rsa_work_risk_assess_plan rw on rw.assess_plan_no = rd.assess_plan_no
+             inner join saf_impr_act sia on sia.ref_table_id = rd.assess_dept_no and sia.impr_class_cd = iif(#{riskType} = 'work', 'ICL41', 'ICL42')
+             where 1=1
+             <if test="riskType != null and !riskType.equals('')">
+               and rw.risk_type =  #{riskType}
+             </if>        
+             <if test= "regRegdemCd != null and !regRegdemCd.equals('')">
+               and rw.reg_regdem = #{regRegdemCd}
+             </if>
+             group by rw.plant_cd, iif(sia.impr_step_cd = 'IMST5', '조치완료(건수)', iif(datediff(dd, sia.act_limit_ymd, getdate()) > 0 , '기한초과(건수)','조치미완료(건수)'))
+         )
+         select  g.plantCd
+                 ,dbo.GET_CODE_NM_LANG('kr', 'COM_PLANT_CD', g.plantCd) as plant_nm
+                 ,'평가현황' as rsa_result
+                 ,g.gubun
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.oldCnt else iif(g.gubun = r.gubun, r.oldCnt, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon1 else iif(g.gubun = r.gubun, r.mon1, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon2 else iif(g.gubun = r.gubun, r.mon2, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon3 else iif(g.gubun = r.gubun, r.mon3, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon4 else iif(g.gubun = r.gubun, r.mon4, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon5 else iif(g.gubun = r.gubun, r.mon5, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon6 else iif(g.gubun = r.gubun, r.mon6, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon7 else iif(g.gubun = r.gubun, r.mon7, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon8 else iif(g.gubun = r.gubun, r.mon8, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon9 else iif(g.gubun = r.gubun, r.mon9, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon10 else iif(g.gubun = r.gubun, r.mon10, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon11 else iif(g.gubun = r.gubun, r.mon11, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon12 else iif(g.gubun = r.gubun, r.mon12, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.total else iif(g.gubun = r.gubun, r.total, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.allCnt else iif(g.gubun = r.gubun, r.allCnt, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,max(g.sort_order)
+         from gubunList g
+         left outer join riskList r on r.plantCd = g.plantCd
+         where 1=1
+         and g.gubun_type = 'assess'
+         <if test= "plantCd != null and !plantCd.equals('')">
+           and g.plantCd = #{plantCd}
+         </if>
+         group by g.plantCd, g.gubun
+         union all
+         select  g.plantCd
+                 ,dbo.GET_CODE_NM_LANG('kr', 'COM_PLANT_CD', g.plantCd) as plant_nm
+                 ,'개선현황' as rsa_result
+                 ,g.gubun
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.oldCnt else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.oldCnt, 0) else iif(g.gubun = r.gubun, r.oldCnt, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon1 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon1, 0) else iif(g.gubun = r.gubun, r.mon1, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon2 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon2, 0) else iif(g.gubun = r.gubun, r.mon2, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon3 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon3, 0) else iif(g.gubun = r.gubun, r.mon3, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon4 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon4, 0) else iif(g.gubun = r.gubun, r.mon4, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon5 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon5, 0) else iif(g.gubun = r.gubun, r.mon5, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon6 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon6, 0) else iif(g.gubun = r.gubun, r.mon6, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon7 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon7, 0) else iif(g.gubun = r.gubun, r.mon7, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon8 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon8, 0) else iif(g.gubun = r.gubun, r.mon8, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon9 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon9, 0) else iif(g.gubun = r.gubun, r.mon9, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon10 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon10, 0) else iif(g.gubun = r.gubun, r.mon10, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon11 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon11, 0) else iif(g.gubun = r.gubun, r.mon11, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon12 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon12, 0) else iif(g.gubun = r.gubun, r.mon12, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.total else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.total, 0) else iif(g.gubun = r.gubun, r.total, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.allCnt else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.allCnt, 0) else iif(g.gubun = r.gubun, r.allCnt, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,max(g.sort_order)
+         from gubunList g
+         left outer join impr r on r.plantCd = g.plantCd
+         where 1=1
+         and g.gubun_type = 'impr'
+         <if test= "plantCd != null and !plantCd.equals('')">
+           and g.plantCd = #{plantCd}
+         </if>
+         group by g.plantCd, g.gubun
+         <!-- 전체일 경우 합계 데이터 조회 -->
+         <if test='!totalFlag != null and totalFlag.equals("Y")'>
+         union all
+         select  '합계'
+                 ,'합계'
+                 ,'평가현황' as rsa_result
+                 ,g.gubun
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.oldCnt else iif(g.gubun = r.gubun, r.oldCnt, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon1 else iif(g.gubun = r.gubun, r.mon1, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon2 else iif(g.gubun = r.gubun, r.mon2, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon3 else iif(g.gubun = r.gubun, r.mon3, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon4 else iif(g.gubun = r.gubun, r.mon4, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon5 else iif(g.gubun = r.gubun, r.mon5, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon6 else iif(g.gubun = r.gubun, r.mon6, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon7 else iif(g.gubun = r.gubun, r.mon7, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon8 else iif(g.gubun = r.gubun, r.mon8, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon9 else iif(g.gubun = r.gubun, r.mon9, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon10 else iif(g.gubun = r.gubun, r.mon10, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon11 else iif(g.gubun = r.gubun, r.mon11, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon12 else iif(g.gubun = r.gubun, r.mon12, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.total else iif(g.gubun = r.gubun, r.total, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
+                 ,case when g.gubun != '평가 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.allCnt else iif(g.gubun = r.gubun, r.allCnt, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,max(g.sort_order)
+         from gubunList g
+         left outer join riskList r on r.plantCd = g.plantCd
+         where 1=1
+         and g.gubun_type = 'assess'
+         group by g.gubun
+         union all
+         select  '합계'
+                 ,'합계'
+                 ,'개선현황' as rsa_result
+                 ,g.gubun
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.oldCnt else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.oldCnt, 0) else iif(g.gubun = r.gubun, r.oldCnt, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon1 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon1, 0) else iif(g.gubun = r.gubun, r.mon1, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon2 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon2, 0) else iif(g.gubun = r.gubun, r.mon2, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon3 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon3, 0) else iif(g.gubun = r.gubun, r.mon3, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon4 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon4, 0) else iif(g.gubun = r.gubun, r.mon4, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon5 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon5, 0) else iif(g.gubun = r.gubun, r.mon5, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon6 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon6, 0) else iif(g.gubun = r.gubun, r.mon6, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon7 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon7, 0) else iif(g.gubun = r.gubun, r.mon7, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon8 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon8, 0) else iif(g.gubun = r.gubun, r.mon8, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon9 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon9, 0) else iif(g.gubun = r.gubun, r.mon9, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon10 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon10, 0) else iif(g.gubun = r.gubun, r.mon10, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon11 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon11, 0) else iif(g.gubun = r.gubun, r.mon11, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon12 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon12, 0) else iif(g.gubun = r.gubun, r.mon12, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.total else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.total, 0) else iif(g.gubun = r.gubun, r.total, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.allCnt else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.total, 0) else iif(g.gubun = r.gubun, r.allCnt, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,max(g.sort_order)
+         from gubunList g
+         left outer join impr r on r.plantCd = g.plantCd
+         where 1=1
+         and g.gubun_type = 'impr'
+
+         group by g.gubun
+         </if>
+         <!-- 전체일 경우 합계 데이터 조회 -->
+         order by g.plantCd, max(g.sort_order)
+    </select>
+    <select id ="getPlanmgmtStatus" resultType="int">
+        /* PlanmgmtMapper.getPlanmgmtStatus [Planmgmt.xml] */
+        select
+         count(*)
+          from rsa_work_risk_assess_dept rd 
+          
+          left join rsa_work_risk_assess_plan rw on rd.assess_plan_no = rw.assess_plan_no
+          
+          where (rd.step_cd = 'BAPSG' or  (rd.step_cd != 'BAPSG' and datediff(day, GETDATE() , rd.assess_end_dt) &gt; 0))
+          and rw.assess_plan_no = #{assessPlanNo}
+    </select>
+    <select id ="getPlanmgmtImprStatus" resultType="int">
+        /* PlanmgmtMapper.getPlanmgmtImprStatus [Planmgmt.xml] */
+        select count(*)
+         from saf_impr_act sia
+         left outer join com_appr_rqst car
+         on sia.appr_rqst_no = car.appr_rqst_no
+         left outer join dbo.LANG_CODE_MASTER('kr', 'COM_BIZ_APPR_STEP') bizAppr
+         on car.biz_appr_step_cd = bizAppr.code
+         
+         where 1=1
+         and del_yn != 'Y'
+            and sia.impr_class_cd in ('ICL41', 'ICL42')
+            and (sia.impr_step_cd = 'IMST5' 
+            or (sia.impr_step_cd != 'IMST5' and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) >= 0 and sia.act_class_cd =  'ACL02'))
+            and sia.ref_table_id = #{assessDeptNo}
+
+    </select>
+    <delete id="deletePlanmgmt">
+        /* PlanmgmtMapper.deletePlanmgmt [Planmgmt.xml] */
+        delete rsa_work_risk_assess_plan where assess_plan_no = #{assessPlanNo}
+        delete rsa_work_risk_assess_dept where assess_plan_no = #{assessPlanNo}
+    </delete>
+    <delete id= "deleteUpdatePlanmgmtDept">
+        /* PlanmgmtMapper.deleteUpdatePlanmgmtDept [Planmgmt.xml] */
+        update rsa_work_risk_assess_dept set
+            state_cd = 'STATE1'
+           ,step_cd = 'BAPSB'
+           ,dept_reader_id = null
+           ,assess_finish_yn = 'N'
+           ,assess_finish_dt = null
+         where assess_dept_no = #{assessDeptNo}
+         delete rsa_work_risk_assess_ex_rater where assess_dept_no = #{assessDeptNo}
+         delete rsa_work_risk_assess_in_rater where assess_dept_no = #{assessDeptNo}
+         delete rsa_work_risk_assess_rslt where assess_dept_no = #{assessDeptNo}
+         delete saf_impr_act where ref_table_id = #{assessDeptNo}
+    </delete>
+</mapper>

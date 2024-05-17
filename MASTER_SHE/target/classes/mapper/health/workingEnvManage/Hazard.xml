@@ -1,0 +1,168 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.health.workingEnvManage.mapper.HazardMapper">
+    <!-- 유해인자 목록 조회 -->
+    <select id= "getHazards" resultType= "com.she.health.model.Hazard">
+        /* HazardMapper.getHazards [Hazard.xml] */
+        select ch.hazard_cd
+            , ch.hazard_cls_cd
+            , wag.code_nm as hazard_cls_nm
+            , ch.hazard_grad_cd
+            , ccm.code_nm as hazard_grad_nm
+            , ch.hazard_nm_ko
+            , ch.hazard_nm_en
+            , ch.special_yn
+            , ch.work_env_yn
+            , ch.use_yn
+            , ch.create_user_id
+            , ch.create_dt
+            , ch.update_user_id
+            , ch.update_dt
+            , case
+                 when dbo.GET_USER_NM(ch.update_user_id) = '' then dbo.GET_USER_NM(ch.create_user_id)
+                 else dbo.GET_USER_NM(ch.update_user_id) end    as writer_user_nm
+            , case when ch.update_dt is null then convert(date, ch.create_dt) else convert(date, ch.update_dt) end   as writer_dt
+        from com_hazard ch
+        inner join com_code_master wag on ch.hazard_cls_cd = wag.code and wag.code_group_cd = 'WORK_AREA_GRADE'
+        inner join com_code_master ccm on ch.hazard_grad_cd = ccm.code and ccm.code_group_cd = 'HEA_HAZARD_CLASS'
+        where 1=1
+        <if test= "hazardClsCd != null and hazardClsCd != ''">
+        and hazard_cls_cd = #{hazardClsCd}
+        </if>
+        <if test= "hazardGradCd != null and hazardGradCd != ''">
+        and hazard_grad_cd = #{hazardGradCd}
+        </if>
+        <if test= "hazardNmKo != null and hazardNmKo != ''">
+        and hazard_nm_ko like '%' + #{hazardNmKo} + '%'
+        </if>
+        <if test= "hazardNmEn != null and hazardNmEn != ''">
+        and hazard_nm_en like '%' + #{hazardNmEn} + '%'
+        </if>
+        <if test= "specialYn != null and specialYn != ''">
+        and special_yn = #{specialYn}
+        </if>
+        <if test= "workEnvYn != null and workEnvYn != ''">
+        and ch.work_env_yn = #{workEnvYn}
+        </if>
+        order by writer_dt desc, ch.hazard_cls_cd, ch.hazard_grad_cd, ch.hazard_cd desc
+    </select>
+    
+    <!-- 유해인자 조회 -->
+    <select id= "getHazard" resultType= "com.she.health.model.Hazard">
+        /* HazardMapper.getHazard [Hazard.xml] */
+        select ch.hazard_cd
+            , ch.hazard_cls_cd
+            , ch.hazard_grad_cd
+            , ch.hazard_nm_ko
+            , ch.hazard_nm_en
+            , ch.special_yn
+            , ch.work_env_yn
+            , ch.use_yn
+            , ch.create_user_id
+            , ch.create_dt
+            , ch.update_user_id
+            , ch.update_dt
+        from com_hazard ch
+        where ch.hazard_cd = #{hazardCd}
+    </select>
+    
+    
+    <select id= "getCountHazard" resultType= "HashMap">
+        /* HazardMapper.getCountHazard [Hazard.xml] */
+        select 'hazard_nm_ko_count' as gubun, count(*) as cnt
+        from com_hazard ch
+        where ch.hazard_nm_ko = #{hazardNmKo}
+        <if test= "hazardCd != null and hazardCd != ''">
+        and hazard_cd not in (#{hazardCd})
+        </if>
+<!--        union all-->
+<!--        select 'hazard_nm_en_count' as gubun, count(*) as cnt-->
+<!--        from com_hazard ch-->
+<!--        where ch.hazard_nm_en = #{hazardNmEn}-->
+<!--        <if test= "hazardCd != null and hazardCd != ''">-->
+<!--        and hazard_cd not in (#{hazardCd})-->
+<!--        </if>-->
+    </select>
+    
+    <!-- 유해인자 저장 -->
+    <insert id= "createHazard" parameterType= "com.she.health.model.Hazard">
+        <selectKey keyProperty= "hazardCd" resultType= "String" order= "BEFORE">
+            select replicate('0',5 - len(convert(varchar(5), next value for seq_com_hazard))) 
+                + convert(varchar(5), (select current_value from sys.sequences where lower(name)='seq_com_hazard')) as hazard_cd
+          </selectKey>
+        /* HazardMapper.createHazard [Hazard.xml] */
+        insert into com_hazard
+            (hazard_cd
+            , hazard_cls_cd
+            , hazard_grad_cd
+            , hazard_nm_ko
+            , hazard_nm_en
+            , special_yn
+            , work_env_yn
+            , use_yn
+            , create_user_id
+            , create_dt)
+        values 
+            (#{hazardCd}
+            , #{hazardClsCd}
+            , #{hazardGradCd}
+            , #{hazardNmKo}
+            , #{hazardNmEn}
+            , #{specialYn}
+            , #{workEnvYn}
+            , #{useYn}
+            , #{createUserId}
+            , convert(char(10), getDate(), 23)
+            )
+    </insert>
+    
+    <!-- 유해인자 수정 -->
+    <update id= "updateHazard" parameterType= "com.she.health.model.Hazard">
+        /* HazardMapper.updateHazard [Hazard.xml] */
+        update com_hazard
+        set hazard_cls_cd = #{hazardClsCd}  
+          , hazard_grad_cd = #{hazardGradCd}
+          , hazard_nm_ko = #{hazardNmKo}
+          , hazard_nm_en = #{hazardNmEn}
+          , special_yn = #{specialYn}
+          , work_env_yn = #{workEnvYn}
+          , use_yn = #{useYn}
+          , update_user_id = #{updateUserId}
+          , update_dt = convert(char(10), getDate(), 23)
+      where hazard_cd = #{hazardCd}
+    </update>
+    
+    <!-- 유해인자 취급공정 저장 -->
+    <insert id= "createHazardProcess" parameterType= "com.she.health.model.HazardProcess">
+        /* HazardMapper.createHazardProcess [Hazard.xml] */
+        insert into com_hazard_process
+            (hazard_cd
+            , process_cd
+            )
+        values 
+            (#{hazardCd}
+            , #{processCd}
+            )
+    </insert>
+    
+    <!-- 유해인자 취급공정 삭제 -->
+    <delete id= "deleteHazardProcess">
+        /* HazardMapper.deleteHazardProcess [Hazard.xml] */
+        DELETE FROM com_hazard_process
+         WHERE hazard_cd = #{hazardCd}
+    </delete>
+    
+    <!-- 유해인자 취급공정 목록 조회 -->
+    <select id="getHazardProcessList" resultType="com.she.health.model.HazardProcess">
+        /* HazardMapper.getHazardProcessList [Hazard.xml] */
+        select   a.hazard_cd
+               , a.process_cd
+               , b.process_nm
+          from com_hazard_process a
+         inner join com_process b
+            on a.process_cd = b.process_cd
+         where a.hazard_cd = #{hazardCd}
+    </select>
+    
+</mapper>

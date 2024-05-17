@@ -1,0 +1,268 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.baseInfo.mapper.ElectTitleMapper">
+
+    <select id= "getElectTitles" resultType= "com.she.mgt.model.ElectTitle">
+    /* ElectTitleMapper.getElectTitles [ElectTitle.xml] */
+        select distinct et.saf_elect_titl_no
+            ,et.plant_cd
+            ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang},'com_plant_cd', plant_cd ) as plant_nm
+            ,et.elect_cls_cd
+            ,electCls.code_nm as elect_cls_nm
+            ,et.elect_att_cd
+            ,taskGrp.code_nm as elect_att_nm
+            ,et.ref_law_cd
+            ,lawClass.code_nm as ref_law_nm
+            ,et.elect_titl_nm
+            ,et.use_yn
+            ,elect.code_nm as elect_type_nm
+            ,elect.code as elect_type_cd
+            ,case
+                when et.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,et.sort_order
+            ,et.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,et.create_dt
+            ,et.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,et.update_dt
+            , ET.ELECT_STND_DESC
+            , ET.QUALIFI_REQUIRE
+            ,case
+                    when dbo.GET_USER_NM(et.update_user_id) = '' then dbo.GET_USER_NM(et.create_user_id)
+                    else dbo.GET_USER_NM(et.update_user_id) end as writer_user_nm
+             ,case when et.update_dt is null then convert(date, et.create_dt) else convert(date, et.update_dt) end   as writer_dt
+            ,et.eval_tgt_yn
+            ,case
+                when et.eval_tgt_yn = 'Y' then '대상'
+                else '미대상'
+            end as eval_tgt_yn_nm
+            ,(select count(*)
+            from saf_elect_titl_item etitem
+            where etitem.use_yn='Y'
+            and etitem.saf_elect_titl_no = et.saf_elect_titl_no) use_yn_ct
+            ,et.saf_elect_titl_no as code
+            ,concat(et.elect_titl_nm, '(', taskGrp.code_nm, '/', lawClass.code_nm, ')') as code_nm
+        from saf_elect_titl et
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ELECT_CLS') electCls
+        on et.elect_cls_cd = electCls.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'TASK_GRP') taskGrp
+        on et.elect_att_cd = taskGrp.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') lawClass
+        on et.ref_law_cd = lawClass.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_ELECT_TYPE') elect
+        on et.elect_type_cd = elect.code
+        left outer join com_user createUser
+        on et.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on et.update_user_id = updateUser.user_id
+        where 1=1
+        and et.elect_titl_nm like '%' + #{electTitlNm} + '%'
+        <if test= "refLawCd != null and !refLawCd.equals('')">
+        and et.ref_law_cd = #{refLawCd}
+        </if>
+        <if test= "electAttCd != null and !electAttCd.equals('')">
+        and et.elect_att_cd = #{electAttCd}
+        </if>
+        <if test= "electClsCd != null and !electClsCd.equals('')">
+        and et.elect_cls_cd = #{electClsCd}
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+        and et.use_yn = #{useYn}
+        </if>
+        <if test="evalTgtYn != null and !evalTgtYn.equals('')">
+        and et.eval_tgt_yn = #{evalTgtYn}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+        and et.plant_cd = #{plantCd}
+        </if>
+        order by et.sort_order, writer_dt desc, et.saf_elect_titl_no
+    </select>
+
+    <select id= "getElectTitle" resultType= "com.she.mgt.model.ElectTitle">
+    /* ElectTitleMapper.getElectTitle [ElectTitle.xml] */
+        select et.saf_elect_titl_no
+            ,et.plant_cd
+            ,et.elect_cls_cd
+            ,electCls.code_nm as elect_cls_nm
+            ,elect.code_nm as elect_type_nm
+            ,elect.code as elect_type_cd
+            ,et.elect_att_cd
+            ,taskGrp.code_nm as elect_att_nm
+            ,et.ref_law_cd
+            ,lawClass.code_nm as ref_law_nm
+            ,et.elect_titl_nm
+            ,et.use_yn
+            ,case
+                when et.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,et.eval_tgt_yn
+            ,case
+                when et.eval_tgt_yn = 'Y' then '대상'
+                else '미대상'
+            end as eval_tgt_yn_nm
+            ,et.sort_order
+            ,et.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,et.create_dt
+            ,et.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,et.update_dt
+            , ET.ELECT_STND_DESC
+            , ET.QUALIFI_REQUIRE
+        from saf_elect_titl et
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ELECT_CLS') electCls
+        on et.elect_cls_cd = electCls.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'TASK_GRP') taskGrp
+        on et.elect_att_cd = taskGrp.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_ELECT_TYPE') elect
+        on et.elect_type_cd = elect.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') lawClass
+        on et.ref_law_cd = lawClass.code
+        left outer join com_user createUser
+        on et.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on et.update_user_id = updateUser.user_id
+        where et.saf_elect_titl_no = #{safElectTitlNo}
+    </select>
+
+    <select id= "getLcnTypeCds" resultType= "String">
+        select lcn_type_cd
+        from saf_elect_titl_lcn
+        where 1=1
+        <if test= "safElectTitlNo != null and safElectTitlNo > 0">
+        and saf_elect_titl_no = #{safElectTitlNo}
+        </if>
+    </select>
+
+    <insert id= "createElectTitle" parameterType= "com.she.mgt.model.ElectTitle">
+        <selectKey keyProperty= "safElectTitlNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_elect_titl as saf_elect_titl_no
+          </selectKey>
+        insert into saf_elect_titl
+            (saf_elect_titl_no
+            ,plant_cd
+            ,elect_cls_cd
+            ,elect_att_cd
+            ,ref_law_cd
+            ,elect_titl_nm
+            ,elect_stnd_desc
+            ,qualifi_require
+            ,use_yn
+            ,elect_type_cd
+            ,sort_order
+            ,create_user_id
+            ,eval_tgt_yn
+            ,create_dt)
+        values
+            (#{safElectTitlNo}
+            ,#{plantCd}
+            ,#{electClsCd}
+            ,#{electAttCd}
+            ,#{refLawCd}
+            ,#{electTitlNm}
+            ,#{electStndDesc}
+            ,#{qualifiRequire}
+            ,#{useYn}
+            ,#{electTypeCd}
+            ,#{sortOrder}
+            ,#{createUserId}
+            ,#{evalTgtYn}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+
+    <update id= "updateElectTitle" parameterType= "com.she.mgt.model.ElectTitle">
+        update saf_elect_titl
+        set 
+            plant_cd = #{plantCd}
+            ,elect_cls_cd = #{electClsCd}
+            ,elect_att_cd = #{electAttCd}
+            ,ref_law_cd = #{refLawCd}
+            ,elect_titl_nm = #{electTitlNm}
+            ,sort_order = #{sortOrder}
+            ,elect_stnd_desc = #{electStndDesc}
+            ,qualifi_require = #{qualifiRequire}
+            ,use_yn = #{useYn}
+            ,elect_type_cd = #{electTypeCd}
+            ,update_user_id = #{updateUserId}
+            ,eval_tgt_yn=#{evalTgtYn}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where saf_elect_titl_no = #{safElectTitlNo}
+    </update>
+
+    <insert id= "createElectTitlLcn" parameterType= "com.she.mgt.model.ElectTitlLcn">
+        insert into saf_elect_titl_lcn
+            (saf_elect_titl_no
+            ,lcn_type_cd)
+        values
+            (#{safElectTitlNo}
+            ,#{lcnTypeCd})
+    </insert>
+
+    <delete id= "deleteElectTitlLcn">
+        delete from saf_elect_titl_lcn
+        where saf_elect_titl_no = #{safElectTitlNo}
+    </delete>
+
+    <select id= "getCheckElectTitle" resultType= "HashMap">
+        select count(*) as cnt
+            ,'electTitlNm' as gubun
+        from saf_elect_titl
+        where 1=1
+        and elect_titl_nm = #{electTitlNm}
+        <if test= "safElectTitlNo != null and safElectTitlNo > 0">
+        and saf_elect_titl_no not in (#{safElectTitlNo})
+        </if>
+    </select>
+
+    <delete id= "deleteElectTitlItems">
+        delete from saf_elect_titl_item
+        where saf_elect_titl_no = #{safElectTitlNo}
+    </delete>
+
+    <insert id= "createElectTitlItems" parameterType= "com.she.mgt.model.ElectTitlItem">
+        <selectKey keyProperty= "safElectTitlItemNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_elect_titl_item as saf_elect_titl_item_no
+          </selectKey>
+        insert into saf_elect_titl_item
+            (saf_elect_titl_item_no
+            ,saf_elect_titl_no
+            ,item_type
+            ,item_work
+            ,remark
+            ,use_yn)
+        values
+            (#{safElectTitlItemNo}
+            ,#{safElectTitlNo}
+            ,#{itemType}
+            ,#{itemWork}
+            ,#{remark}
+            ,#{useYn})
+    </insert>
+
+    <select id="getElectTitlItems" resultType="com.she.mgt.model.ElectTitlItem">
+        select saf_elect_titl_item_no,
+          saf_elect_titl_no,
+          item_type,
+          item_work,
+          remark,
+          use_yn
+        from
+          saf_elect_titl_item
+        where
+          saf_elect_titl_no= #{safElectTitlNo}
+    </select>
+
+     <update id= "updateElectTitleItems" parameterType= "com.she.mgt.model.ElectTitlItem">
+        update saf_elect_titl_item
+        set item_type =#{itemType}
+            ,item_work=#{itemWork}
+            ,remark=#{remark}
+            ,use_yn=#{useYn}
+        where saf_elect_titl_item_no = #{safElectTitlItemNo}
+    </update>
+</mapper>

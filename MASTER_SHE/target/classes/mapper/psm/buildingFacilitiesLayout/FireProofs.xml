@@ -1,0 +1,138 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.psm.buildingFacilitiesLayout.mapper.FireProofsMapper">
+    
+    <select id= "getFireProofsLists" resultType= "com.she.psm.model.FireProofs">
+        select sfp.fire_proofs_no
+            , sfp.plant_cd
+            , ccm.code_nm as plant_nm
+            , sfp.category
+            , sfp.fire_proofs_num
+            , sfp.fire_proofs_nm
+            , sfp.fire_proof_part
+            , sfp.height
+            , sfp.test_stnd
+            , sfp.remark
+            , sfp.rev_num
+            , sfp.rev_contents
+            , sfp.creater_id
+            , convert(char(19), sfp.create_dt, 23) as create_dt
+            , sfp.updater_id
+            , convert(char(19), sfp.update_dt, 23) as update_dt
+            , case
+                 when dbo.GET_USER_NM(sfp.updater_id) = '' then dbo.GET_USER_NM(sfp.creater_id)
+                 else dbo.GET_USER_NM(sfp.updater_id) end    as writer_user_nm
+            , case when sfp.update_dt is null then convert(date, sfp.create_dt) else convert(date, sfp.update_dt) end   as writer_dt
+        from saf_fire_proofs sfp
+        left outer join com_code_master ccm
+        on sfp.plant_cd = ccm.code
+        and ccm.code_group_cd = 'COM_PLANT_CD'
+        where 1=1
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and sfp.plant_cd = #{plantCd}
+        </if>
+        <if test= "category != null and !category.equals('')">
+        and sfp.category like '%' + #{category} + '%'
+        </if>
+        <if test= "fireProofsNum != null and !fireProofsNum.equals('')">
+        and sfp.fire_proofs_num like '%' + #{fireProofsNum} + '%'
+        </if>
+        <if test= "fireProofsNm != null and !fireProofsNm.equals('')">
+        and sfp.fire_proofs_nm like '%' + #{fireProofsNm} + '%'
+        </if>
+        order by writer_dt desc, sfp.plant_cd, sfp.fire_proofs_no desc
+    </select>
+
+    <select id= "getFireProofs" resultType= "com.she.psm.model.FireProofs">
+        SELECT sfp.fire_proofs_no
+              , sfp.plant_cd
+              , ccm.code_nm as plant_nm
+              , sfp.category
+              , sfp.fire_proofs_num
+              , sfp.fire_proofs_nm
+              , sfp.fire_proof_part
+              , sfp.height
+              , sfp.test_stnd
+              , sfp.remark
+              , sfp.rev_num
+              , sfp.rev_contents
+              , sfp.creater_id
+              , convert(char(19), sfp.create_dt, 23) as create_dt
+              , sfp.updater_id
+              , convert(char(19), sfp.update_dt, 23) as update_dt
+			  , sfp.chng_num
+          FROM saf_fire_proofs sfp
+          LEFT OUTER JOIN com_code_master ccm
+            ON sfp.plant_cd = ccm.code
+           AND ccm.code_group_cd = 'COM_PLANT_CD'
+          LEFT OUTER JOIN saf_chng_ref_work scrw
+            ON scrw.ref_table_nm = 'saf_fire_proofs'
+           AND scrw.ref_table_id = sfp.fire_proofs_no
+        where 1=1
+        and sfp.fire_proofs_no = #{fireProofsNo}
+    </select>
+    
+    <insert id= "createFireProofs" parameterType= "com.she.psm.model.FireProofs">
+           <selectKey keyProperty= "fireProofsNo" resultType= "com.she.psm.model.FireProofs" order= "BEFORE">
+            select (next value for seq_saf_fire_proofs) as fireProofsNo
+          </selectKey>
+          insert into saf_fire_proofs
+          (
+          fire_proofs_no
+        ,plant_cd
+        ,category
+        ,fire_proofs_num
+        ,fire_proofs_nm
+        ,fire_proof_part
+        ,height
+        ,test_stnd
+        ,remark
+        ,rev_num
+        ,rev_contents
+        ,creater_id
+        ,create_dt
+        ,chng_num
+          )
+          values
+          (
+          #{fireProofsNo}
+        ,#{plantCd}
+        ,#{category}
+        ,#{fireProofsNum}
+        ,#{fireProofsNm}
+        ,#{fireProofPart}
+        ,#{height}
+        ,#{testStnd}
+        ,#{remark}
+        ,#{revNum}
+        ,#{revContents}
+        ,#{createrId}
+        ,getDate()
+        ,#{chngNum}
+          )
+    </insert>
+    
+    <update id= "updateFireProofs" parameterType= "com.she.psm.model.FireProofs">
+        update saf_fire_proofs 
+        set plant_cd = #{plantCd}
+            ,category = #{category}
+            ,fire_proofs_num = #{fireProofsNum}
+            ,fire_proofs_nm = #{fireProofsNm}
+            ,fire_proof_part = #{fireProofPart}
+            ,height = #{height}
+            ,test_stnd = #{testStnd}
+            ,remark = #{remark}
+            ,rev_num = #{revNum}
+            ,rev_contents = #{revContents}
+            ,updater_id = #{updaterId}
+            ,update_dt = getdate()
+            ,chng_num = #{chngNum}
+        where fire_proofs_no = #{fireProofsNo}
+    </update>
+    
+    <delete id= "deleteFireProofs" parameterType= "com.she.psm.model.FireProofs">
+        delete saf_fire_proofs
+        where fire_proofs_no = #{fireProofsNo}
+    </delete>
+</mapper>

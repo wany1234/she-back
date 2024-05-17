@@ -1,0 +1,21 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.baseInfo.safFacility.mapper.SafFacilityTypeMapper">
+
+    <select id="getSafFacilityTypes" resultType= "com.she.baseInfo.model.SafFacilityType">
+      select com_facility_type_cd
+          ,com_facility_type_nm
+          ,case when use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+          ,sort_order
+      from com_facility_type
+      where 1=1
+      and com_facility_type_cd like '%' + #{comFacilityCd} + '%'
+      and com_facility_type_nm like '%' + #{comFacilityNm} + '%'
+      <if test= "useYn != null and !useYn.equals('')">
+      and use_yn = #{useYn}
+      </if>
+      order by sort_order
+    </select>
+
+</mapper>

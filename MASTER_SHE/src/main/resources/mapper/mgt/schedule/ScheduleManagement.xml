@@ -1,0 +1,516 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.mgt.schedule.mapper.ScheduleManagementMapper">
+    <select id="getScehduleManagements" parameterType="HashMap" resultType="com.she.mgt.model.ScehduleManagement">
+        /* ScheduleManagementMapper.getScehduleManagements [ScheduleManagement.xml] */
+        with B as (
+        SELECT mc.mgt_calendar_no
+        ,case when mc.mgt_cal_kind_cd = 'MCL01' then mc.start_dt
+        else format(dateadd(d,-day(convert(date, case when len(mc.start_dt) = 7 then mc.start_dt + '-01' else mc.start_dt end)) + 1, convert(date, case when len(mc.start_dt) = 7 then mc.start_dt + '-01' else mc.start_dt end)), 'yyyy-MM-dd')
+        end start_dt
+        ,case when mc.mgt_cal_kind_cd = 'MCL01' then mc.end_dt
+        else format(dateadd(d,-day(dateadd(m, 1, convert(date, case when len(mc.end_dt) = 7 then mc.end_dt + '-01' else mc.end_dt end))), dateadd(m, 1, convert(date, case when len(mc.end_dt) = 7 then mc.end_dt + '-01' else mc.end_dt end))), 'yyyy-MM-dd')
+        end end_dt
+        ,case when mc.mgt_cal_kind_cd = 'MCL01' then mc.start_dt + ' ~ ' + mc.end_dt
+        else format(dateadd(d,-day(convert(date, case when len(mc.start_dt) = 7 then mc.start_dt + '-01' else mc.start_dt end)) + 1, convert(date, case when len(mc.start_dt) = 7 then mc.start_dt + '-01' else mc.start_dt end)), 'yyyy-MM-dd')
+        + ' ~ ' + format(dateadd(d,-day(dateadd(m, 1, convert(date, case when len(mc.end_dt) = 7 then mc.end_dt + '-01' else mc.end_dt end))), dateadd(m, 1, convert(date, case when len(mc.end_dt) = 7 then mc.end_dt + '-01' else mc.end_dt end))), 'yyyy-MM-dd')
+        end period
+        ,'일정' as mgt_cal_type_nm
+        ,mc.title
+        ,mc.plan_contents
+        ,mc.use_yn
+        ,case when mc.use_yn = 'Y' then '사용'
+        else '미사용' end as use_yn_nm
+        ,mc.create_user_id
+        ,mc.create_dt
+        ,mc.update_user_id
+        ,mc.update_dt
+        FROM mgt_calendar mc
+        WHERE 1=1
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND (mc.create_user_id = #{createUserId} or
+            exists(SELECT 1
+            FROM mgt_calendar_psn mcp
+            WHERE mc.mgt_calendar_no = mcp.mgt_calendar_no
+            AND mcp.user_id = #{createUserId})
+            )
+        </if>
+        ), A as (
+        SELECT *
+        FROM B
+        WHERE 1=1
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND (convert(datetime, B.start_dt) &lt;= convert(datetime, #{endDt}) or convert(datetime, B.start_dt) &lt;= convert(datetime, #{startDt})) and
+            (convert(datetime, B.end_dt) &gt;= convert(datetime, #{startDt}) or convert(datetime, B.end_dt) &gt;= convert(datetime, #{endDt}))
+        </if>
+        UNION ALL
+        SELECT sc.saf_chng_no
+        ,'' as start_dt
+        ,a.end_sch_dt as end_dt
+        ,'~ ' + a.end_sch_dt as period
+        ,'변경관리' as mgt_cal_type_nm
+        ,sc.chng_contents as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,sc.create_user_id
+        ,format(sc.create_dt, 'yyyy-MM-dd') as create_dt
+        ,sc.update_user_id
+        ,sc.update_dt
+        FROM saf_chng_chk_itm_rslt a
+        INNER JOIN saf_chng sc
+        ON a.saf_chng_no = sc.saf_chng_no
+        WHERE 1=1
+        AND sc.chng_step_cd = 'CGSP3'
+        AND isnull(a.end_dt, '') = ''
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND a.mgr_id = #{createUserId}
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.end_dt) between convert(datetime, #{startDt}) and convert(datetime, #{endDt})
+        </if>
+        UNION ALL
+        SELECT a.saf_check_schedule_no
+        ,format(a.check_ymd, 'yyyy-MM-dd') as start_dt
+        ,format(a.check_ymd, 'yyyy-MM-dd') as end_dt
+        ,'~ ' + format(a.check_ymd, 'yyyy-MM-dd') as period
+        ,'안전점검' as mgt_cal_type_nm
+        ,a.check_title as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,a.create_user_id
+        ,format(a.create_dt, 'yyyy-MM-dd') as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM saf_check_schedule a
+        INNER JOIN saf_check_inspector b
+        ON a.saf_check_no = b.saf_check_no
+        WHERE 1=1
+        AND a.check_step_cd = 'CHS02'
+        AND isnull(convert(varchar, a.check_ymd), '') != ''
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND b.user_id = #{createUserId}
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.check_ymd) between convert(datetime, #{startDt}) and convert(datetime, #{endDt})
+        </if>
+        UNION ALL
+        SELECT b.saf_facil_chk_no
+        ,a.chk_ymd as start_dt
+        ,a.chk_ymd as end_dt
+        ,'~ ' + a.chk_ymd as period
+        ,'설비점검' as mgt_cal_type_nm
+        ,b.saf_facil_chk_title + ' ' + c.facility_nm as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,b.create_user_id
+        ,format(b.create_dt, 'yyyy-MM-dd') as create_dt
+        ,b.update_user_id
+        ,b.update_dt
+        FROM saf_facil_chk_rslt a
+        INNER JOIN saf_facil_chk_plan b
+        ON a.saf_facil_chk_no = b.saf_facil_chk_no
+        INNER JOIN saf_facility_mst c
+        ON a.saf_facility_cd = c.saf_facility_cd
+        WHERE 1=1
+        AND b.chk_step_cd = 'CHS02'
+        AND isnull(a.chk_ymd, '') != ''
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND a.user_id = #{createUserId}
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.chk_ymd) between convert(datetime, #{startDt}) and convert(datetime, #{endDt})
+        </if>
+        UNION ALL
+        SELECT a.com_facility_check_schedule_no
+        ,a.facility_check_ymd as start_dt
+        ,a.facility_check_ymd as end_dt
+        ,'~ ' + a.facility_check_ymd as period
+        ,'시설점검' as mgt_cal_type_nm
+        ,a.facility_check_nm as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,a.create_user_id
+        ,format(a.create_dt, 'yyyy-MM-dd') as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM com_facility_check_schedule a
+        INNER JOIN com_facility_check_inspector b
+        ON a.com_facility_check_no = b.com_facility_check_no
+        WHERE 1=1
+        AND a.check_step_cd = 'CHS02'
+        AND isnull(a.facility_check_ymd, '') != ''
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND b.user_id = #{createUserId}
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.facility_check_ymd) between convert(datetime, #{startDt}) and convert(datetime, #{endDt})
+        </if>
+        UNION ALL
+        SELECT a.saf_impr_act_no
+        ,a.act_limit_ymd as start_dt
+        ,a.act_limit_ymd as end_dt
+        ,'~ ' + a.act_limit_ymd as period
+        ,'개선조치' as mgt_cal_type_nm
+        ,a.impr_title as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,a.create_user_id
+        ,format(a.create_dt, 'yyyy-MM-dd') as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM saf_impr_act a
+        WHERE 1=1
+        AND a.act_class_cd = 'ACL02'
+        AND isnull(a.act_confirm_ymd, '') = ''
+        AND a.del_yn != 'Y'
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND a.act_user_id = #{createUserId}
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.act_limit_ymd) between convert(datetime, #{startDt}) and convert(datetime, #{endDt})
+        </if>
+        UNION ALL
+        SELECT a.saf_edu_mst_no
+        ,a.edu_s_ymd as start_dt
+        ,a.edu_e_ymd as end_dt
+        ,a.edu_s_ymd + ' ~ ' + a.edu_e_ymd as period
+        ,'교육' as content
+        ,a.edu_nm as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,a.create_user_id
+        ,format(a.create_dt, 'yyyy-MM-dd') as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM saf_edu_mst a
+        INNER JOIN saf_edu_dtl_psn b
+        ON a.saf_edu_mst_no = b.saf_edu_mst_no
+        WHERE 1=1
+        AND a.process_step_cd ='SES02'
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND b.user_id = #{createUserId}
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.edu_s_ymd) &lt;= convert(datetime, #{endDt}) and convert(datetime, a.edu_e_ymd) &gt;= convert(datetime, #{startDt})
+        </if>
+        UNION ALL
+        SELECT a.assess_plan_no
+        ,format(a.assess_start_date, 'yyyy-MM-dd') as start_dt
+        ,format(a.assess_end_date, 'yyyy-MM-dd') as end_dt
+        ,format(a.assess_start_date, 'yyyy-MM-dd') + ' ~ ' + format(a.assess_end_date, 'yyyy-MM-dd') as period
+        ,'위험성평가' as content
+        ,a.assess_nm as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,a.create_user_id
+        ,format(a.create_dt, 'yyyy-MM-dd') as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM rsa_risk_assess_plan a
+        WHERE 1=1
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND a.user_id = #{createUserId}
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.assess_start_date) &lt;= convert(datetime, #{endDt}) and convert(datetime, a.assess_end_date) &gt;= convert(datetime, #{startDt})
+        </if>
+        UNION ALL
+        SELECT a.saf_no_accident_no
+        ,a.end_sch_ymd as start_dt
+        ,a.end_sch_ymd as end_dt
+        ,'~ ' + a.end_sch_ymd as period
+        ,'사업장 무재해' as mgt_cal_type_nm
+        ,plant.code_nm as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,a.create_user_id
+        ,format(a.create_dt, 'yyyy-MM-dd') as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM saf_no_accident a
+        INNER JOIN com_code_master plant
+        ON a.plant_cd = plant.code
+        AND plant.code_group_cd = 'COM_PLANT_CD'
+        WHERE 1=1
+        AND a.use_yn='Y' and close_yn='N'
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND a.plant_cd = (SELECT plant_cd
+            FROM com_user cu
+            INNER JOIN com_dept cd
+            ON cu.dept_cd = cd.dept_cd
+            WHERE user_id = #{createUserId})
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.end_sch_ymd) between convert(datetime, #{startDt}) and convert(datetime, #{endDt})
+        </if>
+        UNION ALL
+        SELECT a.saf_no_accident_dept_no
+        ,a.end_sch_ymd as start_dt
+        ,a.end_sch_ymd as end_dt
+        ,'~ ' + a.end_sch_ymd as period
+        ,'부서 무재해' as mgt_cal_type_nm
+        ,b.dept_nm as title
+        ,'' as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,a.create_user_id
+        ,format(a.create_dt, 'yyyy-MM-dd') as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM saf_no_accident_dept a
+        INNER JOIN com_dept b
+        ON a.dept_cd = b.dept_cd
+        WHERE 1=1
+        AND a.use_yn='Y' and close_yn='N'
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND a.dept_cd = (SELECT dept_cd
+            FROM com_user cu
+            WHERE user_id = #{createUserId})
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.end_sch_ymd) between convert(datetime, #{startDt}) and convert(datetime, #{endDt})
+        </if>
+        UNION ALL
+        SELECT a.committee_conf_no
+        ,a.conf_date as start_dt
+        ,a.conf_date as end_dt
+        ,format(a.conf_date, 'yyyy-MM-dd') + ' ~ ' + format(a.conf_date, 'yyyy-MM-dd') as period
+        ,'산업안전위원회/협의체' as mgt_cal_type_nm
+        ,a.conf_nm as title
+        ,a.remark as plan_contents
+        ,'Y' as use_yn
+        ,'사용' as use_yn_nm
+        ,a.create_user_id
+        ,format(a.create_dt, 'yyyy-MM-dd') as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM mgt_committee_conf a
+        INNER join mgt_committee_psn b
+        ON a.committee_conf_no = b.committee_conf_no
+        WHERE 1=1
+        AND a.progress_step_cd in ('CMS03')
+        <if test='createUserId != null and !createUserId.equals("")'>
+            AND b.user_id = #{createUserId}
+        </if>
+        <if test='startDt != null and !startDt.equals("") and endDt != null and !endDt.equals("")'>
+            AND convert(datetime, a.conf_date) between convert(datetime, #{startDt}) and convert(datetime, DATEADD(SECOND, -1, DATEADD(DAY, 1, #{endDt})))
+        </if>
+        )
+        SELECT A.*
+        ,createDept.dept_nm as create_dept_nm
+        ,createUser.dept_cd as create_dept_cd
+        ,createUser.user_nm as create_user_nm
+        ,updateDept.dept_nm as update_dept_nm
+        ,updateUser.dept_cd as update_dept_cd
+        ,updateUser.user_nm as update_user_nm
+        ,case
+        when updateUser.user_nm is null then createUser.user_nm
+        else updateUser.user_nm end    as writer_user_nm
+        , case when A.update_dt is null then convert(date, A.create_dt) else convert(date, A.update_dt) end   as writer_dt
+        FROM A
+        LEFT OUTER JOIN com_user createUser
+        ON A.create_user_id = createUser.user_id
+        LEFT OUTER JOIN com_dept createDept
+        ON createUser.dept_cd = createDept.dept_cd
+        LEFT OUTER JOIN com_user updateUser
+        ON A.update_user_id = updateUser.user_id
+        LEFT OUTER JOIN com_dept updateDept
+        ON updateUser.dept_cd = updateDept.dept_cd
+        WHERE A.title like '%' + #{title} + '%'
+        <if test='useYn != null and !useYn.equals("")'>
+            AND A.use_yn = #{useYn}
+        </if>
+        <if test='mgtCalTypeCd != null and !mgtCalTypeCd.equals("")'>
+            <choose>
+                <when test='"1".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '일정'
+                </when>
+                <when test='"2".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '변경관리'
+                </when>
+                <when test='"3".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '안전점검'
+                </when>
+                <when test='"4".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '설비점검'
+                </when>
+                <when test='"5".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '시설점검'
+                </when>
+                <when test='"6".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '개선조치'
+                </when>
+                <when test='"7".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '교육'
+                </when>
+                <when test='"8".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '위험성평가'
+                </when>
+                <when test='"9".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '사업장 무재해'
+                </when>
+                <when test='"10".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '부서 무재해'
+                </when>
+                <when test='"11".equals(mgtCalTypeCd)'>
+                    and A.mgt_cal_type_nm = '산안위/협의체'
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY A.start_dt desc
+    </select>
+
+    <select id="getScehduleManagement" resultType="com.she.mgt.model.ScehduleManagement">
+        /* ScheduleManagementMapper.getScehduleManagement [ScheduleManagement.xml] */
+        SELECT mc.mgt_calendar_no
+             --,mc.plant_cd
+             --,plant.code_nm as plant_nm
+             , mc.start_dt
+             , mc.end_dt
+             , mc.mgt_cal_kind_cd
+             , calKind.code_nm    as mgt_cal_kind_nm
+             , mc.title
+             , mc.plan_contents
+             , case
+                   when mc.use_yn = 'Y' then '사용'
+                   else '미사용' end as use_yn_nm
+             , mc.use_yn
+             , createDept.dept_nm as create_dept_nm
+             , createUser.dept_cd as create_dept_cd
+             , createUser.user_nm as create_user_nm
+             , mc.create_user_id
+             , mc.create_dt
+             , updateDept.dept_nm as update_dept_nm
+             , updateUser.dept_cd as update_dept_cd
+             , updateUser.user_nm as update_user_nm
+             , mc.update_user_id
+             , mc.update_dt
+        FROM mgt_calendar mc
+                 INNER JOIN com_code_master calKind
+                            ON mc.mgt_cal_kind_cd = calKind.code
+                                AND calKind.code_group_cd = 'MGT_CAL_KIND'
+            --INNER JOIN com_code_master plant
+            --   ON mc.plant_cd = plant.code
+            --  AND plant.code_group_cd = 'COM_PLANT_CD'
+                 LEFT OUTER JOIN com_user createUser
+                                 ON mc.create_user_id = createUser.user_id
+                 LEFT OUTER JOIN com_dept createDept
+                                 ON createUser.dept_cd = createDept.dept_cd
+                 LEFT OUTER JOIN com_user updateUser
+                                 ON mc.update_user_id = updateUser.user_id
+                 LEFT OUTER JOIN com_dept updateDept
+                                 ON updateUser.dept_cd = updateDept.dept_cd
+        WHERE 1 = 1
+          AND mc.mgt_calendar_no = #{mgtCalendarNo}
+    </select>
+
+    <select id="getScehduleManagementPsns" resultType="com.she.mgt.model.ScehduleManagementPsn">
+        /* ScheduleManagementMapper.getScehduleManagementPsns [ScheduleManagement.xml] */
+        SELECT mcp.mgt_calendar_no
+             , mcp.user_id
+             , userInfo.user_nm
+             , dept.dept_cd
+             , dept.dept_nm
+             , duty.duty_cd
+             , duty.duty_nm
+             , position.position_cd
+             , position.position_nm
+        FROM mgt_calendar_psn mcp
+                 INNER JOIN com_user userInfo
+                            ON mcp.user_id = userInfo.user_id
+                 INNER JOIN com_dept dept
+                            ON userInfo.dept_cd = dept.dept_cd
+                 LEFT OUTER JOIN com_hr_duty duty
+                                 ON userInfo.duty_cd = duty.duty_cd
+                 LEFT OUTER JOIN com_hr_position position
+                                 ON userInfo.position_cd = position.position_cd
+        WHERE 1 = 1
+          AND mcp.mgt_calendar_no = #{mgtCalendarNo}
+    </select>
+
+    <insert id="createScehduleManagement" parameterType="com.she.mgt.model.ScehduleManagement">
+        /* ScheduleManagementMapper.createScehduleManagement [ScheduleManagement.xml] */
+        <selectKey keyProperty="mgtCalendarNo" resultType="int" order="BEFORE">
+            select next value for seq_mgt_calendar
+        </selectKey>
+        INSERT INTO mgt_calendar
+        (
+        mgt_calendar_no
+        <!-- ,plant_cd -->
+        ,start_dt
+        ,end_dt
+        ,mgt_cal_kind_cd
+        ,title
+        ,plan_contents
+        ,use_yn
+        ,create_user_id
+        ,create_dt
+        )
+        VALUES
+        (
+        #{mgtCalendarNo}
+        <!-- ,#{plantCd} -->
+        ,convert(varchar(10),#{startDt}, 23)
+        ,convert(varchar(10),#{endDt}, 23)
+        ,#{mgtCalKindCd}
+        ,#{title}
+        ,#{planContents}
+        ,#{useYn}
+        ,#{createUserId}
+        ,convert(varchar(10),getdate(), 23)
+        )
+    </insert>
+
+    <update id="updateScehduleManagement" parameterType="com.she.mgt.model.ScehduleManagement">
+        /* ScheduleManagementMapper.updateScehduleManagement [ScheduleManagement.xml] */
+        UPDATE mgt_calendar
+        SET
+        <!-- plant_cd = #{plantCd} -->
+        start_dt = convert(varchar(10),#{startDt}, 23)
+        ,end_dt = convert(varchar(10),#{endDt}, 23)
+        ,mgt_cal_kind_cd = #{mgtCalKindCd}
+        ,title = #{title}
+        ,plan_contents = #{planContents}
+        ,use_yn = #{useYn}
+        ,update_user_id = #{updateUserId}
+        ,update_dt = convert(varchar(10),getdate(), 23)
+        where mgt_calendar_no = #{mgtCalendarNo}
+    </update>
+
+    <delete id="deleteScehduleManagement">
+        /* ScheduleManagementMapper.deleteScehduleManagement [ScheduleManagement.xml] */
+        DELETE
+            mgt_calendar
+        WHERE mgt_calendar_no =
+              #{mgtCalendarNo}
+    </delete>
+
+    <insert id="createScehduleManagementPsn" parameterType="com.she.mgt.model.ScehduleManagementPsn">
+        /* ScheduleManagementMapper.createScehduleManagementPsn [ScheduleManagement.xml] */
+        INSERT INTO mgt_calendar_psn
+        ( mgt_calendar_no
+        , user_id)
+        VALUES ( #{mgtCalendarNo}
+               , #{userId})
+    </insert>
+
+    <delete id="deleteScehduleManagementPsn">
+        /* ScheduleManagementMapper.deleteScehduleManagementPsn [ScheduleManagement.xml] */
+        DELETE
+            mgt_calendar_psn
+        WHERE mgt_calendar_no =
+              #{mgtCalendarNo}
+    </delete>
+
+</mapper>

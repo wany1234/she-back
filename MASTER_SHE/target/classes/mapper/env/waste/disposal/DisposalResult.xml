@@ -1,0 +1,411 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.waste.disposal.mapper.DisposalResultMapper">
+    <select id= "getDisposalResults" resultType= "com.she.env.waste.model.DisposalResult">
+        select t.ewst_dispo_result_no
+            , t.plant_cd, plant.code_nm as plantNm, t.sell_yn
+            , t.ewst_dispo_st_cd, dc.code_nm as ewst_dispo_st_nm
+            , t.ewst_dispo_div_cd, ddc.code_nm as ewst_dispo_div_nm
+            , t.ewst_dispo_step_cd, dsc.code_nm as ewst_dispo_step_nm    
+            , t.dispo_user_id, tu.user_nm as dispo_user_nm, t.dispo_dept_cd, td.dept_nm as dispo_dept_nm, t.dispo_ymd
+            , t.amt_empty, t.amt_loaded, t.amt_gen,  replace(convert(varchar, cast(t.amt_gen as money),1),'.00','')   as amt_gen_t
+            , replace(convert(varchar, cast(t.freight_cost as money),1),'.00','') as freight_cost_t
+            , replace(convert(varchar, cast(t.total_cost as money),1),'.00','')   as total_cost_t
+            , c.vendor_cd as vendorCd, c.vendor_nm as vendorNm, fc.vendor_cd as freightCd, fc.vendor_nm as freightNm
+            , t.carrier
+            , t.dispo_dept_cd
+            --, t.dispo_cost
+            , t.freight_cost, t.total_cost, t.remark
+            --, t.dispo_cost_sum
+            , t.freight_cost_sum
+            ,  wc.ewst_div_cd, wcc.code_nm as ewst_div_nm, wc.ewst_class_cd, wc.ewst_class_nm, wm.ewst_dispo_mtd_cd, wm.ewst_dispo_mtd_nm, w.ewst_waste_no, w.ewst_waste_nm
+            , t.env_unit_cd as env_unit_cd, uc.code_nm as env_unit_nm
+            , w.ewst_phase_cd, wpc.code_nm as ewst_phase_nm 
+            , t.create_user_id, cu.user_nm as create_user_nm, t.create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, t.update_dt
+            , case when t.ewst_dispo_st_cd = '11' then 'true' else 'false' end as result_editable
+            , case when t.ewst_dispo_st_cd = '91' then 'true' else 'false' end as result_complete
+            , t.wgt_out_no
+            , t.wgt_iocnt
+            , t.wgt_rfno
+            , t.wgt_iogb
+            , case when t.wgt_iogb = 'I' then '반입'
+                else '반출'
+              end as wgt_iogb_nm
+            , t.wgt_bigo
+            , case
+               when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+               else dbo.GET_USER_NM(t.update_user_id) end    as writer_user_nm
+            , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+        from ewst_dispo_result t
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_ST') dc
+        on t.ewst_dispo_st_cd = dc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_DIV') ddc
+        on t.ewst_dispo_div_cd = ddc.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_STEP') dsc
+        on t.ewst_dispo_step_cd = dsc.code
+        left outer join com_vendor_mst c
+        on t.vendor_cd = c.vendor_cd  -- 운반업체
+        left outer join com_vendor_mst fc
+        on t.freight_vendor_cd = fc.vendor_cd  -- 처리업체
+        inner join ewst_waste w
+        on t.ewst_waste_no = w.ewst_waste_no
+        left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_PHASE') wpc
+        on w.ewst_phase_cd = wpc.code
+        inner join ewst_class wc
+        on w.ewst_class_cd = wc.ewst_class_cd
+        inner join ewst_dispo_mtd wm
+        on w.ewst_dispo_mtd_cd = wm.ewst_dispo_mtd_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DIV') wcc
+        on wc.ewst_div_cd = wcc.code
+        left outer join com_user tu
+        on t.dispo_user_id = tu.user_id
+        left outer join com_dept td
+        on t.dispo_dept_cd = td.dept_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on plant.code = t.plant_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_UNIT') uc
+        on t.env_unit_cd = uc.code
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left outer join com_user uu
+        on t.update_user_id = uu.user_id
+        where 1=1
+        <if test= "reqYmdFrom != null and !reqYmdFrom.equals('')">
+        and convert(datetime, t.dispo_ymd) between convert(datetime, #{reqYmdFrom}) and convert(datetime, #{reqYmdTo})+0.99999
+        </if>
+        <if test= "ewstDispoStCd != null and !ewstDispoStCd.equals('')">
+        and t.ewst_dispo_st_cd = #{ewstDispoStCd}
+        </if>
+        <if test= "ewstClassCd != null and !ewstClassCd.equals('')">
+        and w.ewst_class_cd = #{ewstClassCd}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and t.plant_cd = #{plantCd}
+        </if>
+        <if test= "ewstFreightCoNo != null and !ewstFreightCoNo.equals('')">
+        and t.ewst_freight_co_no = #{ewstFreightCoNo}
+        </if>
+        <if test= "ewstDispoCoNo != null and !ewstDispoCoNo.equals('')">
+        and t.ewst_dispo_co_no = #{ewstDispoCoNo}
+        </if>                        
+        <if test= "ewstWasteNo != null and !ewstWasteNo.equals('')">
+        and w.ewst_waste_no = #{ewstWasteNo}
+        </if>
+        <if test= "dispoDeptCd != null and !dispoDeptCd.equals('')">
+           and t.dispo_dept_cd = #{dispoDeptCd}
+        </if>                        
+        order by writer_dt desc, t.dispo_ymd desc, t.create_dt desc
+    </select>
+    
+    <select id= "getDisposalResult" resultType= "com.she.env.waste.model.DisposalResult">
+        select t.ewst_dispo_result_no
+            , t.plant_cd, plant.code_nm as plantNm, t.sell_yn
+            , t.ewst_dispo_st_cd, dc.code_nm as ewst_dispo_st_nm
+            , t.ewst_dispo_div_cd, ddc.code_nm as ewst_dispo_div_nm
+            , t.ewst_dispo_step_cd, dsc.code_nm as ewst_dispo_step_nm
+            , t.dispo_user_id, tu.user_nm as dispo_user_nm, t.dispo_dept_cd, td.dept_nm as dispo_dept_nm, t.dispo_ymd
+            , t.amt_empty, t.amt_loaded, t.amt_gen
+            , c.vendor_cd as vendorCd, c.vendor_nm as vendorNm, fc.vendor_cd as freightCd, fc.vendor_nm as freightNm
+            , t.carrier
+            --, t.dispo_cost
+            , t.freight_cost, t.total_cost, t.remark
+            --, t.dispo_cost_sum
+            , t.freight_cost_sum
+            ,  wc.ewst_div_cd, wcc.code_nm as ewst_div_nm, wc.ewst_class_cd, wc.ewst_class_nm, wm.ewst_dispo_mtd_cd, wm.ewst_dispo_mtd_nm, w.ewst_waste_no, w.ewst_waste_nm
+            , t.env_unit_cd as env_unit_cd, uc.code_nm as env_unit_nm
+            , w.ewst_phase_cd, wpc.code_nm as ewst_phase_nm
+            , t.create_user_id, cu.user_nm as create_user_nm, t.create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, t.update_dt
+            , t.allbaro_trans_num, t.allbaro_yn            
+            , case when t.ewst_dispo_st_cd = '11' then 'true' else 'false' end as result_editable
+            , case when t.ewst_dispo_st_cd = '91' then 'true' else 'false' end as result_complete
+            , t.wgt_out_no
+            , t.wgt_iocnt
+            , t.wgt_rfno
+            , t.wgt_iogb
+            , t.wgt_bigo
+        from ewst_dispo_result t
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_ST') dc
+        on t.ewst_dispo_st_cd = dc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_DIV') ddc
+        on t.ewst_dispo_div_cd = ddc.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_STEP') dsc
+        on t.ewst_dispo_step_cd = dsc.code
+        left outer join com_vendor_mst c
+        on t.vendor_cd = c.vendor_cd  -- 운반업체
+        left outer join com_vendor_mst fc
+        on t.freight_vendor_cd = fc.vendor_cd  -- 처리업체
+        inner join ewst_waste w
+        on t.ewst_waste_no = w.ewst_waste_no
+        left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_PHASE') wpc
+        on w.ewst_phase_cd = wpc.code
+        inner join ewst_class wc
+        on w.ewst_class_cd = wc.ewst_class_cd
+        inner join ewst_dispo_mtd wm
+        on w.ewst_dispo_mtd_cd = wm.ewst_dispo_mtd_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DIV') wcc
+        on wc.ewst_div_cd = wcc.code
+        left outer join com_user tu
+        on t.dispo_user_id = tu.user_id
+        left outer join com_dept td
+        on t.dispo_dept_cd = td.dept_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on plant.code = t.plant_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ENV_UNIT') uc
+        on t.env_unit_cd = uc.code
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left outer join com_user uu
+        on t.update_user_id = uu.user_id
+        where t.ewst_dispo_result_no = #{ewstDispoResultNo}
+    </select>
+    
+    <select id = "getDisposalRequsts" resultType= "com.she.env.waste.model.DisposalRequest">
+        select  
+              t.plant_cd, plant.code_nm as plant_nm, t.ewst_dispo_req_no, wc.ewst_div_cd, wcc.code_nm as ewst_div_nm, wc.ewst_class_cd, wc.ewst_class_nm, wm.ewst_dispo_mtd_cd, wm.ewst_dispo_mtd_nm, w.ewst_waste_no, w.ewst_waste_nm
+            , t.ewst_dispo_st_cd, dc.code_nm as ewst_dispo_st_nm, t.req_user_id, ru.user_nm as allreq_user_nm, t.req_dept_cd, rd.dept_nm as req_dept_nm, t.req_ymd
+            , t.amt_gen, t.env_unit_cd, uc.code_nm as env_unit_nm, t.remark, t.dispo_ymd, t.dispo_amt
+            , w.ewst_dispo_div_cd, wdc.code_nm as ewst_dispo_div_cd
+            , t.create_user_id, cu.user_nm as create_user_nm, t.create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, t.update_dt        
+            , ru.user_nm as req_user_nm
+            , a.wgt_out_no
+            , a.wgt_iocnt
+            , a.wgt_rfno
+            , a.wgt_iogb
+            , a.wgt_bigo
+         from ewst_dispo_result a
+        left outer join ewst_dispo_result_req b
+        on a.ewst_dispo_result_no = b.ewst_dispo_result_no
+        inner join ewst_dispo_req t
+        on t.ewst_dispo_req_no = b.ewst_dispo_req_no 
+        inner join ewst_waste w
+        on t.ewst_waste_no = w.ewst_waste_no
+        inner join ewst_class wc
+        on w.ewst_class_cd = wc.ewst_class_cd
+        inner join ewst_dispo_mtd wm
+        on w.ewst_dispo_mtd_cd = wm.ewst_dispo_mtd_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DIV') wcc
+        on wc.ewst_div_cd = wcc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_ST') dc
+        on t.ewst_dispo_st_cd = dc.code
+        inner join com_user ru
+        on t.req_user_id = ru.user_id
+        inner join com_dept rd
+        on t.req_dept_cd = rd.dept_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_UNIT') uc
+        on t.env_unit_cd = uc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_DIV') wdc
+        on w.ewst_dispo_div_cd = wdc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on plant.code = t.plant_cd
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left outer join com_user uu
+        on t.update_user_id = uu.user_id
+        where a.ewst_dispo_result_no = #{ewstDispoResultNo}     
+    </select>
+
+    <select id= "getDispoRateResult" resultType= "com.she.env.waste.model.DisporateDeptItem">
+    select dept_nm as dept_nm, sum(rate) as m01, max(t.amt_gen)/100 * sum(rate) as m02
+        from ewst_dispo_result t
+        inner join ewst_waste w on t.ewst_waste_no = w.ewst_waste_no
+        inner join ewst_waste_rate b on b.ewst_waste_no = t.ewst_waste_no  and b.plant_cd = t.plant_cd 
+        left outer join 
+        (
+            select 
+                 a.ewst_waste_rate_no as rate_no, a.plant_cd, a.year, b.month, a.ewst_waste_no, b.dept_cd, b.ewst_waste_rate_no, b.rate, d.dept_nm
+            from ewst_waste_rate a
+            inner join ewst_waste_rate_dept b
+            on a.ewst_waste_rate_no = b.ewst_waste_rate_no 
+            inner join com_dept d
+            on b.dept_cd = d.dept_cd
+        ) k 
+        on k.ewst_waste_rate_no = b.ewst_waste_rate_no
+        and k.plant_cd = t.plant_cd
+        and (k.year + k.month) = substring(replace(t.dispo_ymd,'-',''),1,6)
+        where t.ewst_dispo_result_no = #{ewstDispoResultNo}
+        and k.rate_no is not null
+        group by k.dept_nm
+    </select>
+
+    <insert id= "createDisposalResult" parameterType= "com.she.env.waste.model.DisposalResult">
+        <selectKey keyProperty= "ewstDispoResultNo" resultType= "int" order= "BEFORE">
+            select next value for seq_ewst_dispo_result as ewst_dispo_result_no
+          </selectKey>
+          insert into ewst_dispo_result(
+            ewst_dispo_result_no
+            , ewst_waste_no
+            , ewst_dispo_st_cd
+            , ewst_dispo_div_cd
+            , ewst_dispo_step_cd
+            , dispo_user_id
+            , dispo_dept_cd
+            , dispo_ymd
+            , amt_empty
+            , amt_loaded
+            , amt_gen
+            , vendor_cd
+            , freight_vendor_cd
+            , carrier
+            , freight_cost
+            , total_cost
+            , remark
+            , freight_cost_sum
+            , plant_cd
+            , env_unit_cd
+            , wgt_out_no
+            , wgt_iocnt
+            , wgt_rfno
+            , wgt_iogb
+            , wgt_bigo
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{ewstDispoResultNo}
+            , #{ewstWasteNo}
+            , #{ewstDispoStCd}
+            , #{ewstDispoDivCd}
+            , #{ewstDispoStepCd}
+            , #{dispoUserId}
+            , #{dispoDeptCd}
+            , #{dispoYmd}
+            , #{amtEmpty}
+            , #{amtLoaded}
+            , #{amtGen}
+            , #{vendorCd}
+            , #{freightCd}
+            , #{carrier}
+            , #{freightCost}
+            , #{totalCost}
+            , #{remark}
+            , #{freightCostSum}
+            , #{plantCd}
+            , #{envUnitCd}
+            , #{wgtOutNo}
+            , #{wgtIocnt}
+            , #{wgtRfno}
+            , #{wgtIogb}
+            , #{wgtBigo}
+            , #{createUserId}
+            , getdate()
+        )
+    </insert>
+    
+    <insert id = "createDispoRequests">
+            insert into ewst_dispo_result_req (ewst_dispo_result_no, ewst_dispo_req_no)
+        values (#{ewstDispoResultNo}, #{ewstDispoReqNo})
+    </insert>
+    
+    <update id="updateDispoReqComplete">
+        update ewst_dispo_req
+           set ewst_dispo_st_cd = '31'
+         where ewst_dispo_req_no = #{ewstDispoReqNo}
+    </update>
+    
+    <update id="updateDispoReqRequest">
+        update ewst_dispo_req
+           set ewst_dispo_st_cd = '11'
+         where ewst_dispo_req_no in (
+             select t.ewst_dispo_req_no
+             from ewst_dispo_req t
+             left outer join ewst_dispo_result_req y
+             on t.ewst_dispo_req_no = y.ewst_dispo_req_no
+             where ewst_dispo_st_cd = '91'
+               and y.ewst_dispo_req_no is null
+             group by t.ewst_dispo_req_no)
+    </update>
+    
+    <delete id = "deleteDispoRequests">
+        delete from ewst_dispo_result_req where ewst_dispo_result_no = #{ewstDispoResultNo}
+    </delete>
+    
+    <update id= "updateDisposalResult" parameterType= "com.she.env.waste.model.DisposalResult">
+        update ewst_dispo_result
+        set ewst_waste_no = #{ewstWasteNo}
+            , plant_cd = #{plantCd}
+            , ewst_dispo_st_cd = #{ewstDispoStCd}
+            , ewst_dispo_div_cd = #{ewstDispoDivCd}
+            , ewst_dispo_step_cd = #{ewstDispoStepCd}
+            , dispo_user_id = #{dispoUserId}
+            , dispo_dept_cd = #{dispoDeptCd}
+            , dispo_ymd = #{dispoYmd}
+            , amt_empty = #{amtEmpty}
+            , amt_loaded = #{amtLoaded}            
+            , amt_gen = #{amtGen}
+            , vendor_cd = #{vendorCd}
+            , freight_vendor_cd = #{freightCd}
+            , carrier = #{carrier}
+            , freight_cost = #{freightCost}
+            , freight_cost_sum = #{freightCostSum}
+            , total_cost = #{totalCost}
+            , sell_yn = #{sellYn}
+            , remark = #{remark}
+            , env_unit_cd = #{envUnitCd}
+            , wgt_out_no = #{wgtOutNo}
+            , wgt_iocnt = #{wgtIocnt}
+            , wgt_rfno = #{wgtRfno} 
+            , wgt_iogb = #{wgtIogb}
+            , wgt_bigo = #{wgtBigo}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+           where ewst_dispo_result_no = #{ewstDispoResultNo}
+    </update>
+    
+    <update id= "updateDisposalResultStatus">
+        update ewst_dispo_result
+        set ewst_dispo_st_cd = #{ewstDispoStCd}
+        where ewst_dispo_result_no = #{ewstDispoResultNo}
+    </update>
+    
+    <update id= "deleteDisposalResult">
+        delete ewst_dispo_result
+        where ewst_dispo_result_no = #{ewstDispoResultNo}
+        
+        delete ewst_dispo_result_req
+        where ewst_dispo_result_no = #{ewstDispoResultNo}
+    </update>
+    
+    <select id= "getDisposalResultsMtd" resultType= "com.she.env.waste.model.DisposalMtd">
+        select 
+            ewst_dispo_mtd_cd,
+            ewst_dispo_mtd_nm,
+            ewst_dispo_class_cd
+        from ewst_dispo_mtd
+        where use_yn = 'Y'    
+    </select>
+        
+    
+    <select id= "getDisposalResultsExcel" resultType= "com.she.env.waste.model.DisposalResult">
+ select t.ewst_dispo_result_no
+            , t.plant_cd, t.sell_yn
+            , t.ewst_dispo_st_cd, dc.code_nm as ewst_dispo_st_nm
+            , t.ewst_dispo_div_cd, ddc.code_nm as ewst_dispo_div_nm
+            , t.ewst_dispo_step_cd, dsc.code_nm as ewst_dispo_step_nm    
+            , t.dispo_user_id,  t.dispo_dept_cd as dispo_dept_nm, t.dispo_ymd
+            , t.amt_empty, t.amt_loaded, t.amt_gen
+            , c.vendor_cd as vendorCd, c.vendor_nm as vendorNm, fc.vendor_cd as freightCd, fc.vendor_nm as freightNm
+            , t.carrier
+            --, t.dispo_cost
+            , t.freight_cost, t.total_cost, t.remark
+            --, t.dispo_cost_sum
+            , t.freight_cost_sum
+            , t.allbaro_trans_num, t.allbaro_yn            
+            , case when t.ewst_dispo_st_cd = '11' then 'true' else 'false' end as result_editable
+            , case when t.ewst_dispo_st_cd = '91' then 'true' else 'false' end as result_complete
+        from ewst_dispo_result t
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_ST') dc
+        on t.ewst_dispo_st_cd = dc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_DIV') ddc
+        on t.ewst_dispo_div_cd = ddc.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_STEP') dsc
+        on t.ewst_dispo_step_cd = dsc.code
+        left outer join com_vendor_mst c
+        on t.freight_vendor_cd = c.vendor_cd  -- 운반업체
+        left outer join com_vendor_mst fc
+        on t.vendor_cd = fc.vendor_cd  -- 처리업체
+    </select>
+</mapper>

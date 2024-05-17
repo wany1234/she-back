@@ -1,0 +1,374 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.waste.operationLog.mapper.OperationMapper">
+  
+      <!-- 폐기물 처리 현황 -->
+       <select id= "getOperationStatus" resultType= "hashmap">
+            <if test = "totalTypeCd == '01'.toString()">
+ select 
+                    plant.code_nm as plant_nm, wc.ewst_class_nm,wc.ewst_class_cd, w.ewst_waste_nm, uc.code_nm as env_unit_nm 
+                   ,substring(a.dispo_ymd,1,4) as year,
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 1  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm1',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 2  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm2',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 3  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm3',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 4  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm4',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 5  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm5',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 6  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm6',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 7  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm7',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 8  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm8',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 9  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm9',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 10 then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm10',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 11 then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm11',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 12 then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm12',
+                    replace(convert(varchar, cast( sum(a.amt_gen) as money),1),'.00','') as 'sum'
+
+                from ewst_dispo_result a
+                inner join ewst_waste w
+                on a.ewst_waste_no = w.ewst_waste_no
+                <if test= "ewstWasteNo != null and !ewstWasteNo.equals('')">    
+                and w.ewst_waste_no = #{ewstWasteNo}
+                </if>
+                inner join ewst_class wc
+                on w.ewst_class_cd = wc.ewst_class_cd
+                inner join ewst_dispo_mtd wm
+                on w.ewst_dispo_mtd_cd = wm.ewst_dispo_mtd_cd
+                inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_UNIT') uc
+                on a.env_unit_cd = uc.code
+                inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+                on plant.code = a.plant_cd
+                where a.ewst_dispo_st_cd = '91' -- 처리완료건 
+                    
+                <if test= "measureYear != null and !measureYear.equals('')">    
+                and substring(a.dispo_ymd,1,4) = #{measureYear}
+                </if>                                
+                <if test= "ewstClassCd != null and !ewstClassCd.equals('')">    
+                and wc.ewst_class_cd = #{ewstClassCd}
+                </if>                            
+                <if test= "plantCd != null and !plantCd.equals('')">    
+                and a.plant_cd = #{plantCd}
+                </if>                    
+                group by plant.code_nm, a.plant_cd, wc.ewst_class_nm, wc.ewst_class_cd , w.ewst_waste_nm, uc.code_nm, substring(a.dispo_ymd,1,4)
+
+            </if>    
+            <if test = "totalTypeCd == '02'.toString()">
+select 
+                plant.code_nm as plant_nm, freight.vendor_nm as freight_nm, vendor.vendor_nm,  wc.ewst_class_nm, w.ewst_waste_nm, uc.code_nm as env_unit_nm , substring(a.dispo_ymd,1,4) as year,
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 1  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm1',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 2  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm2',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 3  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm3',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 4  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm4',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 5  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm5',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 6  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm6',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 7  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm7',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 8  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm8',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 9  then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm9',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 10 then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm10',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 11 then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm11',
+                    replace(convert(varchar, cast( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 12 then a.amt_gen else 0 end ) as money),1),'.00','') as 'mm12',
+                    replace(convert(varchar, cast( sum(a.amt_gen) as money),1),'.00','') as 'sum'
+            from ewst_dispo_result a
+            inner join ewst_waste w
+            on a.ewst_waste_no = w.ewst_waste_no
+            inner join ewst_class wc
+            on w.ewst_class_cd = wc.ewst_class_cd
+            inner join ewst_dispo_mtd wm
+            on w.ewst_dispo_mtd_cd = wm.ewst_dispo_mtd_cd
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_UNIT') uc
+            on a.env_unit_cd = uc.code
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            on plant.code = a.plant_cd
+            inner join com_vendor_mst vendor 
+            on vendor.vendor_cd = a.vendor_cd
+            and vendor.use_yn = 'Y' and vendor.vendor_type_cd = 'CVET2'
+            inner join com_vendor_mst freight
+            on freight.vendor_cd = a.freight_vendor_cd
+            and freight.use_yn = 'Y' and freight.vendor_type_cd = 'CVET2'
+
+             
+            where a.ewst_dispo_st_cd = '91' -- 처리완료건 
+             <if test= "measureYear != null and !measureYear.equals('')">    
+             and substring(a.dispo_ymd,1,4) = #{measureYear}
+             </if>                                
+             <if test= "ewstClassCd != null and !ewstClassCd.equals('')">    
+             and wc.ewst_class_cd = #{ewstClassCd}
+             </if>                            
+             <if test= "plantCd != null and !plantCd.equals('')">    
+             and a.plant_cd = #{plantCd}
+             </if>                
+            group by plant.code_nm, wc.ewst_class_nm , w.ewst_waste_nm, uc.code_nm, substring(a.dispo_ymd,1,4), freight.vendor_nm, vendor.vendor_nm
+
+        </if>        
+        
+       </select>    
+       
+      <select id= "getWaterUnitStatus" resultType= "hashmap">
+        select   a.plant_cd, 1 seq_num,plant.code_nm as plant_nm, '생산량합계' as gubun, max(d.unit_nm) as  unit_nm
+                ,  replace(convert(varchar, cast( isnull( sum(itm_val)  , '0')  as money),1),'.00','')  as sum
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '01' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm1'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '02' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm2'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '03' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm3'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '04' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm4'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '05' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm5'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '06' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm6'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '07' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm7'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '08' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm8'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '09' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm9'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '10' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm10'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '11' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm11'
+                ,  replace(convert(varchar, cast( isnull( sum(case a.month when '12' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm12'
+        from mgt_mg_info_prdt a inner join mgt_mg_info_prdt_rslt b on a.mgt_mg_info_prdt_no=b.mgt_mg_info_prdt_no and a.plant_cd='3000'
+        inner join mgt_mg_info_itm_dept_att c on b.mgt_mg_info_dept_att_no=c.mgt_mg_info_dept_att_no and  c.mgt_mg_info_itm_no=2202   
+        inner join mgt_mg_info_itm d on c.mgt_mg_info_itm_no=d.mgt_mg_info_itm_no  
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on plant.code = a.plant_cd
+        where 1=1
+        <if test= "measureYear != null and !measureYear.equals('')">    
+        and a.year = #{measureYear}
+        </if>                                                        
+        <if test= "plantCd != null and !plantCd.equals('')">    
+        and a.plant_cd = #{plantCd}
+        </if>
+        group by a.plant_cd, plant.code_nm
+        
+        UNION ALL
+        
+        select   a.plant_cd, 2 seq_num, plant.code_nm as plant_nm,'생산금액합계' as gubun, max(d.unit_nm) as  unit_nm
+                ,replace(convert(varchar, cast( isnull( sum(itm_val) , '0')  as money),1),'.00','') as sum
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '01' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm1'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '02' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm2'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '03' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm3'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '04' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm4'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '05' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm5'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '06' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm6'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '07' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm7'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '08' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm8'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '09' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm9'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '10' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm10'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '11' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm11'
+                ,replace(convert(varchar, cast( isnull( sum(case a.month when '12' then itm_val else 0 end) , '0')  as money),1),'.00','') as 'mm12'
+        from mgt_mg_info_prdt a inner join mgt_mg_info_prdt_rslt b on a.mgt_mg_info_prdt_no=b.mgt_mg_info_prdt_no  and a.plant_cd != '3000'
+        inner join mgt_mg_info_itm_dept_att c on b.mgt_mg_info_dept_att_no=c.mgt_mg_info_dept_att_no and  c.mgt_mg_info_itm_no=2201 
+        inner join mgt_mg_info_itm d on c.mgt_mg_info_itm_no=d.mgt_mg_info_itm_no  
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on plant.code = a.plant_cd
+        where 1=1
+        <if test= "measureYear != null and !measureYear.equals('')">    
+            and a.year = #{measureYear}
+        </if>                                                        
+        <if test= "plantCd != null and !plantCd.equals('')">    
+            and a.plant_cd = #{plantCd}
+        </if>
+        group by a.plant_cd,plant.code_nm
+
+        UNION ALL
+           
+        select
+                a.plant_cd, 3 seq_num, plant.code_nm as plant_nm, '폐기물처리금액합계' as ewst_div_nm, '원' as unit_nm,
+                replace(convert(varchar, cast( isnull( sum(total_cost) , '0')  as money),1),'.00','') as total,
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 1  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm1',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 2  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm2',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 3  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm3',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 4  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm4',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 5  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm5',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 6  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm6',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 7  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm7',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 8  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm8',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 9  then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm9',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 10 then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm10',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 11 then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm11',
+                replace(convert(varchar, cast( isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 12 then total_cost else 0 end ) , '0')  as money),1),'.00','')as 'mm12'       
+        from ewst_dispo_result a
+        inner join ewst_waste w on a.ewst_waste_no = w.ewst_waste_no
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on plant.code = a.plant_cd
+        where 1=1
+        and  a.ewst_dispo_st_cd = '91' -- 처리완료건
+        <if test= "measureYear != null and !measureYear.equals('')">    
+            and substring(a.dispo_ymd,1,4) = #{measureYear}
+        </if>                                                        
+        <if test= "plantCd != null and !plantCd.equals('')">    
+            and a.plant_cd = #{plantCd}
+        </if>
+      group by a.plant_cd,plant.code_nm
+
+      union all
+
+       select g.plant_cd, 4 seq_num, plant.code_nm as plant_nm, '원단위' as ewst_div_nm, '원' as unit_nm
+                <!-- , replace(convert(varchar, cast(  case g.itm_sum when 0 then '0' else 100*h.total/(g.itm_sum) end as money),1),'.00','') as total_cal -->
+                , replace(convert(varchar, cast(
+                    case g.mm1 when 0 then '0' else 100*h.mm1/(g.mm1) end + 
+                    case g.mm2 when 0 then '0' else 100*h.mm2/(g.mm2) end + 
+                    case g.mm3 when 0 then '0' else 100*h.mm3/(g.mm3) end + 
+                    case g.mm4 when 0 then '0' else 100*h.mm4/(g.mm4) end + 
+                    case g.mm5 when 0 then '0' else 100*h.mm5/(g.mm5) end + 
+                    case g.mm6 when 0 then '0' else 100*h.mm6/(g.mm6) end + 
+                    case g.mm7 when 0 then '0' else 100*h.mm7/(g.mm7) end + 
+                    case g.mm8 when 0 then '0' else 100*h.mm8/(g.mm8) end + 
+                    case g.mm9 when 0 then '0' else 100*h.mm9/(g.mm9) end + 
+                    case g.mm10 when 0 then '0' else 100*h.mm10/(g.mm10) end + 
+                    case g.mm11 when 0 then '0' else 100*h.mm11/(g.mm11) end + 
+                    case g.mm12 when 0 then '0' else 100*h.mm12/(g.mm12) end
+                   as money),1),'.00','') as total_cal
+                , replace(convert(varchar, cast(  case g.mm1 when 0 then '0' else 100*h.mm1/(g.mm1) end as money),1),'.00','') as 'mm1'
+                , replace(convert(varchar, cast(  case g.mm2 when 0 then '0' else 100*h.mm2/(g.mm2) end as money),1),'.00','') as 'mm2'
+                , replace(convert(varchar, cast(  case g.mm3 when 0 then '0' else 100*h.mm3/(g.mm3) end as money),1),'.00','') as 'mm3'
+                , replace(convert(varchar, cast(  case g.mm4 when 0 then '0' else 100*h.mm4/(g.mm4) end as money),1),'.00','') as 'mm4'
+                , replace(convert(varchar, cast(  case g.mm5 when 0 then '0' else 100*h.mm5/(g.mm5) end as money),1),'.00','') as 'mm5'
+                , replace(convert(varchar, cast(  case g.mm6 when 0 then '0' else 100*h.mm6/(g.mm6) end as money),1),'.00','') as 'mm6'
+                , replace(convert(varchar, cast(  case g.mm7 when 0 then '0' else 100*h.mm7/(g.mm7) end as money),1),'.00','') as 'mm7'
+                , replace(convert(varchar, cast(  case g.mm8 when 0 then '0' else 100*h.mm8/(g.mm8) end as money),1),'.00','') as 'mm8'
+                , replace(convert(varchar, cast(  case g.mm9 when 0 then '0' else 100*h.mm9/(g.mm9) end as money),1),'.00','') as 'mm9'
+                , replace(convert(varchar, cast(  case g.mm10 when 0 then '0' else 100*h.mm10/(g.mm10) end as money),1),'.00','') as 'mm10'
+                , replace(convert(varchar, cast(  case g.mm11 when 0 then '0' else 100*h.mm11/(g.mm11) end as money),1),'.00','') as 'mm11'
+                , replace(convert(varchar, cast(  case g.mm12 when 0 then '0' else 100*h.mm12/(g.mm12) end as money),1),'.00','') as 'mm12'
+
+                
+            from 
+            (select   a.plant_cd 
+                ,isnull( sum(itm_val) , 0)   as itm_sum
+                ,isnull( sum(case a.month when '01' then itm_val else 0 end) , 0)   as 'mm1'
+                ,isnull( sum(case a.month when '02' then itm_val else 0 end) , 0)   as 'mm2'
+                ,isnull( sum(case a.month when '03' then itm_val else 0 end) , 0)   as 'mm3'
+                ,isnull( sum(case a.month when '04' then itm_val else 0 end) , 0)   as 'mm4'
+                ,isnull( sum(case a.month when '05' then itm_val else 0 end) , 0)   as 'mm5'
+                ,isnull( sum(case a.month when '06' then itm_val else 0 end) , 0)   as 'mm6'
+                ,isnull( sum(case a.month when '07' then itm_val else 0 end) , 0)   as 'mm7'
+                ,isnull( sum(case a.month when '08' then itm_val else 0 end) , 0)   as 'mm8'
+                ,isnull( sum(case a.month when '09' then itm_val else 0 end) , 0)   as 'mm9'
+                ,isnull( sum(case a.month when '10' then itm_val else 0 end) , 0)   as 'mm10'
+                ,isnull( sum(case a.month when '11' then itm_val else 0 end) , 0)   as 'mm11'
+                ,isnull( sum(case a.month when '12' then itm_val else 0 end) , 0)   as 'mm12'
+            from mgt_mg_info_prdt a inner join mgt_mg_info_prdt_rslt b on a.mgt_mg_info_prdt_no=b.mgt_mg_info_prdt_no  and a.plant_cd='3000'
+            inner join mgt_mg_info_itm_dept_att c on b.mgt_mg_info_dept_att_no=c.mgt_mg_info_dept_att_no and  c.mgt_mg_info_itm_no=2202 
+            inner join mgt_mg_info_itm d on c.mgt_mg_info_itm_no=d.mgt_mg_info_itm_no 
+            where 1=1
+            <if test= "measureYear != null and !measureYear.equals('')">    
+                and a.year = #{measureYear}
+            </if>                                                        
+            <if test= "plantCd != null and !plantCd.equals('')">    
+                and a.plant_cd = #{plantCd}
+            </if>
+                group by a.plant_cd
+            ) g inner join 
+            (select
+                    a.plant_cd, 
+                     isnull( sum(dispo_cost_sum) , 0)   as total,
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 1  then dispo_cost_sum else 0 end ) , 0)  as 'mm1',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 2  then dispo_cost_sum else 0 end ) , 0)  as 'mm2',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 3  then dispo_cost_sum else 0 end ) , 0)  as 'mm3',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 4  then dispo_cost_sum else 0 end ) , 0)  as 'mm4',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 5  then dispo_cost_sum else 0 end ) , 0)  as 'mm5',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 6  then dispo_cost_sum else 0 end ) , 0)  as 'mm6',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 7  then dispo_cost_sum else 0 end ) , 0)  as 'mm7',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 8  then dispo_cost_sum else 0 end ) , 0)  as 'mm8',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 9  then dispo_cost_sum else 0 end ) , 0)  as 'mm9',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 10 then dispo_cost_sum else 0 end ) , 0)  as 'mm10',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 11 then dispo_cost_sum else 0 end ) , 0)  as 'mm11',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 12 then dispo_cost_sum else 0 end ) , 0)  as 'mm12'       
+            from ewst_dispo_result a
+                    
+            inner join ewst_waste w on a.ewst_waste_no = w.ewst_waste_no
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on plant.code = a.plant_cd
+            where 1=1
+                and  a.ewst_dispo_st_cd = '91' -- 처리완료건
+                <if test= "measureYear != null and !measureYear.equals('')">    
+                and substring(a.dispo_ymd,1,4) = #{measureYear}
+                </if>                                                        
+                <if test= "plantCd != null and !plantCd.equals('')">    
+                    and a.plant_cd = #{plantCd}
+                </if>
+            group by a.plant_cd,plant.code_nm
+            ) h on g.plant_cd=h.plant_cd
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on plant.code = g.plant_cd
+            where 1=1 
+
+            union all
+
+            select g.plant_cd, 4 seq_num, plant.code_nm as plant_nm, '처리금액/생산금액 비율' as ewst_div_nm, '%' as unit_nm
+                <!-- , replace(convert(varchar, cast(  case g.itm_sum*1000000 when 0 then '0' else 100*h.total/(g.itm_sum*1000000) end as money),1),'.00','') as total_cal -->
+                , replace(convert(varchar, cast(
+                    case g.mm1*1000000 when 0 then '0' else 100*h.mm1/(g.mm1*1000000) end + 
+                    case g.mm2*1000000 when 0 then '0' else 100*h.mm2/(g.mm2*1000000) end + 
+                    case g.mm3*1000000 when 0 then '0' else 100*h.mm3/(g.mm3*1000000) end + 
+                    case g.mm4*1000000 when 0 then '0' else 100*h.mm4/(g.mm4*1000000) end + 
+                    case g.mm5*1000000 when 0 then '0' else 100*h.mm5/(g.mm5*1000000) end + 
+                    case g.mm6*1000000 when 0 then '0' else 100*h.mm6/(g.mm6*1000000) end + 
+                    case g.mm7*1000000 when 0 then '0' else 100*h.mm7/(g.mm7*1000000) end + 
+                    case g.mm8*1000000 when 0 then '0' else 100*h.mm8/(g.mm8*1000000) end + 
+                    case g.mm9*1000000 when 0 then '0' else 100*h.mm9/(g.mm9*1000000) end + 
+                    case g.mm10*1000000 when 0 then '0' else 100*h.mm10/(g.mm10*1000000) end + 
+                    case g.mm11*1000000 when 0 then '0' else 100*h.mm11/(g.mm11*1000000) end + 
+                    case g.mm12*1000000 when 0 then '0' else 100*h.mm12/(g.mm12*1000000) end
+                   as money),1),'.00','') as total_cal
+                , replace(convert(varchar, cast(  case g.mm1*1000000 when 0 then '0' else 100*h.mm1/(g.mm1*1000000) end as money),1),'.00','') as 'mm1'
+                , replace(convert(varchar, cast(  case g.mm2*1000000 when 0 then '0' else 100*h.mm2/(g.mm2*1000000) end as money),1),'.00','') as 'mm2'
+                , replace(convert(varchar, cast(  case g.mm3*1000000 when 0 then '0' else 100*h.mm3/(g.mm3*1000000) end as money),1),'.00','') as 'mm3'
+                , replace(convert(varchar, cast(  case g.mm4*1000000 when 0 then '0' else 100*h.mm4/(g.mm4*1000000) end as money),1),'.00','') as 'mm4'
+                , replace(convert(varchar, cast(  case g.mm5*1000000 when 0 then '0' else 100*h.mm5/(g.mm5*1000000) end as money),1),'.00','') as 'mm5'
+                , replace(convert(varchar, cast(  case g.mm6*1000000 when 0 then '0' else 100*h.mm6/(g.mm6*1000000) end as money),1),'.00','') as 'mm6'
+                , replace(convert(varchar, cast(  case g.mm7*1000000 when 0 then '0' else 100*h.mm7/(g.mm7*1000000) end as money),1),'.00','') as 'mm7'
+                , replace(convert(varchar, cast(  case g.mm8*1000000 when 0 then '0' else 100*h.mm8/(g.mm8*1000000) end as money),1),'.00','') as 'mm8'
+                , replace(convert(varchar, cast(  case g.mm9*1000000 when 0 then '0' else 100*h.mm9/(g.mm9*1000000) end as money),1),'.00','') as 'mm9'
+                , replace(convert(varchar, cast(  case g.mm10*1000000 when 0 then '0' else 100*h.mm10/(g.mm10*1000000) end as money),1),'.00','') as 'mm10'
+                , replace(convert(varchar, cast(  case g.mm11*1000000 when 0 then '0' else 100*h.mm11/(g.mm11*1000000) end as money),1),'.00','') as 'mm11'
+                , replace(convert(varchar, cast(  case g.mm12*1000000 when 0 then '0' else 100*h.mm12/(g.mm12*1000000) end as money),1),'.00','') as 'mm12'
+            from 
+            (select   a.plant_cd 
+                ,isnull( sum(itm_val) , 0)   as itm_sum
+                ,isnull( sum(case a.month when '01' then itm_val else 0 end) , 0)   as 'mm1'
+                ,isnull( sum(case a.month when '02' then itm_val else 0 end) , 0)   as 'mm2'
+                ,isnull( sum(case a.month when '03' then itm_val else 0 end) , 0)   as 'mm3'
+                ,isnull( sum(case a.month when '04' then itm_val else 0 end) , 0)   as 'mm4'
+                ,isnull( sum(case a.month when '05' then itm_val else 0 end) , 0)   as 'mm5'
+                ,isnull( sum(case a.month when '06' then itm_val else 0 end) , 0)   as 'mm6'
+                ,isnull( sum(case a.month when '07' then itm_val else 0 end) , 0)   as 'mm7'
+                ,isnull( sum(case a.month when '08' then itm_val else 0 end) , 0)   as 'mm8'
+                ,isnull( sum(case a.month when '09' then itm_val else 0 end) , 0)   as 'mm9'
+                ,isnull( sum(case a.month when '10' then itm_val else 0 end) , 0)   as 'mm10'
+                ,isnull( sum(case a.month when '11' then itm_val else 0 end) , 0)   as 'mm11'
+                ,isnull( sum(case a.month when '12' then itm_val else 0 end) , 0)   as 'mm12'
+            from mgt_mg_info_prdt a inner join mgt_mg_info_prdt_rslt b on a.mgt_mg_info_prdt_no=b.mgt_mg_info_prdt_no  and a.plant_cd!='3000'
+            inner join mgt_mg_info_itm_dept_att c on b.mgt_mg_info_dept_att_no=c.mgt_mg_info_dept_att_no and  c.mgt_mg_info_itm_no=2201 
+            inner join mgt_mg_info_itm d on c.mgt_mg_info_itm_no=d.mgt_mg_info_itm_no 
+            where 1=1
+                <if test= "measureYear != null and !measureYear.equals('')">    
+                    and a.year = #{measureYear}
+                </if>                                                        
+                <if test= "plantCd != null and !plantCd.equals('')">    
+                    and a.plant_cd = #{plantCd}
+                </if>
+                group by a.plant_cd
+            ) g inner join 
+            (select
+                    a.plant_cd, 
+                     isnull( sum(dispo_cost_sum) , 0)   as total,
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 1  then dispo_cost_sum else 0 end ) , 0)  as 'mm1',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 2  then dispo_cost_sum else 0 end ) , 0)  as 'mm2',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 3  then dispo_cost_sum else 0 end ) , 0)  as 'mm3',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 4  then dispo_cost_sum else 0 end ) , 0)  as 'mm4',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 5  then dispo_cost_sum else 0 end ) , 0)  as 'mm5',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 6  then dispo_cost_sum else 0 end ) , 0)  as 'mm6',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 7  then dispo_cost_sum else 0 end ) , 0)  as 'mm7',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 8  then dispo_cost_sum else 0 end ) , 0)  as 'mm8',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 9  then dispo_cost_sum else 0 end ) , 0)  as 'mm9',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 10 then dispo_cost_sum else 0 end ) , 0)  as 'mm10',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 11 then dispo_cost_sum else 0 end ) , 0)  as 'mm11',
+                     isnull( sum(case when replace(substring(a.dispo_ymd,6,2),'-','') = 12 then dispo_cost_sum else 0 end ) , 0)  as 'mm12'       
+            from ewst_dispo_result a
+                    
+            inner join ewst_waste w on a.ewst_waste_no = w.ewst_waste_no
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on plant.code = a.plant_cd
+            where 1=1
+                and  a.ewst_dispo_st_cd = '91' -- 처리완료건
+                <if test= "measureYear != null and !measureYear.equals('')">    
+                and substring(a.dispo_ymd,1,4) = #{measureYear}
+                </if>                                                        
+                <if test= "plantCd != null and !plantCd.equals('')">    
+                    and a.plant_cd = #{plantCd}
+                </if>
+            group by a.plant_cd,plant.code_nm
+            ) h on g.plant_cd=h.plant_cd
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on plant.code = g.plant_cd
+            where 1=1 
+
+            order by a.plant_cd, seq_num
+       </select>                 
+</mapper>

@@ -1,0 +1,139 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.water.facility.mapper.PreventFacMapper">
+    <select id= "getPreventFacs" resultType= "com.she.env.water.model.PreventFac">
+    select
+             p.plant_cd as plantCd
+            ,plant.code_nm as plantNm
+            ,p.dept_cd as deptCd
+            ,dept.dept_nm as deptNm
+            ,replace(convert(varchar, cast(p.vol as money),1),'.00','') as vol
+            ,p.unit_cd as unitCd
+            ,unit.code_nm as unitNm
+            ,p.ewtr_clean_fac_no as ewtrCleanFacNo
+            ,clean.ewtr_clean_fac_nm as ewtrCleanFacNm
+            ,p.ewtr_prevent_fac_no
+            ,p.ewtr_prevent_fac_nm
+            ,p.ewtr_dispo_mtd_cd
+            ,c.code_nm as ewtr_dispo_mtd_nm
+            ,p.remark
+            ,p.sort_order
+            ,p.use_yn
+            ,case when p.use_yn = 'Y' 
+                then '사용'else '미사용'
+                end as use_yn_nm
+            ,p.create_user_id
+            ,p.create_dt
+            ,p.update_user_id
+            ,p.update_dt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+            , case
+                 when dbo.GET_USER_NM(p.update_user_id) = '' then dbo.GET_USER_NM(p.create_user_id)
+                 else dbo.GET_USER_NM(p.update_user_id) end    as writer_user_nm
+            , case when p.update_dt is null then convert(date, p.create_dt) else convert(date, p.update_dt) end   as writer_dt
+        from ewtr_prevent_fac p
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWTR_DISPO_MTD') c on p.ewtr_dispo_mtd_cd = c.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on p.plant_cd = plant.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ENV_UNIT') unit on p.unit_cd = unit.code
+        left outer join com_dept dept on p.dept_cd = dept.dept_cd
+        left outer join ewtr_clean_fac clean on p.ewtr_clean_fac_no = clean.ewtr_clean_fac_no
+        left outer join com_user cu on p.create_user_id = cu.user_id
+        left outer join com_user uu on p.update_user_id = uu.user_id
+        where 1=1
+        <if test='useYn != null and useYn != ""'>
+        and p.use_yn = #{useYn}
+        </if>
+        <if test= "deptCd != null and !deptCd.equals('')">
+        and p.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and p.plant_cd = #{plantCd}
+        </if>
+        <if test= "ewtrCleanFacNo != null and ewtrCleanFacNo > 0">
+        and p.ewtr_clean_fac_no = #{ewtrCleanFacNo}
+        </if>
+        <if test= "ewtrPreventFacNm != null and !ewtrPreventFacNm.equals('')">
+        and upper(p.ewtr_prevent_fac_nm) like '%'+upper(#{ewtrPreventFacNm})+'%'
+        </if>    
+        order by writer_dt desc, p.plant_cd
+    </select>
+
+    <select id= "getPreventFac" parameterType= "int" resultType= "com.she.env.water.model.PreventFac">
+    select
+             p.plant_cd
+            ,p.dept_cd
+            ,p.vol
+            ,p.unit_cd
+            ,p.ewtr_clean_fac_no
+            ,p.ewtr_prevent_fac_no
+            ,p.ewtr_prevent_fac_nm
+            ,p.ewtr_dispo_mtd_cd
+            ,p.remark
+            ,p.sort_order
+            ,p.use_yn
+            ,p.create_user_id
+            ,p.create_dt
+            ,p.update_user_id
+            ,p.update_dt
+        from ewtr_prevent_fac p
+        where p.ewtr_prevent_fac_no = #{ewtrPreventFacNo}
+    </select>
+
+    <insert id= "createPreventFac" parameterType= "com.she.env.water.model.PreventFac">
+        <selectKey keyProperty= "ewtrPreventFacNo" resultType= "int" order= "BEFORE">
+            select next value for seq_ewtr_prevent_fac
+        </selectKey>
+        insert into ewtr_prevent_fac
+        ( 
+            ewtr_prevent_fac_no
+            ,ewtr_prevent_fac_nm
+            ,ewtr_dispo_mtd_cd
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,plant_cd
+            ,dept_cd
+            ,vol
+            ,unit_cd
+            ,ewtr_clean_fac_no
+            ,create_user_id
+            ,create_dt
+        )
+        VALUES
+        ( 
+            #{ewtrPreventFacNo}
+            ,#{ewtrPreventFacNm}
+            ,#{ewtrDispoMtdCd}
+            ,#{remark}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{plantCd}
+            ,#{deptCd}
+            ,#{vol}
+            ,#{unitCd}
+            ,#{ewtrCleanFacNo}
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>
+
+    <update id= "updatePreventFac" parameterType= "com.she.env.water.model.PreventFac">
+        update ewtr_prevent_fac
+        SET ewtr_prevent_fac_nm = #{ewtrPreventFacNm}
+            ,ewtr_dispo_mtd_cd = #{ewtrDispoMtdCd}
+            ,remark = #{remark}
+            ,sort_order = #{sortOrder}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,plant_cd = #{plantCd}
+            ,dept_cd = #{deptCd}
+            ,vol = #{vol}
+            ,unit_cd =  #{unitCd}
+            ,ewtr_clean_fac_no = #{ewtrCleanFacNo}
+            ,update_dt = getDate()
+        where ewtr_prevent_fac_no = #{ewtrPreventFacNo}
+    </update>
+
+</mapper>

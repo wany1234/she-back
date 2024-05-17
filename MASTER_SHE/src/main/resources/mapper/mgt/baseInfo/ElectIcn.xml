@@ -1,0 +1,293 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.baseInfo.mapper.ElectIcnMapper">
+
+    <select id="getMgtInfoItemDetail" resultType="com.she.mgt.model.MgtMgInfoItmDeptAtt">
+         /* ElectlcnMapper.getMgtInfoItem [Electlcn.xml] */
+        select  miida.mgt_mg_info_dept_att_no
+              , miida.mgt_mg_info_itm_no
+              , miida.plant_cd
+              , cm1.code_nm as plant_nm
+              , mii.info_itm_type_cd
+              , cm2.code_nm as info_itm_type_nm
+              , mii.info_itm_att_cd
+              , cm3.code_nm as info_itm_att_nm
+              , mii.mg_info_itm_nm
+              , miida.dept_att_nm
+              , miida.use_yn
+              , case when miida.use_yn = 'Y' then '사용'
+                     else '미사용'
+                 end as use_yn_nm
+              , miida.sort_order
+          from mgt_mg_info_itm_dept_att miida
+         inner join mgt_mg_info_itm mii
+            on miida.mgt_mg_info_itm_no = mii.mgt_mg_info_itm_no
+         inner join com_code_master cm1
+            on cm1.code = miida.plant_cd
+           and cm1.code_group_cd = 'COM_PLANT_CD'
+         inner join com_code_master cm2
+            on cm2.code = mii.info_itm_type_cd
+           and cm2.code_group_cd = 'MGT_INFO_CLS'
+         inner join com_code_master cm3
+            on cm3.code = mii.info_itm_att_cd
+           and cm3.code_group_cd = 'MICS2'
+         where 1=1
+         <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(mgtMgInfoDeptAttNo)">
+           and miida.mgt_mg_info_dept_att_no =#{mgtMgInfoDeptAttNo}
+         </if>
+         order by miida.sort_order
+    </select>
+
+    <select id= "getMgtInfoItem" resultType= "com.she.mgt.model.MgtMgInfoItmDeptAtt">
+        /* ElectlcnMapper.getMgtInfoItem [Electlcn.xml] */
+        select  miida.mgt_mg_info_dept_att_no
+              , miida.mgt_mg_info_itm_no
+              , miida.plant_cd
+              , cm1.code_nm as plant_nm
+              , mii.info_itm_type_cd
+              , cm2.code_nm as info_itm_type_nm
+              , mii.info_itm_att_cd
+              , cm3.code_nm as info_itm_att_nm
+              , mii.mg_info_itm_nm
+              , miida.dept_att_nm
+              , miida.use_yn
+              , case when miida.use_yn = 'Y' then '사용'
+                     else '미사용'
+                 end as use_yn_nm
+              , miida.sort_order
+          from mgt_mg_info_itm_dept_att miida
+         inner join mgt_mg_info_itm mii
+            on miida.mgt_mg_info_itm_no = mii.mgt_mg_info_itm_no
+         inner join com_code_master cm1
+            on cm1.code = miida.plant_cd
+           and cm1.code_group_cd = 'COM_PLANT_CD'
+         inner join com_code_master cm2
+            on cm2.code = mii.info_itm_type_cd
+           and cm2.code_group_cd = 'MGT_INFO_CLS'
+         inner join com_code_master cm3
+            on cm3.code = mii.info_itm_att_cd
+           and cm3.code_group_cd = 'MICS2'
+         where 1=1
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(plantCd)">
+           and miida.plant_cd = #{plantCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(infoItmAttCd)">
+           and mii.info_itm_att_cd = #{infoItmAttCd}
+        </if>
+         order by miida.sort_order
+    </select>
+
+    <!-- 경영정보항목 목록 조회 -->
+    <select id= "getMgtMgInfoItemList" resultType= "com.she.mgt.model.MgtMgInfoItm">
+        /* ElectlcnMapper.getMgtMgInfoItemList [Electlcn.xml] */
+        select   mgt_mg_info_itm_no
+               , info_itm_type_cd
+               , info_itm_att_cd
+               , mg_info_itm_nm
+               , use_yn
+               , sort_order
+               , p_mgt_mg_info_itm_no
+               , unit_nm
+          from mgt_mg_info_itm
+         where use_yn = 'Y'
+           and info_itm_att_cd in ('MI2PR', 'MI2EG')
+    </select>
+
+    <!-- 등록된 경영정보항목 확인 -->
+    <select id="checkMgtinfoitem" resultType="int">
+        /* ElectlcnMapper.checkMgtinfoitem [Electlcn.xml] */
+        select count(*) as cnt
+          from mgt_mg_info_itm_dept_att
+         where plant_cd = #{plantCd}
+           and mgt_mg_info_itm_no = #{mgtMgInfoItmNo}
+           and dept_att_nm = #{deptAttNm}
+    </select>
+
+    <!-- 경영정보 부서구분명 등록 -->
+    <insert id="createMgtinfoitem" parameterType= "com.she.mgt.model.MgtMgInfoItmDeptAtt">
+      <selectKey keyProperty= "mgtMgInfoDeptAttNo" resultType= "int" order= "BEFORE">
+        select next value for seq_mgt_mg_info_itm_dept_att as mgtMgInfoDeptAttNo
+      </selectKey>
+          /* ElectlcnMapper.createMgtinfoitem [Electlcn.xml] */
+          insert into mgt_mg_info_itm_dept_att
+                 (
+                    mgt_mg_info_dept_att_no
+                  , mgt_mg_info_itm_no
+                  , plant_cd
+                  , dept_att_nm
+                  , use_yn
+                  , sort_order
+                  , create_user_id
+                  , create_dt
+                 )
+                 values
+                 (
+                    #{mgtMgInfoDeptAttNo}
+                  , #{mgtMgInfoItmNo}
+                  , #{plantCd}
+                  , #{deptAttNm}
+                  , #{useYn}
+                  , #{sortOrder}
+                  , #{createUserId}
+                  , getDate()
+                 )
+    </insert>
+
+    <!-- 경영정보 부서구분명 수정 -->
+    <update id="updateMgtinfoitem" parameterType= "com.she.mgt.model.MgtMgInfoItmDeptAtt">
+        /* ElectlcnMapper.updateMgtinfoitem [Electlcn.xml] */
+        update mgt_mg_info_itm_dept_att
+           set   mgt_mg_info_itm_no = #{mgtMgInfoItmNo}
+               , plant_cd = #{plantCd}
+               , dept_att_nm = #{deptAttNm}
+               , use_yn = #{useYn}
+               , sort_order = #{sortOrder}
+               , update_user_id = #{updateUserId}
+               , update_dt = getDate()
+         where mgt_mg_info_dept_att_no = #{mgtMgInfoDeptAttNo}
+    </update>
+
+
+    <!-- 투자항목관리 조회 -->
+     <select id= "getInvestItems" resultType= "com.she.mgt.model.InvestItem">
+        SELECT d.code_domain_cd, d.code_domain_nm
+              , g.code_group_cd, g.code_group_nm, g.for_system_yn, g.settable_yn, g.code_length
+              , m.code, m.code_nm, m.code_nm_en, m.code_nm_ja, m.code_nm_zh_cn, m.code_nm_zh_tw
+              , m.code_abbr, m.remarks, m.sort_order, m.use_yn
+              , (case when m.use_yn = 'Y' then '사용' else '미사용' end) as use_yn_nm
+              , m.attr1, m.attr2, m.attr3
+              , m.create_user_id, cu.user_nm as create_user_nm, convert(char(10), m.create_dt, 23) as create_dt
+              , m.update_user_id, uu.user_nm as update_user_nm, convert(char(10), m.update_dt, 23) as update_dt
+              ,case
+                    when dbo.GET_USER_NM(m.update_user_id) = '' then dbo.GET_USER_NM(m.create_user_id)
+                    else dbo.GET_USER_NM(m.update_user_id) end as writer_user_nm
+              ,case when m.update_dt is null then convert(date, m.create_dt) else convert(date, m.update_dt) end   as writer_dt
+          FROM com_code_domain d
+         INNER JOIN com_code_group g
+            ON d.code_domain_cd = g.code_domain_cd
+         INNER JOIN com_code_master m
+            ON g.code_group_cd = m.code_group_cd
+          LEFT OUTER JOIN com_user cu
+            ON m.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON m.update_user_id = uu.user_id
+         WHERE 1=1
+         AND g.for_system_yn = 'Y'
+         and g.code_group_cd = 'MICS3'
+        <if test="codeNm !=null and !codeNm.equals('')">
+            and m.code_nm like '%' + #{codeNm} + '%'
+         </if>
+        <if test= "mgtMgInfoItmNo != null and mgtMgInfoItmNo > 0">
+         and itm.mgt_mg_info_itm_no = #{mgtMgInfoItmNo}
+         </if>
+         <if test= "useYn != null and !useYn.equals('')">
+         and m.use_yn = #{useYn}
+         </if>
+         ORDER BY writer_dt desc, m.sort_order;
+    </select>
+
+    <!-- 투자항목(중분류) 조회 -->
+        <select id= "getInvestItemsMiddle" resultType= "com.she.mgt.model.InvestItem">
+         SELECT d.code_domain_cd, d.code_domain_nm,  itm.mg_info_itm_nm, itm.mgt_mg_info_itm_no
+              ,g.code_group_cd, g.code_group_nm, g.for_system_yn, g.settable_yn, g.code_length
+              ,m.code, m.code_nm, m.code_nm_en, m.code_nm_ja, m.code_nm_zh_cn, m.code_nm_zh_tw
+              ,itm.sort_order, m.use_yn
+              ,case when m.use_yn = 'Y' then '사용'else '미사용' end as use_yn_nm
+              ,m.create_user_id, cu.user_nm as create_user_nm, m.create_dt
+              ,m.update_user_id, uu.user_nm as update_user_nm, m.update_dt
+          FROM com_code_domain d
+         INNER JOIN com_code_group g
+            on d.code_domain_cd = g.code_domain_cd
+         INNER JOIN com_code_master m
+            ON g.code_group_cd = m.code_group_cd
+          LEFT OUTER JOIN com_user cu
+            ON m.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON m.update_user_id = uu.user_id
+          LEFT OUTER JOIN mgt_mg_info_itm itm
+            ON itm.info_itm_type_cd = g.code_group_cd
+            AND itm.info_itm_att_cd = m.code
+         WHERE 1=1
+         AND g.for_system_yn = 'Y'
+         and g.code_group_cd = 'MICS3'
+         <if test= "infoItmAttCd != null and !infoItmAttCd.equals('')">
+         and m.code = #{infoItmAttCd}
+         </if>
+         <if test= "mgtMgInfoItmNo != null and mgtMgInfoItmNo > 0">
+         and itm.mgt_mg_info_itm_no = #{mgtMgInfoItmNo}
+         </if>
+         <if test= "useYn != null and !useYn.equals('')">
+         and m.use_yn = #{useYn}
+         </if>
+         ORDER BY itm.sort_order;
+    </select>
+
+
+
+     <!-- 투자항목관리 상세조회 -->
+    <select id= "getInvestItem" resultType= "com.she.mgt.model.InvestItem">
+        SELECT d.code_domain_cd, d.code_domain_nm,  itm.mg_info_itm_nm, itm.mgt_mg_info_itm_no
+              ,g.code_group_cd, g.code_group_nm, g.for_system_yn, g.settable_yn, g.code_length
+              ,m.code, m.code_nm, m.code_nm_en, m.code_nm_ja, m.code_nm_zh_cn, m.code_nm_zh_tw
+              ,m.code_abbr, m.remarks, itm.sort_order, m.use_yn, m.attr1, m.attr2, m.attr3
+              ,case when m.use_yn = 'Y' then '사용'else '미사용' end as use_yn_nm
+              ,m.create_user_id, cu.user_nm as create_user_nm, m.create_dt
+              ,m.update_user_id, uu.user_nm as update_user_nm, m.update_dt
+          FROM com_code_domain d
+         INNER JOIN com_code_group g
+            on d.code_domain_cd = g.code_domain_cd
+         INNER JOIN com_code_master m
+            ON g.code_group_cd = m.code_group_cd
+          LEFT OUTER JOIN com_user cu
+            ON m.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON m.update_user_id = uu.user_id
+          LEFT OUTER JOIN mgt_mg_info_itm itm
+            ON itm.info_itm_type_cd = g.code_group_cd
+            AND itm.info_itm_att_cd = m.code
+         WHERE 1=1
+         AND g.for_system_yn = 'Y'
+         and g.code_group_cd = 'MICS3'
+         <if test= "infoItmAttCd != null and !infoItmAttCd.equals('')">
+         and m.code = #{infoItmAttCd}
+         </if>
+         <if test= "mgtMgInfoItmNo != null and mgtMgInfoItmNo > 0">
+         and itm.mgt_mg_info_itm_no = #{mgtMgInfoItmNo}
+         </if>
+    </select>
+
+
+    <!-- 투자항목 등록 -->
+    <insert id= "createInvestItemAdd" parameterType= "com.she.mgt.model.InvestItem">
+
+        insert into mgt_mg_info_itm
+                 (
+                    mgt_mg_info_itm_no
+                   , info_itm_type_cd
+                   , info_itm_att_cd
+                   , mg_info_itm_nm
+                   , use_yn
+                   , sort_order
+                 )
+                 values
+                 (
+                    #{mgtMgInfoItmNo}
+                  , 'MICS3'
+                  , #{infoItmAttCd}
+                  , #{mgInfoItmNm}
+                  , #{useYn}
+                  , #{sortOrder}
+                 )
+    </insert>
+
+    <!-- 투자항목 수정 -->
+    <update id="updateInvestItemAdd" parameterType= "com.she.mgt.model.InvestItem">
+        UPDATE mgt_mg_info_itm
+        SET mg_info_itm_nm = #{mgInfoItmNm}
+            , use_yn = #{useYn}
+            , sort_order = #{sortOrder}
+        WHERE mgt_mg_info_itm_no = #{mgtMgInfoItmNo}
+    </update>
+
+</mapper>

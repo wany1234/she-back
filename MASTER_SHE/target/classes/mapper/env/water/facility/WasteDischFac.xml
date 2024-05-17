@@ -1,0 +1,153 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.water.facility.mapper.WasteDischFacMapper">
+    <select id= "getWasteDischFacs" resultType= "com.she.env.water.model.WasteDischFac">
+        select
+             w.plant_cd as plantCd
+             ,w.ewtr_disch_grp_cd as ewtrDischGrpCd
+            ,plant.code_nm as plantNm
+            ,w.dept_cd as deptCd
+            ,dept.dept_nm as deptNm
+            ,replace(convert(varchar, cast(w.vol as money),1),'.00','') as vol
+            ,w.unit_cd as unitCd
+            ,unit.code_nm as unitNm
+            ,w.saf_facility_cd as safFacilityCd
+            ,w.ewtr_clean_fac_no as ewtrCleanFacNo
+            ,clean.ewtr_clean_fac_nm as ewtrCleanFacNm
+            ,w.ewtr_waste_disch_fac_no
+            ,w.ewtr_waste_disch_fac_nm
+            ,w.remark
+            ,w.sort_order
+            ,w.use_yn
+            ,case when w.use_yn = 'Y' 
+                then '사용'else '미사용'
+                end as use_yn_nm
+            ,w.create_user_id
+            ,w.create_dt
+            ,w.update_user_id
+            ,w.update_dt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+            , case
+                 when dbo.GET_USER_NM(w.update_user_id) = '' then dbo.GET_USER_NM(w.create_user_id)
+                 else dbo.GET_USER_NM(w.update_user_id) end    as writer_user_nm
+            , case when w.update_dt is null then convert(date, w.create_dt) else convert(date, w.update_dt) end   as writer_dt
+        from ewtr_waste_disch_fac w
+        left outer join com_user cu on w.create_user_id = cu.user_id
+        left outer join com_user uu on w.update_user_id = uu.user_id
+        left outer join com_dept dept on w.dept_cd = dept.dept_cd
+        left outer join ewtr_clean_fac clean on w.ewtr_clean_fac_no = clean.ewtr_clean_fac_no
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ENV_UNIT') unit on w.unit_cd = unit.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on w.plant_cd = plant.code
+        where 1=1
+        <if test='useYn != null and useYn != ""'>
+        and w.use_yn = #{useYn}
+        </if>
+        <if test= "deptCd != null and !deptCd.equals('')">
+        and w.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and w.plant_cd = #{plantCd}
+        </if>
+        <if test= "ewtrCleanFacNo != null and ewtrCleanFacNo > 0">
+        and w.ewtr_clean_fac_no = #{ewtrCleanFacNo}
+        </if>
+        <if test= "ewtrWasteDischFacNm != null and !ewtrWasteDischFacNm.equals('')">
+        and upper(w.ewtr_waste_disch_fac_nm) like '%'+upper(#{ewtrWasteDischFacNm})+'%'
+        </if>            
+        order by writer_dt desc, w.plant_cd
+    </select>
+
+    <select id= "getWasteDischFac" parameterType= "int" resultType= "com.she.env.water.model.WasteDischFac">
+        select
+             w.plant_cd
+            ,w.ewtr_disch_grp_cd
+            ,w.dept_cd
+            ,w.vol
+            ,w.unit_cd
+            ,w.saf_facility_cd
+            ,w.ewtr_clean_fac_no
+            ,w.ewtr_waste_disch_fac_no
+            ,w.ewtr_waste_disch_fac_nm
+            ,w.remark
+            ,w.sort_order
+            ,w.use_yn
+            ,w.create_user_id
+            ,w.create_dt
+            ,w.update_user_id
+            ,w.update_dt
+        from ewtr_waste_disch_fac w
+        where w.ewtr_waste_disch_fac_no = #{ewtrWasteDischFacNo}
+    </select>
+
+    <insert id= "createWasteDischFac" parameterType= "com.she.env.water.model.WasteDischFac">
+        <selectKey keyProperty= "ewtrWasteDischFacNo" resultType= "int" order= "BEFORE">
+            select next value for seq_ewtr_waste_disch_fac
+        </selectKey>
+        insert into ewtr_waste_disch_fac
+        ( 
+            ewtr_waste_disch_fac_no
+            ,ewtr_waste_disch_fac_nm
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,plant_cd
+            ,dept_cd
+            ,vol
+            ,unit_cd
+            ,ewtr_clean_fac_no    
+            ,saf_facility_cd
+            ,ewtr_disch_grp_cd
+            ,create_user_id
+            ,create_dt
+        )
+        VALUES
+        ( 
+            #{ewtrWasteDischFacNo}
+            ,#{ewtrWasteDischFacNm}
+            ,#{remark}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{plantCd}
+            ,#{deptCd}
+            ,#{vol}
+            ,#{unitCd}
+            ,#{ewtrCleanFacNo}            
+            ,#{safFacilityCd}
+            ,#{ewtrDischGrpCd}
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>
+
+    <update id= "updateWasteDischFac" parameterType= "com.she.env.water.model.WasteDischFac">
+        update ewtr_waste_disch_fac
+        SET ewtr_waste_disch_fac_nm = #{ewtrWasteDischFacNm}
+            ,remark = #{remark}
+            ,sort_order = #{sortOrder}
+            ,use_yn = #{useYn}
+            ,plant_cd = #{plantCd}
+            ,dept_cd = #{deptCd}
+            ,vol = #{vol}
+            ,unit_cd =  #{unitCd}
+            ,ewtr_clean_fac_no = #{ewtrCleanFacNo}
+            ,saf_facility_cd= #{safFacilityCd}
+            ,ewtr_disch_grp_cd = #{ewtrDischGrpCd}    
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where ewtr_waste_disch_fac_no = #{ewtrWasteDischFacNo}
+    </update>
+
+    <select id="getWasteFacsCheck" resultType="int">
+        select count(*) as cnt
+        from ewtr_waste_disch_fac
+        where
+          ewtr_waste_disch_fac_nm = #{ewtrWasteDischFacNm}
+          and plant_cd = #{plantCd}
+        <if test= "ewtrWasteDischFacNo != null and ewtrWasteDischFacNo > 0">
+          and ewtr_waste_disch_fac_no != #{ewtrWasteDischFacNo}
+        </if>
+    </select>
+    
+</mapper>

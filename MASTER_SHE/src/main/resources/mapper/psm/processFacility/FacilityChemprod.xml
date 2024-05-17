@@ -1,0 +1,185 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.psm.processFacility.mapper.FacilityChemprodMapper">
+
+    <select id= "getRiskChemprodchems" resultType= "com.she.chm.model.Chemprod">
+        select cc.chem_prod_no
+            ,cc.chem_prod_nm_kr
+            , cc.expl_low_limit
+            , cc.expl_up_limit
+            ,cc.chem_prod_nm_en
+            , cc.leak_thresh
+            , cc.lc50
+            , cc.flashing_pnt
+            , cc.Ignition_pnt
+            , cc.vapor_pressure
+            , cc.extra_reaction_yn
+            , case when cc.extra_reaction_yn = 'Y' then 'O'
+                else 'X'
+                end as extra_reaction_yn_nm
+            , cc.corrosiveness_yn
+            , case when cc.corrosiveness_yn = 'Y' then 'O'
+                else 'X'
+                end as corrosiveness_yn_nm
+            , cc.daily_vol
+            , cc.max_vol
+            , cc.remark
+            , cc.plant_cd
+            , plant.code_nm as plant_nm
+            , c.chem_no
+            , c.cas_no
+            , c.chem_nm_kr
+            , c.mole_formula
+            , '보기' as msds
+            , case
+                 when dbo.GET_USER_NM(cc.update_user_id) = '' then dbo.GET_USER_NM(cc.create_user_id)
+                 else dbo.GET_USER_NM(cc.update_user_id) end    as writer_user_nm
+            , case when cc.update_dt is null then convert(date, cc.create_dt) else convert(date, cc.update_dt) end   as writer_dt
+        from com_chemprod cc
+        inner join com_code_master plant
+        on cc.plant_cd = plant.code
+        and plant.code_group_cd = 'COM_PLANT_CD'
+        inner join com_chemprod_chem ccc
+        on ccc.chem_prod_no = cc.chem_prod_no
+        inner join com_chem c
+        on ccc.chem_no = c.chem_no
+        where 1=1
+        <if test= "plantCd != null and !''.equals(plantCd)">
+        and cc.plant_cd = #{plantCd}
+        </if>
+        <if test= "casNo != null and !''.equals(casNo)">
+        and c.cas_no like '%' + #{casNo} + '%'
+        </if>
+        <if test= "chemProdNo != null and chemProdNo > 0">
+            and cc.chem_prod_no = #{chemProdNo}
+        </if>
+        <if test= "saveChemprodNos != null and saveChemprodNos.length > 0">
+        and cc.chem_prod_no not in
+            <foreach collection= "saveChemprodNos" item= "chemProdNo" separator= "," open= "(" close= ")" >
+            #{chemProdNo}
+            </foreach>
+        </if>
+        <if test= "chemProdNmKr != null and !''.equals(chemProdNmKr)">
+            and cc.chem_prod_nm_kr like '%' + #{chemProdNmKr} + '%'
+        </if>
+        order by writer_dt desc, cc.chem_prod_no
+    </select>
+
+    <select id= "getFacilityChemprods" resultType= "com.she.chm.model.Chemprod">
+        select cc.chem_prod_no
+            , sfm.facility_nm
+            , sfm.saf_facility_cd
+            , cc.chem_prod_nm_kr
+            , cc.chem_prod_nm_en
+            , cc.expl_low_limit
+            , cc.expl_up_limit
+            , cc.leak_thresh
+            , cc.lc50
+            , cc.flashing_pnt
+            , cc.Ignition_pnt
+            , cc.vapor_pressure
+            , cc.extra_reaction_yn
+            , case when cc.extra_reaction_yn = 'Y' then 'O'
+                else 'X'
+                end as extra_reaction_yn_nm
+            , cc.corrosiveness_yn
+            , case when cc.corrosiveness_yn = 'Y' then 'O'
+                else 'X'
+                end as corrosiveness_yn_nm
+            , cc.daily_vol
+            , cc.max_vol
+            , cc.remark
+            , cc.plant_cd
+            , plant.code_nm as plant_nm
+            , c.cas_no
+            , c.chem_nm_kr
+            , c.mole_formula
+            , '보기' as msds
+            , ccc.chem_no
+        from saf_facility_mst sfm
+        inner join saf_facility_psm_chemprod sfc
+        on sfm.saf_facility_cd = sfc.saf_facility_cd
+        inner join com_chemprod cc
+        on sfc.chem_prod_no = cc.chem_prod_no
+        inner join com_code_master plant
+        on cc.plant_cd = plant.code
+        and plant.code_group_cd = 'COM_PLANT_CD'
+        inner join com_chemprod_chem ccc
+        on ccc.chem_prod_no = cc.chem_prod_no
+        inner join com_chem c
+        on ccc.chem_no = c.chem_no
+        where 1=1
+        and cc.chem_prod_nm_kr like '%' + #{chemProdNmKr} + '%'
+        <if test= "plantCd != null and !''.equals(plantCd)">
+        and cc.plant_cd = #{plantCd}
+        </if>
+        <if test= "safFacilityCd != null and !safFacilityCd.equals('')">
+        and sfm.saf_facility_cd = #{safFacilityCd}
+        </if>
+        <if test= "equipmentNo != null and equipmentNo > -1">
+        and sfc.equipment_no = #{equipmentNo}
+        </if>
+        <!-- <if test= "chemProdNos != null and chemProdNos.length > 0">
+        and cc.chem_prod_no in
+            <foreach collection= "chemProdNos" item= "chemProdNo" separator= "," open= "(" close= ")" >
+            #{chemProdNo}
+            </foreach>
+        </if> -->
+        order by cc.chem_prod_no
+    </select>
+
+    <insert id= "createFacilityChemprod">
+        insert into saf_facility_psm_chemprod
+            (saf_facility_cd,
+            chem_prod_no,
+            equipment_no)
+        values
+            (#{safFacilityCd}
+            ,#{chemProdNo}
+            ,#{equipmentNo})
+    </insert>
+
+    <delete id= "deleteFacilityChemprod">
+        delete from saf_facility_psm_chemprod
+        where saf_facility_cd = #{safFacilityCd}
+        <if test= "chemProdNo != null and chemProdNo > 0">
+        and chem_prod_no = #{chemProdNo}
+        </if>
+        <if test= "equipmentNo != null and equipmentNo > 0">
+            and equipment_no = #{equipmentNo}
+        </if>
+    </delete>
+
+    <select id= "geChemProdNms" resultType= "com.she.psm.model.ChemprodPrint">
+        select distinct
+        cc.chem_prod_nm_en
+        , cc.chem_prod_nm_kr
+        , cc.chem_prod_no
+        , cc.daily_vol
+        , cc.expl_low_limit
+        , cc.expl_up_limit
+        , cc.leak_thresh
+        , cc.lc50
+        , cc.flashing_pnt
+        , cc.Ignition_pnt
+        , cc.vapor_pressure
+        , cc.extra_reaction_yn
+        , cc.corrosiveness_yn
+        , cc.max_vol
+        , cc.remark
+        , case when cc.extra_reaction_yn = 'Y' then 'O'
+        else 'X'
+        end as extra_reaction_yn_nm
+        , case when cc.corrosiveness_yn = 'Y' then 'O'
+        else 'X'
+        end as corrosiveness_yn_nm
+        from com_chemprod cc
+        inner join com_chemprod_chem ccc
+        on cc.chem_prod_no = ccc.chem_prod_no
+        where 1=1
+        <if test= "plantCd != null and !''.equals(plantCd)">
+            and cc.plant_cd = #{plantCd}
+        </if>
+    </select>
+</mapper>

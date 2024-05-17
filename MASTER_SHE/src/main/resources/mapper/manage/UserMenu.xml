@@ -1,0 +1,174 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 사용자별 메뉴 관리 -->
+<mapper namespace= "com.she.manage.mapper.UserMenuMapper">
+    <!-- 사용자별 메뉴 목록 조회 -->
+    <select id= "getUserMenus" resultType= "com.she.manage.model.UserMenu" parameterType= "java.util.HashMap">
+        /* UserMenuMapper.getUserMenus [UserMenu.xml] */
+        with menutree as
+             (
+              select   cm.menu_id
+                     , max(acgm.write_yn) as write_yn
+                from com_menu cm
+               inner join com_auth_grp_menu acgm
+                  on acgm.menu_id = cm.menu_id
+               inner join com_user_auth_grp cuag
+                  on cuag.auth_grp_no = acgm.auth_grp_no
+               where cm.use_yn = 'Y'
+                 and cuag.user_id = #{userId}
+                group by cm.menu_id
+             ),
+             menudepttree as
+             (
+              select   cm.menu_id
+                     , max(acgm.write_yn) as write_yn
+                from com_menu cm
+               inner join com_auth_grp_menu acgm
+                  on acgm.menu_id = cm.menu_id
+               inner join com_dept_auth_grp cdag
+                  on cdag.auth_grp_no = acgm.auth_grp_no
+               inner join com_dept cd
+                  on cdag.dept_cd = cd.dept_cd
+               inner join com_user cu
+                  on cd.dept_cd = cu.dept_cd
+               where cm.use_yn = 'Y'
+                 and cu.user_id = #{userId}
+               group by cm.menu_id
+             ),
+            normaltree as (
+			    select   cm.menu_id
+					    , agm.write_yn
+				from dbo.LANG_MENU(#{defaultParam.lang}) cm
+				inner join com_auth_grp_menu agm
+					on agm.menu_id = cm.menu_id
+				inner join com_auth_grp ag
+					on ag.auth_grp_no = agm.auth_grp_no
+				where cm.use_yn = 'Y'
+				 and ag.auth_grp_no = (case when (select count(*) from com_user_auth_grp where user_id = #{userId} and auth_grp_no = 1100 group by user_id) > 0 then 1100 else 1020 end)
+             ),
+             alltree as
+             (
+              select menu_id
+                from menutree
+               union
+              select menu_id
+                from menudepttree
+                union
+              select menu_id
+                from normaltree
+             )
+             select   cm.menu_id
+                    , cm.menu_nm
+                    , cm.menu_lvl
+                    , cm.up_menu_id
+                    , cm.front_end_url
+                    , cm.sort_order
+                    , case when menutree.write_yn = 'Y' or menudepttree.write_yn = 'Y' or normaltree.write_yn = 'Y' then 'Y'
+                            else 'N'
+                        end as write_yn
+                    , 'N' as auth_grp_menu_yn
+                    , cm.color
+                    , cm.icon
+               from dbo.LANG_MENU(#{defaultParam.lang}) cm
+              inner join alltree
+                 on cm.menu_id = alltree.menu_id
+               left outer join menutree
+                 on alltree.menu_id = menutree.menu_id
+               left outer join menudepttree
+                 on alltree.menu_id = menudepttree.menu_id
+			   left outer join normaltree
+				 on alltree.menu_id = normaltree.menu_id
+              order by cm.menu_lvl, cm.sort_order
+    </select>
+
+    <!-- 사용자 메뉴 기본값 조회 -->
+<!--     <select id= "getDefaultUserMenus" resultType= "com.she.manage.model.UserMenu">
+        /* UserMenuMapper.getDefaultUserMenus [UserMenu.xml] */
+        select   cm.menu_id
+               , cm.menu_nm
+               , cm.menu_lvl
+               , cm.up_menu_id
+               , cm.front_end_url
+               , cm.sort_order
+               , agm.write_yn
+               , cm.color
+               , cm.icon
+          from dbo.LANG_MENU(#{defaultParam.lang}) cm
+         inner join com_auth_grp_menu agm
+            on agm.menu_id = cm.menu_id
+         inner join com_auth_grp ag
+            on ag.auth_grp_no = agm.auth_grp_no
+         where cm.use_yn = 'Y'
+           and ag.auth_grp_no = 1020
+         order by cm.menu_lvl, cm.sort_order
+    </select> -->
+
+    <!-- 사용자의 권한 그룹 별 메뉴 일괄 등록 안씀 -->
+    <insert id= "createUserMenuByAuthGrp" parameterType= "com.she.manage.model.UserMenu">
+        insert into com_user_menu
+        (user_id
+        ,menu_id
+        ,menu_nm
+        ,up_menu_id
+        ,menu_lvl
+        ,front_end_url
+        ,sort_order
+        ,write_yn
+        ,auth_grp_menu_yn
+        ,all_plant_access_cd
+        ,create_user_id
+        ,create_dt
+        )
+        select distinct
+        #{userId}
+        ,mnu.menu_id
+        ,mnu.menu_nm
+        ,mnu.up_menu_id
+        ,mnu.menu_lvl
+        ,mnu.front_end_url
+        ,mnu.sort_order
+        ,cum.write_yn
+        ,'Y'
+        ,isnull(cum.all_plant_access_cd, 'APA02')
+        ,'dev'
+        ,getdate()
+        from com_menu mnu
+        inner join com_user_menu cum on mnu.menu_id = cum.menu_id
+        and cum.user_id = #{userId}
+        union
+        select distinct
+        #{userId}
+        ,mnu.menu_id
+        ,mnu.menu_nm
+        ,mnu.up_menu_id
+        ,mnu.menu_lvl
+        ,mnu.front_end_url
+        ,mnu.sort_order
+        ,agm.write_yn
+        ,'Y'
+        ,isnull(agm.all_plant_access_cd, 'APA02')
+        ,#{createUserId}
+        ,getdate()
+        from com_menu mnu
+        inner join com_auth_grp_menu agm on mnu.menu_id = agm.menu_id
+        inner join com_user_auth_grp uag on agm.auth_grp_no = uag.auth_grp_no
+        where 1 = 1
+        and uag.user_id = #{userId}
+    </insert>
+
+    <!-- 사용자 권한별 메뉴 일괄 삭제 -->
+    <delete id= "deleteUserMenuByAuthGrp" parameterType= "String">
+        delete
+        from com_user_menu
+        where 1 = 1
+        and user_id = #{userId}
+        <!-- 사용자메뉴 권한은 부여가 된 상황에서 권한을 등록 시 com_user_menu의 정보를 날리게 되는데 권한이 없으므로 아무것도 날리지 못함 그로인헤 com_user_menu에 등록 시 에러가 나옴으로 인해 주석처리 -->
+        <!-- and menu_id in (
+            select agm.menu_id
+            from com_user_auth_grp uag
+            inner join com_auth_grp_menu agm on uag.auth_grp_no = agm.auth_grp_no
+            where 1 = 1
+            and uag.user_id = #{userId}) -->
+    </delete>
+</mapper>

@@ -1,0 +1,128 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.waste.allbaro.mapper.AllbaroMapper">
+        <select id= "getAllbaroData" resultType="com.she.env.waste.model.DisposalResult">
+            SELECT ewst_dispo_result_no
+                 ,plant_cd
+                 ,ewst_waste_no
+                 ,ewst_dispo_st_cd
+                 ,ewst_dispo_div_cd
+                 ,ewst_dispo_step_cd
+                 ,dispo_user_id
+                 ,dispo_dept_cd
+                 ,dispo_ymd
+                 ,amt_empty
+                 ,amt_loaded
+                 ,amt_gen
+                 ,freight_vendor_cd
+                 ,vendor_cd
+                 ,env_unit_cd
+                 ,carrier
+                 ,ewst_dispo_mtd_cd
+                 ,freight_cost
+                 ,freight_cost_sum
+                 ,total_cost
+                 ,remark
+                 ,allbaro_yn
+                 ,allbaro_trans_num
+                 ,create_user_id
+                 ,create_dt
+                 ,update_user_id
+                 ,update_dt
+             FROM ewst_dispo_result
+            WHERE allbaro_yn = 'Y'
+        </select>
+    
+        <insert id= "createDisposalResult" parameterType= "com.she.env.waste.model.DisposalResult">
+            <selectKey keyProperty= "ewstDispoResultNo" resultType= "int" order= "BEFORE">
+                select next value for seq_ewst_dispo_result as ewst_dispo_result_no
+              </selectKey>
+            insert into ewst_dispo_result(
+                ewst_dispo_result_no ,plant_cd ,ewst_waste_no ,ewst_dispo_st_cd ,ewst_dispo_div_cd
+                ,dispo_user_id ,dispo_dept_cd ,dispo_ymd
+                ,amt_gen ,freight_vendor_cd ,vendor_cd ,env_unit_cd
+                ,carrier ,ewst_dispo_mtd_cd 
+                ,freight_cost 
+                ,freight_cost_sum ,total_cost 
+                ,allbaro_yn
+                ,allbaro_trans_num
+                ,create_user_id ,create_dt
+            ) values (
+                #{ewstDispoResultNo},#{plantCd},#{ewstWasteNo},'31',2
+                ,#{createUserId},(select dept_cd from com_user where user_id = #{createUserId}),#{dispoYmd}
+                ,#{amtGen},#{freightCd},#{vendorCd},
+                (select top 1 code from com_code_master 
+                where code_group_cd = 'ENV_UNIT' 
+                and UPPER(code_nm)  = UPPER(#{envUnitNm}))        
+                ,#{carrier}
+                ,#{ewstDispoMtdCd}
+                ,#{freightCost}
+                ,#{freightCostSum},#{totalCost}
+                ,'Y'
+                ,#{allbaroTransNum}
+                ,#{createUserId},getDate()
+            )
+                    
+        </insert>
+        
+        
+        
+        <update id = "updateDisposalResult" parameterType= "com.she.env.waste.model.DisposalResult">
+          update ewst_dispo_result set
+            plant_cd               =  #{plantCd}
+           ,ewst_waste_no          =  #{ewstWasteNo}
+           ,ewst_dispo_st_cd       =  #{ewstDispoStCd}
+           ,ewst_dispo_div_cd      =  2
+           ,dispo_user_id          =  #{createUserId}
+           ,dispo_dept_cd          =  (select dept_cd from com_user where user_id = #{createUserId})
+           ,dispo_ymd              =  #{dispoYmd}
+           ,amt_gen                =  #{amtGen}
+           ,freight_vendor_cd      =  #{freightCd}
+           ,vendor_cd              =  #{vendorCd}
+           ,env_unit_cd            = (select top 1 code from com_code_master where code_group_cd = 'ENV_UNIT' and UPPER(code_nm)  = UPPER(#{envUnitNm}))
+           ,carrier                =  #{carrier}
+           ,ewst_dispo_mtd_cd      =  #{ewstDispoMtdCd}
+           ,freight_cost           =  #{freightCost}
+           ,freight_cost_sum       =  #{freightCostSum}
+           ,total_cost             =  #{totalCost}
+           ,allbaro_yn             =  'Y'
+          where 1 = 1
+          and allbaro_trans_num = #{allbaroTransNum}         
+        </update>
+        
+    
+    
+        <insert id="createAllbaroData" parameterType="com.she.env.waste.model.Allbaro">
+          <selectKey keyProperty="ewstAllbaroTransNo" resultType="int" order="BEFORE">
+        select next value for seq_ewst_allbaro_trans  as ewstAllbaroTransNo
+          </selectKey>
+            insert into ewst_allbaro_trans
+            (
+            ewst_allbaro_trans_no ,plant_cd, yyyymmddhhmiss, allbaro_trans_num, trans_dt
+            ,end_step_nm ,ewst_class_nm ,type_nm ,amt_gen ,unit_nm
+            ,dispo_amt_gen ,freight_vendor_nm ,carrier_num ,dispo_vendor_nm ,ewst_dispo_mtd_nm ,ewst_dispo_plce
+            ,trans_psn_nm ,ass_gen_yn_nm ,input_yn_nm ,respon_office ,process_step_nm ,process_rslt_nm
+            ,excep_reason ,ewst_waste_no ,freight_vendor_cd ,dispo_vendor_cd ,ewst_dispo_mtd_cd ,freight_cost
+            ,dispo_cost ,freight_cost_sum ,dispo_cost_sum ,total_cost ,sell_yn ,dispo_input_yn_desc
+            ,create_dt ,create_user_id)
+            
+            values
+            (
+             #{ewstAllbaroTransNo} ,#{plantCd} ,#{yyyymmddhhmiss},#{allbaroTransNum},#{transDt}
+            ,#{endStepNm},#{ewstClassNm},#{typeNm},#{amtGen},#{unitNm}
+            ,#{dispoAmtGen},#{freightVendorNm},#{carrierNum},#{dispoVendorNm},#{ewstDispoMtdNm}
+            ,#{ewstDispoPlce},#{transPsnNm},#{assGenYnNm},#{inputYnNm},#{responOffice}
+            ,#{processStepNm},#{processRsltNm},#{excepReason},#{ewstWasteNo},#{freightVendorCd}
+            ,#{dispoVendorCd},#{ewstDispoMtdCd},#{freightCost},#{dispoCost},#{freightCostSum}
+            ,#{dispoCostSum},#{totalCost},#{sellYn},#{dispoInputYnDesc},getDate(),#{createUserId}
+            )
+
+    </insert>
+    
+    <delete id = "deleteAllbaroData">   
+        delete from ewst_allbaro_trans where allbaro_trans_num = #{allbaroTransNum}
+        delete from ewst_dispo_result where allbaro_trans_num = #{allbaroTransNum}
+    </delete>
+    
+</mapper>

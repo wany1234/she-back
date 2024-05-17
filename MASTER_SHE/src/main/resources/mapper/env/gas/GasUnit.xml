@@ -1,0 +1,102 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.gas.baseInfo.mapper.GasUnitMapper">
+
+    <!-- 산정기준단위 목록 조회 -->
+    <select id= "getGasUnits" resultType= "com.she.env.gas.model.GasUnit">
+        /* GasUnitMapper.getGasUnits [GasUnit.xml] */
+        select c.code_nm as unitClsCd
+            , d.code_nm as unitClsSecCd
+            , u.unit_cd as unitCd
+            , u.unit_nm as unitNm
+            , case when u.use_yn = 'Y' then '사용'else '미사용' end as useYn
+            , u.sort_order as sortOrder
+            , case
+                 when dbo.GET_USER_NM(u.update_user_id) = '' then dbo.GET_USER_NM(u.create_user_id)
+                 else dbo.GET_USER_NM(u.update_user_id) end    as writer_user_nm
+            , case when u.update_dt is null then convert(date, u.create_dt) else convert(date, u.update_dt) end   as writer_dt
+        from gas_unit u
+        inner join (select * from com_code_master where code_group_cd='UNIT_CLS_EST') c
+        on u.unit_cls_cd=c.code
+        inner join (select * from com_code_master where code_group_cd='UNIT_CLS_SEC') d
+        on u.unit_cls_sec_cd=d.code
+        where 1=1
+        <if test= "unitClsCd != null and !unitClsCd.equals('')">
+          and u.unit_cls_cd = #{unitClsCd}
+        </if>
+        <if test= "unitNm != null and !unitNm.equals('')">
+          and u.unit_nm like '%' + #{unitNm} + '%'
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+          and u.use_yn = #{useYn}
+        </if>
+        order by writer_dt desc, u.sort_order
+    </select>
+    
+    <!-- 산정기준단위 체크 -->
+    <select id= "countGasUnit" parameterType="String" resultType= "int">
+        /* GasUnitMapper.checkGasUnit [GasUnit.xml] */
+        select count(*) as cnt from gas_unit where unit_cd = #{unitCd}
+    </select>
+    
+    <!-- 산정기준단위 상세 조회 -->
+    <select id= "getGasUnit" resultType= "com.she.env.gas.model.GasUnit">
+        /* GasUnitMapper.getGasUnit [GasUnit.xml] */
+        select unit_cls_cd as unitClsCd
+            , unit_cls_sec_cd as unitClsSecCd
+            , unit_cd as unitCd
+            , unit_nm as unitNm
+            , use_yn as useYn
+            , sort_order as sortOrder
+        from gas_unit
+        where unit_cd = #{unitCd}
+    </select>
+    
+    <!-- 산정기준단위 신규등록 -->
+    <insert id= "createGasUnit" parameterType= "com.she.env.gas.model.GasUnit">
+        /* GasUnitMapper.createGasUnit [GasUnit.xml] */
+        insert into gas_unit
+            (unit_cd
+            , unit_nm
+            , unit_cls_cd
+            , unit_cls_sec_cd
+            , use_yn
+            , sort_order
+            , create_user_id
+            , create_dt)
+        values
+            (#{unitCd}
+            , #{unitNm}
+            , #{unitClsCd}
+            , #{unitClsSecCd}
+            , #{useYn}
+            , #{sortOrder}
+            , #{createUserId}
+            , getDate())
+    </insert>
+    
+    <!-- 산정기준단위 수정 -->
+    <update id= "updateGasUnit" parameterType= "com.she.env.gas.model.GasUnit">
+        /* GasUnitMapper.updateGasUnit [GasUnit.xml] */
+        update gas_unit 
+            set unit_cd = #{unitCd}
+            , unit_nm = #{unitNm}
+            , unit_cls_cd = #{unitClsCd}
+            , unit_cls_sec_cd = #{unitClsSecCd}
+            , use_yn = #{useYn}
+            , sort_order = #{sortOrder}
+            , update_user_id = #{updateUserId}
+            , update_dt = getDate()
+         where unit_cd = #{unitCd}
+    </update>
+    
+    <select id= "getGasUnitCdNms" resultType= "com.she.env.gas.model.GasUnit">
+        /* GasUnitMapper.getGasUnitCdNms [GasUnit.xml] */
+        select unit_cd
+          , unit_nm
+        from gas_unit
+        where use_yn = 'Y'
+    </select>
+    
+</mapper>

@@ -1,0 +1,70 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.manage.mapper.CodeDomainMapper">
+    
+    <select id= "getCodeDomains" resultType= "com.she.manage.model.CodeDomain">
+        select d.code_domain_cd
+            , d.code_domain_nm
+            , d.remarks
+            , d.use_yn
+            , (case when d.use_yn = 'Y' then '사용' else '미사용' end) as use_yn_nm
+            , d.create_user_id
+            , convert(char(10), d.create_dt, 23) as create_dt
+            , d.update_user_id
+            , convert(char(10), d.update_dt, 23) as update_dt
+            , case
+                 when dbo.GET_USER_NM(d.update_user_id) = '' then dbo.GET_USER_NM(d.create_user_id)
+                 else dbo.GET_USER_NM(d.update_user_id) end as writer_user_nm
+            , case when d.update_dt is null then convert(date, d.create_dt) else convert(date, d.update_dt) end   as writer_dt
+        from com_code_domain d
+        where 1=1
+        and d.code_domain_nm like '%' + #{codeDomainNm} + '%'
+        order by d.code_domain_nm
+    </select>
+    
+    <select id= "getCodeDomain" resultType= "com.she.manage.model.CodeDomain">
+        select d.code_domain_cd
+            , d.code_domain_nm
+            , d.remarks
+            , d.use_yn
+            , (case when d.use_yn = 'Y' then '사용' else '미사용' end) as use_yn_nm
+            , d.create_user_id
+            , convert(char(10), d.create_dt, 23) as create_dt
+            , d.update_user_id
+            , convert(char(10), d.update_dt, 23) as update_dt
+        from com_code_domain d
+        where 1=1
+        and d.code_domain_cd = #{codeDomainCd}     
+    </select>
+    
+    <insert id= "createCodeDomain" parameterType= "com.she.manage.model.CodeDomain">
+        insert into com_code_domain (
+            code_domain_cd
+            , code_domain_nm
+            , remarks
+            , use_yn
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{codeDomainCd}
+            , #{codeDomainNm}
+            , #{remarks}
+            , #{useYn}
+            , #{createUserId}
+            , getdate()
+        )
+    </insert>
+    
+    <update id= "updateCodeDomain" parameterType= "com.she.manage.model.CodeDomain">
+        update com_code_domain
+        set code_domain_nm = #{codeDomainNm}
+            , remarks = #{remarks}
+            , use_yn = #{useYn}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+           where code_domain_cd = #{codeDomainCd}     
+    </update>
+    
+</mapper>

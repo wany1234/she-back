@@ -1,0 +1,25 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.baseinfo.mapper.IndCauseMapper">
+
+    <select id= "checkIndCause" resultType= "HashMap">
+        /* IndCauseMapper.checkIndCause [IndCause.xml] */
+        select 1
+            ,'code' as gubun
+        from com_code_master ccm
+        where 1=1
+        and ccm.code_group_cd = #{codeGroupCd}
+        and ccm.code = #{code}
+        union all
+        select 1
+            ,'name' as gubun
+        where exists(select 1
+                    from com_code_master ccm
+                    where 1=1
+                    and ccm.code_group_cd = #{codeGroupCd}
+                    and ccm.code_nm = #{codeNm}
+                    and ccm.code not in (#{code}))
+    </select>
+    
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.env.water.baseInfo.mapper.OperationBasicUnitMapper">
+    
+    <select id="getEwtrCleans" resultType="com.she.env.water.model.WasteBasicUnit">
+        /* OperationBasicUnitMapper.getEwtrCleans [getEwtrCleans.xml] */
+        select 
+           cf.plant_cd
+           ,dbo.GET_CODE_NM(cf.plant_cd,'com_plant_cd') as plant_nm
+           ,cf.ewtr_clean_fac_no
+           ,cf.ewtr_clean_fac_nm
+           ,cf.ewtr_clean_fac_class_cd 
+           ,dbo.GET_CODE_NM(cf.ewtr_clean_fac_class_cd,'EWTR_CLEAN_FAC_CLASS') as ewtr_clean_fac_class_nm  
+           ,case when cf.use_yn = 'Y' then '사용' else '미사용' end as use_yn
+           ,cf.dept_cd
+           ,dbo.GET_DEPT_NM(cf.dept_cd) as dept_nm
+       from ewtr_clean_fac cf
+       where 1=1
+       <if test="plantCd !=null and !plantCd.equals('')">
+       and plant_cd = #{plantCd}
+       </if>
+       <if test="deptCd !=null and !deptCd.equals('')">
+       and dept_cd = #{deptCd}
+       </if>
+        <if test="ewtrCleanFacNm !=null and !ewtrCleanFacNm.equals('')">
+            and ewtr_clean_fac_nm like '%' + #{ewtrCleanFacNm} + '%'
+        </if>
+
+    </select>
+    
+    <select id="getDeptList"  resultType="com.she.env.water.model.OperationCleanFacDept">
+        /* OperationBasicUnitMapper.getDeptList [getEwtrCleans.xml] */
+        select
+            ewtr_clean_fac_no
+            ,dept_cd 
+            ,dbo.GET_DEPT_NM(dept_cd) as dept_nm
+        from ewtr_oplog_base_dept
+        where 1=1
+        <if test="ewtrCleanFacNo > 0">
+          and ewtr_clean_fac_no = #{ewtrCleanFacNo}
+        </if>
+    </select>
+    
+    <insert id="insertOplogBaseDept" parameterType="com.she.env.water.model.OperationCleanFacDept">
+        /* OperationBasicUnitMapper.insertOplogBaseDept [getEwtrCleans.xml] */
+        insert into ewtr_oplog_base_dept
+                (ewtr_clean_fac_no
+                ,dept_cd
+                )
+        values(
+                #{ewtrCleanFacNo}
+                ,#{deptCd}
+        )
+ 
+    </insert>
+    <delete id="deleteOplogBaseDept">
+        delete from ewtr_oplog_base_dept
+        where ewtr_clean_fac_no = #{ewtrCleanfacNo}
+        <if test="deptCd !=null and !deptCd.equals('')">
+        and dept_cd = #{deptCd}
+        </if>    
+    </delete>
+</mapper>

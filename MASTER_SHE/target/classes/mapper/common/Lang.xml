@@ -1,0 +1,42 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.common.mapper.LangMapper">
+    
+    <select id="getLangInfoLabel" resultType="com.she.manage.model.LblDtlInfo">
+        /* UserLangMapper.getLangInfoLabel [UserLang.xml] */
+        SELECT mst_cd
+              ,lbl_cd
+              ,case when 'kr' = #{lang} then lbl_val
+                    when 'en' = #{lang} then lbl_val_en
+                    when 'ja' = #{lang} then lbl_val_ja
+                    when 'zh_cn' = #{lang} then lbl_val_zh_cn
+                    when 'zh_tw' = #{lang} then lbl_val_zh_tw
+                    else ''
+               end as lbl_conversion_val
+          FROM com_lbl_dtl
+         WHERE del_yn = 'N'
+        <if test= 'divide != null and !"".equals(divide)'>
+           AND mst_cd = #{divide}
+        </if>
+    </select>
+    
+    <select id="getLangInfoMessage" resultType="com.she.manage.model.MsgDtlInfo">
+        /* UserLangMapper.getLangInfoMessage [UserLang.xml] */
+        SELECT mst_cd
+              ,msg_cd
+              ,case when 'kr' = #{lang} then msg_val
+                    when 'en' = #{lang} then msg_val_en
+                    when 'ja' = #{lang} then msg_val_ja
+                    when 'zh_cn' = #{lang} then msg_val_zh_cn
+                    when 'zh_tw' = #{lang} then msg_val_zh_tw
+                    else ''
+               end as msg_conversion_val
+          FROM com_msg_dtl cmd
+         WHERE del_yn = 'N'
+        <if test= 'divide != null and !"".equals(divide)'>
+           AND mst_cd = #{divide}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,91 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.water.facility.mapper.GuidedMapper">
+    <select id= "getGuideds" resultType= "com.she.env.water.model.GuidedHist">
+        select
+            g.ewtr_guided_hist_no
+            ,g.measure_ymd
+            ,g.regulator
+            ,g.regulator_worker
+            ,g.violation
+            ,g.action
+            ,g.create_user_id
+            ,g.create_dt
+            ,g.update_user_id
+            ,g.update_dt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+        from ewtr_guided_hist g
+        left outer join com_user cu on g.create_user_id = cu.user_id
+        left outer join com_user uu on g.update_user_id = uu.user_id
+        where 1=1
+        order by g.measure_ymd desc
+    </select>
+
+    <select id= "getGuided"  resultType= "com.she.env.water.model.GuidedHist">
+        select
+              o.plant_cd
+            ,clean.ewtr_clean_fac_nm as ewtrCleanFacNm
+            ,clean.ewtr_clean_fac_no as ewtrCleanFacNo
+            ,o.measure_ymd
+            ,o.env_op_log_st_cd
+            ,c.code_nm as env_op_log_st_cd_nm
+            ,o.day
+            ,o.weather            /* 날씨 코드*/
+            ,r.code_nm as weather_nm /* 날씨 명칭*/
+            ,o.temp
+            ,o.amt_sludge_gen   /* 슬러지 발생량(㎥) */
+            ,o.amt_sludge_tx    /* 슬러지 처리량(㎥) */
+            ,o.amt_sludge_sto    /* 슬러지 보관량(㎥) */
+            ,o.sludge_mc        /* 슬러지 함수율(%) */
+            ,o.sludge_sto_po    /* 슬러지 보관장소 */
+            ,o.sludge_tx_po        /* 슬러지 처리장소 또는 위탁처리업체 */
+
+            ,o.pwrc_per_day        /* 금일 폐수 (단위 부피당) 소모전력량*/
+            ,o.shift_worker1    /* 시간대별근무자1 */
+            ,o.shift_worker2    /* 시간대별근무자2 */
+            ,o.shift_worker3    /* 시간대별근무자3 */
+
+            ,o.regulator        /* 단속 기관 */
+            ,o.regulator_worker    /* 단속 기관 점검자 */
+            ,o.violation        /* 위반사항 */
+            ,o.action            /* 조치사항 */
+
+            ,o.create_user_id
+            ,u.user_nm as create_user_nm
+            ,d.dept_nm
+            ,car.biz_appr_step_cd
+            ,o.create_dt
+            ,o.update_user_id
+            ,o.update_dt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+
+        from ewtr_op_log_result o
+        left outer join com_appr_rqst car on o.appr_rqst_no = car.appr_rqst_no
+        left outer join ewtr_clean_fac clean on o.ewtr_clean_fac_no = clean.ewtr_clean_fac_no
+        left outer join com_user u on o.create_user_id = u.user_id
+        left outer join com_dept d on u.dept_cd = d.dept_cd
+        left outer join com_code_master c on c.code_group_cd = 'SAF_PROCESS_STEP' and o.env_op_log_st_cd = c.code
+        left outer join com_code_master r on r.code_group_cd = 'SAF_WEATHER' and o.weather = r.code
+        left outer join com_user cu on o.create_user_id = cu.user_id
+        left outer join com_user uu on o.update_user_id = uu.user_id
+        where 1=1
+        and o.measure_ymd = #{measureYmd}
+        and o.ewtr_clean_fac_no = #{ewtrCleanFacNo}
+        and o.plant_cd = #{plantCd}
+        and o.dept_cd = #{deptCd}
+    </select>
+
+    <update id= "updateGuided" parameterType= "com.she.env.water.model.GuidedHist">
+        update ewtr_op_log_result
+        SET  regulator =  #{regulator}
+            ,regulator_worker =  #{regulatorWorker}
+            ,violation = #{violation}
+            ,action = #{action}
+        where measure_ymd = #{measureYmd}
+            and ewtr_clean_fac_no=#{ewtrCleanFacNo}
+    </update>
+
+</mapper>

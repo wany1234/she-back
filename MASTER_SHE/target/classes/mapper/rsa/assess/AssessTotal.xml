@@ -1,0 +1,1722 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.rsa.assess.mapper.AssessTotalMapper">
+
+    <select id= "getAssessTotalKRASProcess" resultType= "com.she.rsa.model.AssessTotal">
+        with a as
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,rj.process_cd
+                ,count(process_cd) as process_cnt
+            from rsa_dept_assess_job rdaj
+            inner join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            group by rdaj.assess_plan_no, rdaj.dept_cd, rj.process_cd
+        ),
+        b as 
+        (
+            select assess_plan_no, dept_cd, process_cd
+                ,count(dept_cd) riskhazard_cnt
+            from (
+                select assess_plan_no, dept_cd, process_cd
+                from (
+                    select assess_plan_no, rk.dept_cd, rj.process_cd, job_step_id, risk_hazard_no
+                    from rsa_kras rk
+                    inner join rsa_job rj
+                    on rk.dept_cd = rj.dept_cd
+                    and rk.job_id = rj.job_id
+                    union all
+                    select assess_plan_no, rdaj.dept_cd, rj.process_cd, min(rrjs.job_step_id) as job_step_id, rr.risk_hazard_no 
+                    from rsa_dept_assess_job rdaj
+                    inner join rsa_job rj
+                    on rdaj.dept_cd = rj.dept_cd
+                    and rdaj.job_id = rj.job_id
+                    inner join rsa_job_step rjs
+                    on rj.job_id = rjs.job_id
+                    inner join rsa_job_riskhazard rr
+                    on rjs.job_step_id = rr.job_step_id
+                    inner join (select job_id, max(job_step_id) as job_step_id
+                                from rsa_job_step
+                                group by job_id, job_step_no, job_step_group_no) rrjs
+                    on rr.job_step_id = rrjs.job_step_id
+                    group by assess_plan_no, rdaj.dept_cd, process_cd, rr.risk_hazard_no
+                    ) rjr
+                group by assess_plan_no, dept_cd, process_cd, job_step_id, risk_hazard_no) jc
+            group by assess_plan_no, dept_cd, process_cd
+        ),
+        c as
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,rj.process_cd
+                , count(*) complet_cnt
+            from rsa_dept_assess_job rdaj
+            left outer join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rdaj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            inner join rsa_kras rk
+            on rjr.job_id = rk.job_id
+            and rdaj.assess_plan_no = rk.assess_plan_no
+            and rdaj.dept_cd = rk.dept_cd
+            and rjr.risk_hazard_no = rk.risk_hazard_no
+            and rk.assess_date is not null
+            group by rdaj.assess_plan_no, rdaj.dept_cd, rj.process_cd
+        ),
+        d as 
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,rj.process_cd
+                ,count(*) as job_risk_book_cnt
+            from rsa_dept_assess_job rdaj
+            inner join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras rk
+            on rdaj.job_id = rk.job_id
+            and rdaj.assess_plan_no = rk.assess_plan_no
+            and rjr.risk_hazard_no = rk.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rk.assess_plan_no = rjrb.assess_plan_no
+            and rk.dept_cd = rjrb.dept_cd
+            and rk.job_id = rjrb.job_id
+            and rk.risk_hazard_no = rjrb.risk_hazard_no
+            group by rdaj.assess_plan_no, rdaj.dept_cd, rj.process_cd
+        ),
+        e as
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,rj.process_cd
+                ,count(*) as impr_act_request_cnt
+            from rsa_dept_assess_job rdaj
+            inner join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras rk
+            on rdaj.job_id = rk.job_id
+            and rdaj.assess_plan_no = rk.assess_plan_no
+            and rjr.risk_hazard_no = rk.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rk.assess_plan_no = rjrb.assess_plan_no
+            and rk.dept_cd = rjrb.dept_cd
+            and rk.job_id = rjrb.job_id
+            and rk.risk_hazard_no = rjrb.risk_hazard_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and impr_class_cd = 'ICL05'
+            and sia.del_yn != 'Y'
+            group by rdaj.assess_plan_no, rdaj.dept_cd, rj.process_cd
+        ),
+        f as
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,rj.process_cd
+                ,count(*) as impr_act_complet_cnt
+            from rsa_dept_assess_job rdaj
+            inner join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras rk
+            on rdaj.job_id = rk.job_id
+            and rdaj.assess_plan_no = rk.assess_plan_no
+            and rjr.risk_hazard_no = rk.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rk.assess_plan_no = rjrb.assess_plan_no
+            and rk.dept_cd = rjrb.dept_cd
+            and rk.job_id = rjrb.job_id
+            and rk.risk_hazard_no = rjrb.risk_hazard_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and sia.impr_class_cd = 'ICL05'
+            and sia.impr_step_cd = 'IMST5'
+            and sia.del_yn != 'Y'
+            group by rdaj.assess_plan_no, rdaj.dept_cd, rj.process_cd
+        )
+        select rrap.assess_plan_no                                                        --평가계획No
+            ,rrap.assess_nm                                                                --평가명
+            ,rrap.assess_desc                                                            --평가설명
+            ,convert(char(19), rrap.assess_year, 23) as assess_year                        --평가년도
+            --,rrap.kras_assess_type_no                                                    --KRAS평가여부
+            --,rrap.jsa_assess_type_no                                                    --JSA평가여부
+            --,rrap.charm_assess_type_no                                                    --CHARM평가여부
+            ,rrap.assess_type_no
+            ,rrad.dept_cd                                                                --부서코드
+            ,cd.dept_nm                                                                    --부서명
+            ,a.process_cd                                                                --공정
+            ,cp.process_nm                                                                --공정명
+            ,isnull(a.process_cnt, 0) as process_cnt                                    --직무건수
+            ,isnull(b.riskhazard_cnt, 0) as riskhazard_cnt                                --위험요인건수
+            ,isnull(c.complet_cnt, 0) as complet_cnt                                    --평가완료건수
+            ,isnull(ROUND(cast(c.complet_cnt as float) / 
+                cast(b.riskhazard_cnt as float), 4) * 100, 0) as assess_percent            --평가율
+            ,isnull(d.job_risk_book_cnt, 0) as job_risk_book_cnt                        --위험등록부등재건수
+            ,isnull(e.impr_act_request_cnt, 0) as impr_act_request_cnt                    --개선요청건수
+            ,isnull(f.impr_act_complet_cnt, 0) as impr_act_complet_cnt                    --개선완료건수
+            ,isnull(ROUND(cast(f.impr_act_complet_cnt as float) / 
+                cast(e.impr_act_request_cnt as float), 4) * 100, 0) as impr_act_percent --개선실행율
+        from rsa_risk_assess_plan rrap
+        inner join rsa_risk_assess_dept rrad
+        on rrap.assess_plan_no = rrad.assess_plan_no
+        left outer join com_dept cd
+        on rrad.dept_cd = cd.dept_cd
+        inner join a 
+        on rrad.assess_plan_no = a.assess_plan_no
+        and rrad.dept_cd = a.dept_cd
+        left outer join com_process cp
+        on a.process_cd = cp.process_cd
+        left outer join b
+        on rrad.assess_plan_no = b.assess_plan_no
+        and rrad.dept_cd = b.dept_cd
+        and cp.process_cd = b.process_cd
+        left outer join c
+        on rrad.assess_plan_no = c.assess_plan_no
+        and rrad.dept_cd = c.dept_cd
+        and cp.process_cd = c.process_cd
+        left outer join d
+        on rrad.assess_plan_no = d.assess_plan_no
+        and rrad.dept_cd = d.dept_cd
+        and cp.process_cd = d.process_cd
+        left outer join e
+        on rrad.assess_plan_no = e.assess_plan_no
+        and rrad.dept_cd = e.dept_cd
+        and cp.process_cd = e.process_cd
+        left outer join f
+        on rrad.assess_plan_no = f.assess_plan_no
+        and rrad.dept_cd = f.dept_cd
+        and cp.process_cd = f.process_cd
+        inner join com_code_master assessType
+        on rrap.assess_type_cd = assessType.code
+        and assessType.use_yn = 'Y'
+        where assessType.code_nm = 'KRAS' --kras_assess_type_no is not null
+        <if test= "assessNm != null and !assessNm.equals('')">
+        and rrap.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+        and convert(int, rrap.assess_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+        </if>
+        order by rrap.assess_year desc, assess_plan_no desc
+    </select>
+    
+    <select id= "getAssessTotalKRASDept" resultType= "com.she.rsa.model.AssessTotal">
+        with a as
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,count(process_no) as process_cnt
+            from rsa_dept_assess_job rdaj
+            inner join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            group by rdaj.assess_plan_no, rdaj.dept_cd
+        ),
+        b as 
+        (
+            select assess_plan_no, dept_cd
+                ,count(dept_cd) riskhazard_cnt
+            from (
+                select assess_plan_no, dept_cd
+                from (
+                    select assess_plan_no, dept_cd, job_step_id, risk_hazard_no
+                    from rsa_kras
+                    union all
+                    select assess_plan_no, rdaj.dept_cd, min(rrjs.job_step_id) as job_step_id, rr.risk_hazard_no 
+                    from rsa_dept_assess_job rdaj
+                    inner join rsa_job rj
+                    on rdaj.dept_cd = rj.dept_cd
+                    and rdaj.job_id = rj.job_id
+                    inner join rsa_job_step rjs
+                    on rj.job_id = rjs.job_id
+                    inner join rsa_job_riskhazard rr
+                    on rjs.job_step_id = rr.job_step_id
+                    inner join (select job_id, max(job_step_id) as job_step_id
+                                from rsa_job_step
+                                group by job_id, job_step_no, job_step_group_no) rrjs
+                    on rr.job_step_id = rrjs.job_step_id
+                    group by assess_plan_no, rdaj.dept_cd, rr.risk_hazard_no
+                    ) rjr
+                group by assess_plan_no, dept_cd, job_step_id, risk_hazard_no) jc
+            group by assess_plan_no, dept_cd
+        ),
+        c as
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                , count(*) complet_cnt
+            from rsa_dept_assess_job rdaj
+            left outer join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rdaj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            inner join rsa_kras rk
+            on rjr.job_id = rk.job_id
+            and rdaj.assess_plan_no = rk.assess_plan_no
+            and rjr.risk_hazard_no = rk.risk_hazard_no
+            and rk.assess_date is not null
+            group by rdaj.assess_plan_no, rdaj.dept_cd
+        ),
+        d as 
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,count(*) as job_risk_book_cnt
+            from rsa_dept_assess_job rdaj
+            inner join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras rk
+            on rdaj.job_id = rk.job_id
+            and rdaj.assess_plan_no = rk.assess_plan_no
+            and rjr.risk_hazard_no = rk.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rk.assess_plan_no = rjrb.assess_plan_no
+            and rk.dept_cd = rjrb.dept_cd
+            and rk.job_id = rjrb.job_id
+            and rk.risk_hazard_no = rjrb.risk_hazard_no
+            group by rdaj.assess_plan_no, rdaj.dept_cd
+        ),
+        e as
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,count(*) as impr_act_request_cnt
+            from rsa_dept_assess_job rdaj
+            inner join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras rk
+            on rdaj.job_id = rk.job_id
+            and rdaj.assess_plan_no = rk.assess_plan_no
+            and rjr.risk_hazard_no = rk.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rk.assess_plan_no = rjrb.assess_plan_no
+            and rk.dept_cd = rjrb.dept_cd
+            and rk.job_id = rjrb.job_id
+            and rk.risk_hazard_no = rjrb.risk_hazard_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and impr_class_cd = 'ICL05'
+            and sia.del_yn != 'Y'
+            group by rdaj.assess_plan_no, rdaj.dept_cd
+        ),
+        f as
+        (
+            select rdaj.assess_plan_no
+                ,rdaj.dept_cd
+                ,count(*) as impr_act_complet_cnt
+            from rsa_dept_assess_job rdaj
+            inner join rsa_job rj
+            on rdaj.dept_cd = rj.dept_cd
+            and rdaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras rk
+            on rdaj.job_id = rk.job_id
+            and rdaj.assess_plan_no = rk.assess_plan_no
+            and rjr.risk_hazard_no = rk.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rk.assess_plan_no = rjrb.assess_plan_no
+            and rk.dept_cd = rjrb.dept_cd
+            and rk.job_id = rjrb.job_id
+            and rk.risk_hazard_no = rjrb.risk_hazard_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and sia.impr_class_cd = 'ICL05'
+            and sia.impr_step_cd = 'IMST5'
+            and sia.del_yn != 'Y'
+            group by rdaj.assess_plan_no, rdaj.dept_cd
+        )
+        select rrap.assess_plan_no                                                        --평가계획No
+            ,rrap.assess_nm                                                                --평가명
+            ,rrap.assess_desc                                                            --평가설명
+            ,convert(char(19), rrap.assess_year, 23) as assess_year                        --평가년도
+            --,rrap.kras_assess_type_no                                                    --KRAS평가여부
+            --,rrap.jsa_assess_type_no                                                    --JSA평가여부
+            --,rrap.charm_assess_type_no                                                    --CHARM평가여부
+            ,rrap.assess_type_no
+            ,rrad.dept_cd                                                                --부서코드
+            ,cd.dept_nm                                                                    --부서명
+            ,isnull(a.process_cnt, 0) as process_cnt                                    --직무건수
+            ,isnull(b.riskhazard_cnt, 0) as riskhazard_cnt                                --위험요인건수
+            ,isnull(c.complet_cnt, 0) as complet_cnt                                    --평가완료건수
+            ,isnull(ROUND(cast(c.complet_cnt as float) / 
+                cast(b.riskhazard_cnt as float), 4) * 100, 0) as assess_percent            --평가율
+            ,isnull(d.job_risk_book_cnt, 0) as job_risk_book_cnt                        --위험등록부등재건수
+            ,isnull(e.impr_act_request_cnt, 0) as impr_act_request_cnt                    --개선요청건수
+            ,isnull(f.impr_act_complet_cnt, 0) as impr_act_complet_cnt                    --개선완료건수
+            ,isnull(ROUND(cast(f.impr_act_complet_cnt as float) / 
+                cast(e.impr_act_request_cnt as float), 4) * 100, 0) as impr_act_percent --개선실행율
+        from rsa_risk_assess_plan rrap
+        inner join rsa_risk_assess_dept rrad
+        on rrap.assess_plan_no = rrad.assess_plan_no
+        left outer join com_dept cd
+        on rrad.dept_cd = cd.dept_cd
+        inner join a 
+        on rrad.assess_plan_no = a.assess_plan_no
+        and rrad.dept_cd = a.dept_cd
+        left outer join b
+        on rrad.assess_plan_no = b.assess_plan_no
+        and rrad.dept_cd = b.dept_cd
+        left outer join c
+        on rrad.assess_plan_no = c.assess_plan_no
+        and rrad.dept_cd = c.dept_cd
+        left outer join d
+        on rrad.assess_plan_no = d.assess_plan_no
+        and rrad.dept_cd = d.dept_cd
+        left outer join e
+        on rrad.assess_plan_no = e.assess_plan_no
+        and rrad.dept_cd = e.dept_cd
+        left outer join f
+        on rrad.assess_plan_no = f.assess_plan_no
+        and rrad.dept_cd = f.dept_cd
+        inner join com_code_master assessType
+        on rrap.assess_type_cd = assessType.code
+        and assessType.use_yn = 'Y'
+        where assessType.code_nm = 'KRAS' --kras_assess_type_no is not null
+        <if test= "assessNm != null and !assessNm.equals('')">
+        and rrap.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+        and convert(int, rrap.assess_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+        </if>
+        order by rrap.assess_year desc, assess_plan_no desc
+    </select>
+    
+    <select id= "getImprActs" resultType= "com.she.impr.model.ImprAct">
+        /* AssessTotalMapper.getImprActs [AssessTotal.xml] */
+        SELECT rjrb.risk_book_no
+              ,sia.impr_step_cd
+              ,SISCode.code_nm as impr_step_nm
+              ,sia.impr_class_cd
+              ,SICCode.code_nm as impr_class_nm
+              , iif(sia.impr_title = '', sia.discover_matter, isnull(sia.impr_title, sia.discover_matter)) as impr_title
+              , iif(sia.impr_rqst_contents = '', sia.discover_matter, isnull(sia.impr_rqst_contents, sia.discover_matter)) as impr_rqst_contents    -- 개선요청내용
+              ,sia.impr_rqst_user_id
+              ,cu.user_nm as impr_rqst_user_nm
+              ,sia.impr_rqst_ymd
+              ,sia.act_limit_ymd
+              ,sia.act_dept_cd
+              ,cd.dept_nm as act_dept_nm
+              ,sia.act_user_id
+              ,sia.act_user_nm
+              ,sia.act_confirm_ymd
+              ,sia.act_result_contents
+          FROM rsa_job_risk_book rjrb
+         INNER JOIN saf_impr_act sia
+            ON rjrb.risk_book_no = sia.ref_table_id
+           AND sia.impr_class_cd = 'ICL05'
+           AND sia.del_yn != 'Y'
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_IMPR_CLASS') SICCode 
+            ON sia.impr_class_cd = SICCode.code 
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_IMPR_STEP') SISCode 
+            ON sia.impr_step_cd = SISCode.code 
+          LEFT OUTER JOIN com_user cu
+            ON sia.impr_rqst_user_id = cu.user_id
+          LEFT OUTER JOIN com_dept cd
+            ON sia.act_dept_cd = cd.dept_cd
+         WHERE 1=1
+        <if test= "processCd != null and !processCd.equals('')">
+           AND rjrb.assess_type_nm = #{assessTypeNm}
+        </if>
+        <if test= "assessPlanNo != null and assessPlanNo > 0"> 
+           AND rjrb.assess_plan_no = #{assessPlanNo}
+        </if>
+        <!--    and exists(Select 1
+                       From rsa_process_assess_chem rpac
+                Where rpac.assess_plan_no = rjrb.assess_plan_no
+                  AND rpac.dept_cd = rjrb.dept_cd
+                  AND rpac.process_cd = rjrb.process_cd
+                  AND rpac.chem_prod_no = rjrb.chem_prod_no
+                  AND rpac.chem_no = rjrb.chem_no
+         <if test= "deptCd != null and !deptCd.equals('')">
+                  AND rpac.dept_cd = #{deptCd}
+        </if>
+        <if test= "processCd != null and !processCd.equals('')">
+                  AND rpac.process_cd = #{processCd}
+        </if>
+                  ) -->
+         ORDER BY rjrb.risk_book_no
+    </select>
+    
+    <select id= "getAssessTotalJSAProcess" resultType= "com.she.rsa.model.AssessTotal">
+        /* AssessTotalMapper.getAssessTotalJSAProcess [AssessTotal.xml] */
+        with a as
+        (
+            select rpaj.assess_plan_no 
+                ,rj.dept_cd
+                ,rpaj.process_cd
+                ,count(rpaj.process_cd) as process_cnt
+            from rsa_process_assess_job rpaj
+            inner join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            group by rpaj.assess_plan_no, rj.dept_cd, rpaj.process_cd
+        ),
+        b as 
+        (
+            select assess_plan_no, process_cd
+                ,count(process_cd) riskhazard_cnt
+            from (
+                select assess_plan_no, process_cd
+                from (
+                    select assess_plan_no, rka.process_cd, job_step_id, risk_hazard_no
+                    from rsa_kras_jsa rka
+                    inner join rsa_job rj
+                    on rka.process_cd = rj.process_cd
+                    and rka.job_id = rj.job_id
+                    union all
+                    select assess_plan_no, rpaj.process_cd, min(rrjs.job_step_id) as job_step_id, rr.risk_hazard_no 
+                    from rsa_process_assess_job rpaj
+                    inner join rsa_job rj
+                    on rpaj.process_cd = rj.process_cd
+                    and rpaj.job_id = rj.job_id
+                    inner join rsa_job_step rjs
+                    on rj.job_id = rjs.job_id
+                    inner join rsa_job_riskhazard rr
+                    on rjs.job_step_id = rr.job_step_id
+                    inner join (select job_id, max(job_step_id) as job_step_id
+                                from rsa_job_step
+                                group by job_id, job_step_no, job_step_group_no) rrjs
+                    on rr.job_step_id = rrjs.job_step_id
+                    group by assess_plan_no, rpaj.process_cd, rr.risk_hazard_no
+                    ) rjr
+                group by assess_plan_no, process_cd, job_step_id, risk_hazard_no) jc
+            group by assess_plan_no, process_cd
+        ),
+        c as
+        (
+            select rpaj.assess_plan_no
+                ,rpaj.process_cd
+                , count(*) complet_cnt
+            from rsa_process_assess_job rpaj
+            left outer join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rpaj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            inner join rsa_kras_jsa rka
+            on rjr.job_id = rka.job_id
+            and rpaj.assess_plan_no = rka.assess_plan_no
+            and rpaj.process_cd = rka.process_cd
+            and rjr.risk_hazard_no = rka.risk_hazard_no
+            and rka.assess_date is not null
+            group by rpaj.assess_plan_no, rpaj.process_cd
+        ),
+        d as 
+        (
+            select rpaj.assess_plan_no
+                --,rdaj.dept_cd
+                ,rpaj.process_cd
+                ,count(*) as job_risk_book_cnt
+            from rsa_process_assess_job rpaj
+            inner join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras_jsa rka
+            on rpaj.job_id = rka.job_id
+            and rpaj.assess_plan_no = rka.assess_plan_no
+            and rjr.risk_hazard_no = rka.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rka.assess_plan_no = rjrb.assess_plan_no
+            and rka.process_cd = rjrb.process_cd
+            and rka.job_id = rjrb.job_id
+            and rka.risk_hazard_no = rjrb.risk_hazard_no
+            group by rpaj.assess_plan_no, rpaj.process_cd
+        ),
+        e as
+        (
+            select rpaj.assess_plan_no
+                --,rdaj.dept_cd
+                ,rpaj.process_cd
+                ,count(*) as impr_act_request_cnt
+            from rsa_process_assess_job rpaj
+            inner join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras_jsa rkj
+            on rpaj.job_id = rkj.job_id
+            and rpaj.assess_plan_no = rkj.assess_plan_no
+            and rjr.risk_hazard_no = rkj.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rkj.assess_plan_no = rjrb.assess_plan_no
+            and rkj.process_cd = rjrb.process_cd
+            and rkj.job_id = rjrb.job_id
+            and rkj.risk_hazard_no = rjrb.risk_hazard_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and impr_class_cd = 'ICL05'
+            and sia.del_yn != 'Y'
+            group by rpaj.assess_plan_no, rpaj.process_cd
+        ),
+        f as
+        (
+            select rpaj.assess_plan_no
+                --,rdaj.dept_cd
+                ,rpaj.process_cd
+                ,count(*) as impr_act_complet_cnt
+            from rsa_process_assess_job rpaj
+            inner join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras_jsa rkj
+            on rpaj.job_id = rkj.job_id
+            and rpaj.assess_plan_no = rkj.assess_plan_no
+            and rjr.risk_hazard_no = rkj.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rkj.assess_plan_no = rjrb.assess_plan_no
+            and rkj.process_cd = rjrb.process_cd
+            and rkj.job_id = rjrb.job_id
+            and rkj.risk_hazard_no = rjrb.risk_hazard_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and sia.impr_class_cd = 'ICL05'
+            and sia.impr_step_cd = 'IMST5'
+            and sia.del_yn != 'Y'
+            group by rpaj.assess_plan_no, rpaj.process_cd
+        ),
+        g as
+        (
+            select rpaj.assess_plan_no
+                --,rdaj.dept_cd
+                ,rpaj.process_cd
+                ,count(rjs.job_step_id) as job_step_cnt
+            from rsa_process_assess_job rpaj
+            inner join (select job_id, max(job_step_id) as job_step_id
+                        from rsa_job_step
+                        where use_yn = 'Y'
+                        group by job_id, job_step_no, job_step_group_no) rjs
+            on rpaj.job_id = rjs.job_id
+            inner join rsa_job rj
+            on rjs.job_id = rj.job_id
+            group by rpaj.assess_plan_no, rpaj.process_cd
+        )
+        select rrap.plant_cd
+            ,ccm.code_nm as plantNm 
+            ,rrap.assess_plan_no                                                        --평가계획No
+            ,rrap.assess_nm                                                                --평가명
+            ,rrap.assess_desc                                                            --평가설명
+            ,convert(char(19), rrap.assess_year, 23) as assess_year                        --평가년도
+            --,rrap.kras_assess_type_no                                                    --KRAS평가여부
+            --,rrap.jsa_assess_type_no                                                    --JSA평가여부
+            --,rrap.charm_assess_type_no                                                    --CHARM평가여부
+            ,rrap.assess_type_no
+            ,a.dept_cd                                                                --부서코드
+            ,cd.dept_nm                                                                    --부서명
+            ,a.process_cd                                                                --공정
+            ,cp.process_nm                                                                --공정명
+            ,isnull(a.process_cnt, 0) as process_cnt                                    --직무건수
+            ,isnull(g.job_step_cnt, 0) as job_step_cnt                                    --단계건수
+            ,isnull(b.riskhazard_cnt, 0) as riskhazard_cnt                                --위험요인건수
+            ,isnull(c.complet_cnt, 0) as complet_cnt                                    --평가완료건수
+            ,isnull(ROUND(cast(c.complet_cnt as float) / 
+                cast(b.riskhazard_cnt as float), 4) * 100, 0) as assess_percent            --평가율
+            ,isnull(d.job_risk_book_cnt, 0) as job_risk_book_cnt                        --위험등록부등재건수
+            ,isnull(e.impr_act_request_cnt, 0) as impr_act_request_cnt                    --개선요청건수
+            ,isnull(f.impr_act_complet_cnt, 0) as impr_act_complet_cnt                    --개선완료건수
+            ,isnull(ROUND(cast(f.impr_act_complet_cnt as float) / 
+                cast(e.impr_act_request_cnt as float), 4) * 100, 0) as impr_act_percent --개선실행율
+        from rsa_risk_assess_plan rrap
+        inner join rsa_risk_assess_process lirrap
+        on rrap.assess_plan_no = lirrap.assess_plan_no
+        inner join a 
+        on lirrap.assess_plan_no = a.assess_plan_no
+        and lirrap.process_cd = a.process_cd
+        left outer join com_process cp
+        on a.process_cd = cp.process_cd
+        left outer join b
+        on lirrap.assess_plan_no = b.assess_plan_no
+        and cp.process_cd = b.process_cd
+        left outer join c
+        on lirrap.assess_plan_no = c.assess_plan_no
+        and cp.process_cd = c.process_cd
+        left outer join d
+        on lirrap.assess_plan_no = d.assess_plan_no
+        and cp.process_cd = d.process_cd
+        left outer join e
+        on lirrap.assess_plan_no = e.assess_plan_no
+        and cp.process_cd = e.process_cd
+        left outer join f
+        on lirrap.assess_plan_no = f.assess_plan_no
+        and cp.process_cd = f.process_cd
+        left outer join g
+        on lirrap.assess_plan_no = g.assess_plan_no
+        and cp.process_cd = g.process_cd
+        inner join com_code_master assessType
+        on rrap.assess_type_cd = assessType.code
+        and assessType.use_yn = 'Y'
+        left outer join com_dept cd
+        on a.dept_cd = cd.dept_cd
+        inner join com_code_master ccm on rrap.plant_cd = ccm.code
+        where assessType.code_nm = 'JSA' --kras_assess_type_no is not null
+        <if test= "assessNm != null and !assessNm.equals('')">
+        and rrap.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+        and convert(int, rrap.assess_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and rrap.plant_cd = #{plantCd}
+        </if>
+        order by rrap.assess_year desc, assess_plan_no desc
+    </select>
+    
+    <select id= "getAssessTotalJSADept" resultType= "com.she.rsa.model.AssessTotal">
+        with a as
+        (
+            select rpaj.assess_plan_no
+                ,rj.dept_cd
+                ,count(rpaj.process_cd) as process_cnt
+            from rsa_process_assess_job rpaj
+            inner join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            group by rpaj.assess_plan_no, rj.dept_cd
+        ),
+        b as 
+        (
+            select assess_plan_no, dept_cd
+                ,count(dept_cd) riskhazard_cnt
+            from (
+                select assess_plan_no, dept_cd
+                from (
+                    select assess_plan_no, dept_cd, job_step_id, risk_hazard_no
+                    from rsa_kras_jsa rka
+                    inner join rsa_job rj
+                    on rka.process_cd = rj.process_cd
+                    and rka.job_id = rj.job_id
+                    union all
+                    select assess_plan_no, rj.dept_cd, min(rrjs.job_step_id) as job_step_id, rr.risk_hazard_no 
+                    from rsa_process_assess_job rpaj
+                    inner join rsa_job rj
+                    on rpaj.process_cd = rj.process_cd
+                    and rpaj.job_id = rj.job_id
+                    inner join rsa_job_step rjs
+                    on rj.job_id = rjs.job_id
+                    inner join rsa_job_riskhazard rr
+                    on rjs.job_step_id = rr.job_step_id
+                    inner join (select job_id, max(job_step_id) as job_step_id
+                                from rsa_job_step
+                                group by job_id, job_step_no, job_step_group_no) rrjs
+                    on rr.job_step_id = rrjs.job_step_id
+                    group by assess_plan_no, rj.dept_cd, rr.risk_hazard_no
+                    ) rjr
+                group by assess_plan_no, dept_cd, job_step_id, risk_hazard_no) jc
+            group by assess_plan_no, dept_cd
+        ),
+        c as
+        (
+            select rpaj.assess_plan_no
+                ,rj.dept_cd
+                , count(*) complet_cnt
+            from rsa_process_assess_job rpaj
+            left outer join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rpaj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            inner join rsa_kras_jsa rkj
+            on rjr.job_id = rkj.job_id
+            and rpaj.assess_plan_no = rkj.assess_plan_no
+            and rjr.risk_hazard_no = rkj.risk_hazard_no
+            and rkj.assess_date is not null
+            group by rpaj.assess_plan_no, rj.dept_cd
+        ),
+        d as 
+        (
+            select rpaj.assess_plan_no
+                ,rj.dept_cd
+                ,count(*) as job_risk_book_cnt
+            from rsa_process_assess_job rpaj
+            inner join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras_jsa rkj
+            on rpaj.job_id = rkj.job_id
+            and rpaj.assess_plan_no = rkj.assess_plan_no
+            and rjr.risk_hazard_no = rkj.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rkj.assess_plan_no = rjrb.assess_plan_no
+            and rkj.process_cd = rjrb.process_cd
+            and rkj.job_id = rjrb.job_id
+            and rkj.risk_hazard_no = rjrb.risk_hazard_no
+            group by rpaj.assess_plan_no, rj.dept_cd
+        ),
+        e as
+        (
+            select rpaj.assess_plan_no
+                ,rj.dept_cd
+                ,count(*) as impr_act_request_cnt
+            from rsa_process_assess_job rpaj
+            inner join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras_jsa rkj
+            on rpaj.job_id = rkj.job_id
+            and rpaj.assess_plan_no = rkj.assess_plan_no
+            and rjr.risk_hazard_no = rkj.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rpaj.assess_plan_no = rjrb.assess_plan_no
+            and rj.dept_cd = rjrb.dept_cd
+            and rpaj.job_id = rjrb.job_id
+            and rkj.risk_hazard_no = rjrb.risk_hazard_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and impr_class_cd = 'ICL05'
+            and sia.del_yn != 'Y'
+            group by rpaj.assess_plan_no, rj.dept_cd
+        ),
+        f as
+        (
+            select rpaj.assess_plan_no
+                ,rj.dept_cd
+                ,count(*) as impr_act_complet_cnt
+            from rsa_process_assess_job rpaj
+            inner join rsa_job rj
+            on rpaj.process_cd = rj.process_cd
+            and rpaj.job_id = rj.job_id
+            inner join (select job_id, risk_hazard_no 
+                            from rsa_job_riskhazard rj
+                            inner join rsa_job_step rjs
+                            on rj.job_step_id = rjs.job_step_id
+                            group by job_id, risk_hazard_no 
+                            ) rjr
+            on rj.job_id = rjr.job_id
+            inner join rsa_risk_hazard rrh
+            on rjr.risk_hazard_no = rrh.risk_hazard_no
+            left outer join rsa_kras_jsa rkj
+            on rpaj.job_id = rkj.job_id
+            and rpaj.assess_plan_no = rkj.assess_plan_no
+            and rjr.risk_hazard_no = rkj.risk_hazard_no
+            inner join rsa_job_risk_book rjrb
+            on rkj.assess_plan_no = rjrb.assess_plan_no
+            and rj.dept_cd = rjrb.dept_cd
+            and rkj.job_id = rjrb.job_id
+            and rkj.risk_hazard_no = rjrb.risk_hazard_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and sia.impr_class_cd = 'ICL05'
+            and sia.impr_step_cd = 'IMST5'
+            and sia.del_yn != 'Y'
+            group by rpaj.assess_plan_no, rj.dept_cd
+        ),
+        g as
+        (
+            select rpaj.assess_plan_no
+                ,rj.dept_cd
+                ,count(rjs.job_step_id) as job_step_cnt
+            from rsa_process_assess_job rpaj
+            inner join (select job_id, max(job_step_id) as job_step_id
+                        from rsa_job_step
+                        group by job_id, job_step_no, job_step_group_no) rjs
+            on rpaj.job_id = rjs.job_id
+            inner join rsa_job rj
+            on rjs.job_id = rj.job_id
+            group by rpaj.assess_plan_no, rj.dept_cd
+        )
+        select rrap.plant_cd
+            ,ccm.code_nm as plantNm
+            ,rrap.assess_plan_no                                                        --평가계획No
+            ,rrap.assess_nm                                                                --평가명
+            ,rrap.assess_desc                                                            --평가설명
+            ,convert(char(19), rrap.assess_year, 23) as assess_year                        --평가년도
+            ,rrap.assess_type_no
+            ,p.dept_cd                                                                --부서코드
+            ,cd.dept_nm                                                                    --부서명
+            ,isnull(a.process_cnt, 0) as process_cnt                                    --직무건수
+            ,isnull(g.job_step_cnt, 0) as job_step_cnt                                    --단계건수
+            ,isnull(b.riskhazard_cnt, 0) as riskhazard_cnt                                --위험요인건수
+            ,isnull(c.complet_cnt, 0) as complet_cnt                                    --평가완료건수
+            ,isnull(ROUND(cast(c.complet_cnt as float) / 
+                cast(b.riskhazard_cnt as float), 4) * 100, 0) as assess_percent            --평가율
+            ,isnull(d.job_risk_book_cnt, 0) as job_risk_book_cnt                        --위험등록부등재건수
+            ,isnull(e.impr_act_request_cnt, 0) as impr_act_request_cnt                    --개선요청건수
+            ,isnull(f.impr_act_complet_cnt, 0) as impr_act_complet_cnt                    --개선완료건수
+            ,isnull(ROUND(cast(f.impr_act_complet_cnt as float) / 
+                cast(e.impr_act_request_cnt as float), 4) * 100, 0) as impr_act_percent --개선실행율
+        from rsa_risk_assess_plan rrap
+        inner join com_code_master assessType
+        on rrap.assess_type_cd = assessType.code
+        and assessType.code_group_cd = 'RSA_ASSESS_TYPE'
+        inner join com_code_master ccm on rrap.plant_cd = ccm.code and ccm.code_group_cd = 'COM_PLANT_CD'
+
+        inner join (select x.assess_plan_no, z.dept_cd
+                    from rsa_process_assess_job x
+                    inner join rsa_risk_assess_process y
+                    on x.assess_plan_no = y.assess_plan_no
+                    and x.process_cd = y.process_cd
+                    inner join rsa_job z
+                    on x.job_id = z.job_id
+                    group by x.assess_plan_no, z.dept_cd) p
+        on p.assess_plan_no = rrap.assess_plan_no
+
+        left outer join com_dept cd
+        on p.dept_cd = cd.dept_cd
+        inner join a 
+        on rrap.assess_plan_no = a.assess_plan_no
+        and p.dept_cd = a.dept_cd
+        left outer join b
+        on rrap.assess_plan_no = b.assess_plan_no
+        and p.dept_cd = b.dept_cd
+        left outer join c
+        on rrap.assess_plan_no = c.assess_plan_no
+        and p.dept_cd = c.dept_cd
+        left outer join d
+        on rrap.assess_plan_no = d.assess_plan_no
+        and p.dept_cd = d.dept_cd
+        left outer join e
+        on rrap.assess_plan_no = e.assess_plan_no
+        and p.dept_cd = e.dept_cd
+        left outer join f
+        on rrap.assess_plan_no = f.assess_plan_no
+        and p.dept_cd = f.dept_cd
+        left outer join g
+        on rrap.assess_plan_no = g.assess_plan_no
+        and p.dept_cd = g.dept_cd
+        where assessType.code_nm = 'JSA' --kras_assess_type_no is not null
+        and rrap.assess_step_cd = 'C'
+        <if test= "assessNm != null and !assessNm.equals('')">
+        and rrap.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= "assessNm != null and !assessNm.equals('')">
+        and rrap.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+        and convert(int, rrap.assess_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and rrap.plant_cd = #{plantCd}
+        </if>
+        order by rrap.assess_year desc, assess_plan_no desc
+    </select>
+    
+    <select id= "getAssessJob" resultType= "com.she.rsa.model.AssessTotal">
+       /* AssessTotalMapper.getAssessJob [AssessTotal.xml] */
+        with A as 
+        (
+            select rpaj.assess_plan_no
+                , rpaj.process_cd
+                , rjs.job_id
+            from rsa_process_assess_job rpaj
+            inner join rsa_job_step rjs
+            on rpaj.job_id = rjs.job_id
+            group by assess_plan_no, process_cd, rjs.job_id
+        ),
+        B as
+        (
+            select A.assess_plan_no
+                ,rj.dept_cd
+                ,A.process_cd
+                ,A.job_id
+                ,count(rj.process_cd) as process_cnt
+            from A
+            inner join rsa_job rj
+            on A.job_id = rj.job_id
+            group by A.assess_plan_no, rj.dept_cd, A.process_cd, A.job_id
+        ),
+        C as
+        (
+            select rpaj.assess_plan_no
+                ,rj.dept_cd
+                ,rpaj.process_cd
+                ,count(rjs.job_step_id) as job_step_cnt
+            from rsa_process_assess_job rpaj
+            inner join (select job_id, max(job_step_id) as job_step_id
+                        from rsa_job_step
+                        group by job_id, job_step_no, job_step_group_no) rjs
+            on rpaj.job_id = rjs.job_id
+            inner join rsa_job rj
+            on rjs.job_id = rj.job_id
+            group by rpaj.assess_plan_no, rj.dept_cd ,rpaj.process_cd
+        ),
+        D as
+        (
+            select assess_plan_no, process_cd
+                ,count(process_cd) risk_hazard_cnt
+            from (
+                select assess_plan_no, process_cd
+                from (
+                    select assess_plan_no, rka.process_cd, job_step_id, risk_hazard_no
+                    from rsa_kras_jsa rka
+                    inner join rsa_job rj
+                    on rka.process_cd = rj.process_cd
+                    and rka.job_id = rj.job_id
+                    union all
+                    select assess_plan_no, rpaj.process_cd, min(rrjs.job_step_id) as job_step_id, rr.risk_hazard_no 
+                    from rsa_process_assess_job rpaj
+                    inner join rsa_job rj
+                    on rpaj.process_cd = rj.process_cd
+                    and rpaj.job_id = rj.job_id
+                    inner join rsa_job_step rjs
+                    on rj.job_id = rjs.job_id
+                    inner join rsa_job_riskhazard rr
+                    on rjs.job_step_id = rr.job_step_id
+                    inner join (select job_id, max(job_step_id) as job_step_id
+                                from rsa_job_step
+                                group by job_id, job_step_no, job_step_group_no) rrjs
+                    on rr.job_step_id = rrjs.job_step_id
+                    group by assess_plan_no, rpaj.process_cd, rr.risk_hazard_no
+                    ) rjr
+                group by assess_plan_no, process_cd, job_step_id, risk_hazard_no) jc
+            group by assess_plan_no, process_cd
+        )
+        select rrap.assess_plan_no                                                        --평가계획No
+            ,rrap.assess_nm                                                                --평가명
+            ,rrap.assess_desc                                                            --평가설명
+            ,convert(char(19), rrap.assess_year, 23) as assess_year                        --평가년도
+            ,rrap.assess_type_no
+            ,rj.dept_cd                                                                --부서코드
+            ,cd.dept_nm                                                                    --부서명
+            ,ijrrap.process_cd
+            ,cpp.process_nm
+            ,B.job_id
+            ,rj.job_cd
+            ,rj.job_nm
+            ,isnull(B.process_cnt, 0) as process_cnt                                    --직무건수
+            ,isnull(C.job_step_cnt, 0) as job_step_cnt                                    --단계건수
+            ,isnull(D.risk_hazard_cnt, 0) as risk_hazard_cnt                            --위험요인건수
+        from rsa_risk_assess_plan rrap
+        inner join rsa_risk_assess_process ijrrap
+        on rrap.assess_plan_no = ijrrap.assess_plan_no
+        left outer join com_process cpp
+        on ijrrap.process_cd = cpp.process_cd
+        inner join B
+        on rrap.assess_plan_no = B.assess_plan_no
+        and ijrrap.process_cd = B.process_cd
+        inner join rsa_job rj
+        on B.job_id = rj.job_id
+        left outer join com_dept cd
+        on rj.dept_cd = cd.dept_cd
+        left outer join com_process cp
+        on B.process_cd = cp.process_cd
+        left outer join C
+        on B.assess_plan_no = C.assess_plan_no
+        and B.dept_cd = C.dept_cd
+        and B.process_cd = C.process_cd
+        left outer join D
+        on b.assess_plan_no = d.assess_plan_no
+        and b.process_cd = d.process_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_ASSESS_TYPE') assessType
+         on rrap.assess_type_cd = assessType.code
+        where assessType.code_nm = 'JSA' --kras_assess_type_no is not null
+        and rrap.assess_plan_no = #{assessPlanNo}
+        <if test= "deptCd != null and !deptCd.equals('')">
+        and rj.dept_cd = #{deptCd}
+        </if>
+        <if test= "processCd != null and !processCd.equals('')">
+        and rj.process_cd = #{processCd}
+        </if>
+    </select>
+    
+    <select id= "getAssessTotalCHARMProcess" resultType= "com.she.rsa.model.AssessTotal">
+        with A as (
+            select dept_cd
+                ,process_cd
+                ,chem_prod_no
+            from rsa_dept_process_chemprod
+            group by dept_cd, process_cd, chem_prod_no
+        ),
+        B as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , rpac.process_cd
+                , count(A.chem_prod_no) as chem_prod_cnt
+            from rsa_process_assess_chem rpac
+            inner join A
+            on rpac.dept_cd = A.dept_cd
+            and rpac.process_cd = A.process_cd
+            and rpac.chem_prod_no = A.chem_prod_no
+            group by rpac.assess_plan_no, rpac.dept_cd, rpac.process_cd
+        ),
+        C as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , rpac.process_cd
+                , count(ccc.chem_no) as chem_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            group by rpac.assess_plan_no, rpac.dept_cd, rpac.process_cd
+        ),
+        D as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , rpac.process_cd
+                , count(rc.auto_assess_yn) as auto_assess_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            and rc.auto_assess_yn = 'Y'
+            group by rpac.assess_plan_no, rpac.dept_cd, rpac.process_cd
+        ),
+        E as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , rpac.process_cd
+                , count(rc.auto_assess_yn) as user_assess_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            and 'N' = isnull(rc.auto_assess_yn, 'N') 
+            group by rpac.assess_plan_no, rpac.dept_cd, rpac.process_cd
+        ),
+        F as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , rpac.process_cd
+                , count(rjrb.risk_book_no) as job_risk_book_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            inner join rsa_job_risk_book rjrb
+            on rpac.assess_plan_no = rjrb.assess_plan_no
+            and rpac.dept_cd = rjrb.dept_cd
+            and rpac.process_cd = rjrb.process_cd
+            and rpac.chem_prod_no = rjrb.chem_prod_no
+            and rpac.chem_no = rjrb.chem_no
+            group by rpac.assess_plan_no, rpac.dept_cd, rpac.process_cd
+        ),
+        G as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , rpac.process_cd
+                ,count(*) as impr_act_request_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            inner join rsa_job_risk_book rjrb
+            on rpac.assess_plan_no = rjrb.assess_plan_no
+            and rpac.dept_cd = rjrb.dept_cd
+            and rpac.process_cd = rjrb.process_cd
+            and rpac.chem_prod_no = rjrb.chem_prod_no
+            and rpac.chem_no = rjrb.chem_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and sia.impr_class_cd = 'ICL05'
+            and sia.del_yn != 'Y'
+            group by rpac.assess_plan_no, rpac.dept_cd, rpac.process_cd
+        ),
+        H as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , rpac.process_cd
+                ,count(*) as impr_act_complet_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            inner join rsa_job_risk_book rjrb
+            on rpac.assess_plan_no = rjrb.assess_plan_no
+            and rpac.dept_cd = rjrb.dept_cd
+            and rpac.process_cd = rjrb.process_cd
+            and rpac.chem_prod_no = rjrb.chem_prod_no
+            and rpac.chem_no = rjrb.chem_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and sia.impr_class_cd = 'ICL05'
+            and sia.impr_step_cd = 'IMST5'
+            and sia.del_yn != 'Y'
+            group by rpac.assess_plan_no, rpac.dept_cd, rpac.process_cd
+        )
+        select distinct rrap.assess_plan_no                                                --평가계획No
+            ,rrap.assess_nm                                                                --평가명
+            ,rrap.assess_desc                                                            --평가설명
+            ,convert(char(19), rrap.assess_year, 23) as assess_year                        --평가년도
+            ,rrap.assess_type_no
+            ,rrap.plant_cd
+            ,plant.code_nm as plant_nm
+            ,rpac.dept_cd                                                                --부서코드
+            ,cd.dept_nm                                                                    --부서명
+            ,rpac.process_cd                                                            --공정코드
+            ,cp.process_nm                                                                --공정명
+            ,isnull(B.chem_prod_cnt, 0) as chem_prod_cnt                                --취급물질건수
+            ,isnull(C.chem_cnt, 0) as chem_cnt                                            --구성성분건수
+            ,isnull(D.auto_assess_cnt, 0) as auto_assess_cnt                            --자동평가건수
+            ,isnull(E.user_assess_cnt, 0) as user_assess_cnt                            --사용자평가건수
+            ,(isnull(D.auto_assess_cnt, 0) + 
+             isnull(E.user_assess_cnt, 0)) as complet_cnt                                --평가완료합계
+            ,isnull(ROUND(cast((isnull(D.auto_assess_cnt, 0) + 
+             isnull(E.user_assess_cnt, 0)) as float) /                                
+             cast(C.chem_cnt as float), 4) * 100, 0) as assess_percent                    --평가완료율(%)
+            ,isnull(F.job_risk_book_cnt, 0) as job_risk_book_cnt                        --위험등록부등재건수
+            ,isnull(G.impr_act_request_cnt, 0) as impr_act_request_cnt                    --개선대책수립건수
+            ,isnull(H.impr_act_complet_cnt, 0) as impr_act_complet_cnt                    --개선대책완료건수
+            ,isnull(ROUND(cast(H.impr_act_complet_cnt as float) / 
+             cast(G.impr_act_request_cnt as float), 4) * 100, 0) as impr_act_percent    --평가율
+            ,rrap.assess_year
+        from rsa_risk_assess_plan rrap
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+          on rrap.plant_cd = plant.code
+        inner join rsa_process_assess_chem rpac
+        on rrap.assess_plan_no = rpac.assess_plan_no
+        left outer join com_dept cd
+        on rpac.dept_cd = cd.dept_cd
+        left outer join com_process cp
+        on rpac.process_cd = cp.process_cd
+        inner join B
+        on rpac.assess_plan_no = B.assess_plan_no
+        and rpac.dept_cd = B.dept_cd
+        and rpac.process_cd = B.process_cd
+        left join C
+        on rpac.assess_plan_no = C.assess_plan_no
+        and rpac.dept_cd = C.dept_cd
+        and rpac.process_cd = C.process_cd
+        left join D
+        on rpac.assess_plan_no = D.assess_plan_no
+        and rpac.dept_cd = D.dept_cd
+        and rpac.process_cd = D.process_cd
+        left join E
+        on rpac.assess_plan_no = E.assess_plan_no
+        and rpac.dept_cd = E.dept_cd
+        and rpac.process_cd = E.process_cd
+        left join F
+        on rpac.assess_plan_no = F.assess_plan_no
+        and rpac.dept_cd = F.dept_cd
+        and rpac.process_cd = F.process_cd
+        left join G
+        on rpac.assess_plan_no = G.assess_plan_no
+        and rpac.dept_cd = G.dept_cd
+        and rpac.process_cd = G.process_cd
+        left join H
+        on rpac.assess_plan_no = H.assess_plan_no
+        and rpac.dept_cd = H.dept_cd
+        and rpac.process_cd = H.process_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_ASSESS_TYPE') assessType
+        on rrap.assess_type_cd = assessType.code
+        where rrap.assess_type_cd = 'AT003' --kras_assess_type_no is not null
+        and rrap.assess_step_cd = 'C'
+        <if test= "assessNm != null and !assessNm.equals('')">
+        and rrap.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and rrap.plant_cd = #{plantCd}
+        </if>
+        <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+        and convert(int, rrap.assess_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+        </if>
+        order by rrap.assess_year desc, assess_plan_no desc
+    </select>
+    
+    <select id= "getAssessTotalCHARMDept" resultType= "com.she.rsa.model.AssessTotal">
+        with A as (
+            select dept_cd
+                ,process_cd
+                ,chem_prod_no
+            from rsa_dept_process_chemprod
+            group by dept_cd, process_cd, chem_prod_no
+        ),
+        B as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , count(A.chem_prod_no) as chem_prod_cnt
+            from rsa_process_assess_chem rpac
+            inner join A
+            on rpac.dept_cd = A.dept_cd
+            and rpac.process_cd = A.process_cd
+            and rpac.chem_prod_no = A.chem_prod_no
+            group by rpac.assess_plan_no, rpac.dept_cd
+        ),
+        C as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , count(ccc.chem_no) as chem_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            group by rpac.assess_plan_no, rpac.dept_cd
+        ),
+        D as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , count(rc.auto_assess_yn) as auto_assess_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            and rc.auto_assess_yn = 'Y'
+            group by rpac.assess_plan_no, rpac.dept_cd
+        ),
+        E as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , count(rc.auto_assess_yn) as user_assess_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            and 'N' = isnull(rc.auto_assess_yn, 'N') 
+            group by rpac.assess_plan_no, rpac.dept_cd
+        ),
+        F as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                , count(rjrb.risk_book_no) as job_risk_book_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            inner join rsa_job_risk_book rjrb
+            on rpac.assess_plan_no = rjrb.assess_plan_no
+            and rpac.dept_cd = rjrb.dept_cd
+            and rpac.process_cd = rjrb.process_cd
+            and rpac.chem_prod_no = rjrb.chem_prod_no
+            and rpac.chem_no = rjrb.chem_no
+            group by rpac.assess_plan_no, rpac.dept_cd
+        ),
+        G as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                ,count(*) as impr_act_request_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            inner join rsa_job_risk_book rjrb
+            on rpac.assess_plan_no = rjrb.assess_plan_no
+            and rpac.dept_cd = rjrb.dept_cd
+            and rpac.process_cd = rjrb.process_cd
+            and rpac.chem_prod_no = rjrb.chem_prod_no
+            and rpac.chem_no = rjrb.chem_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and sia.impr_class_cd = 'ICL05'
+            and sia.del_yn != 'Y'
+            group by rpac.assess_plan_no, rpac.dept_cd
+        ),
+        H as (
+            select rpac.assess_plan_no
+                , rpac.dept_cd
+                ,count(*) as impr_act_complet_cnt
+            from rsa_process_assess_chem rpac
+            inner join com_chemprod_chem ccc
+            on rpac.chem_prod_no = ccc.chem_prod_no
+            and rpac.chem_no = ccc.chem_no 
+            inner join rsa_dept_process_chemprod rdpc
+            on rpac.dept_cd = rdpc.dept_cd
+            and rpac.process_cd = rdpc.process_cd
+            and rpac.chem_prod_no = rdpc.chem_prod_no
+            inner join rsa_charm rc
+            on rpac.assess_plan_no = rc.assess_plan_no
+            and rpac.dept_cd = rc.dept_cd
+            and rpac.process_cd = rc.process_cd
+            and rpac.chem_prod_no = rc.chem_prod_no
+            and rpac.chem_no = rc.chem_no
+            inner join rsa_job_risk_book rjrb
+            on rpac.assess_plan_no = rjrb.assess_plan_no
+            and rpac.dept_cd = rjrb.dept_cd
+            and rpac.process_cd = rjrb.process_cd
+            and rpac.chem_prod_no = rjrb.chem_prod_no
+            and rpac.chem_no = rjrb.chem_no
+            inner join saf_impr_act sia
+            on rjrb.risk_book_no = sia.ref_table_id
+            and sia.impr_class_cd = 'ICL05'
+            and sia.impr_step_cd = 'IMST5'
+            and sia.del_yn != 'Y'
+            group by rpac.assess_plan_no, rpac.dept_cd
+        )
+        select distinct rrap.assess_plan_no                                                --평가계획No
+            ,rrap.assess_nm                                                                --평가명
+            ,rrap.assess_desc                                                            --평가설명
+            ,convert(char(19), rrap.assess_year, 23) as assess_year                        --평가년도
+            ,rrap.assess_type_no
+            ,rrap.plant_cd
+            ,plant.code_nm as plant_nm
+            ,rpac.dept_cd                                                                --부서코드
+            ,cd.dept_nm                                                                    --부서명
+            ,isnull(B.chem_prod_cnt, 0) as chem_prod_cnt                                --취급물질건수
+            ,isnull(C.chem_cnt, 0) as chem_cnt                                            --구성성분건수
+            ,isnull(D.auto_assess_cnt, 0) as auto_assess_cnt                            --자동평가건수
+            ,isnull(E.user_assess_cnt, 0) as user_assess_cnt                            --사용자평가건수
+            ,(isnull(D.auto_assess_cnt, 0) + 
+             isnull(E.user_assess_cnt, 0)) as complet_cnt                                --평가완료합계
+            ,isnull(ROUND(cast((isnull(D.auto_assess_cnt, 0) + 
+             isnull(E.user_assess_cnt, 0)) as float) /                                
+             cast(C.chem_cnt as float), 4) * 100, 0) as assess_percent                    --평가완료율(%)
+            ,isnull(F.job_risk_book_cnt, 0) as job_risk_book_cnt                        --위험등록부등재건수
+            ,isnull(G.impr_act_request_cnt, 0) as impr_act_request_cnt                    --개선대책수립건수
+            ,isnull(H.impr_act_complet_cnt, 0) as impr_act_complet_cnt                    --개선대책완료건수
+            ,isnull(ROUND(cast(H.impr_act_complet_cnt as float) / 
+             cast(G.impr_act_request_cnt as float), 4) * 100, 0) as impr_act_percent    --평가율
+            ,rrap.assess_year
+        from rsa_risk_assess_plan rrap
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+          on rrap.plant_cd = plant.code
+        inner join rsa_process_assess_chem rpac
+        on rrap.assess_plan_no = rpac.assess_plan_no
+        left outer join com_dept cd
+        on rpac.dept_cd = cd.dept_cd
+        inner join B
+        on rpac.assess_plan_no = B.assess_plan_no
+        and rpac.dept_cd = B.dept_cd
+        left join C
+        on rpac.assess_plan_no = C.assess_plan_no
+        and rpac.dept_cd = C.dept_cd
+        left join D
+        on rpac.assess_plan_no = D.assess_plan_no
+        and rpac.dept_cd = D.dept_cd
+        left join E
+        on rpac.assess_plan_no = E.assess_plan_no
+        and rpac.dept_cd = E.dept_cd
+        left join F
+        on rpac.assess_plan_no = F.assess_plan_no
+        and rpac.dept_cd = F.dept_cd
+        left join G
+        on rpac.assess_plan_no = G.assess_plan_no
+        and rpac.dept_cd = G.dept_cd
+        left join H
+        on rpac.assess_plan_no = H.assess_plan_no
+        and rpac.dept_cd = H.dept_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_ASSESS_TYPE') assessType
+        on rrap.assess_type_cd = assessType.code
+        where rrap.assess_type_cd = 'AT003' --kras_assess_type_no is not null
+        and rrap.assess_step_cd = 'C'
+        <if test= "assessNm != null and !assessNm.equals('')">
+        and rrap.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and rrap.plant_cd = #{plantCd}
+        </if>
+        <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+        and convert(int, rrap.assess_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+        </if>
+        order by rrap.assess_year desc, assess_plan_no desc
+    </select>
+    
+    <select id= "getAssessTotalHAZOPs" resultType= "com.she.rsa.model.AssessTotal">
+        WITH A AS
+        (
+            SELECT count(*) node_cnt, rrnp.assess_plan_no
+              FROM rsa_risk_assess_node rran
+             INNER JOIN rsa_risk_node_pid rrnp
+                ON rran.pid_no = rrnp.pid_no
+             GROUP BY rrnp.assess_plan_no
+        ),
+        B as
+        (
+            SELECT count(*) as deviation_cnt, rrnp.assess_plan_no
+              FROM rsa_hazop rh
+             INNER JOIN rsa_risk_assess_node rran
+                ON rh.node_id = rran.node_id
+             INNER JOIN rsa_risk_node_pid rrnp
+                ON rran.pid_no = rrnp.pid_no
+             GROUP BY rrnp.assess_plan_no
+        ),
+        --C as
+        --(
+        --    select count(*) as complet_cnt, rran.assess_plan_no
+        --    from rsa_hazop rh
+        --    inner join rsa_risk_assess_node rran
+        --    on rh.node_id = rran.node_id
+        --    where isnull(rh.assess_date, '') != ''
+        --    group by rran.assess_plan_no
+        --),
+        D as
+        (
+            SELECT count(*) as job_risk_book_cnt, rjrb.assess_plan_no
+              FROM rsa_job_risk_book rjrb
+             WHERE assess_type_nm = 'HAZOP'
+             GROUP BY rjrb.assess_plan_no
+        ),
+        E as
+        (
+            SELECT count(*) as impr_act_request_cnt, rjrb.assess_plan_no
+              FROM rsa_job_risk_book rjrb
+             INNER JOIN saf_impr_act sia
+                ON rjrb.risk_book_no = sia.ref_table_id
+               AND sia.impr_class_cd = 'ICL05'
+               AND sia.del_yn != 'Y'
+             WHERE assess_type_nm = 'HAZOP'
+             GROUP BY rjrb.assess_plan_no
+        ),
+        F as
+        (
+            SELECT count(*) as impr_act_complet_cnt, rjrb.assess_plan_no
+              FROM rsa_job_risk_book rjrb
+             INNER JOIN saf_impr_act sia
+                ON rjrb.risk_book_no = sia.ref_table_id
+               AND sia.impr_class_cd = 'ICL05'
+               AND sia.impr_step_cd = 'IMST5'
+               AND sia.del_yn != 'Y'
+             WHERE assess_type_nm = 'HAZOP'
+             GROUP BY rjrb.assess_plan_no
+        )
+        SELECT rrap.assess_plan_no
+              ,rrap.plant_cd
+              ,plant.code_nm as plant_nm
+              ,rrap.assess_year
+              ,rrap.assess_nm
+              ,isnull(A.node_cnt, 0) as node_cnt
+              ,isnull(B.deviation_cnt, 0) as deviation_cnt
+              --,isnull(C.complet_cnt, 0) as complet_cnt
+              --,isnull(round(cast(C.complet_cnt as float) / 
+              --            cast(B.deviation_cnt as float), 4) * 100, 0) as assess_percent    
+              ,isnull(D.job_risk_book_cnt, 0) as job_risk_book_cnt
+              ,isnull(E.impr_act_request_cnt, 0) as impr_act_request_cnt
+              ,isnull(F.impr_act_complet_cnt, 0) as impr_act_complet_cnt
+              ,isnull(round(cast(F.impr_act_complet_cnt as float) / 
+                          cast(E.impr_act_request_cnt as float), 4) * 100, 0) as impr_act_percent
+          FROM rsa_risk_assess_plan rrap
+         INNER JOIN dbo.LANG_CODE_MASTER('kr', 'COM_PLANT_CD') plant
+            ON rrap.plant_cd = plant.code
+         INNER JOIN dbo.LANG_CODE_MASTER('kr', 'RSA_ASSESS_TYPE') assessType
+            ON rrap.assess_type_cd = assessType.code
+          LEFT OUTER JOIN A
+            ON rrap.assess_plan_no = A.assess_plan_no
+          LEFT OUTER JOIN B
+            ON rrap.assess_plan_no = B.assess_plan_no
+        --left outer join C
+        --on rrap.assess_plan_no = C.assess_plan_no
+          LEFT OUTER JOIN D
+            ON rrap.assess_plan_no = D.assess_plan_no
+          LEFT OUTER JOIN E
+            ON rrap.assess_plan_no = E.assess_plan_no
+          LEFT OUTER JOIN F
+            ON rrap.assess_plan_no = F.assess_plan_no
+         WHERE assessType.code_nm = 'HAZOP'
+        <if test= "plantCd != null and !plantCd.equals('')">
+           AND rrap.plant_cd = #{plantCd}
+        </if>
+        <if test= "assessNm != null and !assessNm.equals('')">
+           AND rrap.assess_nm like '%' + #{assessNm} + '%'
+        </if>
+        <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+           AND convert(int, rrap.assess_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+        </if>
+         ORDER BY rrap.assess_year desc
+    </select>
+</mapper>

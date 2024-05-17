@@ -1,0 +1,652 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.air.facility.mapper.PreventFacMapper">
+    <!-- 방지시설 -->
+    <select id= "getPreventionFacilities" resultType= "com.she.env.air.model.PreventFac">
+        /* PreventFacMapper.getPreventionFacilities [PreventFac.xml] */
+        SELECT t.fac_conn_stru_cd as facConnStruCd
+              ,concat(t.eair_prevent_fac_nm, ' (',t.install_pos, ')') as prevent_fac_nm
+              ,stru.code_nm as facConnStruNm
+              ,t.plant_cd as plantCd
+              ,p.code_nm as plantNm
+              ,t.eair_prevent_fac_no
+              ,t.eair_prevent_fac_nm
+              ,o.eair_outlet_no
+              ,o.eair_outlet_nm
+              ,t.eair_prevent_fac_class_cd
+              ,m.code_nm as eair_prevent_fac_class_nm
+              ,t.install_pos
+              ,t.sort_order
+              ,t.use_yn
+              ,t.eair_prevent_fac_num
+              ,t.eair_prevent_fac_inh_num
+              ,case when t.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+              ,t.dept_cd
+              ,cd.dept_nm
+              ,t.mg_dept_cd
+              ,mgtDept.dept_nm as mg_dept_nm
+              ,t.remark
+              ,t.create_user_id
+              ,cu.user_nm as create_user_nm
+              ,t.create_dt
+              ,t.update_user_id
+              ,uu.user_nm as update_user_nm
+              ,t.update_dt
+              ,(SELECT top 1 dispo_cap
+                  FROM eair_prevent_fac_chg_hist
+                 WHERE eair_prevent_fac_no = t.eair_prevent_fac_no
+               ) as dispo_cap   --처리용량
+              ,(SELECT top 1 dispo_conc
+                  FROM eair_prevent_fac_chg_hist
+                 WHERE eair_prevent_fac_no =  t.eair_prevent_fac_no
+               ) as dispo_conc   --처리농도
+              ,(SELECT top 1 dispo_eff
+                  FROM eair_prevent_fac_chg_hist
+                 WHERE eair_prevent_fac_no =  t.eair_prevent_fac_no
+               ) as dispo_eff   --처리효율
+              , t.sems_yn
+              , case
+                   when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+                   else dbo.GET_USER_NM(t.update_user_id) end    as writer_user_nm
+              , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+          FROM eair_prevent_fac t
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_PREVENT_FAC_CLASS') m
+            ON t.eair_prevent_fac_class_cd = m.code
+          LEFT OUTER JOIN eair_outlet o
+            ON t.eair_outlet_no = o.eair_outlet_no
+         INNER JOIN com_user cu
+            on t.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON t.update_user_id = uu.user_id
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') p
+            ON t.plant_cd = p.code
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_FAC_CONN_STRU') stru
+            ON t.fac_conn_stru_cd = stru.code
+          LEFT OUTER JOIN com_dept cd
+            ON t.dept_cd = cd.dept_cd
+         INNER JOIN com_dept mgtDept
+            ON t.mg_dept_cd = mgtDept.dept_cd
+         WHERE 1=1
+        <if test= "useYn != null and !useYn.equals('')">
+           AND t.use_yn = #{useYn}
+        </if>
+        <if test= "eairPreventFacClassCd != null and !eairPreventFacClassCd.equals('')">
+           AND t.eair_prevent_fac_class_cd = #{eairPreventFacClassCd}
+        </if>
+        <if test= "eairPreventFacNm != null and !eairPreventFacNm.equals('')">
+           AND upper(t.eair_prevent_fac_nm) like '%'+upper(#{eairPreventFacNm})+'%'
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+           AND t.plant_cd = #{plantCd}
+        </if>
+        <if test="mgDeptCd != null and !mgDeptCd.equals('')">
+           AND t.mg_dept_cd in (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{mgDeptCd}))
+        </if>
+         ORDER BY writer_dt desc, t.plant_cd
+    </select>
+
+    <select id= "getPreventionFacility" resultType= "com.she.env.air.model.PreventFac">
+        select t.fac_conn_stru_cd
+              ,t.plant_cd
+              ,t.eair_prevent_fac_no
+              ,t.eair_prevent_fac_nm
+              ,t.eair_prevent_fac_class_cd
+              ,t.install_pos
+              ,t.sort_order
+              ,t.use_yn
+              ,t.eair_prevent_fac_num
+              ,t.eair_prevent_fac_inh_num
+              ,t.dept_cd
+              ,t.mg_dept_cd
+              ,t.remark, t.sap_cd
+              ,t.create_user_id
+              ,t.create_dt
+              ,t.update_user_id
+              ,t.update_dt
+              ,t.sems_yn
+          from eair_prevent_fac t
+         where t.eair_prevent_fac_no = #{eairPreventFacNo}
+    </select>
+
+    <select id= "getPreventionFacActCarbHists" resultType= "com.she.env.air.model.PreventFacActCarbHist">
+        select t.eair_prevent_fac_act_carb_hist_no as eairPreventFacActCarbHistNo
+              ,t.eair_prevent_fac_no as eairPreventFacNo
+              ,t.chng_ymd as chngYmd
+              ,t.chng_cost as chngCost
+              ,'천원' AS chngUnit
+              ,t.chng_amount as chngAmount
+              ,t.unit_cd as unitCd
+              ,e.code_nm as unit_nm
+              ,t.remark as remark
+              ,t.create_user_id as createUserId
+              ,format(t.create_dt,'yyyy-MM-dd') as chngDate
+          from eair_prevent_fac_act_carb_hist t
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ENV_UNIT') e on e.code = t.unit_cd
+         inner join com_user cu on t.create_user_id = cu.user_id
+         where t.eair_prevent_fac_no = #{eairPreventFacNo}
+    </select>
+
+    <select id= "getPreventionFacActCarbHist" parameterType= "int" resultType= "com.she.env.air.model.PreventFacActCarbHist">
+        select t.eair_prevent_fac_act_carb_hist_no as eairPreventFacActCarbHistNo
+              ,t.eair_prevent_fac_no as eairPreventFacNo
+              ,t.chng_ymd as chngYmd
+              ,t.chng_cost as chngCost
+              ,t.chng_amount as chngAmount
+              ,t.unit_cd as unitCd
+              ,t.remark as remark
+              ,t.create_user_id as createUserId
+              ,t.create_dt as chngDate
+          from eair_prevent_fac_act_carb_hist t
+         inner join com_user cu
+            on t.create_user_id = cu.user_id
+         where t.eair_prevent_fac_act_carb_hist_no = #{eairPreventFacActCarbHistNo}
+    </select>
+
+    <insert id= "createPreventionFacActCarbHist" parameterType= "com.she.env.air.model.PreventFacActCarbHist">
+        insert into eair_prevent_fac_act_carb_hist (
+             eair_prevent_fac_act_carb_hist_no
+            ,eair_prevent_fac_no
+            ,chng_ymd
+            ,chng_cost
+            ,chng_amount
+            ,unit_cd
+            ,remark
+            ,create_user_id
+            ,create_dt
+        ) values (
+             ( select isnull(max(eair_prevent_fac_act_carb_hist_no)+1,1) as eairPreventFacActCarbHistNo from eair_prevent_fac_act_carb_hist  )
+            ,#{eairPreventFacNo}
+            ,#{chngYmd}
+            ,#{chngCost}
+            ,#{chngAmount}
+            ,#{unitCd}
+            ,#{remark}
+            ,#{createUserId}
+            ,#{chngDate}
+        )
+    </insert>
+
+    <update id= "updatePreventionFacActCarbHist" parameterType= "com.she.env.air.model.PreventFacActCarbHist">
+        update eair_prevent_fac_act_carb_hist
+        set chng_ymd = #{chngYmd}
+            , chng_cost = #{chngCost}
+            , chng_amount = #{chngAmount}
+            , unit_cd = #{unitCd}
+            , remark = #{remark}
+           where eair_prevent_fac_act_carb_hist_no = #{eairPreventFacActCarbHistNo}
+           and eair_prevent_fac_no = #{eairPreventFacNo}
+    </update>
+
+
+    <delete id= "deletePreventionFacActCarbHist" parameterType= "com.she.env.air.model.PreventFacActCarbHist">
+          delete from eair_prevent_fac_act_carb_hist
+           where eair_prevent_fac_act_carb_hist_no = #{eairPreventFacActCarbHistNo}
+           and eair_prevent_fac_no = #{eairPreventFacNo}
+    </delete>
+
+
+    <select id= "getPreventionElecMeter" resultType= "com.she.env.air.model.PreventFacElecMeter">
+        select
+             eair_prevent_fac_elec_meter_no as eairPreventFacElecMeterNo
+            ,eair_prevent_fac_no as eairPreventFacNo
+            ,eair_prevent_fac_elec_meter_nm as eairPreventFacElecMeterNm
+            ,pwr_meter_magn as pwrMeterMagn
+            ,sap_cd
+            ,sort_order as sortOrder
+            ,use_yn as useYn
+        from eair_prevent_fac_elec_meter
+        where eair_prevent_fac_no = #{eairPreventFacNo}
+    </select>
+
+
+    <delete id= "deletePreventionElecMeter" parameterType= "com.she.env.air.model.PreventFacElecMeter">
+        delete from eair_prevent_fac_elec_meter
+        where eair_prevent_fac_no = #{eairPreventFacNo}
+    </delete>
+
+    <insert id= "createPreventionElecMeter" parameterType= "com.she.env.air.model.PreventFacElecMeter">
+        INSERT INTO eair_prevent_fac_elec_meter
+            (eair_prevent_fac_elec_meter_no
+            ,eair_prevent_fac_no
+            ,eair_prevent_fac_elec_meter_nm
+            ,pwr_meter_magn
+            ,sort_order
+            ,sap_cd
+            ,use_yn)
+        VALUES
+            ((select isnull(max(eair_prevent_fac_elec_meter_no)+1,1) as eairPreventFacElecMeterNo from eair_prevent_fac_elec_meter)
+            ,#{eairPreventFacNo}
+            ,#{eairPreventFacElecMeterNm}
+            ,#{pwrMeterMagn}
+            ,#{sortOrder}
+            ,#{sapCd}
+            ,#{useYn})
+    </insert>
+
+    <insert id= "createPreventionFacility" parameterType= "com.she.env.air.model.PreventFac">
+        <selectKey keyProperty= "eairPreventFacNo" resultType= "int" order= "BEFORE">
+            select next value for seq_eair_prevent_fac as eair_prevent_fac_no
+          </selectKey>
+        insert into eair_prevent_fac (
+            eair_prevent_fac_no
+            , eair_prevent_fac_nm
+            , eair_prevent_fac_class_cd
+            , eair_prevent_fac_num
+            , eair_prevent_fac_inh_num
+            , eair_outlet_no
+            , install_pos
+            , sort_order
+            , use_yn
+            , sap_cd
+            , dept_cd
+            , mg_dept_cd
+            , plant_cd
+            , remark
+            , fac_conn_stru_cd
+            , create_user_id
+            , create_dt
+            , sems_yn
+        )
+        values (
+            #{eairPreventFacNo}
+            , #{eairPreventFacNm}
+            , #{eairPreventFacClassCd}
+            , #{eairPreventFacNum}
+            , #{eairPreventFacInhNum}
+            , #{eairOutletNo}
+            , #{installPos}
+            , #{sortOrder}
+            , #{useYn}
+            , #{sapCd}
+            , #{deptCd}
+            , #{mgDeptCd}
+            , #{plantCd}
+            , #{remark}
+            , #{facConnStruCd}
+            , #{createUserId}
+            , getdate()
+            , #{semsYn}
+        )
+    </insert>
+
+    <update id= "updatePreventionFacility" parameterType= "com.she.env.air.model.PreventFac">
+        update eair_prevent_fac
+        set eair_prevent_fac_nm = #{eairPreventFacNm}
+            , eair_prevent_fac_class_cd = #{eairPreventFacClassCd}
+            , eair_prevent_fac_num    = #{eairPreventFacNum}
+            , eair_prevent_fac_inh_num = #{eairPreventFacInhNum}
+            , eair_outlet_no = #{eairOutletNo}
+            , install_pos = #{installPos}
+            , sap_cd = #{sapCd}
+            , sort_order = #{sortOrder}
+            , use_yn = #{useYn}
+            , dept_cd = #{deptCd}
+            , mg_dept_cd = #{mgDeptCd}
+            , remark = #{remark}
+            , fac_conn_stru_cd = #{facConnStruCd}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+            , sems_yn = #{semsYn}
+           where eair_prevent_fac_no = #{eairPreventFacNo}
+    </update>
+
+    <!-- 방지시설 변경이력 -->
+    <select id= "getPreventionFacilityChangeHistories" resultType= "com.she.env.air.model.PreventFacChgHist">
+        SELECT t.eair_prevent_fac_no, t.eair_prevent_fac_nm, o.eair_outlet_no, o.eair_outlet_nm
+              ,t.eair_prevent_fac_class_cd, m.code_nm AS eair_prevent_fac_class_nm, t.install_pos
+              ,t.dept_cd AS deptCd ,(SELECT dept_nm FROM com_Dept WHERE dept_cd = t.dept_cd) AS deptNm
+              ,t.remark as remark
+              ,h.eair_prevent_fac_chg_hist_no
+              ,h.start_ymd, h.end_ymd, h.dispo_cap, h.dispo_conc, h.dispo_eff
+              ,h.chem_consum, h.end_cause
+              ,h.create_user_id, cu.user_nm as create_user_nm, convert(char(10), h.create_dt, 23) as create_dt
+              ,h.update_user_id, uu.user_nm as update_user_nm, convert(char(10), h.update_dt, 23) as update_dt
+          from eair_prevent_fac t
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_PREVENT_FAC_CLASS') m
+            on t.eair_prevent_fac_class_cd = m.code
+          left outer join eair_outlet o
+            on t.eair_outlet_no = o.eair_outlet_no
+          left outer join eair_prevent_fac_chg_hist h
+            on t.eair_prevent_fac_no = h.eair_prevent_fac_no
+         inner join com_user cu
+            on h.create_user_id = cu.user_id
+          left outer join com_user uu
+            on h.update_user_id = uu.user_id
+         where 1=1
+        <if test= "eairPreventFacNo != null and eairPreventFacNo > 0">
+           and t.eair_prevent_fac_no = #{eairPreventFacNo}
+        </if>
+         order by h.start_ymd desc
+    </select>
+
+    <select id= "getPreventionFacilityChangeHistory" resultType= "com.she.env.air.model.PreventFacChgHist">
+        select t.eair_prevent_fac_no, t.eair_prevent_fac_nm, o.eair_outlet_no, o.eair_outlet_nm
+            , t.eair_prevent_fac_class_cd, m.code_nm as eair_prevent_fac_class_nm, t.install_pos
+            , t.remark as remark
+            , t.dept_cd as deptCd ,(select dept_nm  from com_Dept  where dept_cd = t.dept_cd) as deptNm
+            , t.plant_cd
+            , h.eair_prevent_fac_chg_hist_no
+            , h.start_ymd, h.end_ymd, h.dispo_cap, h.dispo_conc, h.dispo_eff
+            , h.chem_consum, h.end_cause
+            , h.create_user_id, cu.user_nm as create_user_nm, h.create_dt
+            , h.update_user_id, uu.user_nm as update_user_nm, h.update_dt
+        from eair_prevent_fac t
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_PREVENT_FAC_CLASS') m
+        on t.eair_prevent_fac_class_cd = m.code
+        left outer join eair_outlet o
+        on t.eair_outlet_no = o.eair_outlet_no
+        left outer join eair_prevent_fac_chg_hist h
+        on t.eair_prevent_fac_no = h.eair_prevent_fac_no
+        inner join com_user cu
+        on h.create_user_id = cu.user_id
+        left outer join com_user uu
+        on h.update_user_id = uu.user_id
+        where h.eair_prevent_fac_chg_hist_no = #{eairPreventFacChgHistNo}
+    </select>
+
+    <select id= "getPreventionFacilityLastChangeHistory" resultType= "com.she.env.air.model.PreventFacChgHist">
+    select top 1 t.eair_prevent_fac_no, h.eair_prevent_fac_chg_hist_no, t.eair_prevent_fac_nm
+            , t.eair_prevent_fac_class_cd, m.code_nm as eair_prevent_fac_class_nm, t.install_pos
+            , t.dept_cd as deptCd ,(select dept_nm  from com_Dept  where dept_cd = t.dept_cd) as deptNm
+            , t.remark as remark
+            , t.plant_cd
+            , h.eair_prevent_fac_chg_hist_no
+            , h.start_ymd, h.end_ymd, h.dispo_cap, h.dispo_conc, h.dispo_eff
+
+            , h.chem_consum, h.end_cause
+            , h.create_user_id, cu.user_nm as create_user_nm, h.create_dt
+            , h.update_user_id, uu.user_nm as update_user_nm, h.update_dt
+        from eair_prevent_fac t
+        left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_PREVENT_FAC_CLASS') m
+        on t.eair_prevent_fac_class_cd = m.code
+        left outer join eair_prevent_fac_chg_hist h
+        on t.eair_prevent_fac_no = h.eair_prevent_fac_no
+        inner join com_user cu
+        on h.create_user_id = cu.user_id
+        left outer join com_user uu
+        on h.update_user_id = uu.user_id
+
+        where t.eair_prevent_fac_no = #{eairPreventFacNo}
+        order by end_ymd desc
+    </select>
+
+    <insert id= "createPreventionFacilityChangeHistory" parameterType= "com.she.env.air.model.PreventFacChgHist">
+        <selectKey keyProperty= "eairPreventFacChgHistNo" resultType= "int" order= "BEFORE">
+            select next value for seq_eair_prevent_fac_chg_hist as eair_prevent_fac_chg_hist_no
+          </selectKey>
+        insert into eair_prevent_fac_chg_hist (
+            eair_prevent_fac_chg_hist_no
+            , eair_prevent_fac_no
+            , start_ymd
+            , end_ymd
+            , dispo_cap
+            , eair_pollu_cd
+            , dispo_conc
+            , dispo_eff
+            , eair_chem_cd
+            , chem_consum
+            , end_cause
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{eairPreventFacChgHistNo}
+            , #{eairPreventFacNo}
+            , #{startYmd}
+            , #{startYmd}
+            , #{dispoCap}
+            , #{eairPolluCd}
+            , #{dispoConc}
+            , #{dispoEff}
+            , #{eairChemCd}
+            , #{chemConsum}
+            , #{endCause}
+            , #{createUserId}
+            , getdate()
+        )
+
+        -- 등록 완료 후 등록된 데이터 전체를 검색하여 end_ymd 수정(중간에 데이터가 들어올 수 있으므로)
+        update eair_prevent_fac_chg_hist
+        set eair_prevent_fac_chg_hist.end_ymd = t.end_ymd
+        from (
+            select eair_prevent_fac_chg_hist_no
+                , isnull(convert(varchar(10), convert(datetime, lead(start_ymd) over(order by start_ymd))-1, 23), '9999-12-31') as end_ymd
+            from eair_prevent_fac_chg_hist
+            where eair_prevent_fac_no = #{eairPreventFacNo}
+        ) t
+        where eair_prevent_fac_chg_hist.eair_prevent_fac_chg_hist_no = t.eair_prevent_fac_chg_hist_no
+        and eair_prevent_fac_chg_hist.eair_prevent_fac_no = #{eairPreventFacNo}
+    </insert>
+
+    <select id= "selectPreventionFacilityChangeHistoryPollu" resultType= "com.she.env.air.model.PreventFacItem">
+        select
+            eair_prevent_fac_chg_hist_no as eairPreventFacChgHistNo,
+            eair_pollu_cd as code,
+            (select code_nm from dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_POLLU') where code = eair_pollu_cd) as name
+        from eair_prevent_fac_chg_hist_pollu
+        where eair_prevent_fac_chg_hist_no = #{eairPreventFacChgHistNo}
+    </select>
+
+
+    <insert id= "createPreventionFacilityChangeHistoryPollu" parameterType= "com.she.env.air.model.PreventFacItem">
+            insert into eair_prevent_fac_chg_hist_pollu
+            (eair_prevent_fac_chg_hist_no, eair_pollu_cd)
+            values ( #{eairPreventFacChgHistNo}, #{code})
+    </insert>
+
+    <delete id= "deletePreventionFacilityChangeHistoryPollu" parameterType= "int">
+             delete from eair_prevent_fac_chg_hist_pollu
+             where eair_prevent_fac_chg_hist_no = #{eairPreventFacChgHistNo}
+    </delete>
+
+
+    <select id= "selectPreventionFacilityChangeHistoryChem" parameterType= "int" resultType= "com.she.env.air.model.PreventFacItem">
+        SELECT hist.eair_prevent_fac_chg_hist_no
+              ,chem.eair_chem_cd AS code
+              ,chem.eair_chem_nm AS name
+          FROM eair_prevent_fac_chg_hist_chem hist
+         INNER JOIN eair_chem chem
+            ON hist.eair_chem_cd = chem.eair_chem_cd
+         WHERE eair_prevent_fac_chg_hist_no = #{eairPreventFacChgHistNo}
+    </select>
+
+    <insert id= "createPreventionFacilityChangeHistoryChem" parameterType= "com.she.env.air.model.PreventFacItem">
+            INSERT INTO eair_prevent_fac_chg_hist_chem
+                (eair_prevent_fac_chg_hist_no
+                ,eair_chem_cd)
+            VALUES
+                (#{eairPreventFacChgHistNo}
+                ,#{code})
+    </insert>
+
+    <delete id= "deletePreventionFacilityChangeHistoryChem" parameterType= "int">
+            DELETE FROM eair_prevent_fac_chg_hist_chem
+            WHERE eair_prevent_fac_chg_hist_no = #{eairPreventFacChgHistNo}
+    </delete>
+
+    <update id= "updatePreventionFacilityChangeHistory" parameterType= "com.she.env.air.model.PreventFacChgHist">
+        UPDATE eair_prevent_fac_chg_hist
+           SET start_ymd = #{startYmd}
+              ,dispo_cap = #{dispoCap}
+              ,eair_pollu_cd = #{eairPolluCd}
+              ,dispo_conc = #{dispoConc}
+              ,dispo_eff = #{dispoEff}
+              ,eair_chem_cd = #{eairChemCd}
+              ,chem_consum = #{chemConsum}
+              ,end_cause = #{endCause}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE eair_prevent_fac_chg_hist_no = #{eairPreventFacChgHistNo}
+
+        -- 등록 완료 후 등록된 데이터 전체를 검색하여 end_ymd 수정(중간에 데이터가 들어올 수 있으므로)
+        UPDATE eair_prevent_fac_chg_hist
+           SET eair_prevent_fac_chg_hist.end_ymd = t.end_ymd
+          FROM (SELECT eair_prevent_fac_chg_hist_no
+                      ,isnull(CONVERT(varchar(10), CONVERT(datetime, lead(start_ymd) over(order by start_ymd))-1, 23), '9999-12-31') as end_ymd
+            from eair_prevent_fac_chg_hist
+            where eair_prevent_fac_no = #{eairPreventFacNo}
+        ) t
+        where eair_prevent_fac_chg_hist.eair_prevent_fac_chg_hist_no = t.eair_prevent_fac_chg_hist_no
+        and eair_prevent_fac_chg_hist.eair_prevent_fac_no = #{eairPreventFacNo}
+    </update>
+
+    <delete id= "deletePreventionFacilityChangeHistory">
+        delete eair_prevent_fac_chg_hist
+        where eair_prevent_fac_chg_hist_no = #{eairPreventFacChgHistNo}
+
+           -- 등록 완료 후 등록된 데이터 전체를 검색하여 end_ymd 수정(중간에 데이터가 들어올 수 있으므로)
+        update eair_prevent_fac_chg_hist
+        set eair_prevent_fac_chg_hist.end_ymd = t.end_ymd
+        from (
+            select eair_prevent_fac_chg_hist_no
+                , isnull(convert(varchar(10), convert(datetime, lead(start_ymd) over(order by start_ymd))-1, 23), '9999-12-31') as end_ymd
+            from eair_prevent_fac_chg_hist
+            where eair_prevent_fac_no = #{eairPreventFacNo}
+        ) t
+        where eair_prevent_fac_chg_hist.eair_prevent_fac_chg_hist_no = t.eair_prevent_fac_chg_hist_no
+        and eair_prevent_fac_chg_hist.eair_prevent_fac_no = #{eairPreventFacNo}
+    </delete>
+
+    <!-- 방지시설 보수이력 -->
+    <select id= "getPreventionFacilityMaintenanceHistories" resultType= "com.she.env.air.model.PreventFacMaintHist">
+        SELECT t.eair_prevent_fac_no, t.eair_prevent_fac_nm, o.eair_outlet_no, o.eair_outlet_nm
+              ,t.eair_prevent_fac_class_cd, m.code_nm AS eair_prevent_fac_class_nm, t.install_pos
+              ,h.eair_prevent_fac_maint_hist_no, h.start_ymd, h.end_ymd, h.worker, h.remark
+              ,h.create_user_id, cu.user_nm AS create_user_nm, CONVERT(char(10), h.create_dt, 23) AS create_dt
+              ,h.update_user_id, uu.user_nm AS update_user_nm, CONVERT(char(10), h.update_dt, 23) AS update_dt
+          FROM eair_prevent_fac t
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_PREVENT_FAC_CLASS') m
+            ON t.eair_prevent_fac_class_cd = m.code
+          LEFT OUTER JOIN eair_outlet o
+            ON t.eair_outlet_no = o.eair_outlet_no
+         INNER JOIN eair_prevent_fac_maint_hist h
+            ON t.eair_prevent_fac_no = h.eair_prevent_fac_no
+         INNER JOIN com_user cu
+            ON h.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON h.update_user_id = uu.user_id
+         WHERE 1=1
+        <if test= "eairPreventFacNo != null and eairPreventFacNo > 0">
+           AND t.eair_prevent_fac_no = #{eairPreventFacNo}
+        </if>
+         ORDER BY h.start_ymd DESC, h.end_ymd DESC
+    </select>
+
+    <select id= "getPreventionFacilityMaintenanceHistory" resultType= "com.she.env.air.model.PreventFacMaintHist">
+        select t.eair_prevent_fac_no, t.eair_prevent_fac_nm, o.eair_outlet_no, o.eair_outlet_nm
+            , t.eair_prevent_fac_class_cd, m.code_nm as eair_prevent_fac_class_nm, t.install_pos
+            , h.eair_prevent_fac_maint_hist_no, h.start_ymd, h.end_ymd, h.worker, h.remark
+            , h.create_user_id, cu.user_nm as create_user_nm, h.create_dt
+            , h.update_user_id, uu.user_nm as update_user_nm, h.update_dt
+        from eair_prevent_fac t
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_PREVENT_FAC_CLASS') m
+        on t.eair_prevent_fac_class_cd = m.code
+        left join eair_outlet o
+        on t.eair_outlet_no = o.eair_outlet_no
+        inner join eair_prevent_fac_maint_hist h
+        on t.eair_prevent_fac_no = h.eair_prevent_fac_no
+        inner join com_user cu
+        on h.create_user_id = cu.user_id
+        left outer join com_user uu
+        on h.update_user_id = uu.user_id
+        where h.eair_prevent_fac_maint_hist_no = #{eairPreventFacMaintHistNo}
+    </select>
+
+    <insert id= "createPreventionFacilityMaintenanceHistory" parameterType= "com.she.env.air.model.PreventFacMaintHist">
+        <selectKey keyProperty= "eairPreventFacMaintHistNo" resultType= "int" order= "BEFORE">
+            select next value for seq_eair_prevent_fac_maint_hist as eair_prevent_fac_maint_hist_no
+          </selectKey>
+          insert into eair_prevent_fac_maint_hist (
+            eair_prevent_fac_maint_hist_no
+            , eair_prevent_fac_no
+            , start_ymd
+            , end_ymd
+            , worker
+            , remark
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{eairPreventFacMaintHistNo}
+            , #{eairPreventFacNo}
+            , #{startYmd}
+            , #{endYmd}
+            , #{worker}
+            , #{remark}
+            , #{createUserId}
+            , getdate()
+        )
+    </insert>
+
+    <update id= "updatePreventionFacilityMaintenanceHistory" parameterType= "com.she.env.air.model.PreventFacMaintHist">
+        update eair_prevent_fac_maint_hist
+        set start_ymd = #{startYmd}
+            , end_ymd = #{endYmd}
+            , worker = #{worker}
+            , remark = #{remark}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+           where eair_prevent_fac_maint_hist_no = #{eairPreventFacMaintHistNo}
+    </update>
+
+
+    <delete id= "deletePreventionFacilityMaintenanceHistory">
+        delete eair_prevent_fac_maint_hist
+        where eair_prevent_fac_maint_hist_no = #{eairPreventFacMaintHistNo}
+    </delete>
+
+
+    <select id="checkPreventionFacility" resultType="int">
+        /* PreventFacMapper.checkPreventionFacility [PreventFac.xml] */
+        SELECT count(*)
+        FROM eair_prevent_fac
+        WHERE 1=1
+        AND plant_cd = #{plantCd}
+        AND eair_prevent_fac_nm = #{eairPreventFacNm}
+        <if test="eairPreventFacNo!= null and eairPreventFacNo>0">
+            AND eair_prevent_fac_no not in (#{eairPreventFacNo})
+        </if>
+    </select>
+
+    <select id="checkPreventionInhNum" resultType="int">
+        /* PreventFacMapper.checkPreventionInhNum [PreventFac.xml] */
+        SELECT count(*)
+        FROM eair_prevent_fac
+        WHERE 1=1
+        AND eair_prevent_fac_inh_num = #{eairPreventFacInhNum}
+        <if test="eairPreventFacNo!= null and eairPreventFacNo>0">
+            AND eair_prevent_fac_no not in (#{eairPreventFacNo})
+        </if>
+    </select>
+
+    <insert id= "createPreventionDischItem" parameterType= "com.she.env.air.model.PreventDischFacItem">
+        /* PreventFacN.createPreventionDischItem [preventFacN.xml] */
+        INSERT INTO eair_prevent_disch_fac
+            (eair_disch_fac_no
+            ,eair_prevent_fac_no)
+        VALUES
+            (#{code}
+            ,#{eairPreventFacNo})
+    </insert>
+
+
+    <delete id= "deletePreventionDischItem">
+        /* PreventFacN.deletePreventionDischItem [preventFacN.xml] */
+        DELETE eair_prevent_disch_fac
+         WHERE eair_prevent_fac_no = #{eairPreventFacNo}
+    </delete>
+
+    <select id="selectPreventDisch" resultType="com.she.env.air.model.PreventDischFacItem">
+        /* PreventFacN.deletePreventionDischItem [preventFacN.xml] */
+        select pdf.eair_disch_fac_no
+            , pdf.eair_prevent_fac_no
+            , pdf.eair_prevent_fac_no as code
+            ,df.eair_disch_fac_nm as name
+        from eair_prevent_disch_fac pdf
+        inner join eair_disch_fac df
+        on pdf.eair_disch_fac_no = df.eair_disch_fac_no
+        where eair_prevent_fac_no = #{eairPreventFacNo}
+
+    </select>
+</mapper>

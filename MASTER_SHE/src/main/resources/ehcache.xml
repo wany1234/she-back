@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd"
+         maxBytesLocalHeap="300M"
+         updateCheck="false">
+
+    <!-- 임시저장 경로를 설정 -->
+    <diskStore path="java.io.tmpdir" />
+    <!-- 
+        Cache에 저장할 레퍼런스의 최대값을 100000으로 지정,
+        maxDepthExceededBehavior = "continue" :  초과 된 최대 깊이에 대해 경고하지만 크기가 조정 된 요소를 계속 탐색
+        maxDepthExceededBehavior = "abort" : 순회를 중지하고 부분적으로 계산 된 크기를 즉시 반환
+    -->
+    <sizeOfPolicy maxDepth="100000" maxDepthExceededBehavior="continue"/>
+
+   <!-- default Cache 설정 (반드시 선언해야 하는 Cache) -->
+    <defaultCache
+            eternal="false"
+            timeToIdleSeconds="0"
+            timeToLiveSeconds="1200"
+            overflowToDisk="false"
+            diskPersistent="false"
+            diskExpiryThreadIntervalSeconds="120"
+            memoryStoreEvictionPolicy="LRU">
+    </defaultCache>
+    <!-- 공통코드 캐쉬  -->
+    <cache name="ComCodeSelectCashe"
+           eternal="false"
+           timeToIdleSeconds="0"
+           timeToLiveSeconds="1200"
+           overflowToDisk="false"
+           diskPersistent="false"
+           diskExpiryThreadIntervalSeconds="120"
+           memoryStoreEvictionPolicy="LRU">
+    </cache>
+    <!-- 공통코드 캐쉬  -->
+    <cache name="ComCodeAttrSelectCashe"
+           eternal="false"
+           timeToIdleSeconds="0"
+           timeToLiveSeconds="1200"
+           overflowToDisk="false"
+           diskPersistent="false"
+           diskExpiryThreadIntervalSeconds="120"
+           memoryStoreEvictionPolicy="LRU">
+    </cache>
+    <!-- 페이지별 즐겨찾기 여부체크 캐쉬  -->
+    <cache name="PageFavoriteChkCashe"
+           eternal="false"
+           timeToIdleSeconds="0"
+           timeToLiveSeconds="1200"
+           overflowToDisk="false"
+           diskPersistent="false"
+           diskExpiryThreadIntervalSeconds="120"
+           memoryStoreEvictionPolicy="LRU">
+    </cache>
+    <!-- 부서트리 캐쉬  -->
+    <cache name="DeptTreeCashe"
+           eternal="false"
+           timeToIdleSeconds="0"
+           timeToLiveSeconds="1200"
+           overflowToDisk="false"
+           diskPersistent="false"
+           diskExpiryThreadIntervalSeconds="120"
+           memoryStoreEvictionPolicy="LRU">
+    </cache>
+    <!-- 부서트리 Mobile 캐쉬  -->
+    <cache name="DeptTreeMobileCashe"
+           eternal="false"
+           timeToIdleSeconds="0"
+           timeToLiveSeconds="1200"
+           overflowToDisk="false"
+           diskPersistent="false"
+           diskExpiryThreadIntervalSeconds="120"
+           memoryStoreEvictionPolicy="LRU">
+    </cache>
+    <!-- 첨부파일환경설정 캐쉬  -->
+    <cache name="UploadFileSettingCashe"
+           eternal="false"
+           timeToIdleSeconds="0"
+           timeToLiveSeconds="1200"
+           overflowToDisk="false"
+           diskPersistent="false"
+           diskExpiryThreadIntervalSeconds="120"
+           memoryStoreEvictionPolicy="LRU">
+    </cache>
+    
+</ehcache>
+ 	<!-- 
+> name : 캐시 이름 지정
+> maxEntriesLocalHeap: 메모리에 생성될 Entry Max값  (0=제한없음)
+> maxEntriesLocalDisk: 디스크(DiskStore)에 저장될 Entry Max값 (0=제한없음)
+> eternal: 영구 Cache 사용 여부 (true 인경우 timeToIdleSeconds, timeToLiveSeconds 설정은 무시된다.)
+> timeToIdleSeconds: 해당 시간 동안 캐쉬가 사용되지 않으면 삭제. (0=삭제되지 않는다)
+> timeToLiveSeconds: 해당 시간이 지나면 캐쉬는 삭제된다. (0=삭제되지 않는다)
+> diskExpiryThreadIntervalSeconds: DiskStore 캐시 정리 작업 실행 간격 (Default=120초)
+> diskSpoolBufferSizeMB: 스풀버퍼에 대한 DiskStore 크기 설정
+> clearOnFlush: flush() 메서드 호출 시점에 메모리(MemoryStore) 삭제 여부. (Default=true)
+> memoryStoreEvictionPolicy : maxEntriesLocalHeap 설정 값에 도달했을때 설정된 정책에 따라객체가 제거되고 새로 추가된다.
+> logging: 로깅 사용 여부를 설정한다.
+> maxEntriesInCache: Terracotta의 분산캐시에만 사용가능하며, 
+					클러스터에 저장 할 수 있는 최대 엔트리 수를 설정한다. 0은 제한이 없다. 
+					캐시가 작동하는 동안에 속성을 수정할 수 있다.
+> overflowToOffHeap: 이 설정은 Ehcache 엔터프라이즈 버전에서 사용할 수 있다. 
+					true 로 설정하며 성능을 향상시킬 수 있는 Off-heap 메모리 스토리지를 활용하여 캐시를 사용할 수 있다. 
+					Off-heap 메모리 자바의 GC에 영향을 주지않는 다. (Default=false)
+ 	 -->

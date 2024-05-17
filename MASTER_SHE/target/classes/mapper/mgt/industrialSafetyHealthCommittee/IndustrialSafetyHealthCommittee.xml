@@ -1,0 +1,976 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.industrialSafetyHealthCommittee.mapper.IndustrialSafetyHealthCommitteeMapper">
+
+    <select id= "getIndustrialSafetyHealthCommittees" resultType= "com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.getIndustrialSafetyHealthCommittees [IndustrialSafetyHealthCommittee.xml] */
+        SELECT mcc.committee_conf_no
+              ,mcc.plant_cd
+              ,plant.code_nm AS plant_nm
+              ,mcc.conf_nm
+              ,dbo.GET_CODE_NM(mcc.half_type_cd, 'MGT_HALF_TYPE') as half_type_nm
+              ,CONVERT(char(16), mcc.conf_date, 120) AS conf_date
+              ,mcc.year
+              ,mcc.main_dept_cd
+              ,dbo.GET_DEPT_NM(mcc.main_dept_cd) as mainDeptNm
+              ,(
+                select count(*)
+                  from saf_impr_act sia 
+                  where (sia.impr_class_cd = 'ICL43' and  ref_table_id = mcc.committee_conf_no)
+                  or (sia.impr_class_cd = 'ICL13' and  ref_table_id in (
+                      select agenda_no
+                      from mgt_committee_agenda a
+                      where a.committee_conf_no = mcc.committee_conf_no
+                  ))
+                ) as requestCnt
+              ,(
+                 select count(*)
+                from saf_impr_act sia 
+                where sia.impr_step_cd != 'IMST5'
+                      and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                and ((sia.impr_class_cd = 'ICL43' and  ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' and  ref_table_id in (
+                    select agenda_no
+                    from mgt_committee_agenda
+                    where committee_conf_no = mcc.committee_conf_no
+                    )))
+                 ) as incompletCnt
+             ,(
+                select count(*)
+                from saf_impr_act sia 
+                where sia.impr_step_cd != 'IMST5'
+                and sia.act_class_cd = 'ACL02'
+                and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
+                and ((sia.impr_class_cd = 'ICL43' and  ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' and  ref_table_id in (
+                    select agenda_no
+                    from mgt_committee_agenda
+                    where committee_conf_no = mcc.committee_conf_no
+                    )))
+                 ) as overdueCnt
+              ,(
+                select count(*)
+                from saf_impr_act sia 
+                where sia.impr_step_cd = 'IMST5'
+                and ((sia.impr_class_cd = 'ICL43' and  ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' and  ref_table_id in (
+                    select agenda_no
+                    from mgt_committee_agenda
+                    where committee_conf_no = mcc.committee_conf_no
+                    )))
+                 ) as completCnt
+              ,mcc.conf_place
+              ,mcc.progress_step_cd
+              ,step.code_nm as progress_step_nm
+              ,CONVERT(char(10), mcc.create_dt, 23) AS create_dt
+              ,CONVERT(char(10), mcc.update_dt, 23) AS update_dt
+              ,mcc.cmi_cls_cd
+              ,ccc.code_nm AS cmi_cls_nm
+              ,case
+                    when dbo.GET_USER_NM(mcc.update_user_id) = '' then dbo.GET_USER_NM(mcc.create_user_id)
+                    else dbo.GET_USER_NM(mcc.update_user_id) end    as writer_user_nm
+              ,case when mcc.update_dt is null then convert(date, mcc.create_dt) else convert(date, mcc.update_dt) end   as writer_dt
+              , mcc.appr_rqst_no
+              , isnull(i.code_nm, '결재요청전') biz_appr_step_nm
+              , mcc.state_cd
+              , concat(step.code_nm,' (', case when i.code = 'BAPSD' then i.code_nm else cm.code_nm end , ')') as state_nm
+          FROM mgt_committee_conf AS mcc
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') AS plant
+            ON mcc.plant_cd = plant.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_GEN_STEP') AS step
+            ON mcc.progress_step_cd = step.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_CMI_CLS') AS ccc
+            ON mcc.cmi_cls_cd = ccc.code
+         left outer join com_appr_rqst h on mcc.appr_rqst_no = h.appr_rqst_no
+         left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') i on h.biz_appr_step_cd = i.code   
+         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_STATE') cm on mcc.state_cd = cm.code and cm.use_yn = 'Y'
+         WHERE 1=1
+        <if test= "plantCd != null and !plantCd.equals('')">
+           AND mcc.plant_cd = #{plantCd}
+        </if>
+        <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
+            AND mcc.year BETWEEN #{startDt} AND #{endDt}
+        </if>
+        <if test= "cmiClsCd != null and !cmiClsCd.equals('')">
+           AND mcc.cmi_cls_cd = #{cmiClsCd}
+        </if>
+        <if test= "confNm != null and !confNm.equals('')">
+           AND mcc.conf_nm LIKE '%' + #{confNm} + '%'
+        </if>
+        <if test= "progressStepCd != null and !progressStepCd.equals('')">
+           AND mcc.progress_step_cd = #{progressStepCd}
+        </if>
+        <if test= "stateCd != null and !stateCd.equals('')">
+           AND mcc.state_cd = #{stateCd}
+        </if>
+        <if test= "halfTypeCd != null and !halfTypeCd.equals('')">
+           and mcc.half_type_cd = #{halfTypeCd}
+        </if>
+        <if test= 'mainDeptCd != null and !mainDeptCd.equals("")'>
+            <choose>
+                <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                    and mcc.main_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{mainDeptCd}))
+                </when>
+                <otherwise>
+                    and mcc.main_dept_cd = #{mainDeptCd}
+                </otherwise>
+            </choose>
+        </if>
+        <if test= 'imprChk != null and imprChk.equals("Y")'>
+            AND mcc.committee_conf_no in (
+                 select mcz.committee_conf_no
+                  FROM mgt_committee_conf mcz
+                  INNER JOIN mgt_committee_agenda mca
+                  ON mca.committee_conf_no = mcz.committee_conf_no
+                  INNER JOIN saf_impr_act sia
+                  ON sia.ref_table_id = mca.agenda_no
+                 where 1=1                 
+                   and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) <![CDATA[<]]> 0
+                   and sia.act_class_cd = 'ACL02'
+                   and sia.impr_class_cd = 'ICL13'
+                   and sia.impr_step_cd != 'IMST5'
+            )
+        </if>
+         ORDER BY writer_dt desc, mcc.conf_date DESC
+    </select>
+      
+    <insert id= "createIndustrialSafetyHealthCommittee" parameterType= "com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.createIndustrialSafetyHealthCommittee [IndustrialSafetyHealthCommittee.xml] */
+        <selectKey keyProperty= "committeeConfNo" resultType= "int" order= "BEFORE">
+            SELECT (next value for seq_mgt_committee_conf) as committeeConfNo
+        </selectKey>
+        INSERT INTO mgt_committee_conf (
+            committee_conf_no
+            , meeting_grp_no
+            , cmi_cls_cd
+            , plant_cd
+            , conf_nm
+            , conf_date
+            , conf_place
+            , remark
+            , progress_step_cd
+            , state_cd
+            , create_user_id
+            , create_dt
+            , year
+            , half_type_cd
+            , main_dept_cd
+            , etc_desc
+        ) VALUES (
+            #{committeeConfNo}
+            , #{meetingGrpNo}
+            , #{cmiClsCd}
+            , #{plantCd}
+            , #{confNm}
+            , CONVERT(DATETIME, #{confDate})
+            , #{confPlace}
+            , #{remark}
+            , #{progressStepCd}
+            , 'STATE2'
+            , #{createUserId}
+            , GETDATE()
+            , #{year}
+            , #{halfTypeCd}
+            , #{mainDeptCd}
+            , #{etcDesc}
+        )
+    </insert>
+
+    <insert id="createMgtCommitteePsn" parameterType="com.she.mgt.model.MgtCommitteePsn">
+        /* IndustrialSafetyHealthCommitteeMapper.createMgtCommitteePsn [IndustrialSafetyHealthCommittee.xml] */
+        <selectKey keyProperty="mgtCommitteePsnNo" resultType="int" order="BEFORE">
+            SELECT NEXT VALUE FOR seq_mgt_committee_psn AS mgtCommitteePsnNo
+        </selectKey>
+        INSERT INTO mgt_committee_psn
+            (mgt_committee_psn_no
+            ,committee_conf_no
+            ,psn_cls_cd
+            ,user_id
+            ,user_nm
+            ,dept_cd
+            ,vendor_cd
+            ,dept_nm
+            ,duty_nm
+            ,remark)
+        VALUES
+            (#{mgtCommitteePsnNo}
+            ,#{committeeConfNo}
+            ,#{psnClsCd}
+            ,#{userId}
+            ,#{userNm}
+            ,#{deptCd}
+            ,#{vendorCd}
+            ,#{deptNm}
+            ,#{dutyNm}
+            ,#{remark})
+    </insert>
+    
+    <insert id= "createMgtCommitteeAgenda" parameterType= "com.she.mgt.model.MgtCommitteeAgenda">
+        /* IndustrialSafetyHealthCommitteeMapper.createMgtCommitteeAgenda [IndustrialSafetyHealthCommittee.xml] */
+        <selectKey keyProperty= "agendaNo" resultType= "int" order= "BEFORE">
+            SELECT (next value for seq_mgt_committee_agenda) as agendaNo
+        </selectKey>
+        INSERT INTO mgt_committee_agenda (
+            agenda_no
+            , committee_conf_no
+            , agenda_desc
+            , agenda_review
+            , agenda_result
+            , remark
+            , create_user_id
+            , create_dt
+            , worker_opinion_yn
+            , sort_order
+        ) VALUES (
+            #{agendaNo}
+            , #{committeeConfNo}
+            , #{agendaDesc}
+            , #{agendaReview}
+            , #{agendaResult}
+            , #{remark}
+            , #{createUserId}
+            , GETDATE()
+            , #{workerOpinionYn}
+            , #{sortOrder}
+        )
+    </insert>
+       
+    <select id= "getIndustrialSafetyHealthCommittee" resultType= "com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.getIndustrialSafetyHealthCommittee [IndustrialSafetyHealthCommittee.xml] */
+        SELECT mcc.committee_conf_no
+            , mcc.plant_cd
+            , mcc.cmi_cls_cd
+            , mcc.conf_nm
+            , mcc.conf_date
+            , mcc.conf_place
+            , mcc.remark
+            , mcc.progress_step_cd
+            , mcc.create_dt
+            , mcc.update_dt
+            , car.biz_appr_step_cd
+            , mcc.year
+            , mcc.half_type_cd
+            , mcc.main_dept_cd
+            , mcc.etc_desc
+            , mcc.appr_rqst_no
+            , mcc.state_cd
+        FROM mgt_committee_conf mcc
+        LEFT JOIN (select ar.appr_rqst_no
+                    , ar.biz_appr_step_cd
+                from com_appr_rqst ar
+                INNER JOIN com_code_master cm
+                    ON cm.code_group_cd = 'COM_BIZ_APPR_STEP'
+                    AND cm.code = ar.biz_appr_step_cd) car
+            ON car.appr_rqst_no = mcc.appr_rqst_no
+        WHERE mcc.committee_conf_no = #{committeeConfNo}
+    </select>
+    
+    <select id= "getMgtCommitteeAgenda" resultType= "com.she.mgt.model.MgtCommitteeAgenda">
+        /* IndustrialSafetyHealthCommitteeMapper.getMgtCommitteeAgenda [IndustrialSafetyHealthCommittee.xml] */
+        SELECT mca.agenda_no
+            , mca.committee_conf_no
+            , mca.agenda_desc
+            , mca.agenda_review
+            , mca.agenda_result
+            , mca.remark
+            , (SELECT MAX(saf_impr_act_no) AS saf_impr_act_no 
+                FROM saf_impr_act
+                WHERE impr_class_cd='ICL13'
+                    AND ref_table_id = mca.agenda_no) AS saf_impr_act_no
+            , '개선요청' AS improvement
+            , '즉시조치' AS imprAct
+            ,  isnull(worker_opinion_yn, 'Y') as worker_opinion_yn
+            , dbo.GET_CODE_NM(mcc.plant_cd, 'COM_PLANT_CD') as subPlantNm
+            , dbo.GET_CODE_NM(mcc.half_type_cd, 'MGT_HALF_TYPE') as subHalfTypeNm
+            , mcc.conf_nm as subConfNm
+            , mca.sort_order
+        FROM mgt_committee_agenda mca
+        inner join mgt_committee_conf mcc on mca.committee_conf_no = mcc.committee_conf_no
+        WHERE mca.committee_conf_no = #{committeeConfNo}
+        ORDER BY mca.sort_order, mca.agenda_no 
+    </select>
+
+    <select id="getMgtCommitteePsn" resultType="com.she.mgt.model.MgtCommitteePsn">
+        /* IndustrialSafetyHealthCommitteeMapper.getMgtCommitteePsn [IndustrialSafetyHealthCommittee.xml] */
+        SELECT mcp.mgt_committee_psn_no
+              ,mcp.committee_conf_no
+              ,mcp.psn_cls_cd
+              ,mcp.user_id
+              ,mcp.user_nm
+              ,mcp.dept_cd
+              ,mcp.vendor_cd
+              ,mcp.dept_nm
+              ,mcp.duty_nm
+              ,mcp.remark
+              ,mcp.sign_img
+              ,mcp.sign_cfm_yn
+              ,mcp.sign_reg_dt
+          FROM mgt_committee_psn AS mcp
+         WHERE mcp.committee_conf_no = #{committeeConfNo}
+         ORDER BY mcp.mgt_committee_psn_no
+    </select>
+    
+    <update id= "updateIndustrialSafetyHealthCommittee" parameterType= "com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.updateIndustrialSafetyHealthCommittee [IndustrialSafetyHealthCommittee.xml] */
+        UPDATE mgt_committee_conf
+            SET plant_cd = #{plantCd}
+                , conf_nm = #{confNm}
+                , conf_date = #{confDate}
+                , conf_place = #{confPlace}
+                , remark = #{remark}
+                , progress_step_cd = #{progressStepCd}
+                , state_cd = #{stateCd}
+                , meeting_grp_no = #{meetingGrpNo}
+                , update_dt = GETDATE()
+                , update_user_id = #{updateUserId}
+                , year = #{year}
+                , half_type_cd = #{halfTypeCd}
+                , main_dept_cd = #{mainDeptCd}
+                , etc_desc = #{etcDesc}
+        WHERE committee_conf_no = #{committeeConfNo}
+    </update>
+    
+    <update id= "updateMgtCommitteeAgenda" parameterType= "com.she.mgt.model.MgtCommitteeAgenda">
+        /* IndustrialSafetyHealthCommitteeMapper.updateMgtCommitteeAgenda [IndustrialSafetyHealthCommittee.xml] */
+        UPDATE mgt_committee_agenda
+            set agenda_desc = #{agendaDesc}
+                , agenda_review = #{agendaReview}
+                , agenda_result = #{agendaResult}
+                , remark = #{remark}
+                , update_user_id = #{updateUserId}
+                , update_dt = GETDATE()
+                , worker_opinion_yn = #{workerOpinionYn}
+                , sort_order = #{sortOrder}
+        WHERE committee_conf_no = #{committeeConfNo}
+            AND agenda_no = #{agendaNo} 
+    </update>
+    
+    <delete id="deleteMgtCommitteeAgenda" parameterType= "com.she.mgt.model.MgtCommitteeAgenda">
+        /* IndustrialSafetyHealthCommitteeMapper.deleteMgtCommitteeAgenda [IndustrialSafetyHealthCommittee.xml] */
+        DELETE FROM mgt_committee_agenda
+        WHERE committee_conf_no = #{committeeConfNo}
+            AND agenda_no = #{agendaNo}
+    </delete>
+    
+    <delete id="deleteSafImprAct" parameterType= "com.she.mgt.model.MgtCommitteeAgenda">
+        /* IndustrialSafetyHealthCommitteeMapper.deleteSafImprAct [IndustrialSafetyHealthCommittee.xml] */
+        DELETE FROM saf_impr_act
+        WHERE impr_class_cd = #{imprClassCd}
+            AND ref_table_id = #{agendaNo}
+    </delete>
+    
+    <delete id="deleteImprAct" parameterType= "com.she.mgt.model.MgtCommitteeAgenda">
+        /* IndustrialSafetyHealthCommitteeMapper.deleteSafImprAct [IndustrialSafetyHealthCommittee.xml] */
+        DELETE FROM saf_impr_act
+        WHERE saf_impr_act_no = #{safImprActNo}
+    </delete>
+    
+    <delete id="deleteSafImprActAll" parameterType= "com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.deleteSafImprActAll [IndustrialSafetyHealthCommittee.xml] */
+        DELETE FROM saf_impr_act
+        WHERE impr_class_cd = #{imprClassCd}
+            AND ref_table_id IN (
+                                    SELECT agenda_no
+                                    FROM mgt_committee_agenda
+                                    WHERE committee_conf_no = #{committeeConfNo}
+                                )
+    </delete>
+    
+    <delete id="deleteMgtCommitteeAgendaAll" parameterType= "com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.deleteMgtCommitteeAgendaAll [IndustrialSafetyHealthCommittee.xml] */
+        DELETE FROM mgt_committee_agenda
+        WHERE committee_conf_no = #{committeeConfNo}
+    </delete>
+    
+    <delete id="deleteIndustrialSafetyHealthCommittee" parameterType= "com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.deleteIndustrialSafetyHealthCommittee [IndustrialSafetyHealthCommittee.xml] */
+        DELETE FROM mgt_committee_conf
+        WHERE committee_conf_no = #{committeeConfNo}
+    </delete>
+
+    <delete id="deleteMgtCommitteePsn" parameterType="com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.deleteMgtCommitteePsn [IndustrialSafetyHealthCommittee.xml] */
+        DELETE FROM mgt_committee_psn
+         WHERE committee_conf_no = #{committeeConfNo}
+    </delete>
+    
+    <select id= "getMeetingAgendaImpr" parameterType= "HashMap" resultType= "com.she.mgt.model.MgtCommitteeAgendaImpr">
+        /* IndustrialSafetyHealthCommitteeMapper.getMeetingAgendaImpr [IndustrialSafetyHealthCommittee.xml] */
+        SELECT mca.agenda_no
+            , sia.saf_impr_act_no   -- 개선조치번호
+            , ccm.code_nm AS act_class_nm
+            , dbo.GET_CODE_NM(mcc.plant_cd, 'COM_PLANT_CD') as plant_nm
+            , case when sia.impr_step_cd = 'IMST5' then '완료' else '미완료' end as completYn
+            , iif(sia.impr_title = '', sia.discover_matter, isnull(sia.impr_title, sia.discover_matter)) as impr_title
+            , iif(sia.impr_rqst_contents = '', sia.discover_matter, isnull(sia.impr_rqst_contents, sia.discover_matter)) as impr_rqst_contents    -- 개선요청내용
+            , sia.act_result_contents   -- 조치결과내용
+            , sia.impr_rqst_ymd -- 요청일
+            , sia.act_confirm_ymd -- 조치완료일
+            , sia.ref_table_id  -- 관련테이블PKID
+            , sia.impr_class_cd -- 개선분류코드
+            , sia.plant_cd  -- C사업장코드
+            , sia.act_sch_ymd
+            , sia.act_confirm_ymd
+            , sia.act_class_cd
+            , sia.dtl_locat
+            , sia.discover_matter
+            , cd.dept_nm AS actDeptNm
+            , mca.agenda_desc
+            , mca.remark
+            , sia.act_user_id
+            , cu.user_nm AS act_user_nm
+            , sia.impr_step_cd
+            , sia.act_limit_ymd                  --조치기한
+            , SISCode.code_nm as impr_step_nm    --개선진행단계명
+        FROM mgt_committee_conf mcc
+        INNER JOIN mgt_committee_agenda mca
+            ON mca.committee_conf_no = mcc.committee_conf_no
+        INNER JOIN saf_impr_act sia
+            ON sia.ref_table_id = mca.agenda_no
+            <if test="imprClassCd !=null and !imprClassCd.equals('ICL43')">
+                AND sia.impr_class_cd in('ICL13' ,'ICL43')
+            </if>
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACT_CLASS') ccm
+            ON ccm.code = sia.act_class_cd
+        LEFT JOIN com_dept cd
+            ON cd.dept_cd = act_dept_cd
+        LEFT JOIN com_user cu
+            ON cu.user_id = sia.act_user_id
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_IMPR_STEP') SISCode
+         on sia.impr_step_cd = SISCode.code
+        WHERE mcc.committee_conf_no = #{committeeConfNo}
+        
+        <if test="apprFlag != null and !apprFlag.equals('')">
+            <!-- 작업위험성평가 현황 사용 시  -->
+            <choose>
+                <when test= "'requestCnt'.equals(apprFlag)">
+                    -- 개선요청
+                </when>
+                <when test= "'incompletCnt'.equals(apprFlag)">
+                    -- 미완료
+                    and sia.impr_step_cd != 'IMST5'
+                    and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                </when>
+                <when test= "'overdueCnt'.equals(apprFlag)">
+                    -- 기한초과
+                    and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
+                    and sia.act_class_cd = 'ACL02'
+                    and sia.impr_step_cd != 'IMST5'
+                </when>
+                <when test= "'completCnt'.equals(apprFlag)">
+                    -- 완료
+                    and sia.impr_step_cd = 'IMST5'
+                </when>
+                <otherwise>
+                    and sia.impr_step_cd != 'IMST1'
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    
+    <update id= "updateMgtCommitteeAgendaImpr" parameterType= "com.she.mgt.model.MgtCommitteeAgendaImpr">
+        /* IndustrialSafetyHealthCommitteeMapper.updateMgtCommitteeAgendaImpr [IndustrialSafetyHealthCommittee.xml] */
+        UPDATE saf_impr_act
+        SET dtl_locat = #{dtlLocat}
+            , discover_matter = #{discoverMatter}
+            , act_result_contents = #{actResultContents}
+            , act_sch_ymd = #{actSchYmd}
+            , update_dt = GETDATE()
+            , update_user_id = #{updateUserId}
+        WHERE saf_impr_act_no = #{safImprActNo}
+    </update>
+    
+    <update id="completeImpr">
+        /* IndustrialSafetyHealthCommitteeMapper.completeImpr [IndustrialSafetyHealthCommittee.xml] */
+        UPDATE mgt_committee_conf
+        SET appr_rqst_no = #{apprRqstNo}
+        WHERE committee_conf_no = #{committeeConfNo}
+    </update>
+
+    <update id="apprProcessCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.apprProcessCommittee [IndustrialSafetyHealthCommittee.xml] */
+        UPDATE mgt_committee_conf
+           SET appr_rqst_no = #{apprRqstNo}
+              , state_cd = #{stateCd}
+         WHERE committee_conf_no = #{committeeConfNo}
+    </update>
+
+    <select id="getVendorCommittees" resultType="com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.getVendorCommittees [IndustrialSafetyHealthCommittee.xml] */
+        SELECT DISTINCT mcc.committee_conf_no
+                       ,mcc.plant_cd
+                       ,plant.code_nm AS plant_nm
+                       ,mcc.cmi_cls_cd
+                       ,class.code_nm AS cmi_cls_nm
+                       ,mcc.conf_nm
+                       ,CONVERT(char(16), mcc.conf_date, 120) AS conf_date
+                       ,mcc.conf_place
+                       ,mcc.progress_step_cd
+                       ,step.code_nm as progress_step_nm 
+                       ,mcc.create_user_id
+                       ,create_user.user_nm AS create_user_nm
+                       ,CONVERT(char(10), mcc.create_dt, 23) AS create_dt
+          FROM mgt_committee_conf AS mcc
+         INNER JOIN mgt_committee_psn AS mcp
+            ON mcp.vendor_cd = #{vendorCd}
+            AND mcc.committee_conf_no = mcp.committee_conf_no
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') AS plant
+            ON mcc.plant_cd = plant.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_CMI_CLS') AS class
+            ON mcc.cmi_cls_cd = class.code
+         INNER JOIN dbo.LANG_CODE_MASTER('kr', 'COM_GEN_STEP') AS step
+            ON mcc.progress_step_cd = step.code
+         INNER JOIN com_user AS create_user
+            ON mcc.create_user_id = create_user.user_id
+         WHERE 1=1
+           AND progress_step_cd != 'CMS01' -- 'COM_GEN_STEP' -->>  20220509 계획완료된건 이후로 조회 되도록 변경
+           AND (mcc.cmi_cls_cd = 'CMCL2' OR mcc.cmi_cls_cd = 'CMCL1') -- 'MGT_CMI_CLS'
+           AND mcp.psn_cls_cd = 'CLS02' 
+           AND mcp.vendor_cd = #{vendorCd}
+        <if test="plantCd != null and !plantCd.equals('')">
+           AND mcc.plant_cd = #{plantCd}
+        </if>
+        <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
+           AND YEAR(mcc.conf_date) BETWEEN YEAR(#{startDt}) AND YEAR(#{endDt})
+        </if>
+        <if test="confNm != null and !confNm.equals('')">
+           AND mcc.conf_nm LIKE '%' + #{confNm} + '%'
+        </if>
+         ORDER BY mcc.committee_conf_no
+    </select>
+
+    <select id="getMgtCommitteePsnSigns" resultType="com.she.mgt.model.MgtCommitteePsn">
+        /* IndustrialSafetyHealthCommitteeMapper.getMgtCommitteePsnSigns [IndustrialSafetyHealthCommittee.xml] */
+        SELECT mcp.mgt_committee_psn_no
+              ,mcp.committee_conf_no
+              ,mcc.conf_nm
+              ,CONVERT(char(16), mcc.conf_date, 120) AS conf_date
+              ,mcp.psn_cls_cd
+              ,mcp.user_id
+              ,mcp.user_nm
+              ,mcp.dept_cd
+              ,mcp.vendor_cd
+              ,mcp.dept_nm
+              ,mcp.duty_nm
+              ,mcp.remark
+              ,mcp.sign_img
+              ,mcp.sign_cfm_yn
+              ,CASE WHEN mcp.sign_cfm_yn = 'Y' THEN '완료'ELSE '미완료' END AS sign_cfm_yn_nm
+              ,mcp.sign_reg_dt
+          FROM mgt_committee_psn AS mcp
+         INNER JOIN mgt_committee_conf AS mcc
+            ON mcp.committee_conf_no = mcc.committee_conf_no
+         WHERE 1=1
+           AND mcp.psn_cls_cd = #{psnClsCd}
+        <if test="userId != null and !userId.equals('')">
+           AND mcp.user_id = #{userId}
+        </if>
+        <if test="vendorCd != null and !vendorCd.equals('')">
+           AND mcp.vendor_cd = #{vendorCd}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+           AND mcc.plant_cd = #{plantCd}
+        </if>
+        <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
+           AND YEAR(mcc.conf_date) BETWEEN YEAR(#{startDt}) AND YEAR(#{endDt})
+        </if>
+        <if test="confNm != null and !confNm.equals('')">
+           AND mcc.conf_nm LIKE '%' + #{confNm} + '%'
+        </if>
+    </select>
+
+    <select id="getMgtCommitteePsnSign" resultType="com.she.mgt.model.MgtCommitteePsn">
+        /* IndustrialSafetyHealthCommitteeMapper.getMgtCommitteePsnSign [IndustrialSafetyHealthCommittee.xml] */
+        SELECT mcp.mgt_committee_psn_no
+              ,mcp.committee_conf_no
+              ,mcp.psn_cls_cd
+              ,mcp.user_id
+              ,mcp.user_nm
+              ,mcp.dept_cd
+              ,mcp.vendor_cd
+              ,mcp.dept_nm
+              ,ISNULL(mcp.duty_nm, '직책없음') AS duty_nm
+              ,mcp.remark
+              ,mcp.sign_img
+              ,mcp.sign_cfm_yn
+              ,mcp.sign_reg_dt
+              ,mcc.plant_cd
+              ,plant.code_nm AS plant_nm
+              ,mcc.cmi_cls_cd
+              ,class.code_nm AS cmi_cls_nm
+              ,mcc.conf_place
+              ,CONVERT(char(16), mcc.conf_date, 120) AS conf_date
+              ,mcc.conf_nm
+          FROM mgt_committee_psn AS mcp
+         INNER JOIN mgt_committee_conf AS mcc
+            ON mcp.committee_conf_no = mcc.committee_conf_no
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') AS plant
+            ON mcc.plant_cd = plant.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_CMI_CLS') AS class
+            ON mcc.cmi_cls_cd = class.code
+         WHERE mcp.mgt_committee_psn_no = #{mgtCommitteePsnNo}
+    </select>
+
+    <update id="updateMgtCommitteePsnSign" parameterType="com.she.mgt.model.MgtCommitteePsn">
+        /* IndustrialSafetyHealthCommitteeMapper.updateMgtCommitteePsnSign [IndustrialSafetyHealthCommittee.xml] */
+        UPDATE mgt_committee_psn
+           SET sign_img = #{signImg}
+              ,sign_cfm_yn = #{signCfmYn}
+              ,sign_reg_dt = getdate()
+         WHERE mgt_committee_psn_no = #{mgtCommitteePsnNo}
+    </update>
+    <select id="getListenStatus" resultType="hashMap">
+        /* IndustrialSafetyHealthCommitteeMapper.getListenStatus [IndustrialSafetyHealthCommittee.xml] */
+         with plant as (
+         select c.code as plantCd
+           from com_code_master c where c.code_group_cd = 'COM_PLANT_CD' and c.code != '0000'
+           
+        ),
+        gubunList as (
+            select p.plantCd
+                    ,g.gubun_type
+                    ,g.gubun
+                    ,g.sort_order
+                    , ${year} as year
+            from plant p
+            inner join (
+                select code as gubun_type
+                        ,code_nm as gubun
+                        ,sort_order
+                from dbo.LANG_CODE_MASTER('kr', 'MGT_HALF_TYPE')
+            ) g on 1=1
+        ),
+        statusList as (
+        select mcc.plant_cd
+               , mcc.year
+               , dbo.GET_CODE_NM(mcc.plant_cd, 'COM_PLANT_CD') as plant_nm
+               , mcc.half_type_cd
+               , (
+               select count(*) 
+                 from mgt_committee_conf mck 
+                where 1=1
+                  and mck.plant_cd = mcc.plant_cd 
+                  and mck.half_type_cd = mcc.half_type_cd
+                  and mck.year = #{year}
+                  and mck.progress_step_cd = 'CMS03'
+                  and mck.state_cd = 'STATE4'                  
+               ) as mckCnt
+               , convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year} then 1 else 0 end)) as requestCnt   -- 개선요청
+               , convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                and sia.impr_step_cd != 'IMST5' 
+                and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                then 1 else 0 end)) as incompletCnt
+               , convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                and sia.impr_step_cd != 'IMST5' 
+                and sia.act_class_cd = 'ACL02'
+                and datediff(day, convert(char(10), GETDATE(), 23) , iif(sia.act_limit_ymd = '', sia.act_confirm_ymd, act_limit_ymd)) &lt; 0
+                then 1 else 0 end)) as overdueCnt
+               , convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                and sia.impr_step_cd = 'IMST5' 
+                then 1 else 0 end)) as completCnt
+               , convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                and datediff(day, convert(char(10), GETDATE(), 23) , iif(sia.act_limit_ymd = '', sia.act_confirm_ymd, act_limit_ymd)) &lt; 0
+                then 1 else 0 end)) as targetCnt
+                FROM mgt_committee_conf mcc 
+                LEFT OUTER JOIN saf_impr_act sia
+                ON ((sia.impr_class_cd = 'ICL43' and sia.ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' 
+                    and sia.ref_table_id in (
+                        select agenda_no
+                        from mgt_committee_agenda
+                        where committee_conf_no = mcc.committee_conf_no
+                        )
+                    )
+                )              
+            where 1=1
+            and mcc.progress_step_cd = 'CMS03'
+            and mcc.state_cd = 'STATE4'  
+            <if test="year != null and !year.equals('')">
+            and mcc.year = #{year}
+            </if>
+          group by mcc.year, mcc.plant_cd, mcc.half_type_cd
+        )
+        select 
+           g.plantCd
+         , dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', g.plantCd) as plantNm
+         , g.gubun_type
+         , g.gubun
+         , g.year
+         , max(g.sort_order) as sort_order 
+         , isnull(sum(mckCnt), 0) as mckCnt
+         , isnull(sum(convert(numeric,r.requestCnt)), 0) as requestCnt
+         , isnull(sum(convert(numeric,r.incompletCnt)), 0) as incompletCnt
+         , isnull(sum(convert(numeric,r.overdueCnt)), 0) as overdueCnt
+         , isnull(sum(convert(numeric,r.completCnt)), 0) as completCnt
+         , convert(varchar, format(round(dbo.GET_DIVIDE(isnull(sum(convert(numeric,r.completCnt)), 0), isnull(sum(convert(numeric,r.targetCnt)), 0)) * 100 ,2), '0.00')) as improvement
+        from gubunList g
+                 left join statusList r on r.plant_cd = g.plantCd and  r.half_type_cd = g.gubun_type
+                 where 1=1
+                 <if test="halfTypeCd != null and !halfTypeCd.equals('')">
+                 and g.gubun_type = #{halfTypeCd}
+                 </if>
+                 <if test="plantCd != null and !plantCd.equals('')">
+                 and g.plantCd = #{plantCd}
+                 </if>
+                 group by g.plantCd, g.gubun_type, g.gubun, g.year
+        
+                 union all
+                 
+                 select '합계' as plantCd
+                 , '합계' as plantNm
+                 , '' as gubun_type
+                 ,'' as gubun
+                 , #{year} as year
+                 ,99999999 as sort_order
+                 , (select count(*) 
+                      from mgt_committee_conf 
+                     where 1 = 1 
+                       and progress_step_cd = 'CMS03' 
+                       and state_cd = 'STATE4'
+                       and year = #{year} 
+                       <if test="plantCd != null and !plantCd.equals('')">
+                       and plant_cd = #{plantCd}
+                       </if> 
+                       <if test="halfTypeCd != null and !halfTypeCd.equals('')">
+                       and half_type_cd = #{halfTypeCd}
+                       </if>
+                  ) as mckCnt
+                 , isnull(convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year} then 1 else 0 end)), 0) as requestCnt   -- 개선요청
+                 , isnull(convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                  and sia.impr_step_cd != 'IMST5' 
+                  and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                  then 1 else 0 end)), 0) as incompletCnt
+                 , isnull(convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                  and sia.impr_step_cd != 'IMST5' 
+                  and sia.act_class_cd = 'ACL02'
+                  and datediff(day, convert(char(10), GETDATE(), 23) , iif(sia.act_limit_ymd = '', sia.act_confirm_ymd, act_limit_ymd)) &lt; 0
+                  then 1 else 0 end)), 0) as overdueCnt
+                 , isnull(convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                  and sia.impr_step_cd = 'IMST5' 
+                  then 1 else 0 end)), 0) as completCnt
+                 , convert(varchar(10) ,
+                      format(round(dbo.GET_DIVIDE(
+                          convert(numeric, sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                          and sia.impr_step_cd = 'IMST5' 
+                          then 1 else 0 end)) ,
+                          convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+                          and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                          and datediff(day, convert(char(10), GETDATE(), 23) , iif(sia.act_limit_ymd = '', sia.act_confirm_ymd, act_limit_ymd)) &lt; 0
+                          then 1 else 0 end))
+                      ) * 100, 2), '0.00')
+                 ) as improvement
+                  FROM mgt_committee_conf mcc 
+            LEFT OUTER JOIN saf_impr_act sia
+                ON ((sia.impr_class_cd = 'ICL43' and sia.ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' 
+                    and sia.ref_table_id in (
+                        select agenda_no
+                        from mgt_committee_agenda
+                        where committee_conf_no = mcc.committee_conf_no
+                        )
+                    )
+                )   
+                WHERE mcc.progress_step_cd = 'CMS03'
+                and mcc.state_cd = 'STATE4'  
+              <if test="year != null and !year.equals('')">
+                and mcc.year = #{year}
+              </if>
+              <if test="plantCd != null and !plantCd.equals('')">
+               and mcc.plant_cd = #{plantCd}
+              </if>                
+              <if test="halfTypeCd != null and !halfTypeCd.equals('')">
+               and mcc.half_type_cd = #{halfTypeCd}
+              </if>
+                 order by g.plantCd, max(g.sort_order)
+        
+
+    </select>
+    <select id= "getMeetingAgendaImprPopup" parameterType= "HashMap" resultType= "com.she.mgt.model.MgtCommitteeAgendaImpr">
+        /* IndustrialSafetyHealthCommitteeMapper.getMeetingAgendaImprPopup [IndustrialSafetyHealthCommittee.xml] */
+        SELECT sia.saf_impr_act_no   -- 개선조치번호
+            , ccm.code_nm AS act_class_nm
+            , iif(sia.impr_rqst_contents = '', sia.discover_matter, isnull(sia.impr_rqst_contents, sia.discover_matter)) as impr_rqst_contents    -- 개선요청내용
+            , sia.act_result_contents   -- 조치결과내용
+            , sia.impr_rqst_ymd -- 요청일
+            , sia.act_confirm_ymd -- 조치완료일
+            , sia.ref_table_id  -- 관련테이블PKID
+            , sia.impr_class_cd -- 개선분류코드
+            , sia.plant_cd  -- C사업장코드
+            , dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', sia.plant_cd) as plant_nm
+            , iif(sia.impr_title = '', sia.discover_matter, isnull(sia.impr_title, sia.discover_matter)) as impr_title
+            , sia.act_sch_ymd
+            , sia.act_confirm_ymd
+            , sia.act_class_cd
+            , sia.dtl_locat
+            , sia.discover_matter
+            , cd.dept_nm AS actDeptNm
+            , sia.act_user_id
+            , cu.user_nm AS act_user_nm
+            , sia.impr_step_cd
+            , sia.act_limit_ymd                  --조치기한
+            , SISCode.code_nm as impr_step_nm    --개선진행단계명
+        FROM mgt_committee_conf mcc
+        INNER JOIN saf_impr_act sia
+            ON ((sia.impr_class_cd = 'ICL43' and sia.ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' 
+                    and sia.ref_table_id in (
+                        select agenda_no
+                        from mgt_committee_agenda
+                        where committee_conf_no = mcc.committee_conf_no
+                        )
+                    )
+                )  
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACT_CLASS') ccm
+            ON ccm.code = sia.act_class_cd
+        LEFT JOIN com_dept cd
+            ON cd.dept_cd = act_dept_cd
+        LEFT JOIN com_user cu
+            ON cu.user_id = sia.act_user_id
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_IMPR_STEP') SISCode
+         on sia.impr_step_cd = SISCode.code
+        WHERE 1=1
+        and mcc.progress_step_cd = 'CMS03'
+        and mcc.state_cd = 'STATE4' 
+        <if test="plantCd != null and !plantCd.equals('')">
+          and mcc.plant_cd = #{plantCd}
+        </if>
+        <if test="year != null and !year.equals('')">
+          and left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
+        </if> 
+        <if test="gubunType != null and !gubunType.equals('')">
+          and mcc.half_type_cd = #{gubunType}
+        </if>
+        
+        <if test="imprFlag != null and !imprFlag.equals('')">
+            <!-- 작업위험성평가 현황 사용 시  -->
+            <choose>
+                <when test= "'requestCnt'.equals(imprFlag)">
+                    -- 개선요청
+                </when>
+                <when test= "'incompletCnt'.equals(imprFlag)">
+                    -- 미완료
+                    and sia.impr_step_cd != 'IMST5'
+                    and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                </when>
+                <when test= "'overdueCnt'.equals(imprFlag)">
+                    -- 기한초과
+                    and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
+                    and sia.act_class_cd = 'ACL02'
+                    and sia.impr_step_cd != 'IMST5'
+                </when>
+                <when test= "'completCnt'.equals(imprFlag) or 'improvement'.equals(imprFlag)">
+                    -- 완료
+                    and sia.impr_step_cd = 'IMST5'
+                </when>
+                <otherwise>
+                    and sia.impr_step_cd != 'IMST1'
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id= "getListenResultMgmtPopup" resultType= "com.she.mgt.model.IndustrialSafetyHealthCommittee">
+        /* IndustrialSafetyHealthCommitteeMapper.getListenResultMgmtPopup [IndustrialSafetyHealthCommittee.xml] */
+        SELECT mcc.committee_conf_no
+              ,mcc.plant_cd
+              ,plant.code_nm AS plant_nm
+              ,mcc.conf_nm
+              ,CONVERT(char(16), mcc.conf_date, 120) AS conf_date
+              ,mcc.year
+              ,mcc.main_dept_cd
+              ,dbo.GET_DEPT_NM(mcc.main_dept_cd) as mainDeptNm
+              ,(
+              select count(*)
+                 FROM mgt_committee_conf mcz
+                INNER JOIN mgt_committee_agenda mca
+                    ON mca.committee_conf_no = mcz.committee_conf_no
+                INNER JOIN saf_impr_act sia
+                    ON sia.ref_table_id = mca.agenda_no
+                    AND sia.impr_class_cd = 'ICL13'
+                where 1=1
+                 and mcz.committee_conf_no = mcc.committee_conf_no
+              ) as requestCnt
+              ,(
+                select count(*)
+                  FROM mgt_committee_conf mcz
+                 INNER JOIN mgt_committee_agenda mca
+                    ON mca.committee_conf_no = mcz.committee_conf_no
+                 INNER JOIN saf_impr_act sia
+                    ON sia.ref_table_id = mca.agenda_no
+                   AND sia.impr_class_cd = 'ICL13'
+                 where 1=1
+                   and mcz.committee_conf_no = mcc.committee_conf_no
+                   and sia.impr_step_cd != 'IMST5'
+                   and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                 ) as incompletCnt
+              ,(
+                select count(*)
+                  FROM mgt_committee_conf mcz
+                 INNER JOIN mgt_committee_agenda mca
+                    ON mca.committee_conf_no = mcz.committee_conf_no
+                 INNER JOIN saf_impr_act sia
+                    ON sia.ref_table_id = mca.agenda_no
+                 where 1=1
+                   and mcz.committee_conf_no = mcc.committee_conf_no
+                   and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
+                   and sia.act_class_cd = 'ACL02'
+                   and sia.impr_class_cd = 'ICL13'
+                   and sia.impr_step_cd != 'IMST5'
+                 ) as overdueCnt
+              ,(
+                select count(*)
+                  FROM mgt_committee_conf mcz
+                 INNER JOIN mgt_committee_agenda mca
+                    ON mca.committee_conf_no = mcz.committee_conf_no
+                 INNER JOIN saf_impr_act sia
+                    ON sia.ref_table_id = mca.agenda_no
+                 where 1=1
+                   and mcz.committee_conf_no = mcc.committee_conf_no
+                   and sia.impr_class_cd = 'ICL13'
+                   and sia.impr_step_cd = 'IMST5'
+                 ) as completCnt
+              ,mcc.conf_place
+              ,mcc.progress_step_cd
+              ,step.code_nm as progress_step_nm
+              ,CONVERT(char(10), mcc.create_dt, 23) AS create_dt
+              ,CONVERT(char(10), mcc.update_dt, 23) AS update_dt
+              ,mcc.cmi_cls_cd
+              ,ccc.code_nm AS cmi_cls_nm
+              ,case
+                    when dbo.GET_USER_NM(mcc.update_user_id) = '' then dbo.GET_USER_NM(mcc.create_user_id)
+                    else dbo.GET_USER_NM(mcc.update_user_id) end    as writer_user_nm
+              ,case when mcc.update_dt is null then convert(date, mcc.create_dt) else convert(date, mcc.update_dt) end   as writer_dt
+              , mcc.appr_rqst_no
+              , isnull(i.code_nm, '결재요청전') biz_appr_step_nm
+          FROM mgt_committee_conf AS mcc
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') AS plant
+            ON mcc.plant_cd = plant.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_GEN_STEP') AS step
+            ON mcc.progress_step_cd = step.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_CMI_CLS') AS ccc
+            ON mcc.cmi_cls_cd = ccc.code
+         left outer join com_appr_rqst h on mcc.appr_rqst_no = h.appr_rqst_no
+         left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') i on h.biz_appr_step_cd = i.code   
+         WHERE 1=1
+        <if test= "plantCd != null and !plantCd.equals('')">
+           AND mcc.plant_cd = #{plantCd}
+        </if>
+        <if test="year != null and !year.equals('')">
+            AND mcc.year = #{year}
+        </if>
+        <if test= "halfTypeCd != null and !halfTypeCd.equals('')">
+           and mcc.half_type_cd = #{halfTypeCd}
+        </if>
+        <if test= "progressStepCd != null and !progressStepCd.equals('')">
+           and mcc.progress_step_cd = #{progressStepCd}
+           and mcc.state_cd = 'STATE4'
+        </if>
+        
+         ORDER BY writer_dt desc, mcc.conf_date DESC
+    </select>
+    <delete id="deleteImpr">
+    /* IndustrialSafetyHealthCommitteeMapper.deleteImpr [IndustrialSafetyHealthCommittee.xml] */
+    delete saf_impr_act where ref_table_id = #{refTableId} and impr_class_cd = #{imprClassCd}
+    </delete>
+</mapper>

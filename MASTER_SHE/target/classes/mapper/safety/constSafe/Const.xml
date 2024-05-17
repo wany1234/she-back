@@ -1,0 +1,592 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.constSafe.mapper.ConstMapper">
+    <!-- 공사현황 조회 -->
+    <select id= "getConsts" resultType= "com.she.safety.model.Const">
+        /* ConstMapper.getConsts [Const.xml] */
+        select sc.const_no
+            ,sc.const_num
+            ,sc.plant_cd
+            ,plant.code_nm as plant_nm
+            ,sc.const_start_ymd
+            ,sc.const_end_ymd
+            ,sc.const_start_ymd + ' ~ ' + sc.const_end_ymd as const_period
+            ,sc.const_title
+            ,sc.const_content
+            ,sc.const_step_cd
+            ,constStep.code_nm as const_step_nm
+            ,sc.del_yn
+            ,sc.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,sc.create_dept_cd
+            ,createUserDept.dept_nm as create_dept_nm
+            ,sc.create_dt
+            ,sc.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,sc.update_dept_cd
+            ,updateUserDept.dept_nm as create_dept_nm
+            ,sc.update_dt
+            ,sc.appr_rqst_no
+            ,car.biz_appr_step_cd            
+            ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+            ,isnull(sc.show_vendor_yn, 'N') as show_vendor_yn
+            ,stuff((
+                select ', ' + x.vendor_nm
+                from (select case when isnull(a.vendor_cd, '') = '' then '자체'
+                                else b.vendor_nm
+                            end as vendor_nm
+                    from saf_const_kind_subconn a
+                    left outer join com_vendor_mst b
+                    on a.vendor_cd = b.vendor_cd
+                    where sc.const_no = a.const_no
+                    group by a.vendor_cd, b.vendor_nm) x
+                for xml path('')
+            ), 1, 1, '') as vendor_nms
+            ,sc.assess_plan_no
+            ,rrap.assess_nm
+            ,case
+                    when dbo.GET_USER_NM(sc.update_user_id) = '' then dbo.GET_USER_NM(sc.create_user_id)
+                    else dbo.GET_USER_NM(sc.update_user_id) end as writer_user_nm
+            ,case when sc.update_dt is null then convert(date, sc.create_dt) else convert(date, sc.update_dt) end   as writer_dt
+        from saf_const sc
+        left outer join com_appr_rqst car
+        on sc.appr_rqst_no = car.appr_rqst_no
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') bizAppr
+         on car.biz_appr_step_cd = bizAppr.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+         on sc.plant_cd = plant.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CONST_STEP') constStep
+         on sc.const_step_cd = constStep.code 
+        inner join com_user createUser
+        on sc.create_user_id = createUser.user_id
+        left outer join com_dept createUserDept
+        on createUser.dept_cd = createUserDept.dept_cd
+        left outer join com_user updateUser
+        on sc.update_user_id = updateUser.user_id
+        left outer join com_dept updateUserDept
+        on updateUser.dept_cd = updateUserDept.dept_cd
+        left outer join rsa_risk_assess_plan rrap
+        on sc.assess_plan_no = rrap.assess_plan_no
+        where 1=1
+        and isnull(sc.del_yn, 'N') = 'N' -- 삭제 X
+        and sc.const_title like '%' + #{constTitle} + '%'
+        <if test= "constStartYmd != null and !constStartYmd.equals('') and constEndYmd != null and !constEndYmd.equals('')">
+        and (convert(datetime, sc.const_start_ymd) &lt;= convert(datetime, #{constEndYmd})
+         AND convert(datetime, sc.const_end_ymd) &gt;= convert(datetime, #{constStartYmd})
+        )
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and sc.plant_cd = #{plantCd}
+        </if>
+        <if test= "constStepCd != null and !constStepCd.equals('')">
+        and sc.const_step_cd = #{constStepCd}
+        </if>
+        <if test= "bizApprStepCd != null and !bizApprStepCd.equals('')">
+        and car.biz_appr_step_cd = #{bizApprStepCd}
+        </if>
+        <if test= "showVendorYn != null and !showVendorYn.equals('')">
+        and sc.show_vendor_yn = #{showVendorYn}
+        </if>
+        <if test= "vendorCd != null and !vendorCd.equals('')">
+        and exists(select 1
+                    from saf_const_kind_subconn scks
+                    where scks.const_no = sc.const_no
+                    and  scks.vendor_cd = #{vendorCd})
+        </if>
+        order by writer_dt desc, sc.const_start_ymd desc, constStep.sort_order 
+    </select>
+    
+    <!-- 공사현황 상세 조회 -->
+    <select id= "getConst" resultType= "com.she.safety.model.Const">
+        /* ConstMapper.getConst [Const.xml] */
+        select sc.const_no
+            ,sc.const_num
+            ,sc.plant_cd
+            ,plant.code_nm as plant_nm
+            ,sc.const_start_ymd
+            ,sc.const_end_ymd
+            ,sc.const_start_ymd + ' ~ ' + sc.const_end_ymd as const_period
+            ,sc.const_title
+            ,sc.const_content
+            ,sc.const_step_cd
+            ,constStep.code_nm as const_step_nm
+            ,sc.del_yn
+            ,sc.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,sc.create_dept_cd
+            ,createUserDept.dept_nm as create_dept_nm
+            ,sc.create_dt
+            ,sc.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,sc.update_dept_cd
+            ,updateUserDept.dept_nm as create_dept_nm
+            ,sc.update_dt
+            ,sc.appr_rqst_no
+            ,car.biz_appr_step_cd            
+            ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+            ,isnull(sc.show_vendor_yn, 'N') as show_vendor_yn
+            ,sc.assess_plan_no
+            ,rrap.assess_nm
+        from saf_const sc
+        left outer join com_appr_rqst car
+        on sc.appr_rqst_no = car.appr_rqst_no
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') bizAppr
+         on car.biz_appr_step_cd = bizAppr.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+         on sc.plant_cd = plant.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CONST_STEP') constStep
+         on sc.const_step_cd = constStep.code 
+        inner join com_user createUser
+        on sc.create_user_id = createUser.user_id
+        left outer join com_dept createUserDept
+        on createUser.dept_cd = createUserDept.dept_cd
+        left outer join com_user updateUser
+        on sc.update_user_id = updateUser.user_id
+        left outer join com_dept updateUserDept
+        on updateUser.dept_cd = updateUserDept.dept_cd
+        left outer join rsa_risk_assess_plan rrap
+        on sc.assess_plan_no = rrap.assess_plan_no
+        where 1=1
+        and sc.const_no = #{constNo}
+    </select>
+    
+    <select id="getConstCheck" resultType="HashMap">
+        select count(*) as cnt
+        from saf_const
+        where const_num = #{constNum}
+        <if test= "constNo != null and !constNo.equals('')">
+        and const_no != #{constNo}
+        </if>
+    </select>
+    
+    <!-- 공사현황 작업구분 조회 -->
+    <select id= "getConstKinds" resultType= "com.she.safety.model.ConstKind">
+        /* ConstMapper.getConstKinds [Const.xml] */
+        select sck.const_no
+            ,sck.wkod_kind_cd
+            ,wkodKind.code_nm as wkod_kind_nm
+        from saf_const_kind sck
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') wkodKind
+         on sck.wkod_kind_cd = wkodKind.code
+        where 1=1
+        and sck.const_no = #{constNo}
+    </select>
+    
+    <!-- 공사현황 작업구분별 업체 조회 -->
+    <select id= "getConstKindSubconns" resultType= "com.she.safety.model.ConstKindSubconn">
+        /* ConstMapper.getConstKindSubconns [Const.xml] */
+        select scks.const_kind_subconn_no
+            ,scks.const_no
+            ,scks.wkod_kind_cd
+            ,wkodKind.code_nm as wkod_kind_nm
+            ,wkodKind.attr1
+            ,scks.self_yn
+            ,scks.vendor_cd
+            ,isnull(cvm.vendor_nm, '자체') as vendor_nm
+            ,scks.const_start_ymd
+            ,scks.const_end_ymd
+            ,scks.saf_plan_yn
+            ,scks.work_passer_yn
+            ,scks.subconn_step_cd
+            ,scks.ind_acc_num
+            ,scks.subconn2rd_nm
+            ,scks.subconn3rd_nm
+            ,sc.const_num
+            ,sc.const_title
+            ,sc.const_content
+            ,sc.plant_cd
+            ,sc.assess_plan_no
+            ,rrap.assess_nm
+            ,(select count(*)
+            from (select 
+                    min(a.subconn_worker_no) as subconn_worker_no
+                from saf_const_kind_subconn_worker a
+                inner join saf_const_kind_subconn b
+                on a.const_kind_subconn_no = b.const_kind_subconn_no
+                where 1=1
+                <choose>
+                    <when test="constNo != null and !constNo.equals('')">
+                        and b.const_no = #{constNo}
+                    </when>
+                    <otherwise>
+                        and a.const_kind_subconn_no = scks.const_kind_subconn_no
+                    </otherwise>
+                </choose>
+                group by a.user_id, a.worker_nm) cntTable) as worker_numb
+        from saf_const sc
+        inner join saf_const_kind_subconn scks
+        on sc.const_no = scks.const_no
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') wkodKind
+         on scks.wkod_kind_cd = wkodKind.code
+        left outer join com_vendor_mst cvm
+        on scks.vendor_cd = cvm.vendor_cd
+        left outer join rsa_risk_assess_plan rrap
+        on sc.assess_plan_no = rrap.assess_plan_no
+        where 1=1
+        <if test= "isDateCondition != null and !isDateCondition.equals('')">
+        and convert(datetime, getdate()) &gt;= convert(datetime, scks.const_start_ymd) 
+        and convert(datetime, getdate()) &lt;= convert(datetime, scks.const_end_ymd)
+        </if>
+        <choose>
+            <when test="constNo != null and !constNo.equals('')">
+                and scks.const_no = #{constNo}
+            </when>
+            <otherwise>
+                and sc.const_step_cd = 'CONS3'
+            </otherwise>
+        </choose>
+        <if test= "vendorCd != null and !vendorCd.equals('')">
+        and scks.vendor_cd = #{vendorCd}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and sc.plant_cd = #{plantCd}
+        </if>
+        <if test="wkodKindCds !=null and wkodKindCds.length > 0">
+            and wkod_kind_cd in
+            <foreach collection="wkodKindCds" item="wkodkind" open="(" close=")" separator="," >
+                #{wkodkind}
+            </foreach>
+        </if>
+        <if test="constTitle !=null and !constTitle.equals('')">
+        and sc.const_title like '%' + #{constTitle} + '%'
+        </if>
+    </select>
+    
+    <!-- 공사현황 작업구분별 업체 작업자 조회 -->
+    <select id= "getConstKindSubconnWorkers" resultType= "com.she.safety.model.ConstKindSubconnWorker">
+        /* ConstMapper.getConstKindSubconnWorkers [Const.xml] */
+        select scksw.subconn_worker_no
+            ,scksw.const_kind_subconn_no
+            ,scksw.self_yn
+            ,scksw.user_id
+            ,scksw.worker_nm
+            ,scksw.dept_cd
+            ,scksw.dept_nm
+            ,scksw.birth_ymd
+            ,scksw.gender_cd
+            ,case when scksw.gender_cd = 'M' or scksw.gender_cd = '1' then '남성'
+                  when scksw.gender_cd = 'W' or scksw.gender_cd = '2' then '여성'
+             else '' end as gender_nm
+            ,scksw.worker_job
+            ,scksw.spe_commts
+            ,scksw.car_num
+            ,scksw.in_equip
+        from saf_const_kind_subconn_worker scksw
+        where 1=1
+        and scksw.const_kind_subconn_no = #{constKindSubconnNo}
+    </select>
+    
+    <!-- 공사현황 작업구분별 업체번호 별 작업자들 조회 -->
+    <select id= "getConstKindSubconnsWorkers" resultType= "com.she.safety.model.ConstKindSubconnWorker">
+        /* ConstMapper.getConstKindSubconnsWorkers [Const.xml] */
+        with A as (
+            select min(subconn_worker_no) as subconn_worker_no
+            from saf_const_kind_subconn_worker
+            where 1=1
+            <if test= "constKindSubconnNos != null and constKindSubconnNos.length > 0">
+                and const_kind_subconn_no in
+                <foreach collection= "constKindSubconnNos" item= "constKindSubconnNo" separator= "," open= "(" close= ")" >
+                #{constKindSubconnNo}
+                </foreach>
+            </if>
+            group by user_id, worker_nm
+        )
+        select scksw.subconn_worker_no
+            ,scksw.const_kind_subconn_no
+            ,scksw.self_yn
+            ,scksw.user_id
+            ,scksw.worker_nm
+            ,scksw.dept_cd
+            ,scksw.dept_nm
+            ,scksw.birth_ymd
+            ,scksw.gender_cd
+            ,case when scksw.gender_cd = 'M' or scksw.gender_cd = '1' then '남성'
+                  when scksw.gender_cd = 'W' or scksw.gender_cd = '2' then '여성' 
+             end as gender_nm
+            ,scksw.worker_job
+            ,stuff((
+                select ', ' + x.spe_commts
+                from saf_const_kind_subconn_worker x
+                where scksw.user_id = x.user_id
+                <if test= "constKindSubconnNos != null and constKindSubconnNos.length > 0">
+                    and x.const_kind_subconn_no in
+                    <foreach collection= "constKindSubconnNos" item= "constKindSubconnNo" separator= "," open= "(" close= ")" >
+                    #{constKindSubconnNo}
+                    </foreach>
+                </if>
+                for xml path('')
+            ), 1, 1, '') as spe_commts
+            ,stuff((
+                select ', ' + x.car_num
+                from saf_const_kind_subconn_worker x
+                where scksw.user_id = x.user_id
+                <if test= "constKindSubconnNos != null and constKindSubconnNos.length > 0">
+                    and x.const_kind_subconn_no in
+                    <foreach collection= "constKindSubconnNos" item= "constKindSubconnNo" separator= "," open= "(" close= ")" >
+                    #{constKindSubconnNo}
+                    </foreach>
+                </if>
+                for xml path('')
+            ), 1, 1, '') as car_num
+            ,stuff((
+                select ', ' + x.in_equip
+                from saf_const_kind_subconn_worker x
+                where scksw.user_id = x.user_id
+                <if test= "constKindSubconnNos != null and constKindSubconnNos.length > 0">
+                    and x.const_kind_subconn_no in
+                    <foreach collection= "constKindSubconnNos" item= "constKindSubconnNo" separator= "," open= "(" close= ")" >
+                    #{constKindSubconnNo}
+                    </foreach>
+                </if>
+                for xml path('')
+            ), 1, 1, '') as in_equip
+        from saf_const_kind_subconn_worker scksw
+        inner join A 
+        on scksw.subconn_worker_no = A.subconn_worker_no
+    </select>
+    
+    <select id="getConstSeq" resultType="int">
+        select next value for seq_saf_const
+    </select>
+    
+    <insert id= "createConst" parameterType= "com.she.safety.model.Const">
+        /* ConstMapper.createConst [Const.xml] */
+           <selectKey keyProperty= "constNo" resultType= "com.she.safety.model.Const" order= "BEFORE">
+            select (select case when left(max(const_no), 4) = convert(varchar, year(getdate())) then left(max(const_no), 5) + REPLICATE('0', 7 - len(#{seqValue})) + convert(varchar, #{seqValue})
+                        else convert(varchar, year(getdate())) + '-' + REPLICATE('0', 7 - len(#{seqValue})) + convert(varchar, #{seqValue})
+                    end as constNo
+                from saf_const) as constNo
+          </selectKey>
+        insert into saf_const
+            (const_no
+            ,const_num
+            ,plant_cd
+            ,const_start_ymd
+            ,const_end_ymd
+            ,const_title
+            ,const_content
+            ,assess_plan_no
+            ,const_step_cd
+            ,del_yn
+            ,show_vendor_yn
+            ,create_user_id
+            ,create_dept_cd
+            ,create_dt)
+        values 
+            (#{constNo}
+            ,#{constNum}
+            ,#{plantCd}
+            ,#{constStartYmd}
+            ,#{constEndYmd}
+            ,#{constTitle}
+            ,#{constContent}
+            ,#{assessPlanNo}
+            ,'CONS1' -- 공사작성중 진행단계
+            ,'N' -- 삭제 X
+            ,#{showVendorYn}
+            ,#{createUserId}
+            ,#{createDeptCd}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+    
+    <insert id= "createConstKind" parameterType= "com.she.safety.model.ConstKind">
+        /* ConstMapper.createConstKind [Const.xml] */
+        insert into saf_const_kind
+            (const_no
+            ,wkod_kind_cd)
+        values 
+            (#{constNo}
+            ,#{wkodKindCd})
+    </insert>
+    
+    <insert id= "createConstKindSubconn" parameterType= "com.she.safety.model.ConstKindSubconn">
+        /* ConstMapper.createConstKindSubconn [Const.xml] */
+           <selectKey keyProperty= "constKindSubconnNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_const_kind_subconn as constKindSubconnNo
+          </selectKey>
+        insert into saf_const_kind_subconn
+           (const_kind_subconn_no
+           ,const_no
+           ,wkod_kind_cd
+           ,self_yn
+           ,vendor_cd
+           ,const_start_ymd
+           ,const_end_ymd
+           ,saf_plan_yn
+           ,work_passer_yn
+           ,subconn_step_cd
+           ,ind_acc_num
+           ,subconn2rd_nm
+           ,subconn3rd_nm)
+        values 
+            (#{constKindSubconnNo}
+            ,#{constNo}
+            ,#{wkodKindCd}
+            ,#{selfYn}
+            ,#{vendorCd}
+            ,#{constStartYmd}
+            ,#{constEndYmd}
+            ,#{safPlanYn}
+            ,#{workPasserYn}
+            ,#{subconnStepCd}
+            ,#{indAccNum}
+            ,#{subconn2rdNm}
+            ,#{subconn3rdNm})
+    </insert>
+    
+    <insert id= "createConstKindSubconnWorker" parameterType= "com.she.safety.model.ConstKindSubconnWorker">
+        /* ConstMapper.createConstKindSubconnWorker [Const.xml] */
+           <selectKey keyProperty= "subconnWorkerNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_const_kind_subconn_worker as subconnWorkerNo
+          </selectKey>
+        insert into saf_const_kind_subconn_worker
+           (subconn_worker_no
+           ,const_kind_subconn_no
+           ,self_yn
+           ,user_id
+           ,worker_nm
+           ,dept_cd
+           ,dept_nm
+           ,birth_ymd
+           ,gender_cd
+           ,worker_job
+           ,spe_commts
+           ,car_num
+           ,in_equip)
+        values 
+            (#{subconnWorkerNo}
+            ,#{constKindSubconnNo}
+            ,#{selfYn}
+            ,#{userId}
+            ,#{workerNm}
+            ,#{deptCd}
+            ,#{deptNm}
+            ,#{birthYmd}
+            ,#{genderCd}
+            ,#{workerJob}
+            ,#{speCommts}
+            ,#{carNum}
+            ,#{inEquip})
+    </insert>
+    
+    <insert id= "createLoto" parameterType= "com.she.safety.model.LOTO">
+        /* ConstMapper.createLoto [Const.xml] */
+        insert into saf_const_loto
+           (const_no
+            ,saf_facility_cd
+            ,lock_locate)
+        values 
+            (#{constNo}
+            ,#{safFacilityCd}
+            ,#{lockLocate})
+    </insert>
+    
+    <update id= "updateConst" parameterType= "com.she.safety.model.Const">
+        /* ConstMapper.updateConst [Const.xml] */
+        update saf_const
+        set const_num = #{constNum}
+            ,plant_cd = #{plantCd}
+            ,const_start_ymd = #{constStartYmd}
+            ,const_end_ymd = #{constEndYmd}
+            ,const_title = #{constTitle}
+            ,const_content = #{constContent}
+            ,const_step_cd = #{constStepCd}
+            ,del_yn = #{delYn}
+            ,show_vendor_yn = #{showVendorYn}
+            ,assess_plan_no = #{assessPlanNo}
+            ,update_user_id = #{updateUserId}
+            ,update_dept_cd = #{updateDeptCd}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where const_no = #{constNo}
+    </update>
+    
+    <delete id= "deleteConstKindSubconnWorker">
+        /* ConstMapper.deleteConstKindSubconnWorker [Const.xml] */
+        delete from saf_const_kind_subconn_worker
+        where const_kind_subconn_no in (select const_kind_subconn_no 
+                                        from saf_const_kind_subconn
+                                        where const_no = #{constNo})
+    </delete>
+    
+    <delete id= "deleteConstKindSubconnWorkerKey">
+        /* ConstMapper.deleteConstKindSubconnWorkerKey [Const.xml] */
+        delete from saf_const_kind_subconn_worker
+        where const_kind_subconn_no = #{constKindSubconnNo}
+    </delete>
+    
+    <delete id= "deleteConstKindSubconn">
+        /* ConstMapper.deleteConstKindSubconn [Const.xml] */
+        delete from saf_const_kind_subconn
+        where const_no = #{constNo}
+    </delete>
+    
+    <delete id= "deleteConstKind">
+        /* ConstMapper.deleteConstKind [Const.xml] */
+        delete from saf_const_kind
+        where const_no = #{constNo}
+    </delete>
+    
+    <delete id= "deleteLoto">
+        /* ConstMapper.deleteLoto [Const.xml] */
+        delete from saf_const_loto
+        where const_no = #{constNo}
+    </delete>
+    
+    <update id= "deleteConst">
+        /* ConstMapper.deleteConst [Const.xml] */
+        update saf_const
+        set del_yn = 'Y'
+        where const_no = #{constNo}
+    </update>
+    
+    <select id= "getLotos" resultType= "com.she.safety.model.LOTO">
+        /* ConstMapper.getLotos [Const.xml] */
+        select scl.const_no
+              ,scl.saf_facility_cd
+              ,sfm.facility_nm
+              ,scl.lock_locate
+              ,sft.saf_facility_type_cd
+              ,sft.saf_facility_type_nm
+        from saf_const_loto scl
+        inner join saf_facility_mst sfm
+        on scl.saf_facility_cd = sfm.saf_facility_cd
+        inner join saf_facility_type sft
+        on sfm.saf_facility_type_cd = sft.saf_facility_type_cd
+        where scl.const_no = #{constNo}
+    </select>
+    
+    <update id="updateConstSubconnStep" parameterType="com.she.safety.model.ConstKindSubconn">
+        update saf_const_kind_subconn
+        set subconn_step_cd = #{subconnStepCd}
+        <if test= "safPlanYn != null and !safPlanYn.equals('')">
+        ,saf_plan_yn = #{safPlanYn}
+        </if>
+        <if test= "constStartYmd != null and !constStartYmd.equals('')">
+        ,const_start_ymd = #{constStartYmd}
+        </if>
+        <if test= "constEndYmd != null and !constEndYmd.equals('')">
+        ,const_end_ymd = #{constEndYmd}
+        </if>
+        <if test= "indAccNum != null and !indAccNum.equals('')">
+        ,ind_acc_num = #{indAccNum}
+        </if>
+        where const_kind_subconn_no = #{constKindSubconnNo}
+    </update>
+    
+    <update id="completeConstSafe">
+        update saf_const
+        set appr_rqst_no = #{apprRqstNo}
+        <if test="constStepCd != null and !constStepCd.equals('')">
+        ,const_step_cd = #{constStepCd}
+        </if>
+        where const_no = #{constNo}
+    </update>
+    
+    <update id="completeConstSafeStep">
+        update saf_const
+        set const_step_cd = #{constStepCd}
+        where const_no = #{constNo}
+    </update>
+    
+</mapper>

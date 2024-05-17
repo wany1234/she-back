@@ -1,0 +1,179 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.gas.mapper.FacMgtByYearMapper">
+    <select id="getdisFacByYears" resultType="com.she.env.gas.model.FacMgtByYear">
+            select
+                gf.ghg_fclt_no
+                ,gf.plant_cd
+                ,gfy.year
+                ,plant.code_nm as plant_nm
+                ,ccm.code_nm as ghg_fclt_nm
+                ,cd.dept_nm
+                ,cp.process_nm
+                ,gf.fclt_nm
+                ,gf.lcn_fact_cd
+                ,gf.ngms_fceq_num
+                ,gf.ghg_fclt_cd
+                ,gf.erp_code
+                ,gf.process_cd
+                ,gf.dept_cd
+                ,gf.chg_reason
+                ,gf.sort_order
+                ,gf.use_yn
+                ,gf.create_dt
+                ,cu.user_nm as update_user_nm
+                ,gfy.update_dt
+                ,(select count(*)
+                    from ghg_fclt_out_act_da_year
+                    where ghg_fclt_no = gf.ghg_fclt_no and gfy.year = year) as ghg_count
+                ,case when gf.use_yn = 'Y' then '사용'else '미사용' end as use_yn_nm
+                , case
+                when (select top 1 gfyy.create_user_id from ghg_fclt_year gfyy where gfyy.ghg_fclt_no = gf.ghg_fclt_no and gfyy.year = #{year} order by create_dt desc) is not null then dbo.GET_USER_NM((select top 1 create_user_id from ghg_fclt_year gfyy where gfyy.ghg_fclt_no = gf.ghg_fclt_no and gfyy.year = #{year} order by create_dt desc))
+                when dbo.GET_USER_NM(gf.update_user_id) = '' then dbo.GET_USER_NM(gf.create_user_id)
+                else dbo.GET_USER_NM(gf.update_user_id) end    as writer_user_nm
+               , case
+                   when (select top 1 gfyy.create_dt from ghg_fclt_year gfyy where gfyy.ghg_fclt_no = gf.ghg_fclt_no and gfyy.year = #{year} order by create_dt desc) is not null then convert(date, (select top 1 create_dt from ghg_fclt_year gfyy where gfyy.ghg_fclt_no = gf.ghg_fclt_no and gfyy.year = #{year} order by create_dt desc))
+                   when gf.update_dt is null then convert(date, gf.create_dt)
+                   else convert(date, gf.update_dt) end   as writer_dt
+                from ghg_fclt gf
+                inner join ghg_fclt_year gfy
+                on gfy.ghg_fclt_no = gf.ghg_fclt_no
+                inner join com_code_master plant
+                on plant.code_group_cd = 'COM_PLANT_CD'
+                and plant.code = gf.plant_cd
+                inner join com_dept cd
+                on cd.dept_cd = gf.dept_cd
+                left outer join com_process cp
+                on cp.process_cd = gf.process_cd
+                inner join com_code_master ccm
+                on ccm.code_group_cd = 'GHG_FAC_DATA'
+                and ccm.code = gf.ghg_fclt_cd
+                left outer join com_user cu
+                on cu.user_id = gfy.update_user_id
+                where 1=1
+                <if test= "year != null and !year.equals('')">
+                    and gfy.year = #{year}
+                </if>
+                <if test= "plantCd != null and !plantCd.equals('')">
+                    and gf.plant_cd = #{plantCd}
+                </if>
+                <if test= "fcltNm != null and !fcltNm.equals('')">
+                    and gf.fclt_nm like '%' + #{fcltNm} + '%'
+                </if>
+        order by writer_dt desc, gfy.year, plant.code_nm, cd.dept_nm, ccm.code_nm, gf.fclt_nm
+    </select>
+
+    <select id="getdisFacByYear" resultType="com.she.env.gas.model.FacMgtByYear">
+            select
+                gf.ghg_fclt_no
+                ,gf.plant_cd
+                ,gf.fclt_nm
+                ,gf.lcn_fact_cd
+                ,gf.ngms_fceq_num
+                ,gf.ghg_fclt_cd
+                ,gf.erp_code
+                ,gf.process_cd
+                ,gf.dept_cd
+                ,gfy.year
+                from ghg_fclt gf
+                left outer join ghg_fclt_year gfy
+                on gfy.ghg_fclt_no = gf.ghg_fclt_no
+            where gf.ghg_fclt_no = #{ghgFcltNo}
+                and gfy.year = #{year}
+    </select>
+
+    <select id="getdisFacYearDatas" resultType="com.she.env.gas.model.DischargeFacilityData">
+            select
+            gfocd.fclt_out_act_da_year_no
+            ,gfocd.ghg_fclt_no
+            ,gfocd.ghg_out_act_cd
+            ,gfocd.ghg_act_da_cd
+            ,gfocd.act_da_nm
+            ,gfocd.da_if_cd
+            ,gfocd.if_tag_cd
+            ,gfocd.year
+            ,child.act_data_nm
+            ,parent.act_data_nm as pActDataNm
+            ,gparent.act_data_nm as ppActDataNm
+            from ghg_fclt_out_act_da_year gfocd
+            inner join act_data_categorys child
+            on child.act_data_cd = gfocd.ghg_act_da_cd
+            inner join act_data_categorys parent
+            on parent.act_data_cd = child.p_act_data_cd
+            inner join act_data_categorys gparent
+            on gparent.act_data_cd = parent.p_act_data_cd
+        where gfocd.ghg_fclt_no = #{ghgFcltNo}
+            and gfocd.year = #{year}
+    </select>
+
+    <insert id="insertdisFacByYear" parameterType="com.she.env.gas.model.FacMgtByYear">
+        insert into ghg_fclt_year
+                    (
+                        ghg_fclt_no
+                        , year
+                        , create_user_id
+                        , create_dt
+                    )
+                    values
+                    (
+                        #{ghgFcltNo}
+                        , #{year}
+                        , #{createUserId}
+                        , getDate()
+                    )
+    </insert>
+
+    <select id="checkDisFacByYear" resultType="int">
+        select count(*) as cnt
+            from ghg_fclt_year
+            where ghg_fclt_no = #{ghgFcltNo}
+            and year = #{year}
+    </select>
+
+    <delete id="deletedisFacByYear" parameterType="com.she.env.gas.model.FacMgtByYear">
+        delete
+            from ghg_fclt_year
+            where ghg_fclt_no = #{ghgFcltNo}
+            and year= #{year}
+    </delete>
+
+    <delete id="deletedisFacByYearDatas" parameterType="com.she.env.gas.model.DischargeFacilityData">
+        delete
+            from ghg_fclt_out_act_da_year
+            where ghg_fclt_no = #{ghgFcltNo}
+            and year= #{year}
+    </delete>
+
+    <insert id="insertdisFacByYearDatas" parameterType="com.she.env.gas.model.DischargeFacilityData">
+        <selectKey keyProperty="fcltOutActDaYearNo" resultType="int" order="BEFORE">
+            select next value for seq_ghg_fclt_out_act_da_year as fclt_out_act_da_year_no
+        </selectKey>
+        insert into ghg_fclt_out_act_da_year
+                    (
+                        fclt_out_act_da_year_no
+                        , year
+                        , ghg_fclt_no
+                        , ghg_out_act_cd
+                        , ghg_act_da_cd
+                        , act_da_nm
+                        , da_if_cd
+                        , if_tag_cd
+                        , create_user_id
+                        , create_dt
+                    )
+                    values
+                    (
+                        #{fcltOutActDaYearNo}
+                        , #{year}
+                        , #{ghgFcltNo}
+                        , #{ghgOutActCd}
+                        , #{ghgActDaCd}
+                        , #{actDaNm}
+                        , #{daIfCd}
+                        , #{ifTagCd}
+                        , #{createUserId}
+                        , getDate()
+                    )
+    </insert>
+</mapper>

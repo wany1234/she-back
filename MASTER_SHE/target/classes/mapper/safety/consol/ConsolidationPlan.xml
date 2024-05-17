@@ -1,0 +1,478 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.consol.mapper.ConsolidationPlanMapper">
+    
+    <!-- 연간순회점검 일정 목록 조회 -->
+    <select id= "getConsolPlans" resultType= "com.she.safety.consol.model.Consolidation">
+        select 
+            stuff((select ', ' + b.dept_nm
+                                    from saf_chk_insp_dept a
+                                   inner join com_dept b
+                                      on a.dept_cd = b.dept_cd
+                                  where a.saf_cong_chk_rslt_no = rslt.saf_cong_chk_rslt_no
+                                    and a.dept_cd != 'null'
+                                    and b.use_yn = 'y'
+                                    for xml path('')),1,1,'') as depts
+            ,stuff((select ', ' + b.vendor_nm
+                                    from saf_chk_insp_dept a
+                                   inner join com_vendor_mst b
+                                      on a.vendor_cd = b.vendor_cd
+                                   where a.saf_cong_chk_rslt_no = rslt.saf_cong_chk_rslt_no
+                                     and a.vendor_cd != 'null'
+                                    and b.use_yn = 'y'
+                                     for xml path('')),1,1,'') as vendors
+            ,case when rslt.step_cd = 'ing' 
+                            then '진행중' else '점검완료' end as step_nm
+            ,rslt.dept_cd
+            ,cd.dept_nm
+            ,saf_cong_chk_plan_no 
+            ,saf_cong_chk_rslt_no
+            ,chk_year_title
+            ,rslt.saf_check_kind_no
+            ,plan_eymd
+            ,plan_symd
+            ,rslt.r_appr_rqst_no
+            ,step.code_nm as check_step_nm
+            ,plant.code_nm as plant_nm
+            ,sck.saf_check_kind_nm
+            ,car.biz_appr_step_cd
+            ,chk_year_title
+            ,rslt.cong_chk_sch_ymd
+            ,rslt.cong_chk_ymd            
+            ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+            ,chk_title
+            ,chk_year_title
+        from
+            saf_cong_chk_rslt rslt
+          inner join com_code_master step
+            on step.code_group_cd = 'SAF_CHK_STEP'
+            and step.code = rslt.check_step_cd
+          inner join com_dept cd
+            on cd.dept_cd = rslt.dept_cd 
+          inner join com_code_master plant
+            on plant.code_group_cd = 'COM_PLANT_CD'
+            and plant.code = rslt.plant_cd
+          left outer join saf_check_kind sck
+           on rslt.saf_check_kind_no = sck.saf_check_kind_no
+          and sck.cong_yn = 'Y'
+              left outer join com_appr_rqst car
+                on rslt.r_appr_rqst_no = car.appr_rqst_no
+                left outer join com_code_master bizAppr
+                on car.biz_appr_step_cd = bizAppr.code
+                and bizAppr.code_group_cd = 'COM_BIZ_APPR_STEP'
+        where 1=1
+        <if test= "deptCd != null and !deptCd.equals('')">
+             and rslt.dept_cd = #{deptCd}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+             and rslt.plant_cd = #{plantCd}
+        </if>
+        <if test= "checkStepCd != null and !checkStepCd.equals('')">
+             and rslt.check_step_cd = #{checkStepCd}
+        </if>
+         <if test= "startDate != null and endDate != null and !startDate.equals('') and !endDate.equals('')">
+            and rslt.cong_chk_sch_ymd between #{startDate} and #{endDate} or
+                                rslt.cong_chk_sch_ymd between #{startDate} and #{endDate}
+        </if>
+        <if test= "safCheckKindNo != null and safCheckKindNo > 0">
+         and rslt.saf_check_kind_no = #{safCheckKindNo}
+         </if>
+    </select>
+    
+    <!-- 연간합동점검 (모바일)일정 목록 상세조회 -->
+    <select id= "getConsolSigs" resultType= "com.she.safety.consol.model.Consolidation">
+        select 
+            rslt.dept_cd
+            ,cd.dept_nm
+            ,saf_cong_chk_plan_no 
+            ,rslt.saf_cong_chk_rslt_no
+            ,chk_year_title
+            ,psn.saf_chk_insp_psn_no
+            ,rslt.saf_check_kind_no
+            ,plan_eymd
+            ,plan_symd
+            ,rslt.r_appr_rqst_no
+            ,step.code_nm as check_step_nm
+            ,plant.code_nm as plant_nm
+            ,sck.saf_check_kind_nm
+            ,chk_year_title
+            ,dept.saf_chk_insp_dept_no
+            ,rslt.cong_chk_sch_ymd
+            ,rslt.cong_chk_ymd
+            ,chk_title
+            ,chk_year_title
+            ,psn.user_nm
+            ,car.biz_appr_step_cd
+            ,psn.sign_cfm_yn
+            ,case when isNull(psn.sign_cfm_yn, 'N') = 'Y'
+                            then '완료' else '미완료' end as sign_cfm_yn_nm
+        from
+            saf_cong_chk_rslt rslt
+          inner join com_code_master step
+            on step.code_group_cd = 'SAF_CHK_STEP'
+            and step.code = rslt.check_step_cd
+          inner join com_dept cd
+            on cd.dept_cd = rslt.dept_cd 
+          inner join com_code_master plant
+            on plant.code_group_cd = 'COM_PLANT_CD'
+            and plant.code = rslt.plant_cd
+          left outer join saf_check_kind sck
+           on rslt.saf_check_kind_no = sck.saf_check_kind_no
+          and sck.cong_yn = 'Y'
+          inner join saf_chk_insp_dept dept
+           on dept.saf_cong_chk_rslt_no = rslt.saf_cong_chk_rslt_no
+          inner join saf_chk_insp_psn psn
+           on psn.saf_chk_insp_dept_no = dept.saf_chk_insp_dept_no
+          left outer join com_appr_rqst car
+            on rslt.r_appr_rqst_no = car.appr_rqst_no
+          left outer join com_code_master bizAppr
+            on car.biz_appr_step_cd = bizAppr.code
+            and bizAppr.code_group_cd = 'COM_BIZ_APPR_STEP'
+        where 1=1
+          and psn.user_id = #{userId}
+          and rslt.check_step_cd IN ('CHS02', 'CHS03')
+
+        <if test= "plantCd != null and !plantCd.equals('')">
+             and rslt.plant_cd = #{plantCd}
+        </if>
+         <if test= "startDate != null and endDate != null and !startDate.equals('') and !endDate.equals('')">
+            and rslt.cong_chk_sch_ymd between #{startDate} and #{endDate} or
+                                rslt.cong_chk_sch_ymd between #{startDate} and #{endDate}
+        </if>
+    </select>
+    
+    <!-- 연간합동점검 일정 목록 상세조회 -->
+    <select id= "getConsolPlan" resultType= "com.she.safety.consol.model.Consolidation">
+        select 
+            rslt.saf_cong_chk_rslt_no
+            ,rslt.cong_chk_sch_ymd
+            ,rslt.cong_chk_ymd
+            ,rslt.chk_year_title
+            ,rslt.check_step_cd
+            ,rslt.saf_check_kind_no
+            ,rslt.plant_cd
+            ,rslt.chk_title
+            ,rslt.saf_cong_chk_plan_no
+            ,rslt.saf_check_perd
+            ,rslt.plan_symd
+            ,rslt.plan_eymd
+            ,rslt.chk_title
+            ,rslt.check_result
+            ,rslt.p_appr_rqst_no
+            ,rslt.step_cd
+            ,rslt.r_appr_rqst_no
+            ,rslt.dept_cd
+            ,rslt.chk_title            
+            ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+            ,car.biz_appr_step_cd
+        from saf_cong_chk_rslt rslt
+        left outer join com_appr_rqst car
+            on rslt.r_appr_rqst_no = car.appr_rqst_no
+            left outer join com_code_master bizAppr
+            on car.biz_appr_step_cd = bizAppr.code
+            and bizAppr.code_group_cd = 'COM_BIZ_APPR_STEP'
+        where saf_cong_chk_rslt_no = #{safCongChkRsltNo}
+    </select>
+   
+   <!-- 합동점검(모바일) 일정 목록 상세조회 -->
+    <select id= "getConsolSig" resultType= "com.she.safety.consol.model.Consolidation">
+        select
+            rslt.saf_cong_chk_rslt_no
+            ,rslt.cong_chk_sch_ymd
+            ,rslt.cong_chk_ymd
+            ,rslt.chk_year_title
+            ,rslt.check_step_cd
+            ,rslt.saf_check_kind_no
+            ,rslt.plant_cd
+            ,rslt.chk_title
+            ,rslt.saf_cong_chk_plan_no
+            ,rslt.dept_cd
+            ,plant.code_nm as plant_nm
+            ,psn.user_nm
+            ,psn.user_id
+            ,psn.sign_img
+            ,psn.sign_cfm_yn
+            ,cd.dept_nm
+            ,sck.saf_check_kind_nm
+        from saf_cong_chk_rslt rslt
+        inner join saf_chk_insp_dept dept
+         on dept.saf_cong_chk_rslt_no = rslt.saf_cong_chk_rslt_no
+        inner join saf_chk_insp_psn psn
+         on psn.saf_chk_insp_dept_no = psn.saf_chk_insp_dept_no
+        inner join com_code_master plant
+         on plant.code_group_cd = 'COM_PLANT_CD'
+         and plant.code = rslt.plant_cd
+        inner join com_dept cd
+         on cd.dept_cd = dept.dept_cd
+        left outer join saf_check_kind sck
+           on rslt.saf_check_kind_no = sck.saf_check_kind_no
+          and sck.cong_yn = 'Y'
+        where rslt.saf_cong_chk_rslt_no = #{safCongChkRsltNo}
+             and psn.saf_chk_insp_psn_no = #{safChkInspPsnNo}
+             and dept.saf_chk_insp_dept_no = #{safChkInspDeptNo}
+    </select>
+    
+    <update id="updateUserSignature">
+        /* UserMapper.updateUserSignature [User.xml] */
+        update saf_chk_insp_psn
+        set sign_img = #{signImg}
+        where 1 = 1
+        and saf_chk_insp_psn_no = #{safChkInspPsnNo}
+    </update>
+    
+    <!-- 연간순회점검 일정별 점검계획 목록  -->
+    <select id= "getConsolInspectors" resultType= "com.she.safety.consol.model.ConsolInspDept">
+        SELECT
+            scr.insp_cls_cd
+            ,scr.dept_cd
+            ,scr.vendor_cd
+            ,vendor.vendor_nm
+            ,cd.dept_nm
+            ,scr.vendor_act_cfm_yn
+            ,scr.vendor_act_cfm_dt
+            ,scr.vendor_act_yn
+            ,scr.saf_chk_insp_dept_no
+            ,case when vendor_act_yn = 'Y' 
+                            then '참석' else '불참' end as vendor_act_cfm_yn_nm
+            ,scr.abse_rsn
+            ,scr.remark
+            <!-- ,stuff((select ',' + a.user_nm
+                                    from saf_chk_insp_psn a
+                                where a.saf_chk_insp_dept_no = psn.saf_chk_insp_dept_no
+                                    and a.user_nm != 'null'
+                                    for xml path('')),1,1,'') as user_nms
+            ,stuff((select ',' + a.user_id
+                                    from saf_chk_insp_psn a
+                                where a.saf_chk_insp_dept_no = psn.saf_chk_insp_dept_no
+                                    and a.user_id != 'null'
+                                    for xml path('')),1,1,'') as user_ids     -->           
+        FROM saf_chk_insp_dept scr
+        left outer join com_vendor_mst vendor
+         on vendor.vendor_cd = scr.vendor_cd
+        left outer join com_dept cd
+         on cd.dept_cd = scr.dept_cd
+        <!-- left outer join saf_chk_insp_psn psn
+         on psn.saf_chk_insp_dept_no = scr.saf_chk_insp_dept_no -->
+
+        WHERE scr.saf_cong_chk_rslt_no = #{safCongChkRsltNo}
+    </select>
+    
+    <select id= "getConsolPersons" resultType= "com.she.safety.consol.model.ConsolPerson">
+        SELECT
+            user_id
+            ,user_nm
+            ,sign_cfm_Yn
+            ,sign_reg_dt
+            ,isnull(sign_img, '') as sign_img
+            ,saf_chk_insp_dept_no
+            ,saf_chk_insp_psn_no
+        FROM saf_chk_insp_psn
+        WHERE saf_chk_insp_dept_no = #{safChkInspDeptNo}
+    </select>
+    
+    <!-- <insert id= "createConsolMst" parameterType= "com.she.safety.consol.model.Consolidation">
+        insert into saf_cong_chk_rslt
+             (saf_cong_chk_rslt_no
+             ,saf_cong_chk_plan_no
+             ,plant_cd
+             ,dept_cd
+             ,step_cd
+             ,cong_chk_ymd
+             ,saf_check_kind_no
+             ,cong_chk_sch_ymd
+             ,chk_year_title
+             ,check_step_cd
+             ,plan_symd
+             ,plan_eymd
+             ,p_appr_rqst_no
+             ,r_appr_rqst_no
+             ,saf_check_perd
+             ,chk_title
+             ,check_result
+             ,create_user_id
+             ,create_dt)
+        values
+            (#{safCongChkRsltNo}
+            ,#{safCongChkPlanNo}
+            ,#{plantCd}
+            ,#{deptCd}
+            ,'ING'
+            ,#{congChkYmd}
+            ,#{safCheckKindNo}
+            ,#{congChkSchYmd}
+            ,#{chkYearTitle}
+            ,#{checkStepCd}
+            ,#{planSymd}
+            ,#{planEymd}
+            ,#{pApprRqstNo}
+            ,#{rApprRqstNo}
+            ,#{safCheckPerd}
+            ,#{chkTitle}
+            ,#{checkResult}
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+    -->
+    <insert id= "createConsolResultItem" parameterType= "com.she.safety.model.PatrolItemResult">
+        /* ConsolidationPlanMapper.createConsolResultItem [ConsolidationPlan.xml] */
+        insert into saf_cong_chk_item_rslt
+             (saf_cong_chk_rslt_no
+             ,saf_check_item_no
+             ,chk_rslt_cd
+             ,remark)
+        values
+            (#{safCongChkRsltNo}
+            ,#{safCheckItemNo}
+            ,#{chkRsltCd}
+            ,#{remark})
+    </insert>
+    
+    <insert id= "deleteConsolResultItem" parameterType= "int">
+        /* ConsolidationPlanMapper.deleteConsolResultItem [ConsolidationPlan.xml] */
+        delete from saf_cong_chk_item_rslt
+        where saf_cong_chk_rslt_no = #{safCongChkRsltNo}
+    </insert>
+    
+    <update id="apprConsolPlanByYear" >
+        UPDATE saf_cong_chk_rslt set
+        <if test="stepCd != null and !stepCd.equals('')">
+        check_step_cd = #{stepCd}    
+        </if>
+        ,p_appr_rqst_no = #{apprRqstNo}    
+        where 
+        saf_cong_chk_plan_no = #{safCongChkPlanNo}
+    </update>
+
+     <select id= "getConsolResultItems" resultType= "com.she.safety.model.PatrolItemResult">
+        /* ConsolidationPlanMapper.getConsolResultItems [ConsolidationPlan.xml] */
+        select scir.saf_cong_chk_rslt_no
+             ,scir.saf_check_item_no
+             ,scir.chk_rslt_cd
+             ,scir.remark
+             ,sci.saf_check_type_nm
+             ,sci.saf_check_kind_no
+             ,sck.saf_check_kind_nm
+         from saf_cong_chk_item_rslt scir
+         inner join saf_check_item sci
+         on scir.saf_check_item_no = sci.saf_check_item_no
+         left outer join saf_check_kind sck
+         on sci.saf_check_kind_no = sck.saf_check_kind_no
+         where 1=1
+         and scir.saf_cong_chk_rslt_no = #{safCongChkRsltNo}
+         order by sci.sort_order
+    </select>
+
+    <select id= "getNewConsolResultItems" resultType= "com.she.safety.model.PatrolItemResult">
+        /* ConsolidationPlanMapper.getNewConsolResultItems [ConsolidationPlan.xml] */
+         select sci.saf_check_item_no
+             ,sci.saf_check_type_nm
+             ,sci.saf_check_kind_no
+             ,sck.saf_check_kind_nm
+         from saf_check_item sci
+         inner join saf_check_kind sck
+         on sci.saf_check_kind_no = sck.saf_check_kind_no
+         and sck.cong_yn = 'Y'
+         and sck.use_yn = 'Y'
+         where 1=1
+         and sci.saf_check_kind_no = #{safCheckKindNo}
+         and sci.use_yn = 'Y'
+         order by sci.sort_order
+    </select>
+    
+    <insert id= "createInspDept" parameterType= "com.she.safety.consol.model.ConsolInspDept">
+        <selectKey keyProperty= "safChkInspDeptNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_chk_insp_dept as saf_cong_chk_dept_no
+        </selectKey>
+        insert into saf_chk_insp_dept
+             (saf_chk_insp_dept_no
+             ,saf_cong_chk_rslt_no
+             ,insp_cls_cd
+             ,dept_cd
+             ,vendor_cd
+             ,remark
+             ,vendor_act_yn
+             ,vendor_act_cfm_yn
+             ,abse_rsn
+             ,vendor_act_cfm_dt
+             )
+        values
+            (#{safChkInspDeptNo}
+            ,#{safCongChkRsltNo}
+            ,#{inspClsCd}
+            ,#{deptCd}
+            ,#{vendorCd}
+            ,#{remark}
+            ,#{vendorActYn}
+            ,#{vendorActCfmYn}
+            ,#{abseRsn}
+            ,#{vendorActCfmDt}
+            )
+    </insert>
+    
+    <insert id= "createInspPsn" parameterType= "com.she.safety.consol.model.ConsolPerson">
+        insert into saf_chk_insp_psn
+             (saf_chk_insp_psn_no
+             ,saf_chk_insp_dept_no
+             ,user_id
+             ,user_nm
+             ,sign_cfm_yn
+             ,sign_reg_dt
+             ,sign_img
+             )
+        values
+            (#{safChkInspPsnNo}
+            ,#{safChkInspDeptNo}
+            ,#{userId}
+            ,#{userNm}
+            ,#{signCfmYn}
+            ,#{signRegDt}
+            ,#{signImg}
+            )
+    </insert>
+    
+    <insert id= "createInspPsnNoImg" parameterType= "com.she.safety.consol.model.ConsolPerson">
+        insert into saf_chk_insp_psn
+             (saf_chk_insp_psn_no
+             ,saf_chk_insp_dept_no
+             ,user_id
+             ,user_nm
+             ,sign_cfm_yn
+             ,sign_reg_dt
+             )
+        values
+            (#{safChkInspPsnNo}
+            ,#{safChkInspDeptNo}
+            ,#{userId}
+            ,#{userNm}
+            ,#{signCfmYn}
+            ,#{signRegDt}
+            )
+    </insert>
+    
+    <select id="getPsnSequenceNumber" resultType="int">
+        select next value for seq_saf_chk_insp_psn as saf_chk_insp_psn_no
+    </select>
+    
+   <update id= "completeConsolPlan" parameterType= "int">
+        update saf_cong_chk_rslt 
+
+        set check_step_cd = 'CHS02'
+
+        where saf_cong_chk_rslt_no = #{safCongChkRsltNo}
+    </update>
+    
+    <update id= "completeSign" parameterType= "int">
+        update saf_chk_insp_psn 
+
+        set sign_cfm_yn = 'Y'
+
+        where saf_chk_insp_psn_no = #{safChkInspPsnNo}
+    </update>
+    
+    <delete id= "deleteInspPsn" parameterType= "int">
+        delete 
+        from saf_chk_insp_psn
+        where saf_chk_insp_dept_no = #{safChkInspDeptNo}
+    </delete>
+</mapper>

@@ -1,0 +1,206 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 권한 그룹 관리 -->
+<mapper namespace= "com.she.manage.mapper.AuthGrpMapper">
+    <!-- 권한 그룹 목록 조회 -->
+    <select id= "getAuthGrps" resultType= "com.she.manage.model.AuthGrp">
+        /* AuthGrpMapper.getAuthGrps [AuthGrp.xml] */
+        SELECT atg.auth_grp_no
+              ,atg.auth_grp_no as id
+              ,atg.auth_grp_nm
+              ,atg.auth_grp_nm as label
+              ,atg.remarks
+              ,atg.use_yn
+              ,(case when atg.use_yn = 'Y' then '사용' else '미사용' end) as use_yn_nm
+              ,'N' as setting_yn
+              ,atg.create_user_id
+              ,atg.create_dt
+              ,atg.update_user_id
+              ,atg.update_dt
+          FROM com_auth_grp atg
+         WHERE 1 = 1
+        <if test= "keyword != null and !keyword.equals('')">
+           AND (atg.auth_grp_no like #{keyword} + '%' or UPPER(atg.auth_grp_nm) like + #{keyword} + '%')
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+           AND atg.use_yn = #{useYn}
+        </if>
+        <choose>
+            <when test= 'searchFlag.equals("n")'>
+                AND atg.auth_grp_no != 1015
+            </when>
+            <when test= 'searchFlag.equals("pd")'>
+                AND atg.auth_grp_no not in (1020, 1089)
+            </when>
+            <when test= 'searchFlag.equals("all")'>
+                AND atg.auth_grp_no not in (1020, 1089, 1015)
+            </when>
+            <otherwise>
+            </otherwise>
+        </choose>
+         ORDER BY atg.auth_grp_no
+    </select>
+
+    <!-- 권한그룹 중복검사 -->
+    <select id= "countAuthGrp" resultType= "int">
+        /* AuthGrpMapper.countAuthGrp [AuthGrp.xml] */
+        SELECT count(*)
+          FROM com_auth_grp
+         WHERE auth_grp_nm = #{authGrpNm}
+    </select>
+
+    <!-- 권한 그룹 생성 -->
+    <insert id= "createAuthGrp" parameterType= "com.she.manage.model.AuthGrp">
+        /* AuthGrpMapper.createAuthGrp [AuthGrp.xml] */
+        <selectKey keyProperty= "authGrpNo" resultType= "int" order= "BEFORE">
+            SELECT next value for seq_com_auth_grp
+        </selectKey>
+        INSERT INTO com_auth_grp
+              (auth_grp_no
+              ,auth_grp_nm
+              ,remarks
+              ,use_yn
+              ,create_user_id
+              ,create_dt)
+        VALUES
+              (#{authGrpNo}
+              ,#{authGrpNm}
+              ,#{remarks}
+              ,#{useYn}
+              ,#{createUserId}
+              ,getdate())
+    </insert>
+
+    <!-- 권한 그룹 수정 -->
+    <update id= "updateAuthGrp" parameterType= "com.she.manage.model.AuthGrp">
+        /* AuthGrpMapper.updateAuthGrp [AuthGrp.xml] */
+        UPDATE com_auth_grp
+           SET auth_grp_nm = #{authGrpNm}
+              ,remarks = #{remarks}
+              ,use_yn = #{useYn}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE auth_grp_no = #{authGrpNo}
+    </update>
+
+    <select id="getAuthGrpUsers" resultType="com.she.manage.model.AuthGrpUser">
+        /* AuthGrpMapper.getAuthGrpUsers [AuthGrp.xml] */
+        SELECT plant.code as plant_cd
+              ,plant.code_nm as plant_nm
+              ,cu.dept_cd
+              ,cd.dept_nm
+              ,cu.user_id
+              ,cu.user_nm
+          FROM com_user cu
+         INNER JOIN com_dept cd
+            ON cu.dept_cd = cd.dept_cd
+         INNER JOIN com_code_master plant
+            ON plant.code_group_cd = 'COM_PLANT_CD'
+           AND cd.plant_cd = plant.code
+         WHERE 1=1
+        <if test= "plantCd != null and !plantCd.equals('')">
+           AND cd.plant_cd = #{plantCd}
+        </if>
+        <if test= "deptCd != null and !deptCd.equals('')">
+           AND cd.dept_cd = #{deptCd}
+        </if>
+        <if test= "keyword != null and !keyword.equals('')">
+           AND (cu.user_nm like '%' + #{keyword} + '%' OR
+               exists(SELECT cag.auth_grp_nm
+                  FROM com_auth_grp cag
+                 INNER JOIN com_user_auth_grp cuag
+                    ON cag.auth_grp_no = cuag.auth_grp_no
+                 WHERE cuag.user_id = cu.user_id
+                   AND cag.auth_grp_nm like '%' + #{keyword} + '%'))
+         </if>
+    </select>
+
+    <select id="getAuthGrpUserAuths" resultType="com.she.manage.model.AuthGrp">
+        /* AuthGrpMapper.getAuthGrpUserAuths [AuthGrp.xml] */
+        SELECT cag.auth_grp_no
+              ,cag.auth_grp_nm
+          FROM com_auth_grp cag
+         INNER JOIN com_user_auth_grp cuag
+            ON cag.auth_grp_no = cuag.auth_grp_no
+         WHERE cag.use_yn = 'Y'
+           AND cag.auth_grp_no != 1015
+        <if test= "userId != null and !userId.equals('')">
+           AND cuag.user_id = #{userId}
+        </if>
+    </select>
+
+    <delete id="deleteAuthGrpUser" parameterType="com.she.manage.model.UserAuthGrp">
+        /* AuthGrpMapper.deleteAuthGrpUser [AuthGrp.xml] */
+        DELETE FROM com_user_auth_grp
+         WHERE auth_grp_no = #{authGrpNo}
+           AND user_id = #{userId}
+    </delete>
+
+    <select id="getAuthGrpDepts" resultType="com.she.manage.model.AuthGrpDept">
+        /* AuthGrpMapper.getAuthGrpDepts [AuthGrp.xml] */
+        WITH depttree as (
+            SELECT cd.dept_cd
+                  ,cd.dept_nm
+                  ,cd.p_dept_cd
+                  ,cd.plant_cd
+              FROM com_dept cd
+             WHERE 1=1
+               AND isnull(cd.p_dept_cd, '') = ''
+               AND cd.use_yn = 'Y'
+            UNION ALL
+            SELECT cdd.dept_cd
+                  ,cdd.dept_nm
+                  ,cdd.p_dept_cd
+                  ,cdd.plant_cd
+              FROM com_dept cdd
+             INNER join depttree
+                ON cdd.p_dept_cd = depttree.dept_cd
+             WHERE 1=1
+               AND cdd.use_yn = 'Y'
+        )
+        SELECT depttree.dept_cd
+              ,depttree.dept_nm
+              ,depttree.p_dept_cd
+              ,depttree.plant_cd, plant.code_nm as plant_nm
+          FROM depttree
+          LEFT OUTER JOIN com_code_master plant
+            ON depttree.plant_cd = plant.code
+           AND plant.code_group_cd = 'COM_PLANT_CD'
+         WHERE 1=1
+        <if test= "plantCd != null and plantCd != ''">
+           AND depttree.plant_cd = #{plantCd}
+        </if>
+        <if test= "keyword != null and keyword != ''">
+           AND (upper(depttree.dept_nm) like '%'+upper(#{keyword})+'%' or
+                exists(SELECT 1
+                         FROM com_auth_grp cag
+                        INNER JOIN com_dept_auth_grp cdag
+                           ON cag.auth_grp_no = cdag.auth_grp_no
+                        WHERE cdag.dept_cd = depttree.dept_cd
+                          AND cag.auth_grp_nm like '%' + #{keyword} + '%'))
+        </if>
+    </select>
+
+    <select id="getAuthGrpDeptAuths" resultType="com.she.manage.model.AuthGrp">
+        /* AuthGrpMapper.getAuthGrpDeptAuths [AuthGrp.xml] */
+        SELECT cag.auth_grp_no
+              ,cag.auth_grp_nm
+          FROM com_auth_grp cag
+         INNER JOIN com_dept_auth_grp cdag
+            ON cag.auth_grp_no = cdag.auth_grp_no
+         WHERE cag.use_yn = 'Y'
+           AND cag.auth_grp_no != 1015
+        <if test= "deptCd != null and !deptCd.equals('')">
+           AND cdag.dept_cd = #{deptCd}
+        </if>
+    </select>
+
+    <delete id="deleteAuthGrpDept" parameterType="com.she.manage.model.DeptAuthGrp">
+        /* AuthGrpMapper."deleteAuthGrpDept" [AuthGrp.xml] */
+        DELETE FROM com_dept_auth_grp
+         WHERE auth_grp_no = #{authGrpNo}
+           AND dept_cd = #{deptCd}
+    </delete>
+
+</mapper>

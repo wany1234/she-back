@@ -1,0 +1,404 @@
+{
+  "groups": [
+    {
+      "name": "file",
+      "type": "com.she.file.model.FileStorageProperties",
+      "sourceType": "com.she.file.model.FileStorageProperties"
+    },
+    {
+      "name": "globals",
+      "type": "com.she.config.GlobalSettings",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "spring.mssql.datasource",
+      "type": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties",
+      "sourceType": "com.she.config.db.DefaultDatabaseConfig",
+      "sourceMethod": "public org.springframework.boot.autoconfigure.jdbc.DataSourceProperties dataSourceProperties() "
+    },
+    {
+      "name": "spring.mssql.datasource.configuration",
+      "type": "javax.sql.DataSource",
+      "sourceType": "com.she.config.db.DefaultDatabaseConfig",
+      "sourceMethod": "public javax.sql.DataSource defaultDataSource(org.springframework.boot.autoconfigure.jdbc.DataSourceProperties) "
+    },
+    {
+      "name": "spring.mssql.datasource.xa",
+      "type": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties$Xa",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties",
+      "sourceMethod": "public org.springframework.boot.autoconfigure.jdbc.DataSourceProperties.Xa getXa() "
+    },
+    {
+      "name": "swing.security.jwt",
+      "type": "com.she.config.JwtSettings",
+      "sourceType": "com.she.config.JwtSettings"
+    }
+  ],
+  "properties": [
+    {
+      "name": "file.upload-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.file.model.FileStorageProperties"
+    },
+    {
+      "name": "file.zip-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.file.model.FileStorageProperties"
+    },
+    {
+      "name": "globals.file-store-path",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.logo-image-file-path",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.no-image-file-path",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.pre-start-check",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.pre-start-check-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.pre-start-check-report",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-accident",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-audit-result-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-chm-msds-images",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-chm-msds-warn-sign",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-chm-msds-warn-sign-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-chm-process-mng",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-chm-process-mng-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-eair",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-eair-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-ewtr-chem",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-ewtr-chem-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-ewtr-oplog",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-ewtr-oplog-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-ewtr-self-measurement",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-ewtr-self-measurement-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-ewtr-waste-day-ck",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-env-ewtr-waste-day-ck-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-impr-act-result",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-risk-hazard",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-risk-hazard-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-stress-plan",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-stress-plan-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-wkod",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.report-wkod-dir",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.self-audit-result",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.send-mail-em",
+      "type": "java.lang.String",
+      "description": "공용 메일주소",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "globals.send-mail-nm",
+      "type": "java.lang.String",
+      "description": "공용 메일발송자명",
+      "sourceType": "com.she.config.GlobalSettings"
+    },
+    {
+      "name": "spring.mssql.datasource.continue-on-error",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.data",
+      "type": "java.util.List<java.lang.String>",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.data-password",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.data-username",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.driver-class-name",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.generate-unique-name",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.initialization-mode",
+      "type": "org.springframework.boot.jdbc.DataSourceInitializationMode",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.jndi-name",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.name",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.password",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.platform",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.schema",
+      "type": "java.util.List<java.lang.String>",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.schema-password",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.schema-username",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.separator",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.sql-script-encoding",
+      "type": "java.nio.charset.Charset",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.type",
+      "type": "java.lang.Class<? extends javax.sql.DataSource>",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.url",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.username",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties"
+    },
+    {
+      "name": "spring.mssql.datasource.xa.data-source-class-name",
+      "type": "java.lang.String",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties$Xa"
+    },
+    {
+      "name": "spring.mssql.datasource.xa.properties",
+      "type": "java.util.Map<java.lang.String,java.lang.String>",
+      "sourceType": "org.springframework.boot.autoconfigure.jdbc.DataSourceProperties$Xa"
+    },
+    {
+      "name": "swing.security.jwt.devtoken",
+      "type": "java.lang.String",
+      "description": "개발 및 장기토큰",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.local-ip",
+      "type": "java.lang.String",
+      "description": "요청한 클라이언트의 아이피주소를 클라이언트에서 직접 보내주는경우 헤더 키값",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.opentoken",
+      "type": "java.lang.String",
+      "description": "OPEN서비스 요청시 하용하는 토큰, 10년 장기토큰",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.passip",
+      "type": "java.lang.String",
+      "description": "아이피로 중복 로그인을 비교하는 경우 OPEN토큰 또는 10년토큰의 아이피를 PASS하기 위해서 사용함.",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.passip2",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.refresh-token-exp-time",
+      "type": "java.lang.Integer",
+      "description": "{@link JwtToken} can be refreshed during this timeframe.",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.swagger-header",
+      "type": "java.lang.String",
+      "description": "Swagger에서 데이터를 처리하는 경우 키",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.swaggerkey",
+      "type": "java.lang.String",
+      "description": "Swagger에서 데이터를 처리하는 경우 고유값",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.tenant-header",
+      "type": "java.lang.String",
+      "description": "tenant header key",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.token-expiration-time",
+      "type": "java.lang.Integer",
+      "description": "{@link JwtToken} will expire after this time.",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.token-header",
+      "type": "java.lang.String",
+      "description": "token header key",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.token-issuer",
+      "type": "java.lang.String",
+      "description": "Token issuer.",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.token-signing-key",
+      "type": "java.lang.String",
+      "description": "Key is used to sign {@link JwtToken}.",
+      "sourceType": "com.she.config.JwtSettings"
+    },
+    {
+      "name": "swing.security.jwt.validmode",
+      "type": "java.lang.String",
+      "sourceType": "com.she.config.JwtSettings"
+    }
+  ],
+  "hints": []
+}

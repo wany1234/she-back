@@ -1,0 +1,1141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.manage.mapper.ApprMapper">
+
+    <!-- 결재문서마스터 목록 조회 -->
+    <select id="getApprBizList" resultType="com.she.manage.model.ApprBiz">
+        /* ApprMapper.getApprBizList [Appr.xml] */
+        select   cab.appr_biz_no
+               , cab.appr_biz_cd
+               , cab.biz_nm
+               , cab.appr_biz_type_cd
+               , ccm.code_nm as appr_biz_type_nm
+               , cab.appr_url
+               , cab.appr_parameter
+               , cab.appr_mail_contents
+               , cab.use_yn
+               , cab.sort_order
+               , cab.create_user_id
+               , cu.user_nm as create_user_nm
+               , convert(char(10), cab.create_dt, 23) as create_dt
+               , case
+                    when dbo.GET_USER_NM(cab.update_user_id) = '' then dbo.GET_USER_NM(cab.create_user_id)
+                    else dbo.GET_USER_NM(cab.update_user_id) end as writer_user_nm
+               , case when cab.update_dt is null then convert(date, cab.create_dt) else convert(date, cab.update_dt) end   as writer_dt
+          from com_appr_biz cab
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_SAME') ccm
+            on cab.appr_biz_type_cd = ccm.code
+         inner join com_user cu
+            on cab.create_user_id = cu.user_id
+         where 1=1
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprBizCd)">
+           and cab.appr_biz_cd like '%%' + #{apprBizCd} + '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(bizNm)">
+           and cab.biz_nm like '%' + #{bizNm} + '%'
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprBizTypeCd)">
+           and cab.appr_biz_type_cd = #{apprBizTypeCd}
+        </if>
+         order by writer_dt desc, cab.sort_order
+    </select>
+
+    <!-- 결재문서마스터 등록  -->
+    <insert id="createApprBiz" parameterType="com.she.manage.model.ApprBiz">
+        <selectKey keyProperty="apprBizNo" resultType="int" order="BEFORE">
+            select next value for seq_com_appr_biz_no as appr_biz_no
+        </selectKey>
+        /* ApprMapper.createApprBiz [Appr.xml] */
+        insert into com_appr_biz
+               (
+                   appr_biz_no
+                 , appr_biz_cd
+                 , biz_nm
+                 , appr_biz_type_cd
+                 , appr_url
+                 , appr_parameter
+                 , appr_mail_contents
+                 , use_yn
+                 , sort_order
+                 , create_user_id
+                 , create_dt
+               )
+               values
+               (
+                   #{apprBizNo}
+                 , #{apprBizCd}
+                 , #{bizNm}
+                 , #{apprBizTypeCd}
+                 , #{apprUrl}
+                 , #{apprParameter}
+                 , #{apprMailContents}
+                 , #{useYn}
+                 , #{sortOrder}
+                 , #{createUserId}
+                 , getdate()
+               )
+    </insert>
+
+    <!-- 결재문서결재선 등록 -->
+    <insert id="createApprBizLine" parameterType="com.she.manage.model.ApprBizLine">
+        <selectKey keyProperty="apprBizLineNo" resultType="int" order="BEFORE">
+            select next value for seq_com_appr_biz_line_no as appr_biz_line_no
+        </selectKey>
+        /* ApprMapper.createApprBizLine [Appr.xml] */
+        insert into com_appr_biz_line
+               (
+                   appr_biz_line_no
+                 , appr_biz_no
+                 , plant_cd
+                 , appr_line_nm
+                 , appr_line_desc
+                 , appr_line_type_cd
+               )
+               values
+               (
+                   #{apprBizLineNo}
+                 , #{apprBizNo}
+                 , #{plantCd}
+                 , #{apprLineNm}
+                 , #{apprLineDesc}
+                 , #{apprLineTypeCd}
+               )
+    </insert>
+
+    <!-- 결재문서결재선 세부정보 등록 -->
+    <insert id="createApprBizLineDtl" parameterType="com.she.manage.model.ApprBizLineDtl">
+        /* ApprMapper.createApprBizLineDtl [Appr.xml] */
+        insert into com_appr_biz_line_dtl
+               (
+                   appr_biz_no
+                 , appr_biz_line_no
+                 , plant_cd
+                 , plant_confirm_dept_cd
+                 , plant_conf_worker_id
+                 , plant_conf_charger_id
+                 , hq_confirm_dept_cd
+                 , hq_conf_worker_id
+                 , hq_conf_charger_id
+               )
+               values
+               (
+                   #{apprBizNo}
+                 , #{apprBizLineNo}
+                 , #{plantCd}
+                 , #{plantConfirmDeptCd}
+                 , #{plantConfWorkerId}
+                 , #{plantConfChargerId}
+                 , #{hqConfirmDeptCd}
+                 , #{hqConfWorkerId}
+                 , #{hqConfChargerId}
+               )
+    </insert>
+
+    <!-- 결재문서 마스터 상세 조회 -->
+    <select id="getApprBizDetail" resultType="com.she.manage.model.ApprBiz">
+        /* ApprMapper.getApprBizDetail [Appr.xml] */
+        select   cab.appr_biz_no
+               , cab.appr_biz_cd
+               , cab.biz_nm
+               , cab.appr_biz_type_cd
+               , ccm.code_nm as appr_biz_type_nm
+               , cab.appr_url
+               , cab.appr_parameter
+               , cab.appr_mail_contents
+               , cab.use_yn
+               , cab.sort_order
+               , cab.create_user_id
+               , cab.create_dt
+          from com_appr_biz cab
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_SAME') ccm
+            on cab.appr_biz_type_cd = ccm.code
+         where 1=1
+        <if test="apprBizNo != null and apprBizNo > 0">
+           and cab.appr_biz_no = #{apprBizNo}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprBizCd)">
+           and cab.appr_biz_cd = #{apprBizCd}
+        </if>
+    </select>
+
+    <!-- 결재문서 결재선 목록 조회  -->
+    <select id="getApprBizLineList" resultType="com.she.manage.model.ApprBizLine">
+        /* ApprMapper.getApprBizLineList [Appr.xml] */
+        select   abl.appr_biz_line_no
+               , abl.appr_biz_no
+               , abl.plant_cd
+               , plt.code_nm as plant_nm
+               , abl.appr_line_nm
+               , abl.appr_line_desc
+               , abl.appr_line_type_cd
+          from com_appr_biz_line abl
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plt
+            on abl.plant_cd = plt.code
+         where abl.appr_biz_no = #{apprBizNo}
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(plantCd)">
+           and (abl.plant_cd = #{plantCd} or abl.plant_cd = '0000')
+        </if>
+    </select>
+
+    <!-- 결재문서 결재선 세부정보 목록 조회  -->
+    <select id="getApprBizLineDtlList" resultType="com.she.manage.model.ApprBizLineDtl">
+        /* ApprMapper.getApprBizLineDtlList [Appr.xml] */
+        select   abl.appr_biz_line_no
+               , abl.appr_biz_no
+               , abl.plant_cd
+               , plt.code_nm as plant_nm
+               , abl.plant_confirm_dept_cd
+               , plntdept.dept_nm as plant_confirm_dept_nm
+               , abl.plant_conf_worker_id
+               , plntwork.user_nm as plant_conf_worker_nm
+               , abl.plant_conf_charger_id
+               , plntchgr.user_nm as plant_conf_charger_nm
+               , abl.hq_confirm_dept_cd
+               , hqdept.dept_nm as hq_confirm_dept_nm
+               , abl.hq_conf_worker_id
+               , hqwork.user_nm as hq_conf_worker_nm
+               , abl.hq_conf_charger_id
+               , hqchgr.user_nm as hq_conf_charger_nm
+          from com_appr_biz_line_dtl abl
+          left outer join com_dept plntdept
+            on abl.plant_confirm_dept_cd = plntdept.dept_cd
+          left outer join com_user plntwork
+            on abl.plant_conf_worker_id = plntwork.user_id
+          left outer join com_user plntchgr
+            on abl.plant_conf_charger_id = plntchgr.user_id
+          left outer join com_dept hqdept
+            on abl.hq_confirm_dept_cd = hqdept.dept_cd
+          left outer join com_user hqwork
+            on abl.hq_conf_worker_id = hqwork.user_id
+          left outer join com_user hqchgr
+            on abl.hq_conf_charger_id = hqchgr.user_id
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plt
+            on abl.plant_cd = plt.code
+         where abl.appr_biz_no = #{apprBizNo}
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(plantCd)">
+           and abl.plant_cd = #{plantCd}
+        </if>
+    </select>
+
+    <!-- 결재문서 유형코드 조회 -->
+    <select id="getApprBizCodeCount" resultType="int">
+        /* ApprMapper.getApprBizCodeCount [Appr.xml] */
+        select count(cab.appr_biz_cd) as cnt
+          from com_appr_biz cab
+         where cab.appr_biz_cd = #{apprBizCd}
+    </select>
+
+    <!-- 결재문서마스터 수정 -->
+    <update id="updateApprBiz" parameterType="com.she.manage.model.ApprBiz">
+        /* ApprMapper.updateApprBiz [Appr.xml] */
+        update com_appr_biz
+           set   biz_nm = #{bizNm}
+               , appr_biz_type_cd = #{apprBizTypeCd}
+               , appr_url = #{apprUrl}
+               , appr_parameter = #{apprParameter}
+               , appr_mail_contents = #{apprMailContents}
+               , use_yn = #{useYn}
+               , sort_order = #{sortOrder}
+               , update_user_id = #{updateUserId}
+               , update_dt = getdate()
+         where appr_biz_no = #{apprBizNo}
+    </update>
+
+    <!-- 결재문서 결재선 삭제 -->
+    <delete id="deleteApprBizLine">
+        /* ApprMapper.deleteApprBizLine [Appr.xml] */
+        delete from com_appr_biz_line
+         where appr_biz_no = #{apprBizNo}
+    </delete>
+
+    <!-- 결재문서 결재선 세부정보 삭제 -->
+    <delete id="deleteApprBizLineDtl">
+        /* ApprMapper.deleteApprBizLineDtl [Appr.xml] */
+        delete from com_appr_biz_line_dtl
+         where appr_biz_no = #{apprBizNo}
+    </delete>
+
+    <!-- 결재라인 삭제 -->
+    <delete id="deleteApprRqstLine">
+        delete from com_appr_rqst_line
+        where appr_rqst_no = #{apprRqstNo}
+        and appr_step_cd is null
+        and line_seq_no not in (
+            select top 1 line_seq_no
+            from com_appr_rqst_line
+            where appr_rqst_no = #{apprRqstNo}
+            and appr_step_cd is null
+        )
+    </delete>
+
+    <!-- 결재요청 등록 -->
+    <insert id="createApprRqst" parameterType="com.she.manage.model.ApprRqst">
+        <selectKey keyProperty="apprRqstNo" resultType="int" order="BEFORE">
+            select cast(
+                        cast(datepart(yyyy, getdate()) as char(4)) +
+                        cast(next value for seq_com_appr_rqst_no as char(8)) as int
+                       ) as appr_rqst_no
+        </selectKey>
+        /* ApprMapper.createApprRqst [Appr.xml] */
+        insert into com_appr_rqst
+               (
+                   appr_rqst_no
+                 , p_appr_rqst_no
+                 , appr_rqst_nm
+                 , appr_biz_no
+                 , plant_cd
+                 , biz_appr_step_cd
+                 , appr_req_parameter
+                 , create_dt
+               )
+               values
+               (
+                   #{apprRqstNo}
+                 , #{pApprRqstNo}
+                 , #{apprRqstNm}
+                 , #{apprBizNo}
+                 , #{plantCd}
+                 , #{bizApprStepCd}
+                 , #{apprReqParameter}
+                 , getdate()
+               )
+    </insert>
+
+    <!-- 결재요청 결재선 등록 -->
+    <insert id="createApprRqstLine" parameterType="com.she.manage.model.ApprRqstLine">
+        /* ApprMapper.createApprRqstLine [Appr.xml] */
+        insert into com_appr_rqst_line
+               (
+                   appr_rqst_no
+                 , line_seq_no
+                 , appr_type_cd
+                 , appr_user_id
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprStepCd)">
+                 , appr_dt
+                 , appr_step_cd
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(delegatorId)">
+                 , delegator_id
+        </if>
+                 , appr_user_dept_cd
+                 , appr_user_duty_cd
+               )
+               select   #{apprRqstNo}
+                      , #{lineSeqNo}
+                      , #{apprTypeCd}
+                      , #{apprUserId}
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprStepCd)">
+                      , getdate()
+                      , #{apprStepCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(delegatorId)">
+                      , #{delegatorId}
+        </if>
+                      , dept_cd
+                      , duty_cd
+                 from com_user
+
+                where user_id = #{apprUserId}
+    </insert>
+
+    <!-- 결재 할 문서 목록 조회 -->
+    <select id="getWhichApprs" resultType="com.she.manage.model.Appr">
+        /* ApprMapper.getWhichApprs [Appr.xml] */
+        select   ar.appr_rqst_no
+               , convert(char(10), ar.create_dt, 23) as create_dt
+               , ab.biz_nm
+               , arl.appr_type_cd
+               , cm.code_nm as appr_type_nm
+               , reqarl.appr_user_dept_cd
+               , dept.dept_nm as appr_user_dept_nm
+               , reqarl.appr_user_id
+               , cu.user_nm as appr_user_nm
+               , arl.appr_step_cd
+               , step.code_nm as appr_step_nm
+               , ab.appr_biz_cd
+               , ab.appr_url
+               , ar.appr_req_parameter
+               , arl.line_seq_no
+               , convert(char, arl.appr_dt, 120) as appr_dt
+               , ar.appr_rqst_nm
+               , ar.biz_appr_step_cd
+               , isnull(cm2.code_nm, '결재요청전' ) as biz_appr_step_nm
+               , arl.appr_remark
+          from com_appr_rqst_line arl
+         inner join com_appr_rqst ar
+            on arl.appr_rqst_no = ar.appr_rqst_no
+         inner join com_appr_biz ab
+            on ar.appr_biz_no = ab.appr_biz_no
+         inner join com_appr_rqst_line reqarl
+            on ar.appr_rqst_no = reqarl.appr_rqst_no
+           and reqarl.appr_type_cd = 'APTP0'
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_TYPE') cm
+            on arl.appr_type_cd = cm.code
+         inner join com_dept dept
+            on dept.dept_cd = reqarl.appr_user_dept_cd
+         inner join com_user cu
+            on cu.user_id = reqarl.appr_user_id
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_STEP') step
+            on arl.appr_step_cd = step.code
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm2
+            on cm2.code = ar.biz_appr_step_cd
+         where 1=1
+           and ar.biz_appr_step_cd != 'BAPST'
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprUserId)">
+           and (case when arl.delegator_id is null then arl.appr_user_id else arl.delegator_id end) = #{apprUserId}
+           <!--and arl.appr_user_id = #{apprUserId}-->
+        </if>
+           and exists (select 1
+                         from com_appr_rqst_line
+                        where appr_rqst_no = ar.appr_rqst_no
+                          and line_seq_no = arl.line_seq_no - 1
+                          and appr_step_cd = 'APSPA')
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(returnYn)">
+            <choose>
+                <when test="@org.apache.commons.lang.StringUtils@equals(returnYn, 'Y')">
+           and ar.biz_appr_step_cd = 'BAPSD'
+                </when>
+                <otherwise>
+           and ar.biz_appr_step_cd != 'BAPSD'
+                </otherwise>
+            </choose>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprYn)">
+            <choose>
+                <when test="@org.apache.commons.lang.StringUtils@equals(apprYn, 'Y')">
+           and arl.appr_step_cd is not null
+                </when>
+                <otherwise>
+           and arl.appr_step_cd is null
+                </otherwise>
+            </choose>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(startDate) and @org.apache.commons.lang3.StringUtils@isNotBlank(endDate)">
+           and convert(date, ar.create_dt) between convert(date, #{startDate}) and convert(date, #{endDate})
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprRqstNm)">
+            and ar.appr_rqst_nm like '%' + #{apprRqstNm} + '%'
+        </if>
+         order by ar.create_dt desc
+    </select>
+
+    <!-- 결재 할 문서 결재선 목록 조회 -->
+    <select id="getWhichApprLine" resultType="com.she.manage.model.ApprRqstLine">
+        /* ApprMapper.getWhichApprLine [Appr.xml] */
+        select   arl.appr_rqst_no
+               , arl.line_seq_no
+               , arl.appr_type_cd
+               , cm.code_nm as appr_type_nm
+               , arl.appr_user_id
+               , arl.appr_user_id as user_id
+               , cu.user_nm as appr_user_nm
+               , cu.user_nm
+               , cd.dept_nm
+               , arl.appr_step_cd
+               , step.code_nm as appr_step_nm
+               , arl.appr_remark
+               , arl.appr_user_dept_cd
+               , arl.appr_user_duty_cd
+               , arl.delegator_id
+               , dcu.user_nm as delegator_nm
+          from com_appr_rqst_line arl
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_TYPE') cm
+            on arl.appr_type_cd = cm.code
+         inner join com_user cu
+            on cu.user_id = arl.appr_user_id
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_STEP') step
+            on step.code = arl.appr_step_cd
+         inner join com_dept cd
+         on cd.dept_cd = arl.appr_user_dept_cd
+         left join com_user dcu
+         on dcu.user_id = arl.delegator_id
+         where appr_rqst_no = #{apprRqstNo}
+         order by arl.line_seq_no
+    </select>
+
+
+    <!-- 결재 할 문서 결재선 목록 조회 -->
+    <select id="getApprLine" resultType="com.she.manage.model.ApprRqstLine">
+        /* ApprMapper.getApprLine [Appr.xml] */
+        select   arl.appr_rqst_no
+               , arl.line_seq_no
+               , arl.appr_type_cd
+               , arl.appr_user_id
+               , arl.appr_user_id as user_id
+               , cu.user_nm as appr_user_nm
+               , cu.user_nm
+               , cd.dept_nm
+               , arl.appr_step_cd
+               , arl.appr_remark
+               , arl.appr_user_dept_cd
+               , arl.appr_user_duty_cd
+               , arl.delegator_id
+               , dcu.user_nm as delegator_nm
+          from com_appr_rqst_line arl
+         inner join com_code_master cm
+            on arl.appr_type_cd = cm.code
+           and cm.code_group_cd = 'COM_APPR_TYPE'
+         inner join com_user cu
+            on cu.user_id = arl.appr_user_id
+          left outer join com_code_master step
+            on step.code = arl.appr_step_cd
+           and step.code_group_cd = 'COM_APPR_STEP'
+         inner join com_dept cd
+         on cd.dept_cd = arl.appr_user_dept_cd
+         left join com_user dcu
+         on dcu.user_id = arl.delegator_id
+         where appr_rqst_no = #{apprRqstNo}
+         and line_seq_no = #{lineSeqNo}
+    </select>
+
+    <!-- 결재  처리 상태 수정 -->
+    <update id="updateApprStep" parameterType="com.she.manage.model.ApprRqstLine">
+        /* ApprMapper.updateApprStep [Appr.xml] */
+        update com_appr_rqst_line
+           set   appr_step_cd = #{apprStepCd}
+               , appr_dt = getdate()
+               , appr_remark = #{apprRemark}
+         where appr_rqst_no = #{apprRqstNo}
+           and line_seq_no = #{lineSeqNo}
+           <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(delegatorId)">
+              and delegator_id  = #{delegatorId}
+           </if>
+           <if test="@org.apache.commons.lang3.StringUtils@isBlank(delegatorId)">
+              and appr_user_id = #{apprUserId}
+           </if>
+
+    </update>
+
+    <!-- 결재 요청 결재선 개수 조회 -->
+    <select id="getCountApprRqstLine" parameterType="com.she.manage.model.ApprRqstLine" resultType="int">
+        /* ApprMapper.getCountApprRqstLine [Appr.xml] */
+        select count(*)
+          from com_appr_rqst_line
+         where appr_rqst_no = #{apprRqstNo}
+        <if test="lineSeqNo != null and lineSeqNo > 0">
+           and line_seq_no = #{lineSeqNo}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprUserId) and @org.apache.commons.lang3.StringUtils@isBlank(delegatorId)">
+           and appr_user_id = #{apprUserId}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(delegatorId)">
+           and delegator_id = #{delegatorId}
+        </if>
+    </select>
+
+    <!-- 결재요청 결재진행단계 수정 -->
+    <update id="updateBizApprStep" parameterType="com.she.manage.model.ApprRqst">
+        /* ApprMapper.updateBizApprStep [Appr.xml] */
+        update com_appr_rqst
+           set biz_appr_step_cd = #{bizApprStepCd}
+         where appr_rqst_no = #{apprRqstNo}
+    </update>
+
+    <!-- 결재요청 상세 정보 조회 -->
+    <select id="getApprRqstDetail" resultType="com.she.manage.model.Appr">
+        /* ApprMapper.getApprRqstDetail [Appr.xml] */
+        select   ab.appr_biz_no
+               , ar.p_appr_rqst_no
+               , ar.appr_rqst_nm
+               , ab.appr_biz_cd
+               , ab.biz_nm
+               , ab.appr_url
+               , ab.appr_mail_contents
+               , ar.appr_rqst_no
+               , ar.create_dt
+               , ar.plant_cd
+               , ar.appr_req_parameter
+               , ar.biz_appr_step_cd
+
+          from com_appr_rqst ar
+         inner join com_appr_biz ab
+            on ar.appr_biz_no = ab.appr_biz_no
+         where ar.appr_rqst_no = #{apprRqstNo}
+    </select>
+
+    <!-- 결재선 결재자 조회 -->
+    <select id="getApprUserInfo" resultType="com.she.manage.model.User">
+        /* ApprMapper.getApprUserInfo [Appr.xml] */
+        with dept as (
+                      select   a.dept_cd
+                             , a.dept_nm
+                             , a.p_dept_cd
+                        from com_dept a, com_user u
+                       where a.dept_cd = u.dept_cd
+                         and u.user_id = #{userId}
+                       union all
+                      select   b.dept_cd
+                             , b.dept_nm
+                             , b.p_dept_cd
+                        from com_dept b, dept
+                       where dept.p_dept_cd = b.dept_cd
+                     )
+        select   top(1)
+                 dept.dept_cd
+               , dept.dept_nm
+               , cu.user_id
+               , cu.user_nm
+               , cu.duty_cd
+               , cu.duty_nm
+          from dept
+         inner join com_user cu
+            on dept.dept_cd = cu.dept_cd
+           and cu.duty_cd = #{dutyCd}
+    </select>
+
+    <!-- 부서별 결재자 조회 -->
+    <select id="getApprUserInfoByDept" resultType="com.she.manage.model.User">
+        /* ApprMapper.getApprUserInfoByDept [Appr.xml] */
+        with dept as (
+                      select   a.dept_cd
+                             , a.dept_nm
+                             , a.p_dept_cd
+                        from com_dept a
+                       where a.dept_cd = #{deptCd}
+                       union all
+                      select   b.dept_cd
+                             , b.dept_nm
+                             , b.p_dept_cd
+                        from com_dept b, dept
+                       where dept.p_dept_cd = b.dept_cd
+                     )
+        select   top(1)
+                 dept.dept_cd
+               , dept.dept_nm
+               , cu.user_id
+               , cu.user_nm
+               , cu.duty_cd
+               , cu.duty_nm
+          from dept
+         inner join com_user cu
+            on dept.dept_cd = cu.dept_cd
+           and cu.duty_cd = #{dutyCd}
+    </select>
+
+    <!-- 결재 요청 문서 목록 조회 -->
+    <select id="getApprRequestList" resultType="com.she.manage.model.Appr">
+        /* ApprMapper.getApprRequestList [Appr.xml] */
+        with   curline as (
+                           select   appr_rqst_no
+                                  , max(line_seq_no) as max_line_seq_no
+                                  , appr_step_cd
+                             from com_appr_rqst_line
+                            where appr_step_cd is not null
+                            group by appr_rqst_no, appr_step_cd
+                          )
+             , maxline as (
+                           select   appr_rqst_no
+                                  , max(line_seq_no) as max_line_seq_no
+                             from com_appr_rqst_line
+                            group by appr_rqst_no
+                          )
+             , apprline as (
+                            select   case when curline.max_line_seq_no = maxline.max_line_seq_no
+                                          then curline.max_line_seq_no
+                                          when maxline.max_line_seq_no > curline.max_line_seq_no
+                                          then case when curline.appr_step_cd = 'APSPA' then curline.max_line_seq_no + 1
+                                                    else curline.max_line_seq_no
+                                                end
+                                      end max_line_seq_no
+                                   , curline.appr_rqst_no
+                              from curline, maxline
+                             where curline.appr_rqst_no = maxline.appr_rqst_no
+                           )
+                            select distinct arl.appr_rqst_no
+                                   , ar.p_appr_rqst_no
+                                   , ab.appr_biz_no
+                                   , arl.line_seq_no
+                                   , arl.appr_type_cd
+                                   , cm1.code_nm as appr_type_nm
+                                   , arl.appr_user_id
+                                   , cu.user_nm as appr_user_nm
+                                   , arl.delegator_id
+                                   , cu2.user_nm as delegator_nm
+                                   , dept2.dept_nm as delegator_dept_nm
+                                   , arl.appr_step_cd
+                                   , isnull(cm2.code_nm, '결재대기') as appr_step_nm
+                                   , convert(char, arl.appr_dt, 120) as appr_dt
+                                   , arl.appr_user_dept_cd
+                                   , dept.dept_nm as appr_user_dept_nm
+                                   , ab.biz_nm
+                                   , convert(char(10), ar.create_dt, 23) as create_dt
+                                   , ar.biz_appr_step_cd
+                                   , isnull(cm3.code_nm, '결재요청전' ) as biz_appr_step_nm
+                                   , ar.appr_rqst_nm
+                              from com_appr_rqst_line arl
+                             inner join apprline
+                                on arl.appr_rqst_no = apprline.appr_rqst_no
+                               and arl.line_seq_no = apprline.max_line_seq_no
+                             inner join com_appr_rqst ar
+                                on arl.appr_rqst_no = ar.appr_rqst_no
+                             inner join com_appr_biz ab
+                                on ar.appr_biz_no = ab.appr_biz_no
+                              left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_TYPE') cm1
+                                on cm1.code = arl.appr_type_cd
+                              left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_STEP') cm2
+                                on cm2.code = arl.appr_step_cd
+                              left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm3
+                                on cm3.code = ar.biz_appr_step_cd
+                             inner join com_user cu
+                                on cu.user_id = arl.appr_user_id
+                             left join com_user cu2
+                                on cu2.user_id = arl.delegator_id
+                             left outer join com_dept dept
+                                on dept.dept_cd = arl.appr_user_dept_cd
+                             left outer join com_dept dept2
+                                on dept2.dept_cd = cu2.dept_cd
+                             inner join (select appr_rqst_no
+                                             from com_appr_rqst_line
+                                            where appr_user_id = #{apprUserId}
+                                              and line_seq_no = 0
+                                              and appr_type_cd = 'APTP0') a
+                                on a.appr_rqst_no = ar.appr_rqst_no
+                             where 1=1
+                               and ar.biz_appr_step_cd != 'BAPST'
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(startDate) and @org.apache.commons.lang3.StringUtils@isNotBlank(endDate)">
+                               and convert(date, ar.create_dt) between convert(date, #{startDate}) and convert(date, #{endDate})
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(bizApprStepCd)">
+                               and ar.biz_appr_step_cd = #{bizApprStepCd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprRqstNm)">
+            and ar.appr_rqst_nm like '%' + #{apprRqstNm} + '%'
+        </if>
+                             order by create_dt desc
+    </select>
+
+    <!-- 반려 결재선 목록 조회 -->
+    <select id="getRejectApprLine" resultType="com.she.manage.model.ApprRqstLine">
+        /* ApprMapper.getRejectApprLine [Appr.xml] */
+        select   arl.appr_rqst_no
+               , arl.line_seq_no
+               , arl.appr_type_cd
+               , cm.code_nm as appr_type_nm
+               , arl.appr_user_id as user_id
+               , cu.user_nm
+               , arl.appr_step_cd
+               , step.code_nm as appr_step_nm
+               , arl.appr_remark
+               , arl.appr_user_dept_cd as dept_cd
+               , cd.dept_nm
+               , arl.appr_user_duty_cd
+               , arl.delegator_id
+               , cu2.user_nm as delegator_nm
+               , dept.dept_nm as delegator_dept_nm
+          from com_appr_rqst_line arl
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_TYPE') cm
+            on arl.appr_type_cd = cm.code
+         inner join com_user cu
+            on cu.user_id = arl.appr_user_id
+          left join com_user cu2
+            on cu2.user_id = arl.delegator_id
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_STEP') step
+            on step.code = arl.appr_step_cd
+          left outer join com_dept cd
+            on cd.dept_cd = arl.appr_user_dept_cd
+          left outer join com_dept dept
+            on dept.dept_cd = cu2.dept_cd
+         where arl.appr_type_cd != 'APTP0'
+           and arl.appr_rqst_no = #{apprRqstNo}
+    </select>
+
+    <!-- 반려 결재 이력 조회 -->
+    <select id="getApprLineHistory" resultType="com.she.manage.model.ApprRqstLine">
+        /* ApprMapper.getApprLineHistory [Appr.xml] */
+        with apprline as (
+            select   a.appr_rqst_no
+                   , a.p_appr_rqst_no
+              from com_appr_rqst a
+             where a.appr_rqst_no = #{apprRqstNo}
+             union all
+            select   b.appr_rqst_no
+                   , b.p_appr_rqst_no
+              from com_appr_rqst b, apprline
+             where apprline.p_appr_rqst_no = b.appr_rqst_no
+        )
+        select   apprline.appr_rqst_no
+               , arl.line_seq_no
+               , arl.appr_type_cd
+               , cm1.code_nm as appr_type_nm
+               , arl.appr_user_id
+               , cu.user_nm as appr_user_nm
+               , convert(char(10), arl.appr_dt, 23) as appr_dt
+               , arl.appr_step_cd
+               , cm2.code_nm as appr_step_nm
+               , arl.appr_remark
+               , arl.appr_user_dept_cd
+               , cd.dept_nm as appr_user_dept_nm
+               , arl.appr_user_duty_cd
+               , hd.duty_nm as appr_user_duty_nm
+               , arl.delegator_id
+               , cu2.user_nm as delegator_nm
+               , dept.dept_nm as delegator_dept_nm
+          from apprline
+         inner join com_appr_rqst_line arl
+            on apprline.appr_rqst_no = arl.appr_rqst_no
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_TYPE') cm1
+            on cm1.code = arl.appr_type_cd
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_STEP') cm2
+            on cm2.code = arl.appr_step_cd
+         inner join com_user cu
+            on cu.user_id = arl.appr_user_id
+         left join com_user cu2
+            on cu2.user_id = arl.delegator_id
+         left join com_dept dept
+            on dept.dept_cd = cu2.dept_cd
+         inner join com_dept cd
+            on cd.dept_cd = arl.appr_user_dept_cd
+          left outer join com_hr_duty hd
+            on hd.duty_cd = arl.appr_user_duty_cd
+         order by apprline.appr_rqst_no, arl.line_seq_no
+    </select>
+
+    <!-- 그룹웨어 결재 할 문서 목록 조회 -->
+    <select id="getWhichApprsForGroupWare" resultType="com.she.manage.model.ApprGroupWare">
+        /* ApprMapper.getWhichApprsForGroupWare [Appr.xml] */
+        select   ar.appr_rqst_no
+               , arl.line_seq_no
+               , ab.biz_nm
+               , ar.appr_rqst_nm
+               , reqarl.appr_user_id
+               , cu.user_nm as appr_user_nm
+               , convert(char(10), ar.create_dt, 23) as rqst_dt
+               , dept.dept_nm as appr_user_dept_nm
+               , step.code_nm as appr_step_nm
+               , isnull(cm2.code_nm, '결재요청전' ) as biz_appr_step_nm
+          from com_appr_rqst_line arl
+         inner join com_appr_rqst ar
+            on arl.appr_rqst_no = ar.appr_rqst_no
+         inner join com_appr_biz ab
+            on ar.appr_biz_no = ab.appr_biz_no
+         inner join com_appr_rqst_line reqarl
+            on ar.appr_rqst_no = reqarl.appr_rqst_no
+           and reqarl.appr_type_cd = 'APTP0'
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_TYPE') cm
+            on arl.appr_type_cd = cm.code
+         inner join com_dept dept
+            on dept.dept_cd = reqarl.appr_user_dept_cd
+         inner join com_user cu
+            on cu.user_id = reqarl.appr_user_id
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_STEP') step
+            on arl.appr_step_cd = step.code
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm2
+            on cm2.code = ar.biz_appr_step_cd
+         where 1=1
+           and ar.biz_appr_step_cd != 'BAPST'
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(userId)">
+           and arl.appr_user_id = #{userId}
+        </if>
+           and exists (select 1
+                         from com_appr_rqst_line
+                        where appr_rqst_no = ar.appr_rqst_no
+                          and line_seq_no = arl.line_seq_no - 1
+                          and appr_step_cd = 'APSPA')
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprYn)">
+            <choose>
+                <when test="@org.apache.commons.lang.StringUtils@equals(apprYn, 'Y')">
+           and arl.appr_step_cd is not null
+                </when>
+                <otherwise>
+           and arl.appr_step_cd is null
+                </otherwise>
+            </choose>
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(startDate) and @org.apache.commons.lang3.StringUtils@isNotBlank(endDate)">
+           and convert(date, ar.create_dt) between convert(date, #{startDate}) and convert(date, #{endDate})
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(apprStepCd)">
+           and arl.appr_step_cd = #{apprStepCd}
+        </if>
+         order by ar.create_dt
+    </select>
+
+    <!-- 그룹웨어 결재 요청 문서 목록 조회 -->
+    <select id="getApprRequestListForGroupWare" resultType="com.she.manage.model.ApprRqstGroupWare">
+        /* ApprMapper.getApprRequestListForGroupWare [Appr.xml] */
+        with   curline as (
+                           select   appr_rqst_no
+                                  , max(line_seq_no) as max_line_seq_no
+                                  , appr_step_cd
+                             from com_appr_rqst_line
+                            where appr_step_cd is not null
+                            group by appr_rqst_no, appr_step_cd
+                          )
+             , maxline as (
+                           select   appr_rqst_no
+                                  , max(line_seq_no) as max_line_seq_no
+                             from com_appr_rqst_line
+                            group by appr_rqst_no
+                          )
+             , apprline as (
+                            select   case when curline.max_line_seq_no = maxline.max_line_seq_no
+                                          then curline.max_line_seq_no
+                                          when maxline.max_line_seq_no > curline.max_line_seq_no
+                                          then case when curline.appr_step_cd = 'APSPA' then curline.max_line_seq_no + 1
+                                                    else curline.max_line_seq_no
+                                                end
+                                      end max_line_seq_no
+                                   , curline.appr_rqst_no
+                              from curline, maxline
+                             where curline.appr_rqst_no = maxline.appr_rqst_no
+                           )
+                            select   arl.appr_rqst_no
+                                   , ab.appr_biz_no
+                                   , convert(char(10), ar.create_dt, 23) as rqst_dt
+                                   , ab.biz_nm
+                                   , ar.appr_rqst_nm
+                                   , ar.biz_appr_step_cd
+                                   , isnull(cm3.code_nm, '결재요청전' ) as biz_appr_step_nm --결재진행단계
+                                   , arl.appr_user_id
+                                   , cu.user_nm as appr_user_nm
+                                   , dept.dept_nm as appr_user_dept_nm
+                                   , isnull(cm2.code_nm, '결재대기') as appr_step_nm --결재자처리상태
+                                   , convert(varchar, arl.appr_dt, 120) as appr_dt
+                                   , arl.line_seq_no
+                                   , ar.p_appr_rqst_no
+                                   , arl.appr_step_cd
+                                   , arl.appr_type_cd
+                                   , cm1.code_nm as appr_type_nm
+                                   , arl.appr_user_dept_cd
+                              from com_appr_rqst_line arl
+                             inner join apprline
+                                on arl.appr_rqst_no = apprline.appr_rqst_no
+                               and arl.line_seq_no = apprline.max_line_seq_no
+                             inner join com_appr_rqst ar
+                                on arl.appr_rqst_no = ar.appr_rqst_no
+                             inner join com_appr_biz ab
+                                on ar.appr_biz_no = ab.appr_biz_no
+                              left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_TYPE') cm1
+                                on cm1.code = arl.appr_type_cd
+                              left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_APPR_STEP') cm2
+                                on cm2.code = arl.appr_step_cd
+                              left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm3
+                                on cm3.code = ar.biz_appr_step_cd
+                             inner join com_user cu
+                                on cu.user_id = arl.appr_user_id
+                              left outer join com_dept dept
+                                on dept.dept_cd = arl.appr_user_dept_cd
+                             inner join (select appr_rqst_no
+                                             from com_appr_rqst_line
+                                            where appr_user_id = #{userId}
+                                              and line_seq_no = 0
+                                              and appr_type_cd = 'APTP0') a
+                                on a.appr_rqst_no = ar.appr_rqst_no
+                             where 1=1
+                               and ar.biz_appr_step_cd != 'BAPST'
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(startDate) and @org.apache.commons.lang3.StringUtils@isNotBlank(endDate)">
+                               and convert(date, ar.create_dt) between convert(date, #{startDate}) and convert(date, #{endDate})
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(bizApprStepCd)">
+                               and ar.biz_appr_step_cd = #{bizApprStepCd}
+        </if>
+                             order by rqst_dt desc
+    </select>
+    <select id="getCollectCheck" resultType="com.she.manage.model.ApprRqstLine">
+        select
+            arl.*
+        from com_appr_rqst ar
+        inner join com_appr_rqst_line arl
+        on arl.appr_rqst_no = ar.appr_rqst_no
+        inner join com_appr_biz ab
+        on ab.appr_biz_no = ar.appr_biz_no
+        where
+        ar.appr_rqst_no = #{apprRqstNo}
+        and ar.biz_appr_step_cd = 'BAPSA'
+        and arl.appr_step_cd = 'APSPA'
+    </select>
+    <delete id="deleteAppr">
+        delete
+        from com_appr_rqst
+        where appr_rqst_no = #{apprRqstNo}
+
+        delete
+        from com_appr_rqst_line
+        where appr_rqst_no = #{apprRqstNo}
+    </delete>
+
+    <update id="updateApprParam">
+        update
+            com_appr_rqst
+        set
+            appr_req_parameter = #{apprParam}
+        where
+            appr_rqst_no = #{apprRqstNo}
+            and biz_appr_step_cd = 'BAPSA'
+    </update>
+
+    <insert id="createApprDelegate" parameterType="com.she.manage.model.ApprDelegate">
+        insert into com_appr_delegate (
+            user_id
+            , delegator_id
+            , start_ymd
+            , end_ymd
+        ) values (
+            #{userId}
+            , #{delegatorId}
+            , #{startYmd}
+            , #{endYmd}
+        )
+    </insert>
+
+    <delete id="deleteApprDelegates">
+        delete
+        from com_appr_delegate
+        where user_id = #{userId}
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(delegatorId)">
+           and delegator_id = #{delegatorId}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(startYmd)">
+           and start_ymd = #{startYmd}
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(endYmd)">
+           and end_ymd = #{endYmd}
+        </if>
+    </delete>
+
+    <select id="checkApprDelegate" resultType="hashmap">
+        <![CDATA[
+           WITH cte (user_id, delegator_id, level, v_path, idx, error_user_id)
+           AS (SELECT user_id,
+                      delegator_id,
+                      0,
+                      Cast(Concat(user_id, ',') AS VARCHAR(max)),
+                      0,
+                      Cast('' AS VARCHAR)
+               FROM   com_appr_delegate
+               WHERE  user_id = #{delegatorId} -- 시작하는 user_id
+               AND (
+                 (convert(DATE, start_ymd) >= #{startYmd} AND convert(DATE, start_ymd) <= #{endYmd})
+                 OR
+                 (convert(DATE, end_ymd) >= #{startYmd} AND convert(DATE, end_ymd) <= #{endYmd})
+               )
+
+               UNION ALL
+               SELECT cad.user_id,
+                      CASE
+                        WHEN Charindex(Concat(',' ,cad.delegator_id, ','), cte.v_path) > 0
+                      THEN
+                        'error'
+                        ELSE cad.delegator_id
+                      END           delegator_id,
+                      cte.level + 1 AS level,
+                      Concat(cte.v_path, cad.user_id, ','),
+                      Cast(Charindex(Concat(',' ,cad.delegator_id, ','), cte.v_path) AS INT
+                      ),
+                      CASE
+                        WHEN Charindex(Concat(',' ,cad.delegator_id, ','), cte.v_path) > 0
+                      THEN
+                        Cast(cad.user_id AS VARCHAR)
+                        ELSE ''
+                      END           error_user_id
+               FROM   com_appr_delegate cad
+                      INNER JOIN cte
+                              ON cad.user_id = cte.delegator_id),
+               rslt
+               AS (SELECT user_id,
+                          delegator_id,
+                          level,
+                          v_path,
+                          idx,
+                          error_user_id
+                   FROM   cte)
+               SELECT cu.user_nm
+               FROM   rslt r
+               inner join com_user cu
+               on cu.user_id = r.error_user_id
+               WHERE  delegator_id = 'error'
+        ]]>
+    </select>
+    <select id="getApprDelegator" resultType="hashmap">
+        <![CDATA[
+           WITH cte (user_id, delegator_id, level, v_path, idx)
+           AS (SELECT user_id,
+                      delegator_id,
+                      0,
+                      Cast(Concat(user_id, ',') AS VARCHAR(max)),
+                      0
+               FROM   com_appr_delegate
+               WHERE  user_id = #{userId} -- 시작하는 user_id
+               AND (convert(DATE, start_ymd) <= convert(DATE, getdate(), 23) AND convert(DATE, end_ymd) >= convert(DATE, getdate(), 23))
+
+               UNION ALL
+               SELECT cad.user_id,
+                      CASE
+                        WHEN Charindex(Concat(',' ,cad.delegator_id, ','), cte.v_path) > 0
+                      THEN
+                        'error'
+                        ELSE cad.delegator_id
+                      END           delegator_id,
+                      cte.level + 1 AS level,
+                      Concat(cte.v_path, cad.user_id, ','),
+                      Cast(Charindex(Concat(',' ,cad.delegator_id, ','), cte.v_path) AS INT
+                      )
+               FROM   com_appr_delegate cad
+                      INNER JOIN cte
+                              ON cad.user_id = cte.delegator_id),
+               rslt
+               AS (SELECT user_id,
+                          delegator_id,
+                          level,
+                          v_path,
+                          idx
+                   FROM   cte)
+               SELECT top 1 r.delegator_id, cu.user_nm as delegator_nm
+               FROM   rslt r
+               inner join com_user cu
+               on cu.user_id = r.delegator_id
+               order by level desc
+        ]]>
+    </select>
+
+    <!-- 결재 할 문서 결재선 목록 조회 -->
+    <select id="getApprEndDt" resultType="String">
+    /* ApprMapper.getApprEndDt [Appr.xml] */
+    SELECT
+        appr_end_dt
+    FROM com_appr_rqst_end_v
+    WHERE 1=1
+    AND appr_rqst_no = #{apprRqstNo}
+    </select>
+
+    <!-- 결재진행상태 조회 -->
+    <select id="getApprProgress" resultType="HashMap">
+    /* ApprMapper.getApprProgress [Appr.xml] */
+    with apprline as (
+         select   a.appr_rqst_no
+                , a.p_appr_rqst_no
+                , a.biz_appr_step_cd
+           from com_appr_rqst a
+          where a.appr_rqst_no = #{apprRqstNo}
+          union all
+         select   b.appr_rqst_no
+                , b.p_appr_rqst_no
+                , null as biz_appr_step_cd
+           from com_appr_rqst b, apprline
+          where apprline.p_appr_rqst_no = b.appr_rqst_no
+     )
+     select   car.appr_rqst_nm as apprRqstNm
+        , cm1.code_nm as apprTypeNm
+        , cd.dept_nm as deptNm
+        , chp.position_nm as positionNm
+        , cu.user_nm as userNm
+        , iif(carl.appr_type_cd = 'APTP0', dbo.GET_LBL_NM_LANG('kr', 'L0000002039'), iif(cm2.code_nm is not null, cm2.code_nm, iif(apprline.biz_appr_step_cd = 'BAPSD' or apprline.biz_appr_step_cd is null, null, dbo.GET_CODE_NM_LANG('kr', 'COM_BIZ_APPR_STEP', 'BAPSA')))) as apprStepNm
+        , convert(varchar(10), carl.appr_dt, 120) as apprDt
+        , carl.appr_remark as apprRemark     
+       from apprline
+      inner join com_appr_rqst_line carl
+         on apprline.appr_rqst_no = carl.appr_rqst_no
+      inner join com_appr_rqst car on carl.appr_rqst_no = car.appr_rqst_no
+       left outer join dbo.LANG_CODE_MASTER('kr', 'COM_APPR_TYPE') cm1
+         on cm1.code = carl.appr_type_cd
+       left outer join dbo.LANG_CODE_MASTER('kr', 'COM_APPR_STEP') cm2
+         on cm2.code = carl.appr_step_cd
+      inner join com_user cu
+         on cu.user_id = carl.appr_user_id
+      LEFT JOIN com_hr_position chp ON chp.position_cd = cu.position_cd
+      inner join com_dept cd
+         on cd.dept_cd = carl.appr_user_dept_cd
+      order by apprline.appr_rqst_no, carl.line_seq_no   
+    </select>
+</mapper>

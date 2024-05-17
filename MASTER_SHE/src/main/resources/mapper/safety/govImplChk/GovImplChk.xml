@@ -1,0 +1,1097 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.safety.govImplChk.mapper.GovImplChkMapper">
+    <!-- 정부지자체 시정조치 이행점검 관리 목록 조회 -->
+    <select id="getGovImplChkResults" resultType="com.she.safety.model.GovImplChkPlan">
+        /* GovImplChkMapper.getGovImplChkResults[GovImplChk.xml] */
+        select	p.impl_chk_plan_no -- 정부지자체 시정조치 이행점검번호
+                ,p.plant_cd -- 사업장
+                ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', p.plant_cd) as plant_nm
+                ,(select count(*)
+                    from com_dept cd
+                    inner join dbo.FN_GET_Split(p.target_dept_cd, ',') tdc
+                    on tdc.VALUE = cd.dept_cd) as targetDeptCnt
+                <choose>
+                    <when test="tgtDeptYn != null and tgtDeptYn == 'Y'.toString()">
+                        ,tdc.VALUE as target_dept_cd -- 대상부서
+                        ,dbo.GET_DEPT_NM(tdc.VALUE) as target_dept_nm -- 대상부서
+                    </when>
+                    <otherwise>
+                    ,p.target_dept_cd -- 대상부서
+                    ,STUFF(
+                        (
+                            select ',' + cd.dept_nm
+                            from com_dept cd
+                            inner join dbo.FN_GET_Split(p.target_dept_cd, ',') tdc
+                            on tdc.VALUE = cd.dept_cd
+                            for xml path('')
+                        ), 1, 1, ''
+                    ) as target_dept_nm -- 대상부서
+                    </otherwise>
+                </choose>
+                ,p.year -- 대상년도
+                ,p.chk_nm -- 점검명
+                ,p.reg_regdem -- 구분코드
+                ,dbo.GET_CODE_NM_LANG('kr', 'RSA_REG_REGDEM', p.reg_regdem) as reg_regdem_nm -- 구분
+                ,p.main_dept_cd -- 주관부서
+                ,dbo.GET_DEPT_NM(p.main_dept_cd) as main_dept_nm -- 주관부서
+                ,p.ref_gov_nm -- 관련 정부지자체
+                ,p.chk_start_dt -- 점검시작일
+                ,p.chk_end_dt -- 점검종료일
+                ,iif(isnull(p.chk_start_dt, '') = '' or isnull(p.chk_end_dt, '') = '', null, concat(convert(char(10), p.chk_start_dt, 23), '~', convert(char(10), p.chk_end_dt, 23))) as chk_period -- 점검기간
+                ,p.proc_step_cd -- 단계
+                ,dbo.GET_CODE_NM_LANG('kr', 'COM_STEP', p.proc_step_cd) as proc_step_nm -- 단계
+                ,p.state_cd -- 상태
+                ,dbo.GET_CODE_NM_LANG('kr', 'COM_STEP', p.state_cd) as state_nm -- 상태
+                ,p.step_cd -- 결재상태
+                ,p.appr_rqst_no -- 결재요청번호
+                ,concat(dbo.GET_CODE_NM_LANG('kr', 'COM_STEP', p.proc_step_cd), '(', case when p.step_cd = 'BAPSD' then dbo.GET_CODE_NM(p.step_cd, 'COM_BIZ_APPR_STEP') else dbo.GET_CODE_NM(p.state_cd, 'COM_STATE') end, ')') as step_nm -- 단계(상태)
+                ,iif(isnull(p.update_user_id, '') = '', dbo.GET_USER_NM(p.create_user_id), dbo.GET_USER_NM(p.update_user_id)) as writer_nm -- 작성자
+                ,iif(isnull(p.update_dt, '') = '', convert(char(10), p.create_dt, 23), convert(char(10), p.update_dt, 23)) as write_dt -- 작성일
+                ,(
+                    select count(*)
+                    from saf_impr_act
+                    where impr_class_cd = 'ICL39'
+                    and ref_table_id = p.impl_chk_plan_no
+                    ) as requestCnt -- 개선요청
+                ,(
+                    select count(*)
+                    from saf_impr_act
+                    where impr_class_cd = 'ICL39'
+                    and ref_table_id = p.impl_chk_plan_no
+                    and impr_step_cd != 'IMST5'
+                ) as incompletCnt -- 조치 미완료
+                ,(
+                    select count(*)
+                    from saf_impr_act
+                    where impr_class_cd = 'ICL39'
+                    and ref_table_id = p.impl_chk_plan_no
+                    and impr_step_cd != 'IMST5'
+                    and act_class_cd = 'ACL02'
+                    and DATEDIFF(day, convert(char(10), getdate(), 23), act_limit_ymd) <![CDATA[<]]> 0
+                ) as overdueCnt -- 조치기한 초과
+                ,(
+                    select count(*)
+                    from saf_impr_act
+                    where impr_class_cd = 'ICL39'
+                    and ref_table_id = p.impl_chk_plan_no
+                    and impr_step_cd = 'IMST5'
+                ) as completCnt -- 조치 완료
+        from saf_gov_impl_chk_plan p
+        <if test="tgtDeptYn != null and tgtDeptYn == 'Y'.toString()">
+        outer apply dbo.FN_GET_Split(p.target_dept_cd, ',') tdc -- 대상부서
+        </if>
+        where 1=1
+        <if test="statusYn != null and !statusYn.equals('')">
+        and p.step_cd = 'BAPSG'
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+        and p.plant_cd = #{plantCd} -- 사업장
+        </if>
+        <if test="year != null and !year.equals('')">            
+            <if test= "month != null and month > 0  and month == 200">
+                and p.year &lt; #{year}
+            </if>
+            <if test= "month != null and month > 0  and month == 300">
+                and p.year &lt;= #{year}
+            </if>   
+            <if test= "month = 0 or month = 100">
+                and p.year = #{year}
+            </if>      
+        </if>
+        <if test="month != null and month > 0 and month != 100 and month != 200 and month != 300">
+        and substring(convert(char(10), p.chk_end_dt, 23), 6, 2) = #{month}
+        </if>
+        <if test="regRegdem != null and !regRegdem.equals('')">
+        and p.reg_regdem = #{regRegdem} -- 구분
+        </if>
+        <if test="procStepCd != null and !procStepCd.equals('')">
+        and p.proc_step_cd = #{procStepCd} -- 단계
+        </if>
+        <if test="stateCd != null and !stateCd.equals('')">
+        and p.state_cd = #{stateCd} -- 상태
+        </if>
+        <if test="chkNm != null and !chkNm.equals('')">
+        and p.chk_nm like '%' + #{chkNm} + '%' -- 점검명
+        </if>
+        <if test="mainDeptCd != null and !mainDeptCd.equals('')">
+            <choose>
+                <when test='mainDeptSubYn != null and mainDeptSubYn.equals("Y")'>
+                and p.main_dept_cd in ( select dept_cd from dbo.GET_UNDER_DEPTS(#{mainDeptCd}) ) -- 주관부서 하위부서 포함
+                </when>
+                <otherwise>
+                and p.main_dept_cd = #{mainDeptCd} -- 주관부서
+                </otherwise>
+            </choose>
+        </if>
+        <if test="targetDeptCd != null and !targetDeptCd.equals('')">
+            and exists (
+                select 1
+                from dbo.FN_GET_Split(p.target_dept_cd, ',') td
+                where 1=1
+                <choose>
+                    <when test='targetDeptSubYn != null and targetDeptSubYn.equals("Y")'>
+                        and td.VALUE in ( select dept_cd from dbo.GET_UNDER_DEPTS(#{targetDeptCd}) ) -- 대상부서 하위부서 포함
+                    </when>
+                    <otherwise>
+                        and td.VALUE = #{targetDeptCd} -- 대상부서
+                    </otherwise>
+                </choose>
+            )
+        </if>
+        <if test="refGovNm != null and !refGovNm.equals('')">
+        and p.ref_gov_nm like '%' + #{refGovNm} + '%' -- 관련 정부지자체
+        </if>
+        <if test='overdueYn != null and overdueYn.equals("Y")'>
+            and exists (
+                select 1 from saf_impr_act sia
+                where sia.ref_table_id = p.impl_chk_plan_no
+                and DATEDIFF(day, convert(char(10), getdate(), 23), sia.act_limit_ymd) <![CDATA[<]]> 0
+                and impr_class_cd = 'ICL39'
+                and impr_step_cd != 'IMST5'
+                and sia.act_class_cd = 'ACL02'
+                group by sia.ref_table_id
+            ) -- 개선조치의 조치기한 초과된 건 조회
+        </if>
+    </select>
+
+    <!-- 정부지자체 시정조치 이행점검 상세 조회 -->
+    <select id="getGovImplChkPlan" resultType="com.she.safety.model.GovImplChkPlan">
+        /* GovImplChkMapper.getGovImplChkResult[GovImplChk.xml] */
+        select	p.impl_chk_plan_no -- 정부지자체 시정조치 이행점검번호
+                ,p.plant_cd -- 사업장
+                ,p.target_dept_cd -- 대상부서
+                ,STUFF(
+                    (
+                        select ',' + cd.dept_nm
+                        from com_dept cd
+                        inner join dbo.FN_GET_Split(p.target_dept_cd, ',') tdc
+                        on tdc.VALUE = cd.dept_cd
+                        for xml path('')
+                    ), 1, 1, ''
+                ) as target_dept_nm -- 대상부서
+                ,p.year -- 대상년도
+                ,p.chk_nm -- 점검명
+                ,p.chk_desc -- 상세내용
+                ,p.reg_regdem -- 구분코드
+                ,p.main_dept_cd -- 주관부서
+                ,p.ref_gov_nm -- 관련 정부지자체
+                ,p.dept_reader_id -- 점검리더 ID
+                ,u.user_nm as dept_reader_nm -- 점검리더
+                ,u.dept_cd as reader_dept_cd -- 점검리더 부서코드
+                ,dbo.GET_DEPT_NM(u.dept_cd) as reader_dept_nm -- 점검리더 부서코드
+                ,p.chk_start_dt -- 점검시작일
+                ,p.chk_end_dt -- 점검종료일
+                ,p.proc_step_cd -- 단계
+                ,p.state_cd -- 상태
+                ,p.step_cd -- 결재상태
+                ,p.appr_rqst_no -- 결재요청번호
+                ,p.create_user_id
+                ,convert(char(10), p.create_dt, 23) as create_dt
+                ,p.create_dept_cd
+                ,p.create_dept_nm
+                ,p.create_position_cd
+                ,p.create_position_nm
+                ,p.update_user_id
+                ,convert(char(10), p.update_dt, 23) as update_dt
+                ,p.update_dept_cd
+                ,p.update_dept_nm
+                ,p.update_position_cd
+                ,p.update_position_nm
+        from saf_gov_impl_chk_plan p
+        left outer join com_user u
+        on u.user_id = p.dept_reader_id
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </select>
+
+    <!-- 정부지자체 시정조치 이행점검 내부점검자 목록 조회 -->
+    <select id="getGovImplChkInRaters" resultType="com.she.safety.model.GovImplChkInRater">
+        /* GovImplChkMapper.getGovImplChkInRaters [GovImplChk.xml] */
+        select	impl_chk_in_rater_no
+                ,impl_chk_plan_no
+                ,dept_cd
+                ,dept_nm
+                ,position_cd
+                ,position_nm
+                ,user_id
+                ,user_nm
+                ,rater_desc
+        from saf_gov_impl_chk_in_rater
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </select>
+
+    <!-- 정부지자체 시정조치 이행점검 외부점검자 목록 조회 -->
+    <select id="getGovImplChkExRaters" resultType="com.she.safety.model.GovImplChkExRater">
+        /* GovImplChkMapper.getGovImplChkExRaters [GovImplChk.xml] */
+        select	impl_chk_ex_rater_no
+                ,impl_chk_plan_no
+                ,company_nm
+                ,position_nm
+                ,user_nm
+                ,rater_desc
+        from saf_gov_impl_chk_ex_rater
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </select>
+
+    <!-- 정부지자체 시정조치 이행점검 외부점검자 결과 조회 -->
+    <select id="getGovImplChkRslt" resultType="com.she.safety.model.GovImplChkRslt">
+        /* GovImplChkMapper.getGovImplChkRslt [GovImplChk.xml] */
+        select	impl_chk_rslt_no
+                ,impl_chk_plan_no
+                ,impr_case_cnt
+                ,chk_dt
+                ,rslt_desc
+        from saf_gov_impl_chk_rslt
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </select>
+
+    <!-- 정부지자체 시정조치 이행점검 계획 저장 -->
+    <insert id="createGovImplChkPlan" parameterType="com.she.safety.model.GovImplChkPlan">
+        /* GovImplChkMapper.createGovImplChkPlan[GovImplChk.xml] */
+        <selectKey keyProperty="implChkPlanNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_gov_impl_chk_plan as implChkPlanNo
+        </selectKey>
+        insert into saf_gov_impl_chk_plan
+        (
+            impl_chk_plan_no
+            ,plant_cd
+            ,year
+            ,reg_regdem
+            ,chk_start_dt
+            ,chk_end_dt
+            ,main_dept_cd
+            ,target_dept_cd
+            ,chk_nm
+            ,chk_desc
+            ,proc_step_cd
+            ,state_cd
+            ,step_cd
+            ,ref_gov_nm
+            ,dept_reader_id
+            ,create_user_id
+            ,create_dt
+            ,create_dept_nm
+            ,create_dept_cd
+            ,create_position_nm
+            ,create_position_cd
+        )
+        values
+        (
+            #{implChkPlanNo}
+            ,#{plantCd}
+            ,#{year}
+            ,#{regRegdem}
+            ,#{chkStartDt}
+            ,#{chkEndDt}
+            ,#{mainDeptCd}
+            ,#{targetDeptCd}
+            ,#{chkNm}
+            ,#{chkDesc}
+            ,#{procStepCd}
+            ,#{stateCd}
+            ,#{stepCd}
+            ,#{refGovNm}
+            ,#{deptReaderId}
+            ,#{createUserId}
+            ,getDate()
+            ,#{createDeptNm}
+            ,#{createDeptCd}
+            ,#{createPositionNm}
+            ,#{createPositionCd}
+        )
+    </insert>
+
+    <update id="updateGovImplChkPlan" parameterType="com.she.safety.model.GovImplChkPlan">
+        /* GovImplChkMapper.updateGovImplChkPlan[GovImplChk.xml] */
+        update saf_gov_impl_chk_plan
+        set plant_cd = #{plantCd}
+            ,year = #{year}
+            ,reg_regdem = #{regRegdem}
+            ,chk_start_dt = #{chkStartDt}
+            ,chk_end_dt = #{chkEndDt}
+            ,main_dept_cd = #{mainDeptCd}
+            ,target_dept_cd = #{targetDeptCd}
+            ,chk_nm = #{chkNm}
+            ,chk_desc = #{chkDesc}
+            ,proc_step_cd = #{procStepCd}
+            ,state_cd = #{stateCd}
+            ,step_cd = #{stepCd}
+            ,ref_gov_nm = #{refGovNm}
+            ,dept_reader_id = #{deptReaderId}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+            ,update_dept_nm = #{updateDeptNm}
+            ,update_dept_cd = #{updateDeptCd}
+            ,update_position_nm = #{updatePositionNm}
+            ,update_position_cd = #{updatePositionCd}
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </update>
+
+    <!-- 정부지자체 시정조치 이행점검 계획 삭제 -->
+    <delete id="deleteGovImplChkPlan">
+        /* GovImplChkMapper.deleteGovImplChkPlan[GovImplChk.xml] */
+        delete from saf_gov_impl_chk_plan
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </delete>
+
+    <!-- 정부지자체 시정조치 이행점검 내부점검자 저장 -->
+    <insert id="saveGovImplChkInRater" parameterType="com.she.safety.model.GovImplChkInRater">
+        /* GovImplChkMapper.saveGovImplChkInRater[GovImplChk.xml] */
+        <selectKey keyProperty="implChkInRaterNo" resultType="int" order="BEFORE">
+            <choose>
+                <when test="implChkInRaterNo != null and implChkInRaterNo > 0">
+                    select #{implChkInRaterNo} as implChkInRaterNo
+                </when>
+                <otherwise>
+                    select next value for seq_saf_gov_impl_chk_in_rater as implChkInRaterNo
+                </otherwise>
+            </choose>
+        </selectKey>
+        merge into saf_gov_impl_chk_in_rater T
+        using (
+            select  #{implChkInRaterNo} as impl_chk_in_rater_no
+                    ,#{implChkPlanNo} as impl_chk_plan_no
+                    ,#{deptCd} as dept_cd
+                    ,#{deptNm} as dept_nm
+                    ,#{positionCd} as position_cd
+                    ,#{positionNm} as position_nm
+                    ,#{userId} as user_id
+                    ,#{userNm} as user_nm
+                    ,#{raterDesc} as rater_desc
+        ) as S
+        on S.impl_chk_in_rater_no = T.impl_chk_in_rater_no
+        when not matched then
+            insert (
+                impl_chk_in_rater_no
+                ,impl_chk_plan_no
+                ,dept_cd
+                ,dept_nm
+                ,position_cd
+                ,position_nm
+                ,user_id
+                ,user_nm
+                ,rater_desc
+            )
+            values (
+                S.impl_chk_in_rater_no
+                ,S.impl_chk_plan_no
+                ,S.dept_cd
+                ,S.dept_nm
+                ,S.position_cd
+                ,S.position_nm
+                ,S.user_id
+                ,S.user_nm
+                ,S.rater_desc
+            )
+        when matched then
+            update
+            set dept_cd = S.dept_cd
+                ,dept_nm = S.dept_nm
+                ,position_cd = S.position_cd
+                ,position_nm = S.position_nm
+                ,user_id = S.user_id
+                ,user_nm = S.user_nm
+                ,rater_desc = S.rater_desc
+        ;
+    </insert>
+
+    <!-- 정부지자체 시정조치 이행점검 내부점검자 삭제 -->
+    <delete id="deleteGovImplChkInRater">
+        /* GovImplChkMapper.deleteGovImplChkInRater[GovImplChk.xml] */
+        delete from saf_gov_impl_chk_in_rater
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </delete>
+
+    <!-- 정부지자체 시정조치 이행점검 외부점검자 저장 -->
+    <insert id="saveGovImplChkExRater" parameterType="com.she.safety.model.GovImplChkExRater">
+        /* GovImplChkMapper.saveGovImplChkExRater[GovImplChk.xml] */
+        <selectKey keyProperty="implChkExRaterNo" resultType="int" order="BEFORE">
+            <choose>
+                <when test="implChkExRaterNo != null and implChkExRaterNo > 0">
+                    select #{implChkExRaterNo} as implChkExRaterNo
+                </when>
+                <otherwise>
+                    select next value for seq_saf_gov_impl_chk_ex_rater as implChkExRaterNo
+                </otherwise>
+            </choose>
+        </selectKey>
+        merge into saf_gov_impl_chk_ex_rater T
+        using (
+        select  #{implChkExRaterNo} as impl_chk_ex_rater_no
+                ,#{implChkPlanNo} as impl_chk_plan_no
+                ,#{companyNm} as company_nm
+                ,#{positionNm} as position_nm
+                ,#{userNm} as user_nm
+                ,#{raterDesc} as rater_desc
+        ) as S
+        on S.impl_chk_ex_rater_no = T.impl_chk_ex_rater_no
+        when not matched then
+        insert (
+            impl_chk_ex_rater_no
+            ,impl_chk_plan_no
+            ,company_nm
+            ,position_nm
+            ,user_nm
+            ,rater_desc
+        )
+        values (
+            S.impl_chk_ex_rater_no
+            ,S.impl_chk_plan_no
+            ,S.company_nm
+            ,S.position_nm
+            ,S.user_nm
+            ,S.rater_desc
+        )
+        when matched then
+        update
+        set impl_chk_plan_no = S.impl_chk_plan_no
+            ,company_nm = S.company_nm
+            ,position_nm = S.position_nm
+            ,user_nm = S.user_nm
+            ,rater_desc = S.rater_desc
+        ;
+    </insert>
+
+    <!-- 정부지자체 시정조치 이행점검 외부점검자 삭제 -->
+    <delete id="deleteGovImplChkExRater">
+        /* GovImplChkMapper.deleteGovImplChkExRater[GovImplChk.xml] */
+        delete from saf_gov_impl_chk_ex_rater
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </delete>
+
+    <!-- 정부지자체 시정조치 이행점검 결과 저장 -->
+    <insert id="saveGovImplChkRslt" parameterType="com.she.safety.model.GovImplChkExRater">
+        /* GovImplChkMapper.saveGovImplChkRslt[GovImplChk.xml] */
+        <selectKey keyProperty="implChkRsltNo" resultType="int" order="BEFORE">
+            <choose>
+                <when test="implChkRsltNo != null and implChkRsltNo > 0">
+                    select #{implChkRsltNo} as implChkRsltNo
+                </when>
+                <otherwise>
+                    select next value for seq_saf_gov_impl_chk_rslt as implChkRsltNo
+                </otherwise>
+            </choose>
+        </selectKey>
+        merge into saf_gov_impl_chk_rslt T
+        using (
+        select  #{implChkRsltNo} as impl_chk_rslt_no
+                ,#{implChkPlanNo} as impl_chk_plan_no
+                ,#{imprCaseCnt,jdbcType=INTEGER} as impr_case_cnt
+                ,#{chkDt,jdbcType=VARCHAR} as chk_dt
+                ,#{rsltDesc,jdbcType=VARCHAR} as rslt_desc
+        ) as S
+        on S.impl_chk_rslt_no = T.impl_chk_rslt_no
+        when not matched then
+        insert (
+            impl_chk_rslt_no
+            ,impl_chk_plan_no
+            ,impr_case_cnt
+            ,chk_dt
+            ,rslt_desc
+        )
+        values (
+            S.impl_chk_rslt_no
+            ,S.impl_chk_plan_no
+            ,S.impr_case_cnt
+            ,S.chk_dt
+            ,S.rslt_desc
+        )
+        when matched then
+        update
+        set impl_chk_plan_no = S.impl_chk_plan_no
+            ,impr_case_cnt = S.impr_case_cnt
+            ,chk_dt = S.chk_dt
+            ,rslt_desc = S.rslt_desc
+        ;
+    </insert>
+
+    <!-- 정부지자체 시정조치 이행점검 결과 삭제 -->
+    <delete id="deleteGovImplChkRslt">
+        /* GovImplChkMapper.deleteGovImplChkRslt[GovImplChk.xml] */
+        delete from saf_gov_impl_chk_rslt
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </delete>
+
+    <!-- 정부지자체 시정조치 이행점검 결재상태 업데이트 -->
+    <update id="updateAppr" parameterType="com.she.safety.model.GovImplChkPlan">
+        /* GovImplChkMapper.updateAppr[GovImplChk.xml] */
+        update saf_gov_impl_chk_plan
+        set step_cd = #{stepCd}
+            ,state_cd = #{stateCd}
+            ,appr_rqst_no = #{apprRqstNo}
+        where impl_chk_plan_no = #{implChkPlanNo}
+    </update>
+
+    <select id="getGovImplChkStatus" resultType="HashMap">
+        /* GovImplChkMapper.getGovImplChkStatus[GovImplChk.xml] */
+        with plant as (
+            select	code as plantCd
+                    ,code_nm as plantNm
+            from dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD')
+            where code != '0000'
+            and use_yn = 'Y'
+        ), typeList as (
+            select '점검현황' as gubun
+					,'chkCnt' as typeCd
+                    ,'점검(건수)' as type
+                    ,1 as sortOrder
+            union all
+            select '점검현황' as gubun
+					,'tgtDeptCnt' as typeCd
+                    ,'대상부서(건수)' as type
+                    ,2 as sortOrder
+            union all
+            select '개선현황' as gubun
+					,'requestCnt' as typeCd
+                    ,'요청(건수)' as type
+                    ,3 as sortOrder
+            union all
+            select '개선현황' as gubun
+					,'incompletCnt' as typeCd
+                    ,'조치미완료(건수)' as type
+                    ,4 as sortOrder
+            union all
+            select '개선현황' as gubun
+					,'overdueCnt' as typeCd
+                    ,'조치기한 초과(건수)' as type
+                    ,5 as sortOrder
+            union all
+            select '개선현황' as gubun
+					,'completCnt' as typeCd
+                    ,'조치완료(건수)' as type
+                    ,6 as sortOrder
+            union all
+            select '개선현황' as gubun
+					,'completeRate' as typeCd
+                    ,'개선 조치율(%)' as type
+                    ,7 as sortOrder
+        ), govImplChk as (
+            select	gicp.plant_cd
+                    ,gicp.year
+                    ,'점검현황' as gubun
+                    ,count(distinct case when gicp.year &lt; #{year} then gicp.impl_chk_plan_no end) as chkOldCnt
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '01' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon1
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '02' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon2
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '03' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon3
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '04' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon4
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '05' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon5
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '06' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon6
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '07' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon7
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '08' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon8
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '09' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon9
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '10' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon10
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '11' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon11
+                    ,count(distinct case when DATEPART(month, gicp.chk_end_dt) = '12' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkMon12
+                    ,count(distinct case when gicp.year = #{year} then gicp.impl_chk_plan_no end) as chkTotal
+                    ,count(distinct case when gicp.year &lt;= #{year} then gicp.impl_chk_plan_no end) as chkAllCnt
+                    ,count(case when gicp.year &lt; #{year} then gicp.impl_chk_plan_no end) as tgtDeptOldCnt
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '01' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon1
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '02' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon2
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '03' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon3
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '04' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon4
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '05' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon5
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '06' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon6
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '07' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon7
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '08' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon8
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '09' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon9
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '10' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon10
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '11' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon11
+                    ,count(case when DATEPART(month, gicp.chk_end_dt) = '12' and gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptMon12
+                    ,count(case when gicp.year = #{year} then gicp.impl_chk_plan_no end) as tgtDeptTotal
+                    ,count(case when gicp.year &lt;= #{year} then gicp.impl_chk_plan_no end) as tgtDeptAllCnt
+            from saf_gov_impl_chk_plan gicp
+            outer apply dbo.FN_GET_Split(gicp.target_dept_cd, ',') tdc -- 대상부서
+            inner join com_dept d on d.dept_cd = tdc.VALUE
+            <!-- 속도 이슈 있을 시 아래로 수정 후 테스트 필요 -->
+            <!--inner join com_dept d on d.dept_cd in ( select value from dbo.FN_GET_Split(a.target_dept_cd, ',') )-->
+            where 1=1
+            and gicp.step_cd = 'BAPSG'
+            <if test="plantCd != null and !plantCd.equals('')">
+            and gicp.plant_cd = #{plantCd}
+            </if>
+            <if test="regRegdem != null and !regRegdem.equals('')">
+            and gicp.reg_regdem = #{regRegdem}
+            </if>
+            group by gicp.plant_cd
+                    ,gicp.year
+        ), imprList as (
+            select	gicp.plant_cd
+                    ,gicp.year
+                    ,'개선현황' as gubun
+                    ,iif(sia.impr_step_cd = 'IMST5', '조치완료(건수)', iif(DATEDIFF(day, convert(char(10), getDate(), 23), sia.act_limit_ymd) <![CDATA[<]]> 0, '조치기한 초과(건수)', '조치미완료(건수)')) as type
+                    ,count(case when left(sia.act_limit_ymd, 4) &lt; #{year} then sia.saf_impr_act_no end) as oldCnt
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '01' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon1
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '02' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon2
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '03' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon3
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '04' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon4
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '05' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon5
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '06' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon6
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '07' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon7
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '08' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon8
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '09' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon9
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '10' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon10
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '11' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon11
+                    ,count(case when substring(sia.act_limit_ymd, 6, 2) = '12' and left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as mon12
+                    ,count(case when left(sia.act_limit_ymd, 4) = #{year} then sia.saf_impr_act_no end) as total
+                    ,count(case when left(sia.act_limit_ymd, 4) &lt;= #{year} then sia.saf_impr_act_no end) as allCnt
+            from saf_gov_impl_chk_plan gicp
+            inner join saf_impr_act sia
+            on sia.ref_table_id = gicp.impl_chk_plan_no
+            and sia.impr_class_cd = 'ICL39'
+            where 1=1
+            and gicp.step_cd = 'BAPSG'
+            <if test="plantCd != null and !plantCd.equals('')">
+            and gicp.plant_cd = #{plantCd}
+            </if>
+            <if test="regRegdem != null and !regRegdem.equals('')">
+            and gicp.reg_regdem = #{regRegdem}
+            </if>
+            group by gicp.plant_cd
+                    ,gicp.year
+                    ,iif(sia.impr_step_cd = 'IMST5', '조치완료(건수)', iif(DATEDIFF(day, convert(char(10), getDate(), 23), sia.act_limit_ymd) <![CDATA[<]]> 0, '조치기한 초과(건수)', '조치미완료(건수)'))
+        )
+        select	p.plantCd
+                ,p.plantNm
+                <if test="year != null and !year.equals('')">
+                ,#{year} as year
+                </if>
+                ,t.gubun
+                ,t.type
+                ,max(t.typeCd) as typeCd
+                ,max(t.sortOrder) as sortOrder
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkOldCnt end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptOldCnt end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.oldCnt else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.oldCnt, 0) else iif(t.type = i.type, i.oldCnt, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.oldCnt, 0)), sum(i.oldCnt)) * 100, 2), '0.00')) end                      
+                    end as oldCnt
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon1 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon1 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon1 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon1, 0) else iif(t.type = i.type, i.mon1, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon1, 0)), sum(i.mon1)) * 100, 2), '0.00')) end   
+                    end as mon1
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon2 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon2 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon2 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon2, 0) else iif(t.type = i.type, i.mon2, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon2, 0)), sum(i.mon2)) * 100, 2), '0.00')) end   
+                    end as mon2
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon3 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon3 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon3 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon3, 0) else iif(t.type = i.type, i.mon3, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon3, 0)), sum(i.mon3)) * 100, 2), '0.00')) end  
+                    end as mon3
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon4 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon4 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon4 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon4, 0) else iif(t.type = i.type, i.mon4, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon4, 0)), sum(i.mon4)) * 100, 2), '0.00')) end 
+                    end as mon4
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon5 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon5 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon5 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon5, 0) else iif(t.type = i.type, i.mon5, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon5, 0)), sum(i.mon5)) * 100, 2), '0.00')) end 
+                    end as mon5
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon6 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon6 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon6 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon6, 0) else iif(t.type = i.type, i.mon6, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon6, 0)), sum(i.mon6)) * 100, 2), '0.00')) end 
+                    end as mon6
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon7 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon7 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon7 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon7, 0) else iif(t.type = i.type, i.mon7, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon7, 0)), sum(i.mon7)) * 100, 2), '0.00')) end 
+                    end as mon7
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon8 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon8 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon8 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon8, 0) else iif(t.type = i.type, i.mon8, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon8, 0)), sum(i.mon8)) * 100, 2), '0.00')) end 
+                    end as mon8
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon9 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon9 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon9 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon9, 0) else iif(t.type = i.type, i.mon9, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon9, 0)), sum(i.mon9)) * 100, 2), '0.00')) end 
+                    end as mon9
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon10 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon10 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon10 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon10, 0) else iif(t.type = i.type, i.mon10, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon10, 0)), sum(i.mon10)) * 100, 2), '0.00')) end 
+                    end as mon10
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon11 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon11 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon11 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon11, 0) else iif(t.type = i.type, i.mon11, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon11, 0)), sum(i.mon11)) * 100, 2), '0.00')) end 
+                    end as mon11
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon12 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon12 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon12 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon12, 0) else iif(t.type = i.type, i.mon12, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon12, 0)), sum(i.mon12)) * 100, 2), '0.00')) end 
+                    end as mon12
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                            iif(
+                                t.type = '점검(건수)'
+                                ,sum(case when t.type = '점검(건수)' then g.chkTotal end)
+                                ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptTotal end)
+                            )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.total else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.total, 0) else iif(t.type = i.type, i.total, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.total, 0)), sum(i.total)) * 100, 2), '0.00')) end 
+                    end as total
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkAllCnt end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptAllCnt end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.allCnt else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.allCnt, 0) else iif(t.type = i.type, i.allCnt, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.allCnt, 0)), sum(i.allCnt)) * 100, 2), '0.00')) end 
+                    end as allCnt
+        from plant p
+        inner join typeList t on 1=1
+        left outer join govImplChk g
+        on g.plant_cd = p.plantCd
+        and t.gubun = g.gubun
+        left outer join imprList i
+        on i.plant_cd = p.plantCd
+        and t.gubun = i.gubun
+        where 1=1
+        <if test="plantCd != null and !plantCd.equals('')">
+        and p.plantCd = #{plantCd}
+        </if>
+        group by p.plantCd
+                ,p.plantNm
+                ,t.gubun
+                ,t.type
+        <if test='!totalFlag != null and totalFlag.equals("Y")'>
+        union all
+        select	'합계' as plant_cd
+                ,'합계' as plant_nm
+                <if test="year != null and !year.equals('')">
+                ,#{year} as year
+                </if>
+                ,t.gubun
+                ,t.type
+                ,max(t.typeCd) as typeCd
+                ,max(t.sortOrder) as sortOrder
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkOldCnt end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptOldCnt end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.oldCnt else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.oldCnt, 0) else iif(t.type = i.type, i.oldCnt, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.oldCnt, 0)), sum(i.oldCnt)) * 100, 2), '0.00')) end                      
+                    end as oldCnt
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon1 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon1 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon1 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon1, 0) else iif(t.type = i.type, i.mon1, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon1, 0)), sum(i.mon1)) * 100, 2), '0.00')) end   
+                    end as mon1
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon2 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon2 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon2 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon2, 0) else iif(t.type = i.type, i.mon2, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon2, 0)), sum(i.mon2)) * 100, 2), '0.00')) end   
+                    end as mon2
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon3 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon3 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon3 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon3, 0) else iif(t.type = i.type, i.mon3, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon3, 0)), sum(i.mon3)) * 100, 2), '0.00')) end  
+                    end as mon3
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon4 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon4 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon4 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon4, 0) else iif(t.type = i.type, i.mon4, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon4, 0)), sum(i.mon4)) * 100, 2), '0.00')) end 
+                    end as mon4
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon5 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon5 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon5 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon5, 0) else iif(t.type = i.type, i.mon5, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon5, 0)), sum(i.mon5)) * 100, 2), '0.00')) end 
+                    end as mon5
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon6 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon6 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon6 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon6, 0) else iif(t.type = i.type, i.mon6, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon6, 0)), sum(i.mon6)) * 100, 2), '0.00')) end 
+                    end as mon6
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon7 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon7 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon7 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon7, 0) else iif(t.type = i.type, i.mon7, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon7, 0)), sum(i.mon7)) * 100, 2), '0.00')) end 
+                    end as mon7
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon8 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon8 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon8 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon8, 0) else iif(t.type = i.type, i.mon8, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon8, 0)), sum(i.mon8)) * 100, 2), '0.00')) end 
+                    end as mon8
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon9 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon9 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon9 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon9, 0) else iif(t.type = i.type, i.mon9, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon9, 0)), sum(i.mon9)) * 100, 2), '0.00')) end 
+                    end as mon9
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon10 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon10 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon10 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon10, 0) else iif(t.type = i.type, i.mon10, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon10, 0)), sum(i.mon10)) * 100, 2), '0.00')) end 
+                    end as mon10
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon11 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon11 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon11 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon11, 0) else iif(t.type = i.type, i.mon11, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon11, 0)), sum(i.mon11)) * 100, 2), '0.00')) end 
+                    end as mon11
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkMon12 end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptMon12 end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.mon12 else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.mon12, 0) else iif(t.type = i.type, i.mon12, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.mon12, 0)), sum(i.mon12)) * 100, 2), '0.00')) end 
+                    end as mon12
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                            iif(
+                                t.type = '점검(건수)'
+                                ,sum(case when t.type = '점검(건수)' then g.chkTotal end)
+                                ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptTotal end)
+                            )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.total else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.total, 0) else iif(t.type = i.type, i.total, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.total, 0)), sum(i.total)) * 100, 2), '0.00')) end 
+                    end as total
+                ,case when t.gubun = '점검현황'
+                    then
+                        convert(varchar, isnull(
+                                iif(
+                                    t.type = '점검(건수)'
+                                    ,sum(case when t.type = '점검(건수)' then g.chkAllCnt end)
+                                    ,sum(case when t.type = '대상부서(건수)' then g.tgtDeptAllCnt end)
+                                )
+                        ,'0'))
+                    else
+                        case when t.type != '개선 조치율(%)' then convert(varchar, isnull(sum(case when t.type = '요청(건수)' then i.allCnt else case when t.type = '조치미완료(건수)' then iif(t.type = i.type or t.type = '기한초과(건수)', i.allCnt, 0) else iif(t.type = i.type, i.allCnt, 0) end end), 0))
+                        else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(i.type = '조치완료(건수)', i.allCnt, 0)), sum(i.allCnt)) * 100, 2), '0.00')) end 
+                    end as allCnt
+        from plant p
+        inner join typeList t on 1=1
+        left outer join govImplChk g
+        on g.plant_cd = p.plantCd
+        and t.gubun = g.gubun
+        left outer join imprList i
+        on i.plant_cd = p.plantCd
+        and t.gubun = i.gubun
+        where 1=1
+        <if test="plantCd != null and !plantCd.equals('')">
+        and p.plantCd = #{plantCd}
+        </if>
+        group by t.gubun
+                ,t.type
+        </if>
+        order by plantCd, sortOrder
+    </select>
+</mapper>

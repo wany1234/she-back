@@ -1,0 +1,141 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.vendor.baseInfo.mapper.SubconEvalItemMapper">
+
+    <select id= "getSubconEvalItems" resultType= "com.she.vendor.model.SubconEvalItem">
+        select ssei.saf_subcon_eval_item_no
+            ,ssei.subcon_eval_item_nm
+            ,ssei.subcon_eval_item_stnd
+            ,ssei.subcon_eval_item_pnt
+            ,ssei.subcon_eval_cls_cd
+            ,subconEvalCls.code_nm as subcon_eval_cls_nm
+            ,ssei.subcon_eval_att_cd
+            ,subconEvalAtt.code_nm as subcon_eval_att_nm
+            ,ssei.sort_order
+            ,ssei.use_yn
+            ,case 
+                when ssei.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,ssei.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,ssei.create_dt
+            ,ssei.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,ssei.update_dt
+        from saf_subcon_eval_item ssei
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_SC_EVAL_CLS') subconEvalCls
+         on ssei.subcon_eval_cls_cd = subconEvalCls.code
+         and subconEvalCls.use_yn = 'Y'
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_SC_EVAL_CLS') subconEvalAtt
+         on ssei.subcon_eval_att_cd = subconEvalAtt.code
+         and subconEvalAtt.use_yn = 'Y'
+        inner join com_user createUser 
+        on ssei.create_user_id = createUser.user_id
+        and createUser.use_yn = 'Y'
+        left outer join com_user updateUser 
+        on ssei.update_user_id = updateUser.user_id
+        and updateUser.use_yn = 'Y'
+        where 1=1
+        and ssei.subcon_eval_item_nm like '%' + #{subconEvalItemNm} + '%'
+        <if test= "subconEvalClsCd != null and !subconEvalClsCd.equals('')">
+        and ssei.subcon_eval_cls_cd = #{subconEvalClsCd}
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+        and ssei.use_yn = #{useYn}
+        </if>
+        order by ssei.sort_order
+    </select>
+    
+    <select id= "getSubconEvalItem" resultType= "com.she.vendor.model.SubconEvalItem">
+        select ssei.saf_subcon_eval_item_no
+            ,ssei.subcon_eval_item_nm
+            ,ssei.subcon_eval_item_stnd
+            ,ssei.subcon_eval_item_pnt
+            ,ssei.subcon_eval_cls_cd
+            ,subconEvalCls.code_nm as subcon_eval_cls_nm
+            ,ssei.subcon_eval_att_cd
+            ,subconEvalAtt.code_nm as subcon_eval_att_nm
+            ,ssei.sort_order
+            ,ssei.use_yn
+            ,case 
+                when ssei.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,ssei.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,ssei.create_dt
+            ,ssei.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,ssei.update_dt
+        from saf_subcon_eval_item ssei
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_SC_EVAL_CLS') subconEvalCls
+         on ssei.subcon_eval_cls_cd = subconEvalCls.code
+         and subconEvalCls.use_yn = 'Y'
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_SC_EVAL_CLS') subconEvalAtt
+         on ssei.subcon_eval_att_cd = subconEvalAtt.code
+         and subconEvalAtt.use_yn = 'Y'
+        inner join com_user createUser 
+        on ssei.create_user_id = createUser.user_id
+        and createUser.use_yn = 'Y'
+        left outer join com_user updateUser 
+        on ssei.update_user_id = updateUser.user_id
+        and updateUser.use_yn = 'Y'
+        where ssei.saf_subcon_eval_item_no = #{safSubconEvalItemNo}
+    </select>
+    
+    <insert id= "createSubconEvalItem" parameterType= "com.she.vendor.model.SubconEvalItem">
+        <selectKey keyProperty= "safSubconEvalItemNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_subcon_eval_item as saf_subcon_eval_item_no
+          </selectKey>
+        insert into saf_subcon_eval_item
+            (saf_subcon_eval_item_no
+            ,subcon_eval_item_nm
+            ,subcon_eval_item_stnd
+            ,subcon_eval_item_pnt
+            ,subcon_eval_cls_cd
+            ,subcon_eval_att_cd
+            ,sort_order
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+        values 
+            (#{safSubconEvalItemNo}
+            ,#{subconEvalItemNm}
+            ,#{subconEvalItemStnd}
+            ,#{subconEvalItemPnt}
+            ,#{subconEvalClsCd}
+            ,#{subconEvalAttCd}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+    
+    <update id= "updateSubconEvalItem" parameterType= "com.she.vendor.model.SubconEvalItem">
+        update saf_subcon_eval_item
+        set subcon_eval_item_nm = #{subconEvalItemNm}
+            ,subcon_eval_item_stnd = #{subconEvalItemStnd}
+            ,subcon_eval_item_pnt = #{subconEvalItemPnt}
+            ,subcon_eval_cls_cd = #{subconEvalClsCd}
+            ,subcon_eval_att_cd = #{subconEvalAttCd}
+            ,sort_order = #{sortOrder}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where saf_subcon_eval_item_no = #{safSubconEvalItemNo}
+    </update>
+    
+    <select id= "getCheckSubconEvalItem" resultType= "HashMap">
+        select count(*) as cnt
+            ,'subconEvalItemNm' as gubun
+        from saf_subcon_eval_item
+        where 1=1
+        and subcon_eval_item_nm = #{subconEvalItemNm}
+        <if test= "safSubconEvalItemNo != null and safSubconEvalItemNo > 0">
+        and saf_subcon_eval_item_no not in (#{safSubconEvalItemNo})
+        </if>
+    </select>
+    
+</mapper>

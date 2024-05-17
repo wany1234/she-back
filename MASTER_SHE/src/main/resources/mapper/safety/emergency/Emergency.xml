@@ -1,0 +1,875 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.emergency.mapper.EmergencyMapper">
+    <select id ="getEmergencyLists" resultType="com.she.safety.model.Emergency">
+        /* EmergencyMapper.getEmergencyLists [Emergency.xml] */
+        select
+              saf_train_plan_no      --          훈련계획번호
+             ,tp.plant_cd                --  사업장코드
+             ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
+             ,tp.dept_cd                 --주관부서코드
+             ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
+             ,dbo.GET_CODE_NM(tp.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(tp.state_cd, 'COM_PROCESS_STEP') + ')' as stateAnm
+             ,tp.train_type_cd           --      훈련구분코드 SAF_TRA_COURSE_CLS
+             ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
+             ,tp.train_user_id           --      훈련교관ID
+             ,tp.train_dept_cd           --      훈련교관소속부서코드
+             ,tp.train_nm                --  훈련명
+             ,tp.train_ymd               --  훈련일
+             ,tp.train_s_time            --      훈련시작시간
+             ,tp.train_e_time            --      훈련종료시간
+             ,tp.train_s_hour            --      훈련시작시
+             ,tp.train_s_min             --  훈련시작분
+             ,tp.train_e_hour            --      훈련종료시
+             ,tp.train_e_min             --  훈련종료분
+             ,tp.train_place             --  훈련장소
+             ,tp.train_content           --      훈련내용요약
+             ,tp.train_s_time + ' ~ ' + tp.train_e_time as trainTime
+             ,tp.proc_step_cd            --      단계 SAF_TRAIN_STEP
+             ,dbo.GET_CODE_NM(tp.proc_step_cd, 'SAF_TRAIN_STEP') as state_nm
+             ,tp.create_user_id          --      등록자
+             ,dbo.GET_USER_NM(tp.create_user_id) as create_user_nm
+             ,convert(char(10), tp.create_dt, 23) as create_dt --  등록일
+             ,tp.update_user_id          --      수정자
+             ,tp.update_dt               --  수정일
+             ,tp.create_dept_nm          --      등록자부서명
+             ,tp.state_cd                --  상태 COM_PROCESS_STEP
+             ,dbo.GET_CODE_NM(tp.state_cd, 'COM_PROCESS_STEP') as state_nm
+             ,tp.create_dept_cd          --      등록자부서코드
+             ,tp.update_dept_nm          --      수정자부서명
+             ,tp.update_dept_cd          --      수정자부서코드
+             ,tp.create_position_nm      --          등록자직위명
+             ,tp.create_position_cd      --          등록자직위코드
+             ,tp.update_position_nm      --          수정자직위명
+             ,tp.update_position_cd      --          수정자직위코드
+             ,(
+                select count(*)
+                from saf_train_dept_rslt tds
+                where tds.saf_train_plan_no = tp.saf_train_plan_no
+             ) as subDeptCnt
+             ,format(isnull((
+                select sum(case when tds.train_user_cnt != 0 then tds.train_user_cnt else 0 end)
+                from saf_train_dept_rslt tds
+                where tds.saf_train_plan_no = tp.saf_train_plan_no
+             ), 0), '##,###') as userCnt
+             ,(select count(*) 
+              from saf_train_dept_rslt tds
+             where tds.saf_train_plan_no = tp.saf_train_plan_no
+               and tds.state_cd != 'PSEND'
+               ) as stateNCnt
+           ,(select count(*) 
+              from saf_train_dept_rslt tds
+             where tds.saf_train_plan_no = tp.saf_train_plan_no
+               and tds.state_cd != 'PSEND'
+               and  datediff(day, GETDATE() , tds.train_ymd) &lt; 0) as overDateCnt
+           ,(select count(*) 
+              from saf_train_dept_rslt tds
+             where tds.saf_train_plan_no = tp.saf_train_plan_no
+               and tds.state_cd = 'PSEND') as stateYCnt
+             ,STUFF((
+                select ',' + dbo.GET_DEPT_NM(td.dept_cd) as dept_nm
+                from saf_train_dept_rslt td
+                where td.saf_train_plan_no = tp.saf_train_plan_no
+                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as sub_dept_nm
+          from saf_train_plan tp
+         where 1=1
+         <if test="plantCd != null and !plantCd.equals('')">
+            and tp.plant_cd = #{plantCd}
+         </if>
+         <if test="trainTypeCd != null and !trainTypeCd.equals('')">
+            and tp.train_type_cd = #{trainTypeCd}
+         </if>
+         <if test="trainNm != null and !trainNm.equals('')">
+            and tp.train_nm like '%' +  #{trainNm} + '%'
+         </if>
+         <if test="trainPlace != null and !trainPlace.equals('')">
+            and tp.train_place like '%' +  #{trainPlace} + '%'
+         </if>
+         <if test="procStepCd != null and !procStepCd.equals('')">
+            and tp.proc_step_cd = #{procStepCd}
+         </if>
+         <if test="stateCd != null and !stateCd.equals('')">
+            and tp.state_cd = #{stateCd}
+         </if>
+         <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
+             and convert(char(10), tp.train_ymd, 23) between #{startDt} and #{endDt}
+         </if>
+         <if test= 'deptCd != null and !deptCd.equals("")'>
+           <choose>
+               <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                   and tp.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+               </when>
+               <otherwise>
+                   and tp.dept_cd = #{deptCd}
+               </otherwise>
+           </choose>
+        </if>
+        order by tp.saf_train_plan_no desc
+    </select>
+    <select id ="getEmergencyInfo" resultType="com.she.safety.model.Emergency">
+        /* EmergencyMapper.getEmergencyInfo [Emergency.xml] */
+        select
+              saf_train_plan_no      --          훈련계획번호
+             ,tp.plant_cd                --  사업장코드
+             ,tp.dept_cd                 --주관부서코드
+             ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
+             ,tp.train_type_cd           --      훈련구분코드 SAF_TRA_COURSE_CLS
+             ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
+             ,tp.train_user_id           --      훈련교관ID
+             ,dbo.GET_USER_NM(tp.train_user_id) as train_user_nm
+             ,tp.train_dept_cd           --      훈련교관소속부서코드
+             ,dbo.GET_DEPT_NM(tp.train_dept_cd) as train_dept_nm
+             ,tp.train_nm                --  훈련명
+             ,tp.train_ymd               --  훈련일
+             ,tp.train_s_time            --      훈련시작시간
+             ,tp.train_e_time            --      훈련종료시간
+             ,tp.train_s_hour            --      훈련시작시
+             ,tp.train_s_min             --  훈련시작분
+             ,tp.train_e_hour            --      훈련종료시
+             ,tp.train_e_min             --  훈련종료분
+             ,tp.train_place             --  훈련장소
+             ,tp.train_content           --      훈련내용요약
+             ,tp.chng_num
+             ,tp.proc_step_cd            --      단계 SAF_TRAIN_STEP
+             ,dbo.GET_CODE_NM(tp.proc_step_cd, 'SAF_TRAIN_STEP') as state_nm
+             ,tp.create_user_id          --      등록자
+             ,dbo.GET_USER_NM(tp.create_user_id) as create_user_nm
+             ,convert(char(10), tp.create_dt, 23) as create_dt --  등록일
+             ,tp.update_user_id          --      수정자
+             ,tp.update_dt               --  수정일
+             ,tp.create_dept_nm          --      등록자부서명
+             ,tp.state_cd                --  상태 COM_PROCESS_STEP
+             ,dbo.GET_CODE_NM(tp.state_cd, 'COM_PROCESS_STEP') as state_nm
+             ,tp.create_dept_cd          --      등록자부서코드
+             ,tp.update_dept_nm          --      수정자부서명
+             ,tp.update_dept_cd          --      수정자부서코드
+             ,tp.create_position_nm      --          등록자직위명
+             ,tp.create_position_cd      --          등록자직위코드
+             ,tp.update_position_nm      --          수정자직위명
+             ,tp.update_position_cd      --          수정자직위코드
+          from saf_train_plan tp
+         where tp.saf_train_plan_no = #{safTrainPlanNo}
+    </select>
+    <select id ="getEmergencyDeptLists" resultType="com.she.safety.model.EmergencyDept">
+        /* EmergencyMapper.getEmergencyDeptLists [Emergency.xml] */
+        select
+             td.dept_cd
+            ,dbo.GET_DEPT_NM(td.dept_cd) as dept_nm
+            ,td.saf_train_plan_no
+            ,td.saf_train_dept_rslt_no
+            ,td.train_desc
+            ,td.train_yn
+            ,td.train_user_cnt
+            ,td.train_ymd
+            ,case when td.state_cd = 'PSEND' then '완료' else '미완료' end as trainCompleteYn
+            ,td.state_cd
+            ,td.proc_step_cd
+            ,td.train_s_time
+            ,td.train_e_time
+            ,td.train_impr_desc
+            ,td.train_eval_opin
+            ,convert(varchar(10), td.train_complete_dt, 23) as train_complete_dt
+            ,td.create_user_id
+            ,td.create_dt
+            ,td.create_dept_cd
+            ,td.create_dept_nm
+            ,td.create_position_cd
+            ,td.create_position_nm
+         from saf_train_dept_rslt td
+        where td.saf_train_plan_no = #{safTrainPlanNo}
+    </select>
+    <select id ="getEmergencyDeptList" resultType="com.she.safety.model.EmergencyDept">
+        /* EmergencyMapper.getEmergencyDeptList [Emergency.xml] */
+        select
+             td.dept_cd
+            ,dbo.GET_DEPT_NM(td.dept_cd) as dept_nm
+            ,td.saf_train_plan_no
+            ,td.saf_train_dept_rslt_no
+            ,td.train_desc
+            ,case when td.train_yn = 'Y' then '참여' else '미참여' end as train_yn
+            ,td.train_user_cnt
+            ,td.train_ymd
+            ,case when td.state_cd = 'PSEND' then '완료' else '미완료' end as trainCompleteYn
+            ,td.state_cd
+            ,td.proc_step_cd
+            ,td.train_s_time
+            ,td.train_e_time
+            ,td.train_impr_desc
+            ,td.train_eval_opin
+            ,td.create_user_id
+            ,td.create_dt
+            ,td.create_dept_cd
+            ,td.create_dept_nm
+            ,td.create_position_cd
+            ,td.create_position_nm
+         from saf_train_dept_rslt td
+        where td.saf_train_plan_no = #{safTrainPlanNo}
+         <if test="apprFlag != null and !apprFlag.equals('')">
+            <choose>
+                <when test= "'subDeptCnt'.equals(apprFlag)">
+                    -- 대상부서
+                </when>
+                <when test= "'stateNCnt'.equals(apprFlag)">
+                    -- 훈련미완료
+                    and td.state_cd != 'PSEND'
+                </when>
+                <when test= "'overDateCnt'.equals(apprFlag)">
+                    -- 훈련 기한초과
+                    and td.state_cd != 'PSEND'
+                    and datediff(day, GETDATE() , td.train_ymd) &lt; 0
+                </when>
+                <when test= "'stateYCnt'.equals(apprFlag)">
+                    -- 훈련완료
+                    and td.state_cd = 'PSEND'
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id ="getEmergencyScenarioLists" resultType="com.she.safety.model.EmergencyScenario">
+        /* EmergencyMapper.getEmergencyScenarioLists [Emergency.xml] */
+        select
+            stms.saf_train_mst_no
+           ,stms.train_sce_no
+           ,sts.title
+        from saf_train_mst_sce stms
+        inner join saf_train_sce sts on sts.train_sce_no = stms.train_sce_no
+        where stms.saf_train_mst_no = #{safTrainPlanNo}
+    </select>
+    <insert id="createEmergency" parameterType="com.she.safety.model.Emergency">
+        /* EmergencyMapper.createEmergency [Emergency.xml] */
+        <selectKey keyProperty="safTrainPlanNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_train_plan as saf_train_plan_no
+        </selectKey>
+        insert into saf_train_plan
+        (
+            saf_train_plan_no
+           ,plant_cd
+           ,dept_cd
+           ,train_type_cd
+           ,train_user_id
+           ,train_dept_cd
+           ,train_nm
+           ,train_ymd
+           ,train_s_time
+           ,train_e_time
+           ,train_s_hour
+           ,train_s_min
+           ,train_e_hour
+           ,train_e_min
+           ,train_place
+           ,train_content
+           ,proc_step_cd
+           ,create_user_id
+           ,create_dt
+           ,create_dept_nm
+           ,state_cd
+           ,create_dept_cd
+           ,create_position_nm
+           ,create_position_cd
+           ,chng_num
+        )
+        values
+        (
+            #{safTrainPlanNo}
+           ,#{plantCd}
+           ,#{deptCd}
+           ,#{trainTypeCd}
+           ,#{trainUserId}
+           ,#{trainDeptCd}
+           ,#{trainNm}
+           ,#{trainYmd}
+           ,#{trainSTime}
+           ,#{trainETime}
+           ,#{trainSHour}
+           ,#{trainSMin}
+           ,#{trainEHour}
+           ,#{trainEMin}
+           ,#{trainPlace}
+           ,#{trainContent}
+           ,#{procStepCd}
+           ,#{createUserId}
+           ,getDate()
+           ,#{createDeptNm}
+           ,#{stateCd}
+           ,#{createDeptCd}
+           ,#{createPositionNm}
+           ,#{createPositionCd}
+           ,#{chngNum}
+        )
+    </insert>
+    <insert id="createEmergencyDept" parameterType="com.she.safety.model.EmergencyDept">
+        /* EmergencyMapper.createEmergencyDept [Emergency.xml] */
+        <selectKey keyProperty="safTrainDeptRsltNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_train_dept_rslt as saf_train_dept_rslt_no
+        </selectKey>
+        insert into saf_train_dept_rslt
+        (
+            saf_train_dept_rslt_no
+           ,dept_cd
+           ,train_desc
+           ,proc_step_cd
+           ,create_user_id
+           ,create_dt
+           ,create_dept_nm
+           ,state_cd
+           ,create_dept_cd
+           ,create_position_nm
+           ,create_position_cd
+           ,saf_train_plan_no
+           ,train_user_cnt
+           ,train_yn
+           ,train_ymd
+           ,train_s_time
+           ,train_e_time
+           ,train_impr_desc
+           ,train_eval_opin
+        )
+        values
+        (
+            #{safTrainDeptRsltNo}
+           ,#{deptCd}
+           ,#{trainDesc}
+           ,#{procStepCd}
+           ,#{createUserId}
+           ,getDate()
+           ,#{createDeptNm}
+           ,#{stateCd}
+           ,#{createDeptCd}
+           ,#{createPositionNm}
+           ,#{createPositionCd}
+           ,#{safTrainPlanNo}
+           ,#{trainUserCnt}
+           ,#{trainYn}
+           ,#{trainYmd}
+           ,#{trainSTime}
+           ,#{trainETime}
+           ,#{trainImprDesc}
+           ,#{trainEvalOpin}
+        )
+
+    </insert>
+    <insert id="createEmergencyScenario" parameterType="com.she.safety.model.EmergencyScenario">
+        /* EmergencyMapper.createEmergencyScenario [Emergency.xml] */
+            insert into saf_train_mst_sce
+            (
+            train_sce_no
+            ,saf_train_mst_no
+            )
+            values
+            (
+            #{trainSceNo}
+            ,#{safTrainMstNo}
+            )
+    </insert>
+    <delete id="deleteEmergencyDept">
+        /* EmergencyMapper.createEmergencyScenario [Emergency.xml] */
+        delete saf_train_dept_rslt
+         where saf_train_plan_no = #{safTrainPlanNo}
+    </delete>
+    <delete id="deleteEmergencyScenario">
+        /* EmergencyMapper.deleteEmergencyScenario [Emergency.xml] */
+        delete saf_train_mst_sce
+         where saf_train_mst_no = #{safTrainPlanNo}
+    </delete>
+    <update id="updateEmergency" parameterType="com.she.safety.model.Emergency">
+        /* EmergencyMapper.updateEmergency [Emergency.xml] */
+        update saf_train_plan
+           set plant_cd = #{plantCd}
+              ,dept_cd = #{deptCd}
+              ,train_type_cd = #{trainTypeCd}
+              ,train_user_id = #{trainUserId}
+              ,train_dept_cd = #{trainDeptCd}
+              ,train_nm = #{trainNm}
+              ,train_ymd = #{trainYmd}
+              ,train_s_time = #{trainSTime}
+              ,train_e_time = #{trainETime}
+              ,train_s_hour = #{trainSHour}
+              ,train_s_min = #{trainSMin}
+              ,train_e_hour = #{trainEHour}
+              ,train_e_min = #{trainEMin}
+              ,train_place = #{trainPlace}
+              ,train_content = #{trainContent}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getDate()
+              ,update_dept_nm = #{updateDeptNm}
+              ,update_dept_cd = #{updateDeptCd}
+              ,update_position_nm = #{updatePositionNm}
+              ,update_position_cd = #{updatePositionCd}
+              ,chng_num = #{chngNum}
+         where saf_train_plan_no = #{safTrainPlanNo}
+    </update>
+    <delete id="deleteEmergency">
+        /* EmergencyMapper.deleteEmergency [Emergency.xml] */
+        delete saf_train_plan
+         where saf_train_plan_no = #{safTrainPlanNo}
+        delete saf_train_dept_rslt
+         where saf_train_plan_no = #{safTrainPlanNo}
+        delete saf_train_mst_sce
+         where saf_train_mst_no = #{safTrainPlanNo}
+    </delete>
+    <delete id="deleteEachEmergencyDept">
+        /* EmergencyMapper.deleteEachEmergencyDept [Emergency.xml] */
+        delete saf_train_dept_rslt
+         where saf_train_dept_rslt_no = #{safTrainDeptRsltNo}
+    </delete>
+    <update id="updateEmergencyComplete">
+        /* EmergencyMapper.updateEmergencyComplete [Emergency.xml] */
+        update saf_train_plan set state_cd = 'PSEND' where saf_train_plan_no = #{safTrainPlanNo}
+    </update>
+   
+    <select id="getEmergencyResultLists" resultType="com.she.safety.model.EmergencyDept">
+        /* EmergencyMapper.getEmergencyResultLists [Emergency.xml] */
+        select
+            td.saf_train_dept_rslt_no
+           ,td.saf_train_plan_no
+           ,(select count(*) from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
+              and sia.impr_class_cd = 'ICL37' and del_yn = 'N') as requestCnt
+           ,(select count(*)
+              from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
+              and sia.impr_class_cd = 'ICL37'
+              and sia.impr_step_cd != 'IMST5'
+              and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+              and del_yn = 'N'
+              ) as incompletCnt
+           ,(select count(*)
+              from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
+              and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
+              and sia.act_class_cd = 'ACL02'
+              and sia.impr_class_cd = 'ICL37'
+              and sia.impr_step_cd != 'IMST5'
+              and del_yn = 'N'
+              ) as overdueCnt
+           ,(select count(*) from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
+              and sia.impr_class_cd = 'ICL37'
+              and sia.impr_step_cd = 'IMST5'
+              and del_yn = 'N'
+              ) as completCnt
+           ,td.state_cd
+           ,tp.plant_cd 
+           ,td.dept_cd as sub_dept_cd
+           ,tp.dept_cd
+           ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
+           ,dbo.GET_DEPT_NM(td.dept_cd) as sub_dept_nm
+           ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
+           ,dbo.GET_CODE_NM(td.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(td.state_cd, 'COM_PROCESS_STEP2') + ')' as stateAnm
+           ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
+           ,td.train_ymd               --  훈련일
+           ,td.train_s_time + ' ~ ' + td.train_e_time as trainTime
+           ,tp.train_nm
+           ,tp.train_place
+           ,format(isnull(td.train_user_cnt, 0), '##,###') as train_user_cnt
+           ,dbo.GET_USER_NM(td.create_user_id) as create_user_nm
+           ,convert(char(10), td.create_dt, 23) as create_dt
+        from saf_train_dept_rslt td
+        inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
+        where tp.state_cd = 'PSEND'
+        <if test="plantCd != null and !plantCd.equals('')">
+            and tp.plant_cd = #{plantCd}
+         </if>
+         <if test="trainTypeCd != null and !trainTypeCd.equals('')">
+            and tp.train_type_cd = #{trainTypeCd}
+         </if>
+         <if test="trainNm != null and !trainNm.equals('')">
+            and tp.train_nm like '%' +  #{trainNm} + '%'
+         </if>
+         <if test="trainPlace != null and !trainPlace.equals('')">
+            and tp.train_place like '%' +  #{trainPlace} + '%'
+         </if>
+         <if test="procStepCd != null and !procStepCd.equals('')">
+            and td.proc_step_cd = #{procStepCd}
+         </if>
+         <if test="stateCd != null and !stateCd.equals('')">
+            and td.state_cd = #{stateCd}
+         </if>
+         <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
+             and convert(char(10), td.train_ymd, 23) between #{startDt} and #{endDt}
+         </if>
+         <if test= 'deptCd != null and !deptCd.equals("")'>
+           <choose>
+               <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                   and tp.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+               </when>
+               <otherwise>
+                   and tp.dept_cd = #{deptCd}
+               </otherwise>
+           </choose>
+        </if>
+        <if test="year != null and !year.equals('')">            
+            <if test= "monFlag != null and monFlag > 0  and monFlag == 200">
+                and convert(char(4), td.train_ymd, 23) &lt; #{year}
+            </if>
+            <if test= "monFlag != null and monFlag > 0  and monFlag == 300">
+                and convert(char(4), td.train_ymd, 23) &lt;= #{year}
+            </if>
+            <if test= "monFlag != null and monFlag > 0  and monFlag != 200 and monFlag != 300">
+                and convert(char(4), td.train_ymd, 23) = #{year}
+            </if>          
+        </if>
+        <if test= "monFlag != null and monFlag > 0  and monFlag != 100 and monFlag != 200 and monFlag != 300">
+          and substring(convert(char(10), td.train_ymd, 23), 6, 2) = #{monFlag}
+        </if>
+        <if test= "gubun != null and !gubun.equals('')">
+          <choose>
+              <when test= "'계획(조직수)'.equals(gubun)">
+              </when>
+              <when test= "'실시(조직수)'.equals(gubun)">
+                and td.state_cd = 'PSEND'
+              </when>
+              <otherwise>
+                and td.state_cd = 'PSEND'
+              </otherwise>
+          </choose>
+        </if>
+        <if test= 'imprChk != null and imprChk.equals("Y")'>
+            and (
+            select count(*) 
+              from saf_impr_act sia 
+             where sia.impr_class_cd = 'ICL37' 
+               and sia.ref_table_id = td.saf_train_dept_rslt_no
+               and datediff(day, GETDATE() , sia.act_limit_ymd) &lt; 0) != 0
+        </if>
+        order by td.saf_train_dept_rslt_no desc
+    </select>
+    <select id="getEmergencyResultInfo" resultType="com.she.safety.model.EmergencyDept">
+        select
+            td.saf_train_dept_rslt_no
+           ,td.saf_train_plan_no
+           ,tp.dept_cd
+           ,td.dept_cd as sub_dept_cd
+           ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
+           ,dbo.GET_DEPT_NM(td.dept_cd) as sub_dept_nm
+           ,tp.plant_cd
+           ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
+           ,dbo.GET_CODE_NM(td.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(td.state_cd, 'COM_PROCESS_STEP2') + ')' as stateAnm
+           ,tp.train_type_cd
+           ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
+           ,tp.train_ymd               --  훈련일
+           ,tp.train_s_time
+           ,tp.train_e_time
+           ,tp.train_user_id
+           ,dbo.GET_USER_NM(tp.train_user_id) as train_user_nm
+           ,tp.train_dept_cd
+           ,dbo.GET_DEPT_NM(tp.train_dept_cd) as train_dept_nm
+           ,tp.train_s_time + ' ~ ' + tp.train_e_time as trainTime
+           ,tp.train_nm
+           ,tp.train_place
+           ,tp.chng_num
+           ,tp.train_content
+           ,td.train_s_time as sub_train_s_time
+           ,td.train_e_time as sub_train_e_time
+           ,td.train_ymd as sub_train_ymd
+           ,isnull(td.train_yn, 'N') as train_yn
+           ,isnull(td.train_user_cnt, 0) as train_user_cnt
+           ,td.train_desc
+           ,td.train_impr_desc
+           ,td.train_eval_opin
+           ,dbo.GET_USER_NM(td.create_user_id) as create_user_nm
+           ,convert(char(10), td.create_dt, 23) as create_dt
+           ,td.state_cd
+        from saf_train_dept_rslt td
+        inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
+        where td.saf_train_dept_rslt_no = #{safTrainDeptRsltNo}
+    </select>
+    <update id="updateEmergencyResult" parameterType="com.she.safety.model.EmergencyDept">
+        update saf_train_dept_rslt
+           set train_user_cnt = #{trainUserCnt}
+              ,train_yn = #{trainYn}
+              ,train_ymd = #{subTrainYmd}
+              ,train_s_time = #{subTrainSTime}
+              ,train_e_time = #{subTrainETime}
+              ,train_desc = #{trainDesc}
+              ,train_impr_desc = #{trainImprDesc}
+              ,train_eval_opin = #{trainEvalOpin}
+              ,state_cd = 'PSREG'
+         where saf_train_dept_rslt_no = #{safTrainDeptRsltNo}
+    </update>
+    <update id="updateEmergencyResultComplete">
+        update saf_train_dept_rslt set state_cd = 'PSEND'
+               ,train_complete_dt = getDate() 
+        where saf_train_dept_rslt_no = #{safTrainDeptRsltNo}
+    </update>
+    <select id ="getResultstatusList" resultType="hashMap">
+        with plant as (
+             select code as plantCd
+             from com_code_master
+             where code_group_cd = 'COM_PLANT_CD'
+             and code != '0000'
+         ),
+         gubunList as (
+             select p.plantCd
+                     ,g.gubun_type
+                     ,g.gubun
+                     ,g.sort_order
+             from plant p
+             inner join (
+                 select 'assess' as gubun_type
+                         ,'계획(조직수)' as gubun
+                         ,1 as sort_order
+                 union
+                 select 'assess' as gubun_type
+                         ,'실시(조직수)' as gubun
+                         ,2 as sort_order
+                 union
+                 select 'assess' as gubun_type
+                         ,'훈련 실시율(%)' as gubun
+                         ,3 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'요청(건수)' as gubun
+                         ,4 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'조치미완료(건수)' as gubun
+                         ,5 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'기한초과(건수)' as gubun
+                         ,6 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'조치완료(건수)' as gubun
+                         ,7 as sort_order
+                 union
+                 select 'impr' as gubun_type
+                         ,'개선 조치율(%)' as gubun
+                         ,8 as sort_order
+             ) g on 1=1
+         ),
+         riskList as (
+             select
+                     tp.plant_cd as plantCd
+                     ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
+                     ,iif(td.state_cd = 'PSEND', '실시(조직수)', '계획(조직수)') AS gubun
+                     ,convert(numeric(10),sum(case when left(td.train_ymd, 4) &lt; #{year} then 1 else 0 end)) as oldCnt
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 1 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon1
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 2 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon2
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 3 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon3
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 4 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon4
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 5 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon5
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 6 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon6
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 7 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon7
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 8 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon8
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 9 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon9
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 10 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon10
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 11 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon11
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 12 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon12
+                     ,convert(numeric(10),sum(case when left(td.train_ymd, 4) = #{year} then 1 else 0 end)) as total
+                     ,convert(numeric(10),sum(case when left(td.train_ymd, 4) &lt;= #{year} then 1 else 0 end)) as allCnt  
+             from saf_train_dept_rslt td
+             inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
+             where 1=1
+                and tp.state_cd = 'PSEND'
+             <if test= "trainTypeCd != null and !trainTypeCd.equals('')">
+                and tp.train_type_cd = #{trainTypeCd}
+             </if>
+             group by tp.plant_cd, iif(td.state_cd = 'PSEND', '실시(조직수)', '계획(조직수)')
+         ),
+         impr as (
+             select
+                     sia.plant_cd as plantCd
+                     ,dbo.GET_CODE_NM(sia.plant_cd, 'COM_PLANT_CD') as plant_nm
+                     ,iif(sia.impr_step_cd = 'IMST5', '조치완료(건수)', iif(datediff(dd, sia.act_limit_ymd, getdate()) > 0 , '기한초과(건수)','조치미완료(건수)')) AS gubun
+                     ,convert(numeric(10),sum(case when left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) &lt; #{year} then 1 else 0 end)) as oldCnt
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 1 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon1
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 2 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon2
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 3 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon3
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 4 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon4
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 5 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon5
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 6 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon6
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 7 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon7
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 8 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon8
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 9 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon9
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 10 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon10
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 11 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon11
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 12 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon12
+                     ,convert(numeric(10),sum(case when left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year} then 1 else 0 end)) as total
+                     ,convert(numeric(10),sum(case when left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) &lt;= #{year} then 1 else 0 end)) as allCnt
+             from saf_train_dept_rslt td
+             inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
+             inner join saf_impr_act sia on sia.ref_table_id = td.saf_train_dept_rslt_no and sia.impr_class_cd = 'ICL37'
+             where sia.del_yn != 'Y'
+                <if test= "trainTypeCd != null and !trainTypeCd.equals('')">
+                    and tp.train_type_cd = #{trainTypeCd}
+                </if>
+             group by sia.plant_cd, iif(sia.impr_step_cd = 'IMST5', '조치완료(건수)', iif(datediff(dd, sia.act_limit_ymd, getdate()) > 0 , '기한초과(건수)','조치미완료(건수)'))
+         )
+         select  g.plantCd
+                 ,dbo.GET_CODE_NM_LANG('kr', 'COM_PLANT_CD', g.plantCd) as plant_nm
+                 ,'훈련현황' as rsa_result
+                 ,g.gubun
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.oldCnt else iif(g.gubun = r.gubun, r.oldCnt, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon1 else iif(g.gubun = r.gubun, r.mon1, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon2 else iif(g.gubun = r.gubun, r.mon2, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon3 else iif(g.gubun = r.gubun, r.mon3, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon4 else iif(g.gubun = r.gubun, r.mon4, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon5 else iif(g.gubun = r.gubun, r.mon5, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon6 else iif(g.gubun = r.gubun, r.mon6, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon7 else iif(g.gubun = r.gubun, r.mon7, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon8 else iif(g.gubun = r.gubun, r.mon8, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon9 else iif(g.gubun = r.gubun, r.mon9, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon10 else iif(g.gubun = r.gubun, r.mon10, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon11 else iif(g.gubun = r.gubun, r.mon11, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon12 else iif(g.gubun = r.gubun, r.mon12, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.total else iif(g.gubun = r.gubun, r.total, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.allCnt else iif(g.gubun = r.gubun, r.allCnt, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,max(g.sort_order)
+         from gubunList g
+         left outer join riskList r on r.plantCd = g.plantCd
+         where 1=1
+         and g.gubun_type = 'assess'
+         <if test= "plantCd != null and !plantCd.equals('')">
+           and g.plantCd = #{plantCd}
+         </if>
+         group by g.plantCd, g.gubun
+         union all
+         select  g.plantCd
+                 ,dbo.GET_CODE_NM_LANG('kr', 'COM_PLANT_CD', g.plantCd) as plant_nm
+                 ,'개선현황' as rsa_result
+                 ,g.gubun
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.oldCnt else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.oldCnt, 0) else iif(g.gubun = r.gubun, r.oldCnt, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon1 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon1, 0) else iif(g.gubun = r.gubun, r.mon1, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon2 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon2, 0) else iif(g.gubun = r.gubun, r.mon2, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon3 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon3, 0) else iif(g.gubun = r.gubun, r.mon3, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon4 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon4, 0) else iif(g.gubun = r.gubun, r.mon4, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon5 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon5, 0) else iif(g.gubun = r.gubun, r.mon5, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon6 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon6, 0) else iif(g.gubun = r.gubun, r.mon6, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon7 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon7, 0) else iif(g.gubun = r.gubun, r.mon7, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon8 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon8, 0) else iif(g.gubun = r.gubun, r.mon8, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon9 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon9, 0) else iif(g.gubun = r.gubun, r.mon9, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon10 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon10, 0) else iif(g.gubun = r.gubun, r.mon10, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon11 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon11, 0) else iif(g.gubun = r.gubun, r.mon11, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon12 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon12, 0) else iif(g.gubun = r.gubun, r.mon12, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.total else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.total, 0) else iif(g.gubun = r.gubun, r.total, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.allCnt else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.allCnt, 0) else iif(g.gubun = r.gubun, r.allCnt, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,max(g.sort_order)
+         from gubunList g
+         left outer join impr r on r.plantCd = g.plantCd
+         where 1=1
+         and g.gubun_type = 'impr'
+         <if test= "plantCd != null and !plantCd.equals('')">
+           and g.plantCd = #{plantCd}
+         </if>
+         group by g.plantCd, g.gubun
+        <!-- 전체일 경우 합계 데이터 조회 -->
+         <if test='!totalFlag != null and totalFlag.equals("Y")'>
+         union all
+         select  '합계'
+                 ,'합계'
+                 ,'훈련현황' as rsa_result
+                 ,g.gubun
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.oldCnt else iif(g.gubun = r.gubun, r.oldCnt, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon1 else iif(g.gubun = r.gubun, r.mon1, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon2 else iif(g.gubun = r.gubun, r.mon2, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon3 else iif(g.gubun = r.gubun, r.mon3, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon4 else iif(g.gubun = r.gubun, r.mon4, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon5 else iif(g.gubun = r.gubun, r.mon5, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon6 else iif(g.gubun = r.gubun, r.mon6, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon7 else iif(g.gubun = r.gubun, r.mon7, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon8 else iif(g.gubun = r.gubun, r.mon8, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon9 else iif(g.gubun = r.gubun, r.mon9, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon10 else iif(g.gubun = r.gubun, r.mon10, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon11 else iif(g.gubun = r.gubun, r.mon11, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon12 else iif(g.gubun = r.gubun, r.mon12, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.total else iif(g.gubun = r.gubun, r.total, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.allCnt else iif(g.gubun = r.gubun, r.allCnt, 0) end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,max(g.sort_order)
+         from gubunList g
+         left outer join riskList r on r.plantCd = g.plantCd
+         where 1=1
+         and g.gubun_type = 'assess'
+         group by g.gubun
+         union all
+         select  '합계'
+                 ,'합계'
+                 ,'개선현황' as rsa_result
+                 ,g.gubun
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.oldCnt else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.oldCnt, 0) else iif(g.gubun = r.gubun, r.oldCnt, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon1 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon1, 0) else iif(g.gubun = r.gubun, r.mon1, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon2 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon2, 0) else iif(g.gubun = r.gubun, r.mon2, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon3 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon3, 0) else iif(g.gubun = r.gubun, r.mon3, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon4 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon4, 0) else iif(g.gubun = r.gubun, r.mon4, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon5 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon5, 0) else iif(g.gubun = r.gubun, r.mon5, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon6 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon6, 0) else iif(g.gubun = r.gubun, r.mon6, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon7 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon7, 0) else iif(g.gubun = r.gubun, r.mon7, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon8 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon8, 0) else iif(g.gubun = r.gubun, r.mon8, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon9 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon9, 0) else iif(g.gubun = r.gubun, r.mon9, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon10 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon10, 0) else iif(g.gubun = r.gubun, r.mon10, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon11 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon11, 0) else iif(g.gubun = r.gubun, r.mon11, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.mon12 else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.mon12, 0) else iif(g.gubun = r.gubun, r.mon12, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.total else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.total, 0) else iif(g.gubun = r.gubun, r.total, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
+                 ,case when g.gubun != '개선 조치율(%)' then convert(varchar, isnull(sum(case when g.gubun = '요청(건수)' then r.allCnt else case when g.gubun = '조치미완료(건수)' then iif(g.gubun = r.gubun or r.gubun = '기한초과(건수)', r.allCnt, 0) else iif(g.gubun = r.gubun, r.allCnt, 0) end end), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '조치완료(건수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,max(g.sort_order)
+         from gubunList g
+         left outer join impr r on r.plantCd = g.plantCd
+         where 1=1
+         and g.gubun_type = 'impr'
+
+         group by g.gubun
+         </if>
+         <!-- 전체일 경우 합계 데이터 조회 -->
+         order by g.plantCd, max(g.sort_order)
+    </select>
+</mapper>

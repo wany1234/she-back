@@ -1,0 +1,277 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.chem.mapper.ChemProceessManageMapper">
+
+    <!-- 공정관리요령 조회 -->
+    <select id= "getChemProcessManages" parameterType= "HashMap" resultType= "com.she.chm.model.ChemProcessManage">
+        /* ChemProceessManageMapper.getChemProcessManages [ChemProcessManage.xml] */
+        select cpm.chm_process_manage_no
+        ,cpm.plant_cd
+        ,plant.code_nm as plant_nm
+        ,cpm.dept_cd
+        ,dept.dept_nm
+        ,cpm.process_cd
+        ,process.process_nm
+        ,cpm.haz_danger_desc
+        ,cpm.handle_care_desc
+        ,cpm.safety_equip_desc
+        ,cpm.fst_handle_desc
+        ,cpm.acc_handle_desc
+        ,cpm.etc
+        ,cpm.use_yn
+        ,(case when isnull(cpm.use_yn,'Y') = 'Y' then '사용' else '사용안함' end) as use_yn_nm
+        ,cpm.create_user_id
+        ,cpm.create_user_id
+        ,createUser.user_nm as create_user_nm
+        ,convert(char(10), cpm.create_dt, 23) as create_dt
+        ,cpm.update_user_id
+        ,updateUser.user_nm as update_user_nm
+        ,convert(char(10), cpm.update_dt, 23) as update_dt
+        , case
+             when dbo.GET_USER_NM(cpm.update_user_id) = '' then dbo.GET_USER_NM(cpm.create_user_id)
+             else dbo.GET_USER_NM(cpm.update_user_id) end as writer_user_nm
+        , case when cpm.update_dt is null then convert(date, cpm.create_dt) else convert(date, cpm.update_dt) end   as writer_dt
+        from chm_process_manage cpm
+            inner join com_code_master plant on cpm.plant_cd = plant.code
+                and plant.code_group_cd = 'COM_PLANT_CD'
+            inner join com_dept dept on cpm.dept_cd = dept.dept_cd
+            inner join com_process process on cpm.process_cd = process.process_cd
+            left outer join com_user createUser on cpm.create_user_id = createUser.user_id
+            left outer join com_user updateUser on cpm.update_user_id = updateUser.user_id
+        where 1=1
+        <if test= "search != null and !search.equals('')">
+        or exists(select 1
+            from com_chemprod ccp
+            inner join chm_process_manage_chemprod_val cmcv on ccp.chem_prod_no = cmcv.chem_prod_no
+            inner join com_vendor_mst vendor on ccp.vendor_cd = vendor.vendor_cd
+            inner join com_vendor_mst maker on ccp.maker_cd = maker.vendor_cd
+            where ccp.use_yn = 'Y'
+            and cmcv.chm_process_manage_no = cpm.chm_process_manage_no
+        and (vendor.vendor_nm like '%' + #{search} + '%'
+            or maker.vendor_nm like '%' + #{search} + '%')
+        )
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+        and isnull(cpm.use_Yn, 'N') = #{useYn}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            <choose>
+              <when test= "plantCd.equals('0000')">
+                  and isnull(cpm.plant_cd, '') != ''
+              </when>
+              <otherwise>
+                  and cpm.plant_cd in (#{plantCd}, '0000')
+              </otherwise>
+            </choose>
+        </if>
+        <if test= "deptCd != null and !deptCd.equals('')">
+        and cpm.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+        </if>
+        <if test= "processCd != null and !processCd.equals('')">
+        and cpm.process_cd = #{processCd}
+        </if>
+        order by writer_dt desc
+    </select>
+
+    <!-- 공정관리요령 상세정보 조회 -->
+    <select id= "getChemProcessManage" resultType= "com.she.chm.model.ChemProcessManage">
+        /* ChemProceessManageMapper.getChemProcessManage [ChemProcessManage.xml] */
+        select cpm.chm_process_manage_no
+        ,cpm.plant_cd
+        ,plant.code_nm as plant_nm
+        ,cpm.dept_cd
+        ,dept.dept_nm
+        ,cpm.process_cd
+        ,process.process_nm
+        ,cpm.haz_danger_desc
+        ,cpm.handle_care_desc
+        ,cpm.safety_equip_desc
+        ,cpm.fst_handle_desc
+        ,cpm.acc_handle_desc
+        ,cpm.etc
+        ,cpm.use_yn
+        ,(case when isnull(cpm.use_yn,'Y') = 'Y' then '사용' else '사용안함' end) as use_yn_nm
+        ,cpm.create_user_id
+        ,cpm.create_user_id
+        ,createUser.user_nm as create_user_nm
+        ,convert(char(10), cpm.create_dt, 23) as create_dt
+        ,cpm.update_user_id
+        ,updateUser.user_nm as update_user_nm
+        ,convert(char(10), cpm.update_dt, 23) as update_dt
+        from chm_process_manage cpm
+            inner join com_code_master plant on cpm.plant_cd = plant.code
+                and plant.code_group_cd = 'COM_PLANT_CD'
+            inner join com_dept dept on cpm.dept_cd = dept.dept_cd
+            inner join com_process process on cpm.process_cd = process.process_cd
+            left outer join com_user createUser on cpm.create_user_id = createUser.user_id
+            left outer join com_user updateUser on cpm.update_user_id = updateUser.user_id
+        where 1=1
+        and cpm.chm_process_manage_no = #{chmProcessManageNo}
+    </select>
+
+    <!-- 공정관리요령 신규등록 -->
+    <insert id= "createChemProcessManage" parameterType= "com.she.chm.model.ChemProcessManage">
+        <selectKey keyProperty= "chmProcessManageNo" resultType= "int" order= "BEFORE">
+            select next value for seq_chm_process_manage as chm_process_manage_no
+          </selectKey>
+        /* ChemProceessManageMapper.createChemProcessManage [ChemProcessManage.xml] */
+        insert into chm_process_manage
+            (chm_process_manage_no
+            ,plant_cd
+            ,dept_cd
+            ,process_cd
+            ,haz_danger_desc
+            ,handle_care_desc
+            ,safety_equip_desc
+            ,fst_handle_desc
+            ,acc_handle_desc
+            ,etc
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{chmProcessManageNo}
+            , #{plantCd}
+            , #{deptCd}
+            , #{processCd}
+            , #{hazDangerDesc}
+            , #{handleCareDesc}
+            , #{safetyEquipDesc}
+            , #{fstHandleDesc}
+            , #{accHandleDesc}
+            , #{etc}
+            , #{useYn}
+            , #{createUserId}
+            , convert(char(10), getDate(), 23))
+    </insert>
+
+    <!-- 공정관리요령 수정 -->
+    <update id= "updateChemProcessManage" parameterType= "com.she.chm.model.ChemProcessManage">
+        /* ChemProceessManageMapper.updateChemProcessManage [ChemProcessManage.xml] */
+        update chm_process_manage
+        set plant_cd = #{plantCd}
+            ,dept_cd = #{deptCd}
+            ,process_cd = #{processCd}
+            ,haz_danger_desc = #{hazDangerDesc}
+            ,handle_care_desc = #{handleCareDesc}
+            ,safety_equip_desc = #{safetyEquipDesc}
+            ,fst_handle_desc = #{fstHandleDesc}
+            ,acc_handle_desc = #{accHandleDesc}
+            ,etc = #{etc}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where chm_process_manage_no = #{chmProcessManageNo}
+    </update>
+
+    <!-- 공정관리요령 취급자재목록 조회 -->
+    <select id= "getChemProcessManageChemprodVals" resultType= "com.she.chm.model.ChemProcessManageChemprodVal">
+        /* ChemProceessManageMapper.getChemProcessManageChemprodVals [ChemProcessManage.xml] */
+        select t.chm_process_manage_no
+        , t.chem_prod_no
+        , cc.chem_prod_nm_kr
+        , cc.chem_prod_nm_en
+        , cc.sap_mat_cd
+        , cc.vendor_cd as vendorCd
+        , vendor.vendor_nm as vendorNm
+        , cc.maker_cd as makecpCd
+        , maker.vendor_nm as makecpNm
+        from chm_process_manage_chemprod_val t
+        inner join com_chemprod cc on t.chem_prod_no = cc.chem_prod_no
+        inner join com_vendor_mst vendor on cc.vendor_cd = vendor.vendor_cd
+        inner join com_vendor_mst maker on cc.maker_cd = maker.vendor_Cd
+        where t.chm_process_manage_no = #{chmProcessManageNo}
+    </select>
+
+    <!-- 공정관리요령 취급자재목록 등록 -->
+    <insert id= "createChemProcessManageChemprodVal" parameterType= "com.she.chm.model.ChemProcessManageChemprodVal">
+        /* ChemProceessManageMapper.createChemProcessManageChemprodVal [ChemProcessManage.xml] */
+        insert into chm_process_manage_chemprod_val
+            (chm_process_manage_no
+            ,chem_prod_no)
+        values
+            (#{chmProcessManageNo}
+            ,#{chemProdNo})
+    </insert>
+
+    <!-- 공정관리요령 취급자재목록 삭제 -->
+    <delete id= "deleteChemProcessManageChemprodVals">
+        /* ChemProceessManageMapper.deleteChemProcessManageChemprodVals [ChemProcessManage.xml] */
+        delete from chm_process_manage_chemprod_val
+        where chm_process_manage_no = #{chmProcessManageNo}
+    </delete>
+
+    <select id= "getPrintChemProcessManage" resultType= "HashMap">
+        /* ChemProceessManageMapper.getPrintChemProcessManage [ChemProcessManage.xml] */
+        select cpm.chm_process_manage_no
+        ,plant.code_nm as plant_nm
+        ,dept.dept_nm
+        ,process.process_nm
+        ,cpm.haz_danger_desc
+        ,cpm.handle_care_desc
+        ,cpm.safety_equip_desc
+        ,cpm.fst_handle_desc
+        ,cpm.acc_handle_desc
+        ,cpm.etc
+        ,STRING_AGG(cc.chem_prod_nm_kr, ' , ') as chem_prod_nm_kr
+        from chm_process_manage cpm
+            inner join com_code_master plant on cpm.plant_cd = plant.code
+                and plant.code_group_cd = 'COM_PLANT_CD'
+            inner join com_dept dept on cpm.dept_cd = dept.dept_cd
+            inner join com_process process on cpm.process_cd = process.process_cd
+            inner join chm_process_manage_chemprod_val cmcv on cpm.chm_process_manage_no = cmcv.chm_process_manage_no
+            inner join com_chemprod cc on cmcv.chem_prod_no = cc.chem_prod_no
+        where 1=1
+        <if test= "chmProcessManageNos != null and chmProcessManageNos.length > 0">
+        and cpm.chm_process_manage_no in
+            <foreach collection= "chmProcessManageNos" item= "chmProcessManageNo" separator= "," open= "(" close= ")" >
+            #{chmProcessManageNo}
+            </foreach>
+        </if>
+        group by cpm.chm_process_manage_no
+        ,plant.code_nm
+        ,dept.dept_nm
+        ,process.process_nm
+        ,cpm.haz_danger_desc
+        ,cpm.handle_care_desc
+        ,cpm.safety_equip_desc
+        ,cpm.fst_handle_desc
+        ,cpm.acc_handle_desc
+        ,cpm.etc
+        order by cpm.chm_process_manage_no
+    </select>
+
+    <select id= "getProcessManagePicGraphs" resultType= "String">
+        /* ChemProceessManageMapper.getProcessManagePicGraphs [ChemProcessManage.xml] */
+        select pic_graph_cd
+        from chm_process_manage_pic_graph
+        where chm_process_manage_no = #{chmProcessManageNo}
+    </select>
+    
+    <select id= "getProcessManagePicGraphsNm" resultType= "String">
+        /* ChemProceessManageMapper.getProcessManagePicGraphs [ChemProcessManage.xml] */
+        select ccm.code_nm as pic_graph_nm
+        from chm_process_manage_pic_graph cpmpg
+        inner join com_code_master ccm
+        on ccm.code = cpmpg.pic_graph_cd
+        and ccm.code_group_cd = 'CHM_GHS_PIC'
+        where cpmpg.chm_process_manage_no = #{chmProcessManageNo}
+    </select>
+
+    <insert id= "createProcessManagePicGraphs" parameterType= "com.she.chm.model.ProcessManagePicGraph">
+        /* ChemProceessManageMapper.createProcessManagePicGraphs [ChemProcessManage.xml] */
+        insert into chm_process_manage_pic_graph
+            (chm_process_manage_no
+            ,pic_graph_cd)
+        values
+            (#{chmProcessManageNo}
+            ,#{picGraphCd})
+    </insert>
+
+    <delete id= "deleteProcessManagePicGraphs">
+        /* ChemProceessManageMapper.deleteProcessManagePicGraphs [ChemProcessManage.xml] */
+        delete from chm_process_manage_pic_graph
+        where chm_process_manage_no = #{chmProcessManageNo}
+    </delete>
+</mapper>

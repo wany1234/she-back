@@ -1,0 +1,102 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.health.baseInfo.mapper.DiseaseMapper">
+    <select id= "getDiseases" parameterType= "HashMap" resultType= "com.she.health.model.Disease">
+        select diseaseclass.code as hea_disease_class_cd
+            ,diseaseclass.code_nm as hea_disease_class_nm
+            ,hd.hea_disease_cd
+            ,hd.hea_disease_nm
+            ,hd.remark
+            ,hd.sort_order
+            ,hd.use_yn
+            ,case 
+              when hd.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm            -- 사용여부
+            ,hd.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,hd.create_dt
+            ,hd.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,hd.update_dt
+            , case
+                 when dbo.GET_USER_NM(hd.update_user_id) = '' then dbo.GET_USER_NM(hd.create_user_id)
+                 else dbo.GET_USER_NM(hd.update_user_id) end    as writer_user_nm
+            , case when hd.update_dt is null then convert(date, hd.create_dt) else convert(date, hd.update_dt) end   as writer_dt
+        from hea_disease hd
+        inner join com_code_master diseaseclass 
+        on diseaseclass.code = hd.hea_disease_class_cd 
+        and diseaseclass.code_group_cd = 'HEA_DISEASE_CLASS'
+        inner join com_user createUser 
+        on hd.create_user_id = createUser.user_id
+        left outer join com_user updateUser 
+        on hd.update_user_id = updateUser.user_id
+        where diseaseclass.use_yn = 'Y'
+        <if test= "heaDiseaseClassCd != null and !heaDiseaseClassCd.equals('')">
+        and hd.hea_disease_class_cd = #{heaDiseaseClassCd}
+        </if>
+        <if test= "heaDiseaseNm != null and !heaDiseaseNm.equals('')">
+        and hd.hea_disease_nm like '%' + #{heaDiseaseNm} + '%'
+        </if>
+        order by writer_dt desc, diseaseclass.sort_order, hd.sort_order
+    </select>
+    
+    <select id= "getDisease" resultType= "com.she.health.model.Disease">
+        select hea_disease_cd
+            ,hea_disease_class_cd
+            ,hea_disease_nm
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,case 
+              when use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm            -- 사용여부
+            ,create_user_id
+            ,create_dt
+            ,update_user_id
+            ,update_dt
+        from hea_disease
+        where 1=1
+        and hea_disease_cd = #{heaDiseaseCd}
+    </select>
+    
+    <insert id= "createDisease" parameterType= "com.she.health.model.Disease">
+        <selectKey keyProperty= "heaDiseaseCd" resultType= "String" order= "BEFORE">
+            select replicate('0',5 - len(convert(varchar(5), next value for seq_hea_disease))) 
+                + convert(varchar(5), (select current_value from sys.sequences where lower(name)='seq_hea_disease')) as hea_disease_cd
+          </selectKey>
+        insert into hea_disease
+            (hea_disease_cd
+            ,hea_disease_class_cd
+            ,hea_disease_nm
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+         values
+               (#{heaDiseaseCd}
+               ,#{heaDiseaseClassCd}
+               ,#{heaDiseaseNm}
+               ,#{remark}
+               ,#{sortOrder}
+               ,#{useYn}
+               ,#{createUserId}
+               ,getDate()) 
+    </insert>
+    
+    <update id= "updateDisease" parameterType= "com.she.health.model.Disease">
+        update hea_disease
+        set hea_disease_class_cd = #{heaDiseaseClassCd}
+            ,hea_disease_nm = #{heaDiseaseNm}
+            ,remark = #{remark}
+            ,sort_order = #{sortOrder}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where hea_disease_cd = #{heaDiseaseCd}
+    </update>
+    
+</mapper>

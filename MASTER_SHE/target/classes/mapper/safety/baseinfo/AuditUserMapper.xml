@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.baseinfo.mapper.AuditUserMapper">
+    
+    <select id="getAuditUsers" resultType= "com.she.safety.model.AuditUser">
+        /* AuditUserMapper.getAuditUsers [AuditUserMapper.xml] */
+        SELECT spau.audit_user_no
+            , plant.code_nm AS plant_nm
+            , spau.year
+            , ccm.code_nm as audit_type_nm
+            , spau.dept_nm
+            , cu.duty_nm
+            , cu.user_nm
+            , spau.major_desc
+            , spau.career_desc
+            , spau.remark
+            , spau.use_yn
+            , spau.edu_desc
+            , spau.certi_desc
+            , CASE WHEN spau.use_yn = 'Y'
+                THEN '사용' ELSE '미사용'
+                END AS use_yn_nm
+            , convert(char(10), spau.create_dt, 23) AS create_dt
+            , convert(char(10), spau.update_dt, 23) AS update_dt
+            , case
+                 when dbo.GET_USER_NM(spau.update_user_id) = '' then dbo.GET_USER_NM(spau.create_user_id)
+                 else dbo.GET_USER_NM(spau.update_user_id) end    as writer_user_nm
+            , case when spau.update_dt is null then convert(date, spau.create_dt) else convert(date, spau.update_dt) end   as writer_dt
+        FROM saf_psm_audit_user spau
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD')  plant
+               ON spau.plant_cd = plant.code
+        INNER JOIN com_user cu
+            ON cu.user_id = spau.user_id
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'AUDIT_TYPE_CD')  ccm
+              ON spau.audit_type_cd = ccm.code
+        WHERE 1=1
+        <if test="parameter.plantCd != null and !''.equals(parameter.plantCd)">
+            AND spau.plant_cd = #{parameter.plantCd}
+        </if>
+        <if test="parameter.year != null and !''.equals(parameter.year)">
+            AND spau.year = #{parameter.year}
+        </if>
+        <if test="parameter.auditTypeCd != null and !''.equals(parameter.auditTypeCd)">
+            AND spau.audit_type_cd = #{parameter.auditTypeCd}
+        </if>
+        <if test="parameter.useYn != null and !''.equals(parameter.useYn)">
+            AND spau.use_yn = #{parameter.useYn}
+        </if>
+        ORDER BY writer_dt DESC
+    </select>
+    
+    <insert id="createAuditUser" parameterType= "com.she.safety.model.AuditUser">
+        /* AuditUserMapper.createAuditUser [AuditUserMapper.xml] */
+        <selectKey keyProperty= "auditUserNo" resultType= "int" order= "BEFORE">
+            SELECT (next value for seq_saf_psm_audit_user) as auditUserNo
+        </selectKey>
+        INSERT INTO saf_psm_audit_user (
+            audit_user_no
+            , year
+            , user_id
+            , plant_cd
+            , dept_nm
+            , major_desc
+            , career_desc
+            , edu_desc
+            , certi_desc
+            , remark
+            , use_yn
+            , audit_type_cd
+            , create_user_id
+            , create_dt
+        ) VALUES (
+            #{auditUserNo}
+            , #{year}
+            , #{userId}
+            , #{plantCd}
+            , #{deptNm}
+            , #{majorDesc}
+            , #{careerDesc}
+            , #{eduDesc}
+            , #{certiDesc}
+            , #{remark}
+            , #{useYn}
+            , #{auditTypeCd}
+            , #{createUserId}
+            , GETDATE()
+        )
+    </insert>
+    
+    <select id="getAuditUser" resultType= "com.she.safety.model.AuditUser">
+        /* AuditUserMapper.getAuditUser [AuditUserMapper.xml] */
+        SELECT spau.audit_user_no
+            , spau.plant_cd
+            , spau.year
+            , cd.dept_cd
+            , spau.dept_nm
+            , spau.user_id
+            , cu.user_nm
+            , spau.major_desc
+            , spau.career_desc
+            , spau.edu_desc
+            , spau.certi_desc
+            , spau.audit_type_cd
+            , spau.remark
+            , spau.use_yn
+        FROM saf_psm_audit_user spau
+        INNER JOIN com_user cu
+            ON cu.user_id = spau.user_id
+        INNER JOIN com_dept cd 
+            ON cd.dept_cd = cu.dept_cd
+        WHERE spau.audit_user_no = #{auditUserNo}
+    </select>
+    
+    <update id="updateAuditUser" parameterType= "com.she.safety.model.AuditUser">
+        /* AuditUserMapper.updateAuditUser [AuditUserMapper.xml] */
+        UPDATE saf_psm_audit_user
+        SET year = #{year}
+            , user_id = #{userId}
+            , plant_cd = #{plantCd}
+            , dept_nm = #{deptNm}
+            , major_desc = #{majorDesc}
+            , career_desc = #{careerDesc}
+            , edu_desc = #{eduDesc}
+            , certi_desc = #{certiDesc}
+            , remark = #{remark}
+            , use_yn = #{useYn}
+            , audit_type_cd = #{auditTypeCd}
+            , update_user_id = #{updateUserId}
+            , update_dt = GETDATE()
+        WHERE audit_user_no = #{auditUserNo}
+    </update>
+    
+    <delete id="deleteAuditUser" parameterType= "com.she.safety.model.AuditUser">
+        /* AuditUserMapper.deleteAuditUser [AuditUserMapper.xml] */
+        DELETE FROM saf_psm_audit_user
+        WHERE audit_user_no = #{auditUserNo}
+    </delete>
+    
+    <select id="getAuditUserCheck" resultType= "int">
+        /* AuditUserMapper.getAuditUserCheck [AuditUserMapper.xml] */
+        select count(*)
+        from saf_psm_audit_rslt_user
+        where audit_user_no = #{auditUserNo}
+    </select>
+</mapper>

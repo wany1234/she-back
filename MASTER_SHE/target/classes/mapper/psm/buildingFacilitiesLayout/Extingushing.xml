@@ -1,0 +1,157 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.psm.buildingFacilitiesLayout.mapper.ExtingushingMapper">
+    
+    <select id= "getExtingushingLists" resultType= "com.she.psm.model.Extingushing">
+        select se.extingushing_no
+            , se.plant_cd
+            , ccm.code_nm as plant_nm
+            , se.location
+            , se.extinguisher
+            , se.spread_extinguisher
+            , se.auto_extinguisher
+            , se.indoor_extinguisher
+            , se.sprinkler
+            , se.water_spray
+            , se.foam_extinguisher
+            , se.co2_extinguisher
+            , se.halogen_extinguisher
+            , se.clean_extinguisher
+            , se.outdoor_extinguisher
+            , se.rev_num
+            , se.rev_contents
+            , se.creater_id
+            , convert(char(19), se.create_dt, 23) as create_dt
+            , se.updater_id
+            , convert(char(19), se.update_dt, 23) as update_dt
+            , case
+                 when dbo.GET_USER_NM(se.updater_id) = '' then dbo.GET_USER_NM(se.creater_id)
+                 else dbo.GET_USER_NM(se.updater_id) end    as writer_user_nm
+            , case when se.update_dt is null then convert(date, se.create_dt) else convert(date, se.update_dt) end   as writer_dt
+        from saf_extingushing se
+        left outer join com_code_master ccm
+        on se.plant_cd = ccm.code
+        and ccm.code_group_cd = 'COM_PLANT_CD'
+        where 1=1
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and se.plant_cd = #{plantCd}
+        </if>
+        <if test= "location != null and !location.equals('')">
+        and se.location like '%' + #{location} + '%'
+        </if>
+        order by writer_dt desc, se.plant_cd, se.extingushing_no desc
+    </select>
+
+    <select id= "getExtingushing" resultType= "com.she.psm.model.Extingushing">
+        SELECT se.extingushing_no
+              , se.plant_cd
+              , ccm.code_nm as plant_nm
+              , se.location
+              , se.extinguisher
+              , se.spread_extinguisher
+              , se.auto_extinguisher
+              , se.indoor_extinguisher
+              , se.sprinkler
+              , se.water_spray
+              , se.foam_extinguisher
+              , se.co2_extinguisher
+              , se.halogen_extinguisher
+              , se.clean_extinguisher
+              , se.outdoor_extinguisher
+              , se.rev_num
+              , se.rev_contents
+              , se.creater_id
+              , convert(char(19), se.create_dt, 23) as create_dt
+              , se.updater_id
+              , convert(char(19), se.update_dt, 23) as update_dt
+			  , se.chng_num
+          FROM saf_extingushing se
+          LEFT OUTER JOIN com_code_master ccm
+            ON se.plant_cd = ccm.code
+           AND ccm.code_group_cd = 'COM_PLANT_CD'
+          LEFT OUTER JOIN saf_chng_ref_work scrw
+            ON scrw.ref_table_nm = 'saf_extingushing'
+           AND scrw.ref_table_id = se.extingushing_no
+        where 1=1
+        and se.extingushing_no = #{extingushingNo}
+    </select>
+    
+    <insert id= "createExtingushing" parameterType= "com.she.psm.model.Extingushing">
+           <selectKey keyProperty= "extingushingNo" resultType= "com.she.psm.model.Extingushing" order= "BEFORE">
+            select (next value for seq_saf_extingushing) as extingushingNo
+          </selectKey>
+          insert into saf_extingushing
+          (
+        extingushing_no
+        ,plant_cd
+        ,location
+        ,extinguisher
+        ,spread_extinguisher
+        ,auto_extinguisher
+        ,indoor_extinguisher
+        ,sprinkler
+        ,water_spray
+        ,foam_extinguisher
+        ,co2_extinguisher
+        ,halogen_extinguisher
+        ,clean_extinguisher
+        ,outdoor_extinguisher
+        ,rev_num
+        ,rev_contents
+        ,creater_id
+        ,create_dt
+        ,chng_num
+          )
+          values
+          (
+        #{extingushingNo}
+        ,#{plantCd}
+        ,#{location}
+        ,#{extinguisher}
+        ,#{spreadExtinguisher}
+        ,#{autoExtinguisher}
+        ,#{indoorExtinguisher}
+        ,#{sprinkler}
+        ,#{waterSpray}
+        ,#{foamExtinguisher}
+        ,#{co2Extinguisher}
+        ,#{halogenExtinguisher}
+        ,#{cleanExtinguisher}
+        ,#{outdoorExtinguisher}
+        ,#{revNum}
+        ,#{revContents}
+        ,#{createrId}
+        ,getDate()
+        ,#{chngNum}
+          )
+    </insert>
+    
+    <update id= "updateExtingushing" parameterType= "com.she.psm.model.Extingushing">
+        update saf_extingushing 
+        set plant_cd = #{plantCd}
+            ,location = #{location}
+            ,extinguisher = #{extinguisher}
+            ,spread_extinguisher = #{spreadExtinguisher}
+            ,auto_extinguisher = #{autoExtinguisher}
+            ,indoor_extinguisher = #{indoorExtinguisher}
+            ,sprinkler = #{sprinkler}
+            ,water_spray = #{waterSpray}
+            ,foam_extinguisher = #{foamExtinguisher}
+            ,co2_extinguisher = #{co2Extinguisher}
+            ,halogen_extinguisher = #{halogenExtinguisher}
+            ,clean_extinguisher = #{cleanExtinguisher}
+            ,outdoor_extinguisher = #{outdoorExtinguisher}
+            ,rev_num = #{revNum}
+            ,rev_contents = #{revContents}
+            ,updater_id = #{updaterId}
+            ,update_dt = getdate()
+            ,chng_num = #{chngNum}
+        where extingushing_no = #{extingushingNo}
+    </update>
+    
+    <delete id= "deleteExtingushing" parameterType= "com.she.psm.model.Extingushing">
+        delete saf_extingushing
+        where extingushing_no = #{extingushingNo}
+    </delete>
+</mapper>

@@ -1,0 +1,120 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.air.baseInfo.mapper.IngredientMapper">
+    <select id= "getIngredients" resultType= "com.she.env.air.model.Ingredient">
+        /* IngredientMapper.getIngredients [Ingredient.xml] */
+        SELECT t.eair_ingr_cd
+              ,t.eair_ingr_nm
+              ,t.plant_cd as plantCd
+              ,p.code_nm as plantNm
+              ,t.env_unit_cd
+              ,c.code_nm as env_unit_nm
+              ,t.remark
+              ,t.sort_order
+              ,t.use_yn
+              ,case when t.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+              ,t.create_user_id
+              ,cu.user_nm as create_user_nm
+              ,t.create_dt
+              ,t.update_user_id
+              ,uu.user_nm as update_user_nm
+              ,t.update_dt
+              , case
+                   when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+                   else dbo.GET_USER_NM(t.update_user_id) end    as writer_user_nm
+              , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+          FROM eair_ingr t
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') p
+            ON t.plant_cd = p.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_INGR_UNIT') c
+            ON t.env_unit_cd = c.code
+         INNER JOIN com_user cu
+            ON t.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON t.update_user_id = uu.user_id
+         WHERE 1=1
+        <if test= "useYn != null and !useYn.equals('')">
+           AND t.use_yn = #{useYn}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+           AND t.plant_cd = #{plantCd}
+        </if>
+        <if test="eairIngrNm != null and !eairIngrNm.equals('')">
+            AND t.eair_ingr_nm like '%' + #{eairIngrNm} + '%'
+        </if>
+
+         ORDER BY writer_dt desc, t.plant_cd
+    </select>
+
+    <select id= "getIngredient" resultType= "com.she.env.air.model.Ingredient">
+        /* IngredientMapper.getIngredient [Ingredient.xml] */
+        SELECT t.eair_ingr_cd
+              ,t.eair_ingr_nm
+              ,t.plant_cd
+              ,t.env_unit_cd
+              ,t.remark
+              ,t.sort_order
+              ,t.use_yn
+              ,t.create_user_id
+              ,t.create_dt
+              ,t.update_user_id
+              ,t.update_dt
+          FROM eair_ingr t
+         WHERE t.eair_ingr_cd = #{eairIngrCd}
+    </select>
+
+    <insert id= "createIngredient" parameterType= "com.she.env.air.model.Ingredient">
+        /* IngredientMapper.createIngredient [Ingredient.xml] */
+        <selectKey keyProperty= "eairIngrCd" resultType= "String" order= "BEFORE">
+            SELECT convert(varchar(5), replicate('0', 5-len(convert(varchar(5), next value for seq_eair_ingr)))
+                + convert(varchar(5), (SELECT current_value FROM sys.sequences WHERE lower(name)='seq_eair_ingr'))) as eair_ingr_cd
+          </selectKey>
+        INSERT INTO eair_ingr
+            (eair_ingr_cd
+            ,eair_ingr_nm
+            ,plant_cd
+            ,env_unit_cd
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+        VALUES
+            (#{eairIngrCd}
+            ,#{eairIngrNm}
+            ,#{plantCd}
+            ,#{envUnitCd}
+            ,#{remark}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+
+    <update id= "updateIngredient" parameterType= "com.she.env.air.model.Ingredient">
+        /* IngredientMapper.updateIngredient [Ingredient.xml] */
+        UPDATE eair_ingr
+           SET eair_ingr_nm = #{eairIngrNm}
+              ,plant_cd = #{plantCd}
+              ,env_unit_cd = #{envUnitCd}
+              ,remark = #{remark}
+              ,sort_order = #{sortOrder}
+              ,use_yn = #{useYn}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE eair_ingr_cd = #{eairIngrCd}
+    </update>
+
+    <select id="checkIngredient" resultType="int">
+        /* IngredientMapper.checkIngredient [Ingredient.xml] */
+        SELECT count(*)
+          FROM eair_ingr
+         WHERE 1=1
+           AND plant_cd = #{plantCd}
+           AND eair_ingr_nm = #{eairIngrNm}
+        <if test="eairIngrCd!= null and !eairIngrCd.equals('')">
+           AND eair_ingr_cd not in (#{eairIngrCd})
+        </if>
+    </select>
+</mapper>

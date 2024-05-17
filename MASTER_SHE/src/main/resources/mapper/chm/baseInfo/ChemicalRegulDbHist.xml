@@ -1,0 +1,214 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.baseInfo.mapper.ChemicalRegulDbHistMapper">
+
+    <select id= "getChemicalRegulDbHists" resultType= "com.she.chm.model.ChemicalRegulDbHist">
+        /* ChemicalRegulDbHistMapper.getChemicalRegulDbHists [ChemicalRegulDbHist.xml] */
+        select cr.chm_regul_db_cd
+        , cr.upload_dt
+        , cr.upload_user_id
+        , uploadUser.user_nm as upload_user_nm
+        , cr.apply_dt
+        , cr.apply_user_id
+        , applyUser.user_nm as apply_user_nm
+        , cr.upload_status
+        , reguldbStep.code_nm as upload_status_nm
+        , cr.confirm_dt
+        , cr.file_no
+        , cr.success_yn
+        , cr.tot_count
+        , cr.no_count
+        , cr.add_count
+        , cr.edit_count
+        , cr.delete_count
+        , cr.last_err
+        from chm_regul_db_hist cr
+        inner join com_user uploadUser
+            on cr.upload_user_id = uploadUser.user_id
+        left outer join com_user applyUser
+            on cr.apply_user_id = applyUser.user_id
+        inner join com_code_master reguldbStep
+            on cr.upload_status = reguldbStep.code
+            and reguldbStep.code_group_cd = 'CHM_REGULDB_STEP'
+        where 1=1
+        and cr.del_yn = 'N'
+        order by cr.upload_dt desc
+    </select>
+
+    <select id= "getChemicalRegulDbHist" resultType= "com.she.chm.model.ChemicalRegulDbHist">
+        /* ChemicalRegulDbHistMapper.getChemicalRegulDbHists [ChemicalRegulDbHist.xml] */
+        select cr.chm_regul_db_cd
+        , cr.upload_dt
+        , cr.upload_user_id
+        , uploadUser.user_nm as upload_user_nm
+        , cr.apply_dt
+        , cr.apply_user_id
+        , applyUser.user_nm as apply_user_nm
+        , cr.upload_status
+        , reguldbStep.code_nm as upload_status_nm
+        , cr.confirm_dt
+        , cr.file_no
+        , cr.success_yn
+        , cr.tot_count
+        , cr.no_count
+        , cr.add_count
+        , cr.edit_count
+        , cr.delete_count
+        , cr.last_err
+        from chm_regul_db_hist cr
+        inner join com_user uploadUser
+            on cr.upload_user_id = uploadUser.user_id
+        left outer join com_user applyUser
+            on cr.apply_user_id = applyUser.user_id
+        inner join com_code_master reguldbStep
+            on cr.upload_status = reguldbStep.code
+            and reguldbStep.code_group_cd = 'CHM_REGULDB_STEP'
+        where 1=1
+        and cr.chm_regul_db_cd = #{chmRegulDbCd}
+    </select>
+
+    <insert id= "createChemicalRegulDbHist" parameterType= "com.she.chm.model.ChemicalRegulDbHist">
+          /* ChemicalRegulDbHistMapper.createChemicalRegulDbHist [ChemicalRegulDbHist.xml] */
+        insert into chm_regul_db_hist
+            (chm_regul_db_cd
+            ,upload_dt
+            ,upload_user_id
+            ,upload_status
+            ,del_yn
+            ,success_yn)
+        values
+            (#{chmRegulDbCd}
+            ,getdate()
+            ,#{uploadUserId}
+            ,#{uploadStatus}
+            ,'N','N')
+    </insert>
+
+    <update id= "changeChemicalRegulDbHistStatus" parameterType= "com.she.chm.model.ChemicalRegulDbHist">
+        /* ChemicalRegulDbHistMapper.changeChemicalRegulDbHistStatus [ChemicalRegulDbHist.xml] */
+        update chm_regul_db_hist
+        set upload_status = #{uploadStatus}
+        , success_yn = #{successYn}
+        , tot_count = #{totCount}
+        , no_count = #{noCount}
+        , add_count = #{addCount}
+        , edit_count = #{editCount}
+        , delete_count = #{deleteCount}
+        where chm_regul_db_cd = #{chmRegulDbCd}
+    </update>
+
+    <update id= "applyChemicalRegulDbHist" parameterType= "com.she.chm.model.ChemicalRegulDbHist">
+        /* ChemicalRegulDbHistMapper.applyChemicalRegulDbHist [ChemicalRegulDbHist.xml] */
+        update chm_regul_db_hist
+        set upload_status = #{uploadStatus}
+        , apply_dt = getdate()
+        , apply_user_id = #{applyUserId}
+        where chm_regul_db_cd = #{chmRegulDbCd}
+    </update>
+
+    <update id= "updateMsgChemicalRegulDbHist" parameterType= "com.she.chm.model.ChemicalRegulDbHist">
+        /* ChemicalRegulDbHistMapper.updateMsgChemicalRegulDbHist [ChemicalRegulDbHist.xml] */
+        update chm_regul_db_hist
+        set last_msg = #{lastMsg}
+        where chm_regul_db_cd = #{chmRegulDbCd}
+    </update>
+
+    <update id= "confirmChemicalRegulDbHist" parameterType= "com.she.chm.model.ChemicalRegulDbHist">
+        /* ChemicalRegulDbHistMapper.confirmChemicalRegulDbHist [ChemicalRegulDbHist.xml] */
+        update chm_regul_db_hist
+        set upload_status = #{uploadStatus}
+        , confirm_dt = getdate()
+        where chm_regul_db_cd = #{chmRegulDbCd}
+    </update>
+
+
+    <delete id= "deleteChemicalRegulDbHist">
+        /* ChemicalRegulDbHistMapper.deleteChemicalRegulDbHist [ChemicalRegulDbHist.xml] */
+        delete from chm_regul_db_hist
+        where chm_regul_db_cd = #{chmRegulDbCd}
+    </delete>
+
+    <!-- 적용전 규제DB의 영향받을 자재 정보  -->
+    <select id= "getAffectedProdBefore" resultType= "com.she.chm.model.ChemicalRegulDbValid">
+        WITH A AS (
+            SELECT T3.CHEM_ID, T3.chem_nm_kr, T3.CHEM_NM_EN, CHMLAW.code_nm AS LAW_NM, CHMREGUL.regul_itm_nm
+            , (CASE WHEN T1.DB_TYPE = '1' THEN '추가' WHEN T1.DB_TYPE = '3' THEN '기준치변경' WHEN T1.DB_TYPE = '2' THEN '삭제' ELSE '' END) AS ACT_TYPE
+            , (CASE WHEN T1.DB_TYPE = '1' THEN '추가' WHEN T1.DB_TYPE = '3' THEN CONCAT(T2.stnd_val,' -> ', T1.cont_std_num) WHEN T1.DB_TYPE = '2' THEN '삭제' ELSE '' END) AS ACT_TYPE_DESC
+            , T3.CHEM_NO, T2.REGUL_ITM_NO, CHMREGUL.REGUL_LAW_CD
+            FROM CHM_REGUL_DB T1
+            INNER JOIN CHM_REGUL_DB_HIST T4 ON T1.CHM_REGUL_DB_CD = T4.CHM_REGUL_DB_CD
+            INNER JOIN CHM_REGUL_ITM_CHEM_VAL T2 ON T1.ADMIN_NUM = T2.ADMIN_NUM
+            INNER JOIN COM_CHEM T3 ON T2.CHEM_NO = T3.CHEM_NO AND T1.CHEM_ID = T3.CHEM_ID
+            INNER JOIN DBO.CHM_REGUL_ITM CHMREGUL ON T2.REGUL_ITM_NO = CHMREGUL.REGUL_ITM_NO
+            INNER JOIN DBO.COM_CODE_MASTER CHMLAW ON CHMREGUL.REGUL_LAW_CD = CHMLAW.CODE AND CHMLAW.CODE_GROUP_CD = 'CHM_REGUL_LAW'
+            WHERE T1.chm_regul_db_cd = #{chmRegulDbCd}
+            AND ISNULL(T1.ERR_MSG,'') = '' AND T4.UPLOAD_STATUS &lt;&gt; 'CRD20'
+        )
+        SELECT A.CHEM_ID, A.CHEM_NM_KR, A.CHEM_NM_EN, A.LAW_NM, A.REGUL_ITM_NM, A.ACT_TYPE, A.ACT_TYPE_DESC
+        , A.CHEM_NO, A.REGUL_ITM_NO, A.REGUL_LAW_CD, C.CHEM_PROD_NO, C.CHEM_PROD_NM_KR, C.CHEM_PROD_NM_EN, C.SAP_MAT_CD
+        FROM A
+        INNER JOIN COM_CHEMPROD_CHEM B ON A.CHEM_NO = B.CHEM_NO
+        INNER JOIN COM_CHEMPROD C ON B.CHEM_PROD_NO = C.CHEM_PROD_NO
+        ORDER BY A.CHEM_NM_KR, C.CHEM_PROD_NM_KR
+    </select>
+
+    <!-- 적용전 규제DB의 영향받을 화학물질 정보  -->
+    <select id= "getAffectedChemBefore" resultType= "com.she.chm.model.ChemicalRegulDbValid">
+        SELECT T3.CHEM_ID, T3.chem_nm_kr, T3.CHEM_NM_EN, CHMLAW.code_nm AS LAW_NM, CHMREGUL.regul_itm_nm
+        , (CASE WHEN T1.DB_TYPE = '1' THEN '추가' WHEN T1.DB_TYPE = '3' THEN '기준치변경' WHEN T1.DB_TYPE = '2' THEN '삭제' ELSE '' END) AS ACT_TYPE
+        , (CASE WHEN T1.DB_TYPE = '1' THEN '추가' WHEN T1.DB_TYPE = '3' THEN CONCAT(T2.stnd_val,' -> ', T1.cont_std_num) WHEN T1.DB_TYPE = '2' THEN '삭제' ELSE '' END) AS ACT_TYPE_DESC
+        , T3.CHEM_NO, T2.REGUL_ITM_NO, CHMREGUL.REGUL_LAW_CD
+        FROM CHM_REGUL_DB T1
+        INNER JOIN CHM_REGUL_DB_HIST T4 ON T1.CHM_REGUL_DB_CD = T4.CHM_REGUL_DB_CD
+        INNER JOIN CHM_REGUL_ITM_CHEM_VAL T2 ON T1.ADMIN_NUM = T2.ADMIN_NUM
+        INNER JOIN COM_CHEM T3 ON T2.CHEM_NO = T3.CHEM_NO AND T1.CHEM_ID = T3.CHEM_ID
+        INNER JOIN DBO.CHM_REGUL_ITM CHMREGUL ON T2.REGUL_ITM_NO = CHMREGUL.REGUL_ITM_NO
+        INNER JOIN DBO.COM_CODE_MASTER CHMLAW ON CHMREGUL.REGUL_LAW_CD = CHMLAW.CODE AND CHMLAW.CODE_GROUP_CD = 'CHM_REGUL_LAW'
+        WHERE T1.chm_regul_db_cd = #{chmRegulDbCd}
+        AND ISNULL(T1.ERR_MSG,'') = '' AND T4.UPLOAD_STATUS &lt;&gt; 'CRD20'
+        ORDER BY T3.chem_nm_kr
+    </select>
+
+    <!-- 적용후 규제DB의 영향받을 자재 정보  -->
+    <select id= "getAffectedProdAfter" resultType= "com.she.chm.model.ChemicalRegulDbValid">
+        WITH A AS (
+            SELECT T3.CHEM_ID, T3.CHEM_NM_KR, T3.CHEM_NM_EN, CHMLAW.code_nm AS LAW_NM, CHMREGUL.regul_itm_nm
+            , (CASE WHEN T1.DB_TYPE = '1' THEN '추가' WHEN T1.DB_TYPE = '3' THEN '기준치변경' WHEN T1.DB_TYPE = '2' THEN '삭제' ELSE '' END) AS ACT_TYPE
+            , T1.APPLY_MSG AS ACT_TYPE_DESC
+            , T1.CHEM_NO, T1.REGUL_ITM_NO, CHMREGUL.REGUL_LAW_CD
+            FROM CHM_REGUL_DB_APPLY_HIST T1
+            INNER JOIN CHM_REGUL_DB_HIST T2 ON T1.CHM_REGUL_DB_CD = T2.CHM_REGUL_DB_CD
+            INNER JOIN COM_CHEM T3 ON T1.CHEM_NO = T3.CHEM_NO
+            INNER JOIN DBO.CHM_REGUL_ITM CHMREGUL ON T1.REGUL_ITM_NO = CHMREGUL.REGUL_ITM_NO
+            INNER JOIN DBO.COM_CODE_MASTER CHMLAW ON CHMREGUL.REGUL_LAW_CD = CHMLAW.CODE AND CHMLAW.CODE_GROUP_CD = 'CHM_REGUL_LAW'
+            WHERE T1.CHM_REGUL_DB_CD = #{chmRegulDbCd}
+            AND T1.APPLY_TABLE &lt;&gt; 'CHM_REGUL_ITM_CHEM_VAL:::000'
+            AND T2.UPLOAD_STATUS = 'CRD40'
+        )
+        SELECT A.CHEM_ID, A.CHEM_NM_KR, A.CHEM_NM_EN, A.LAW_NM, A.REGUL_ITM_NM, A.ACT_TYPE, A.ACT_TYPE_DESC
+        , A.CHEM_NO, A.REGUL_ITM_NO, A.REGUL_LAW_CD, C.CHEM_PROD_NO, C.CHEM_PROD_NM_KR, C.CHEM_PROD_NM_EN, C.SAP_MAT_CD
+        FROM A
+        INNER JOIN COM_CHEMPROD_CHEM B ON A.CHEM_NO = B.CHEM_NO
+        INNER JOIN COM_CHEMPROD C ON B.CHEM_PROD_NO = C.CHEM_PROD_NO
+        ORDER BY A.CHEM_NM_KR, C.CHEM_PROD_NM_KR
+    </select>
+
+    <!-- 적용후 규제DB의 영향받은 화학물질 정보  -->
+    <select id= "getAffectedChemAfter" resultType= "com.she.chm.model.ChemicalRegulDbValid">
+        SELECT T3.CHEM_ID, T3.CHEM_NM_KR, T3.CHEM_NM_EN, CHMLAW.code_nm AS LAW_NM, CHMREGUL.regul_itm_nm
+        , (CASE WHEN T1.DB_TYPE = '1' THEN '추가' WHEN T1.DB_TYPE = '3' THEN '기준치변경' WHEN T1.DB_TYPE = '2' THEN '삭제' ELSE '' END) AS ACT_TYPE
+        , T1.APPLY_MSG AS ACT_TYPE_DESC
+        , T1.CHEM_NO, T1.REGUL_ITM_NO, CHMREGUL.REGUL_LAW_CD
+        FROM CHM_REGUL_DB_APPLY_HIST T1
+        INNER JOIN CHM_REGUL_DB_HIST T2 ON T1.CHM_REGUL_DB_CD = T2.CHM_REGUL_DB_CD
+        INNER JOIN COM_CHEM T3 ON T1.CHEM_NO = T3.CHEM_NO
+        INNER JOIN DBO.CHM_REGUL_ITM CHMREGUL ON T1.REGUL_ITM_NO = CHMREGUL.REGUL_ITM_NO
+        INNER JOIN DBO.COM_CODE_MASTER CHMLAW ON CHMREGUL.REGUL_LAW_CD = CHMLAW.CODE AND CHMLAW.CODE_GROUP_CD = 'CHM_REGUL_LAW'
+        WHERE T1.CHM_REGUL_DB_CD = #{chmRegulDbCd}
+        AND T1.APPLY_TABLE &lt;&gt; 'CHM_REGUL_ITM_CHEM_VAL:::000'
+        AND T2.UPLOAD_STATUS = 'CRD40'
+        ORDER BY T3.CHEM_NM_KR
+    </select>
+
+</mapper>

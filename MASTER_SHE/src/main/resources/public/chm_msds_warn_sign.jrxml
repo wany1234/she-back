@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.9.0.final using JasperReports Library version 6.9.0-cb8f9004be492ccc537180b49c026951f4220bf3  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Blank_A4_Landscape" pageWidth="420" pageHeight="298" orientation="Landscape" columnWidth="380" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isSummaryWithPageHeaderAndFooter="true" uuid="8718a359-b145-4ea1-b36a-c7e3a50b6a19">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="PSSHE"/>
+	<parameter name="msdsRqstNo" class="java.lang.Integer">
+		<parameterDescription><![CDATA[MSDS정보번호]]></parameterDescription>
+		<defaultValueExpression><![CDATA[1002]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="chemProdNmKr" class="java.lang.String">
+		<fieldDescription><![CDATA[chemProdNmKr]]></fieldDescription>
+	</field>
+	<field name="chemProdNmEn" class="java.lang.String">
+		<fieldDescription><![CDATA[chemProdNmEn]]></fieldDescription>
+	</field>
+	<field name="chemProdNo" class="java.lang.String">
+		<fieldDescription><![CDATA[chemProdNo]]></fieldDescription>
+	</field>
+	<field name="signalDesc" class="java.lang.String">
+		<fieldDescription><![CDATA[signalDesc]]></fieldDescription>
+	</field>
+	<field name="hazDangerDesc" class="java.lang.String">
+		<fieldDescription><![CDATA[hazDangerDesc]]></fieldDescription>
+	</field>
+	<field name="preventActDesc" class="java.lang.String">
+		<fieldDescription><![CDATA[preventActDesc]]></fieldDescription>
+	</field>
+	<field name="vendorCd" class="java.lang.String">
+		<fieldDescription><![CDATA[vendorCd]]></fieldDescription>
+	</field>
+	<field name="vendorNm" class="java.lang.String">
+		<fieldDescription><![CDATA[vendorNm]]></fieldDescription>
+	</field>
+	<field name="makecpCd" class="java.lang.String">
+		<fieldDescription><![CDATA[makecpCd]]></fieldDescription>
+	</field>
+	<field name="makecpNm" class="java.lang.String">
+		<fieldDescription><![CDATA[makecpNm]]></fieldDescription>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="36" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="3" width="380" height="30" uuid="37c94a49-09b5-40ba-a9f2-6694049f1cb4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="굴림" size="18"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{chemProdNmKr}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="229" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="9" width="370" height="19" uuid="619bc076-f676-47b9-a27f-61c50f8453f1"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="굴림" size="14"/>
+				</textElement>
+				<text><![CDATA[● 신호어 ]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="10" y="29" width="370" height="30" uuid="8aadaf0f-0888-40cb-b7cf-9a97ebd73364"/>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="굴림" size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{signalDesc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="10" y="69" width="370" height="19" uuid="4245c6d5-7a0f-47d1-bfad-01bcce01e100"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="굴림" size="14"/>
+				</textElement>
+				<text><![CDATA[● 유해·위험문구]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="129" width="370" height="19" uuid="2fb73fd0-2348-490f-b586-f8a51d63bace"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="굴림" size="14"/>
+				</textElement>
+				<text><![CDATA[● 예방조치문구  ]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="10" y="89" width="370" height="30" uuid="d739e5d1-9fe1-4f38-90c5-925ba7389384"/>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="굴림" size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hazDangerDesc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="10" y="149" width="370" height="30" uuid="7134ab43-cc34-4140-adf7-91d79a1a4078"/>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="굴림" size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{preventActDesc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="110" y="193" width="270" height="30" uuid="101da450-9836-44b8-96f3-ea0d41051949"/>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="굴림" size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{vendorNm}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="8" y="193" width="100" height="30" uuid="a44cc01f-9990-4f0a-8d33-fa2071bd45d4"/>
+				<textElement>
+					<font fontName="굴림" size="14"/>
+				</textElement>
+				<text><![CDATA[● 공급자정보 : ]]></text>
+			</staticText>
+		</band>
+	</detail>
+</jasperReport>

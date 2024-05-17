@@ -1,0 +1,51 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.security.mapper.LoginLogMapper">
+    <select id= "getLoginLogs" parameterType= "com.she.security.model.SearchCond" resultType= "com.she.security.model.token.UserTokenStore">
+        select t.login_log_no
+        , t.login_type
+        , t.conn_user_id
+        , t.conn_user_nm
+        , t.conn_user_token
+        , t.conn_error_yn
+        , t.conn_error_msg
+        , t.conn_ip
+        , t.insert_dt
+        from com_login_log
+    </select>
+
+    <insert id= "createLoginLog" parameterType= "com.she.security.model.LoginLog">
+        <selectKey keyProperty= "loginLogNo" resultType= "long" order= "BEFORE">
+            select next value for seq_com_login_log as loginLogNo
+          </selectKey>
+        INSERT INTO com_login_log
+        (login_log_no
+        , login_type
+        , conn_user_id
+        , conn_user_nm
+        , conn_user_token
+        , conn_error_yn
+        , conn_error_msg
+        , conn_ip
+        , insert_dt)
+        VALUES
+        (#{loginLogNo}
+        , #{loginType}
+        , #{connUserId}
+        , #{connUserNm}
+        , #{connUserToken}
+        , #{connErrorYn}
+        , #{connErrorMsg}
+        , #{connIp}
+        , getDate())
+    </insert>
+    
+    <update id ="updateLoginLog">
+        Update com_login_log Set
+            logout_dt = getdate()
+        Where conn_user_id = #{userId} And logout_dt Is Null
+    </update>
+    
+    
+</mapper>

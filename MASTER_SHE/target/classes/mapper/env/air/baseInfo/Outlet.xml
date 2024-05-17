@@ -1,0 +1,316 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.air.baseInfo.mapper.OutletMapper">
+
+    <select id= "getOutlets" resultType= "com.she.env.air.model.Outlet">
+        /* OutletMapper.getOutlets [Outlet.xml] */
+        SELECT t.eair_outlet_no
+              ,concat(t.eair_outlet_nm, '(',t.main_disch_fac_nm ,')') as outlet_nm
+              ,t.plant_cd
+              ,p.code_nm as plantNm
+              ,t.eair_outlet_nm
+              ,t.eair_outlet_diam
+              ,t.eair_outlet_ht
+              ,t.main_disch_fac_nm
+              ,t.air_perd_cd as airPerdCd
+              ,b.code_nm as airPerdNm
+              ,t.sort_order
+              ,t.use_yn
+              ,t.eair_outlet_permit_no
+              ,t.sap_cd
+              ,case when t.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+              ,t.dept_cd as deptCd
+              ,cd.dept_nm
+              ,t.mg_dept_cd
+              ,mgtDept.dept_nm as mg_dept_nm
+              ,t.create_user_id
+              ,cu.user_nm as create_user_nm
+              ,t.create_dt
+              ,t.update_user_id
+              ,uu.user_nm as update_user_nm
+              ,t.update_dt
+              ,t.sems_yn
+              ,case when t.airtot_target_yn = 'Y' then ' 사용' else '미사용' end as airtot_target_yn
+              , case
+                   when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+                   else dbo.GET_USER_NM(t.update_user_id) end    as writer_user_nm
+              , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+          FROM eair_outlet t
+         INNER JOIN com_user cu
+            ON t.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON t.update_user_id = uu.user_id
+          LEFT OUTER JOIN com_dept cd
+            ON t.dept_cd = cd.dept_cd
+         INNER JOIN com_dept mgtDept
+            ON t.mg_dept_cd = mgtDept.dept_cd
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') p
+            ON p.code = t.plant_cd
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_SELF_TEST_PERD') b
+            ON b.code = t.air_perd_cd
+         WHERE 1=1
+        <if test= "useYn != null and !useYn.equals('')">
+           AND t.use_yn = #{useYn}
+        </if>
+        <if test= "eairOutletNm != null and !eairOutletNm.equals('')">
+           AND upper(t.eair_outlet_nm) like '%'+upper(#{eairOutletNm})+'%'
+        </if>
+        <if test= "mainDischFacNm != null and !mainDischFacNm.equals('')">
+           AND upper(t.main_disch_fac_nm) like '%'+upper(#{mainDischFacNm})+'%'
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+           AND t.plant_cd = #{plantCd}
+        </if>
+        <if test="mgDeptCd != null and !mgDeptCd.equals('')">
+           AND t.mg_dept_cd = #{mgDeptCd}
+        </if>
+         ORDER BY writer_dt desc, t.plant_cd, t.eair_outlet_nm
+    </select>
+
+    <select id= "getOutletTestItems" resultType= "com.she.env.air.model.TestItem">
+        /* OutletMapper.getOutletTestItems [Outlet.xml] */
+        SELECT o.eair_test_item_cd
+              ,t.eair_test_item_nm
+              ,t.env_unit_cd
+              ,c.code_nm as env_unit_nm
+              ,o.eair_inst_cd
+              ,ic.code_nm as eair_inst_nm
+              ,o.eair_test_mtd_cd
+              ,mc.code_nm as eair_test_mtd_nm
+              ,isnull(o.disch_amt_calc_factor, 0) as disch_amt_calc_factor
+              ,isnull(o.legal_limit, 0) as legal_limit
+              ,isnull(o.self_limit, 0) as self_limit
+              ,t.remark
+              ,o.limit_per_day
+              ,o.sort_order
+              ,o.use_yn
+              ,case when o.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+              ,o.create_user_id as createUserId
+          FROM eair_outlet_test_item o
+         INNER JOIN eair_test_item t
+            ON o.eair_test_item_cd = t.eair_test_item_cd
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_INST') ic
+            ON o.eair_inst_cd = ic.code
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_TEST_MTD') mc
+            ON o.eair_test_mtd_cd = mc.code
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ENV_UNIT') c
+            ON t.env_unit_cd = c.code
+         WHERE o.eair_outlet_no = #{eairOutletNo}
+    </select>
+
+    <select id= "getOutlet" resultType= "com.she.env.air.model.Outlet">
+        /* OutletMapper.getOutlet [Outlet.xml] */
+        SELECT t.eair_outlet_no
+              ,t.eair_outlet_nm
+              ,t.plant_cd
+              ,t.eair_outlet_diam
+              ,t.eair_outlet_ht
+              ,t.main_disch_fac_nm
+              ,t.air_perd_cd
+              ,t.eair_outlet_permit_no
+              ,t.dept_cd
+              ,t.mg_dept_cd
+              ,t.sap_cd
+              ,t.sort_order
+              ,t.use_yn
+              ,t.create_user_id
+              ,t.create_dt
+              ,t.update_user_id
+              ,t.update_dt
+              ,t.prevent_fac_exem_yn
+              ,t.sems_yn
+              ,t.efficiency
+              ,t.airtot_target_yn
+          FROM eair_outlet t
+         WHERE t.eair_outlet_no = #{eairOutletNo}
+    </select>
+
+    <insert id= "createOutlet" parameterType= "com.she.env.air.model.Outlet">
+        /* OutletMapper.createOutlet [Outlet.xml] */
+        <selectKey keyProperty= "eairOutletNo" resultType= "int" order= "BEFORE">
+            SELECT next value for seq_eair_outlet as eair_outlet_no
+        </selectKey>
+        INSERT INTO eair_outlet
+            (eair_outlet_no
+            ,eair_outlet_nm
+            ,eair_outlet_permit_no
+            ,eair_outlet_diam
+            ,eair_outlet_ht
+            ,main_disch_fac_nm
+            ,sort_order
+            ,use_yn
+            ,sap_cd
+            ,dept_cd
+            ,mg_dept_cd
+            ,plant_cd
+            ,air_perd_cd
+            ,create_user_id
+            ,create_dt
+            ,prevent_fac_exem_yn
+            ,sems_yn
+            ,airtot_target_yn
+            ,efficiency)
+        VALUES
+            (#{eairOutletNo}
+            ,#{eairOutletNm}
+            ,#{eairOutletPermitNo}
+            ,#{eairOutletDiam}
+            ,#{eairOutletHt}
+            ,#{mainDischFacNm}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{sapCd}
+            ,#{deptCd}
+            ,#{mgDeptCd}
+            ,#{plantCd}
+            ,#{airPerdCd}
+            ,#{createUserId}
+            ,getdate()
+            ,#{preventFacExemYn}
+            ,#{semsYn}
+            ,#{airtotTargetYn}
+            ,#{efficiency})
+    </insert>
+
+    <insert id= "createOutletTestItem" parameterType= "com.she.env.air.model.TestItem">
+        /* OutletMapper.createOutletTestItem [Outlet.xml] */
+        INSERT INTO eair_outlet_test_item
+            (eair_outlet_no
+            ,eair_test_item_cd
+            ,disch_amt_calc_factor
+            ,legal_limit
+            ,self_limit
+            ,eair_inst_cd
+            ,eair_test_mtd_cd
+            ,sort_order
+            ,use_yn
+            ,limit_per_day
+            ,create_user_id
+            ,create_dt)
+        VALUES
+            (<if test = "eairOutletNo == 0"> ( select isnull(max(eair_outlet_no),1) as eair_outlet from eair_outlet  ) </if>
+            <if test = "eairOutletNo != 0"> #{eairOutletNo}</if>
+            ,#{eairTestItemCd}
+            ,#{dischAmtCalcFactor}
+            ,#{legalLimit}
+            ,#{selfLimit}
+            ,#{eairInstCd}
+            ,#{eairTestMtdCd}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{limitPerDay} 
+            ,#{createUserId}
+            ,getDate())
+    </insert>
+
+    <update id= "updateOutlet" parameterType= "com.she.env.air.model.Outlet">
+        /* OutletMapper.updateOutlet [Outlet.xml] */
+        UPDATE eair_outlet
+           SET eair_outlet_nm = #{eairOutletNm}
+              ,eair_outlet_permit_no = #{eairOutletPermitNo}
+              ,eair_outlet_diam = #{eairOutletDiam}
+              ,sap_cd = #{sapCd}
+              ,eair_outlet_ht = #{eairOutletHt}
+              ,main_disch_fac_nm = #{mainDischFacNm}
+              ,plant_cd = #{plantCd}
+              ,dept_cd = #{deptCd}
+              ,mg_dept_cd = #{mgDeptCd}
+              ,sort_order = #{sortOrder}
+              ,use_yn = #{useYn}
+              ,air_perd_cd = #{airPerdCd}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+              ,prevent_fac_exem_yn = #{preventFacExemYn}
+              ,sems_yn = #{semsYn}
+              ,airtot_target_yn = #{airtotTargetYn}
+              ,efficiency = #{efficiency}
+
+         WHERE eair_outlet_no = #{eairOutletNo}
+    </update>
+
+    <delete id= "deleteOutletTestItem">
+        /* OutletMapper.deleteOutletTestItem [Outlet.xml] */
+        DELETE eair_outlet_test_item
+         WHERE eair_outlet_no = #{eairOutletNo}
+    </delete>
+
+    <select id="checkOutlet" resultType="int">
+        /* OutletMapper.checkOutlet [Outlet.xml] */
+        SELECT count(*)
+          FROM eair_outlet
+         WHERE 1=1
+           AND plant_cd = #{plantCd}
+           AND main_disch_fac_nm = #{mainDischFacNm}
+        <if test="eairOutletNo!= null and eairOutletNo>0">
+           AND eair_outlet_no not in (#{eairOutletNo})
+        </if>
+    </select>
+
+     <insert id= "createOutletDischItem" parameterType= "com.she.env.air.model.OutletDischFacItem">
+        /* outletN.createOutletDischItem [outletN.xml] */
+        INSERT INTO eair_outlet_disch_fac
+            (eair_disch_fac_no
+            ,eair_outlet_no)
+        VALUES
+            (#{eairDischFacNo}
+            ,#{eairOutletNo})
+    </insert>
+
+
+
+     <delete id="delOutletDischItem">
+        delete from  eair_outlet_disch_fac
+        where eair_outlet_no = #{eairOutletNo}
+    </delete>
+
+
+
+    <select id="getOutletDischItem" resultType= "com.she.env.air.model.OutletDischFacItem">
+    /* outletN.getOutletDischItem [outletN.xml] */
+        select odf.eair_disch_fac_no, odf.eair_disch_fac_no as code , df.eair_disch_fac_nm as name
+        from eair_outlet_disch_fac odf
+        inner join eair_disch_fac df
+        on odf.eair_disch_fac_no = df.eair_disch_fac_no
+        where odf.eair_outlet_no = #{eairOutletNo}
+    </select>
+
+
+
+    <insert id="createSerialPreventFac" parameterType="com.she.env.air.model.OutletPreventSerial">
+        insert into eair_outlet_prevent_serial
+        (
+            eair_outlet_no
+            ,eair_prevent_fac_no
+            ,eair_serial_prevent_fac_no
+            ,serial
+        )
+        values(
+            #{eairOutletNo}
+            ,#{eairPreventFacNo}
+            ,#{eairSerialPreventFacNo}
+            ,#{serial}
+        )
+    </insert>
+
+    <delete id="delSerialPreventFac" >
+        delete from eair_outlet_prevent_serial
+        where eair_outlet_no = #{eairOutletNo}
+    </delete>
+
+    <select id="getSerialPreventFac" resultType="com.she.env.air.model.OutletPreventSerial">
+        select
+            s.eair_outlet_no
+            ,s.eair_prevent_fac_no
+            ,pf.eair_prevent_fac_nm
+            ,s.eair_serial_prevent_fac_no
+            ,pf2.eair_prevent_fac_nm as eair_serial_prevent_fac_nm
+            ,s.serial
+        from eair_outlet_prevent_serial s
+        inner join eair_prevent_fac pf
+        on s.eair_prevent_fac_no = pf.eair_prevent_fac_no
+        left join eair_prevent_fac pf2
+        on s.eair_serial_prevent_fac_no = pf2.eair_prevent_fac_no
+        where s.eair_outlet_no = #{eairOutletNo}
+    </select>
+</mapper>

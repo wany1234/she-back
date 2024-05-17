@@ -1,0 +1,118 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.baseInfo.mapper.SafetyActionBizFieldItemMapper">
+
+    <select id= "getSafetyActionBizFieldItems" resultType= "com.she.mgt.baseInfo.model.BizFieldItem">
+        /* SafetyActionBizFieldItemMapper.getSafetyActionBizFieldItems [SafetyActionBizFieldItem.xml] */
+        select bfi.biz_field_item_no, cm.code as biz_field_cd, cm.code_nm as biz_field_nm   
+            , bfi.biz_field_item_nm, bfi.dec_place, bfi.dashboard_yn, bfi.use_yn
+            ,case when bfi.dashboard_yn = 'Y' then '사용'else '미사용' end as dashboard_yn_nm            
+            ,case when bfi.use_yn = 'Y' then '사용'else '미사용' end as use_yn_nm
+            , cu.user_nm as create_user_nm
+            , convert(CHAR(10), isnull(bfi.update_dt, bfi.create_dt), 23) as create_dt
+            , bfi.sort_order
+        from mgt_saf_act_biz_field_item bfi 
+        inner join com_code_master cm on bfi.biz_field_cd = cm.code 
+        left outer join com_user cu on bfi.create_user_id = cu.user_id  
+        where cm.code_group_cd = 'MGT_BIZ_FIELD'    
+        and cm.use_yn = 'Y' 
+        <if test= "bizFieldCd != null and !bizFieldCd.equals('')">
+        and cm.code = #{bizFieldCd}
+        </if>   
+        <if test= "bizFieldItemNm != null and !bizFieldItemNm.equals('')">
+        and bfi.biz_field_item_nm like '%' + #{bizFieldItemNm} + '%'
+        </if>   
+        <if test= "useYn != null and !useYn.equals('')">
+        and bfi.use_yn = #{useYn}   
+        </if>
+        <if test= "from != null and !from.equals('') and to != null and !to.equals('')">
+        and isnull(bfi.update_dt, bfi.create_dt) between convert(datetime, #{from}) and convert(datetime, #{to}) 
+        </if>
+        <if test= "createUserNm != null and !createUserNm.equals('')">
+        and cu.user_nm like '%' + #{createUserNm} + '%'
+        </if>     
+        order by cm.sort_order, bfi.sort_order        
+    </select>
+    
+    <select id="getSafetyActionBizFieldItem" resultType="com.she.mgt.baseInfo.model.BizFieldItem">
+        /* SafetyActionBizFieldItemMapper.getSafetyActionBizFieldItem [SafetyActionBizFieldItem.xml] */
+        select biz_field_item_no, biz_field_cd, biz_field_item_nm
+            , dec_place, sort_order, dashboard_yn, use_yn
+            , create_user_id, create_dt
+        from mgt_saf_act_biz_field_item
+        where biz_field_item_no = #{bizFieldItemNo}
+    </select>
+    
+    <insert id="createSafetyActionBizFieldItem" parameterType="com.she.mgt.baseInfo.model.BizFieldItem">
+        /* SafetyActionBizFieldItemMapper.createSafetyActionBizFieldItem [SafetyActionBizFieldItem.xml] */
+        <selectKey keyProperty="bizFieldItemNo" resultType="int" order="BEFORE">
+            select next value for seq_biz_field_item_no
+        </selectKey>
+        insert into mgt_saf_act_biz_field_item(
+           biz_field_item_no
+           , biz_field_cd
+           , biz_field_item_nm
+           , dec_place
+           , sort_order
+           , dashboard_yn
+           , use_yn
+           , create_user_id
+           , create_dt
+           , create_dept_nm
+           , create_dept_cd
+           , create_position_nm
+           , create_position_cd)
+       values (
+           #{bizFieldItemNo}
+           , #{bizFieldCd}
+           , #{bizFieldItemNm}
+           , #{decPlace}
+           , #{sortOrder}
+           , #{dashboardYn}
+           , #{useYn}
+           , #{createUserId}
+           , getdate()
+           , (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
+           , (select dept_cd from com_user where user_id = #{createUserId})
+           , (select position_nm from com_user where user_id = #{createUserId})
+           , (select position_cd from com_user where user_id = #{createUserId})
+       )
+    </insert>
+
+    <insert id="updateSafetyActionBizFieldItem" parameterType="com.she.mgt.baseInfo.model.BizFieldItem">
+        /* SafetyActionBizFieldItemMapper.updateSafetyActionBizFieldItem [SafetyActionBizFieldItem.xml] */
+        update mgt_saf_act_biz_field_item
+        set biz_field_cd = #{bizFieldCd}
+            , biz_field_item_nm = #{bizFieldItemNm}
+            , dec_place = #{decPlace}
+            , sort_order = #{sortOrder}
+            , dashboard_yn = #{dashboardYn}
+            , use_yn = #{useYn}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+            , update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
+            , update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
+            , update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
+            , update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
+        where biz_field_item_no = #{bizFieldItemNo}
+    </insert>
+
+    <select id= "checkSafetyActionBizFieldItem" resultType= "HashMap">
+        /* SafetyActionBizFieldItemMapper.checkSafetyActionBizField [SafetyActionBizFieldItem.xml] */                      
+        select 1
+            ,'code' as gubun
+        from mgt_saf_act_biz_field_item 
+        where biz_field_cd = #{bizFieldCd}
+        and biz_field_item_nm = #{bizFieldItemNm}
+        union all
+        select 1
+            ,'name' as gubun
+        where exists(select 1
+                    from mgt_saf_act_biz_field_item
+                    where biz_field_cd = #{bizFieldCd}
+                    and biz_field_item_nm = #{bizFieldItemNm}
+                    and biz_field_item_no != #{bizFieldItemNo})
+    </select>
+    
+</mapper>

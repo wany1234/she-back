@@ -1,0 +1,129 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.air.baseInfo.mapper.ChemBaseMapper">
+    
+    <select id= "getChemBases" resultType= "com.she.env.air.model.ChemBase">
+        /* ChemBaseMapper.getChemBases [ChemBase.xml] */
+        SELECT c.eair_chem_cd
+              ,c.eair_chem_nm
+              ,c.plant_cd
+              ,b.code_nm as plant_nm
+              ,c.env_unit_cd
+              ,cm.code_nm as env_unit_nm
+              ,c.sems_code
+              ,c.remark
+              ,c.use_yn
+              ,case when c.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+              ,c.sort_order
+              ,c.eair_chem_cd as code
+              ,c.eair_chem_nm +'('+ cm.code_nm +')' as codeNm
+              ,c.create_user_id
+              ,c.create_dt
+              ,c.update_user_id
+              ,c.update_dt
+              ,cu.user_nm as create_user_nm
+              ,uu.user_nm as update_user_nm
+              , case
+                   when dbo.GET_USER_NM(c.update_user_id) = '' then dbo.GET_USER_NM(c.create_user_id)
+                   else dbo.GET_USER_NM(c.update_user_id) end    as writer_user_nm
+              , case when c.update_dt is null then convert(date, c.create_dt) else convert(date, c.update_dt) end   as writer_dt
+          FROM eair_chem c
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') b
+            ON c.plant_cd = b.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_CHEM_UNIT') cm
+            ON c.env_unit_cd = cm.code
+         INNER JOIN com_user cu
+            ON c.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON c.update_user_id = uu.user_id
+         WHERE 1=1
+        <if test='useYn != null and useYn != ""'>
+           AND c.use_yn = #{useYn}
+        </if>
+        <if test='plantCd != null and plantCd != ""'>
+           AND c.plant_cd = #{plantCd}
+        </if>
+        <if test='eairChemNm != null and !eairChemNm.equals("")'>
+            AND c.eair_chem_nm like '%' + #{eairChemNm} + '%'
+        </if>
+         ORDER BY writer_dt desc, c.plant_cd
+    </select>
+    
+    <select id= "getChemBase" parameterType= "String" resultType= "com.she.env.air.model.ChemBase">
+        /* ChemBaseMapper.getChemBase [ChemBase.xml] */
+        SELECT c.eair_chem_cd
+              ,c.eair_chem_nm
+              ,c.plant_cd
+              ,c.env_unit_cd
+              ,c.sems_code
+              ,c.remark
+              ,c.use_yn
+              ,c.sort_order
+              ,c.eair_chem_cd
+              ,c.eair_chem_nm
+              ,c.create_user_id
+              ,c.create_dt
+              ,c.update_user_id
+              ,c.update_dt
+          FROM eair_chem c
+         WHERE c.eair_chem_cd = #{eairChemCd}
+    </select>
+    
+    <insert id= "createChemBase" parameterType= "com.she.env.air.model.ChemBase">
+        /* ChemBaseMapper.createChemBase [ChemBase.xml] */
+        <selectKey keyProperty= "eairChemCd" resultType= "String" order= "BEFORE">
+            SELECT convert(varchar(5), replicate('0', 5-len(convert(varchar(5), next value for seq_eair_chem)))
+                    + convert(varchar(5), (SELECT current_value FROM sys.sequences WHERE lower(name)='seq_eair_chem'))) as eair_chem_cd
+        </selectKey>
+        INSERT INTO eair_chem
+            (eair_chem_cd
+            ,plant_cd
+            ,eair_chem_nm
+            ,env_unit_cd
+            ,sems_code
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+        VALUES
+            (#{eairChemCd}
+            ,#{plantCd}
+            ,#{eairChemNm}
+            ,#{envUnitCd}
+            ,#{semsCode}
+            ,#{remark}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+
+    <update id= "updateChemBase" parameterType= "com.she.env.air.model.ChemBase">
+        /* ChemBaseMapper.updateChemBase [ChemBase.xml] */
+        UPDATE eair_chem
+           SET plant_cd = #{plantCd}
+              ,eair_chem_nm = #{eairChemNm}
+              ,env_unit_cd = #{envUnitCd}
+              ,sems_code = #{semsCode}
+              ,remark = #{remark}
+              ,use_yn = #{useYn}
+              ,sort_order = #{sortOrder}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE eair_chem_cd = #{eairChemCd}
+    </update>
+    
+     <select id= "checkChemBase" parameterType= "com.she.env.air.model.ChemBase" resultType = "int">
+         /* ChemBaseMapper.checkChemBase [ChemBase.xml] */
+         SELECT count(*)
+           FROM eair_chem
+          WHERE 1=1
+            AND plant_cd = #{plantCd}
+            AND eair_chem_nm = #{eairChemNm}
+         <if test="eairChemCd!= null and !eairChemCd.equals('')">
+            AND eair_chem_cd not in (#{eairChemCd})
+         </if>
+    </select>
+</mapper>

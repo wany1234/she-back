@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.9.0.final using JasperReports Library version 6.9.0-cb8f9004be492ccc537180b49c026951f4220bf3  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="warn_sign_pic_graph" columnCount="5" printOrder="Horizontal" pageWidth="640" pageHeight="120" orientation="Landscape" columnWidth="128" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="98e409da-79e5-4d58-b400-ffdc32957ebd">
+	<property name="net.sf.jasperreports.awt.ignore.missing.font" value="true"/>
+	<property name="net.sf.jasperreports.print.create.bookmarks" value="true"/>
+	<parameter name="image_dir" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="picGraphNm1" class="java.lang.String"/>
+	<field name="picGraphNm2" class="java.lang.String"/>
+	<field name="picGraphNm3" class="java.lang.String"/>
+	<field name="picGraphNm4" class="java.lang.String"/>
+	<field name="picGraphNm5" class="java.lang.String"/>
+	<field name="picGraphNm6" class="java.lang.String"/>
+	<field name="picGraphNm7" class="java.lang.String"/>
+	<field name="picGraphNm8" class="java.lang.String"/>
+	<field name="picGraphNm9" class="java.lang.String"/>
+	<detail>
+		<band height="120" splitType="Stretch">
+			<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.FreeLayout"/>
+			<image hAlign="Center" vAlign="Middle">
+				<reportElement positionType="Float" x="268" y="0" width="120" height="120" uuid="bb91298e-559a-4b90-adda-dca7fe3a52d2">
+					<property name="net.sf.jasperreports.style.hImageAlign" value="CENTER"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<printWhenExpression><![CDATA[$F{picGraphNm1}!=null]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{image_dir}+$F{picGraphNm1}]]></imageExpression>
+			</image>
+			<image hAlign="Center" vAlign="Middle">
+				<reportElement positionType="Float" x="196" y="0" width="120" height="120" uuid="2ea3c696-8c24-48a4-9120-397184a54393">
+					<property name="net.sf.jasperreports.style.hImageAlign" value="CENTER"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<printWhenExpression><![CDATA[$F{picGraphNm2}!=null]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{image_dir}+$F{picGraphNm2}]]></imageExpression>
+			</image>
+			<image hAlign="Center" vAlign="Middle">
+				<reportElement positionType="Float" x="133" y="0" width="120" height="120" uuid="43abcb9d-2b8b-458d-9fb6-aa127b10d080">
+					<property name="net.sf.jasperreports.style.hImageAlign" value="CENTER"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<printWhenExpression><![CDATA[$F{picGraphNm3}!=null]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{image_dir}+$F{picGraphNm3}]]></imageExpression>
+			</image>
+			<image hAlign="Center" vAlign="Middle">
+				<reportElement positionType="Float" x="69" y="0" width="120" height="120" uuid="97b2db7d-64ec-4713-b659-1fe62799f508">
+					<property name="net.sf.jasperreports.style.hImageAlign" value="CENTER"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<printWhenExpression><![CDATA[$F{picGraphNm4}!=null]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{image_dir}+$F{picGraphNm4}]]></imageExpression>
+			</image>
+			<image hAlign="Center" vAlign="Middle">
+				<reportElement positionType="Float" x="5" y="0" width="120" height="120" uuid="39293124-6b83-4a6c-9561-9fedb756b992">
+					<property name="net.sf.jasperreports.style.hImageAlign" value="CENTER"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<printWhenExpression><![CDATA[$F{picGraphNm5}!=null]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{image_dir}+$F{picGraphNm5}]]></imageExpression>
+			</image>
+		</band>
+	</detail>
+</jasperReport>

@@ -1,0 +1,187 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.air.baseInfo.mapper.OpLogBaseMapper">
+    <select id="getOplogBases" resultType="com.she.env.air.model.OplogBase">
+        with t as (
+        select 
+            o.plant_cd
+            ,o.dept_cd
+            ,o.mg_dept_cd
+            ,o.eair_outlet_no
+            ,o.main_disch_fac_nm
+            ,o.eair_outlet_nm
+            ,o.eair_outlet_permit_no
+            ,s.eair_prevent_fac_no
+            ,pf.eair_prevent_fac_nm
+            ,s.serial
+            ,s.eair_serial_prevent_fac_no
+            ,pf2.eair_prevent_fac_nm as eair_serial_prevent_fac_nm
+            ,df.eair_disch_fac_no
+            ,df.eair_disch_fac_nm
+        from eair_outlet o
+        inner join eair_outlet_prevent_serial s
+        on o.eair_outlet_no = s.eair_outlet_no
+        inner join eair_prevent_fac pf
+        on s.eair_prevent_fac_no = pf.eair_prevent_fac_no
+        inner join eair_prevent_fac pf2
+        on s.eair_serial_prevent_fac_no = pf2.eair_prevent_fac_no
+        left join eair_prevent_disch_fac pdf
+        on pf2.eair_prevent_fac_no = pdf.eair_prevent_fac_no
+        left join eair_disch_fac df
+        on df.eair_disch_fac_no = pdf.eair_disch_fac_no
+        where o.use_yn = 'Y'
+        and o.prevent_fac_exem_yn ='N'
+        union all
+        select
+            o.plant_cd
+            ,o.dept_cd
+            ,o.mg_dept_cd
+            ,o.eair_outlet_no
+            ,o.main_disch_fac_nm
+            ,o.eair_outlet_nm
+            ,o.eair_outlet_permit_no
+            ,0 
+            ,'방지시설면제' as eair_prevent_fac_nm
+            ,0 
+            ,0
+            ,'방지시설면제' as eair_serial_prevent_fac_nm
+            ,df.eair_disch_fac_no
+            ,df.eair_disch_fac_nm
+        from eair_outlet o
+        inner join eair_outlet_disch_fac odf
+        on o.eair_outlet_no = odf.eair_outlet_no
+        inner join eair_disch_fac df
+        on odf.eair_disch_fac_no =  df.eair_disch_fac_no
+        where o.use_yn = 'Y'
+        and o.prevent_fac_exem_yn ='Y'
+        )
+        select 
+            t.plant_cd
+            ,t.dept_cd
+            ,t.mg_dept_cd
+            ,t.eair_outlet_no
+            ,t.main_disch_fac_nm
+            ,t.eair_outlet_nm
+            ,t.eair_outlet_permit_no
+            ,t.eair_prevent_fac_no
+            ,t.eair_prevent_fac_nm
+            ,t.serial
+            ,t.eair_serial_prevent_fac_no
+            ,t.eair_serial_prevent_fac_nm
+            ,t.eair_disch_fac_no
+            ,t.eair_disch_fac_nm
+            ,ob.eair_oplog_base_mst_no
+            ,isnull(ob.oplog_disch_yn,'') as oplog_disch_yn
+            ,isnull(ob.oplog_prevent_yn,'') as oplog_prevent_yn 
+        from t
+        left join eair_oplog_base ob
+        on t.eair_outlet_no = ob.eair_outlet_no
+        and t.eair_prevent_fac_no = ob.eair_prevent_fac_no
+        and t.eair_serial_prevent_fac_no = ob.eair_serial_prevent_fac_no
+        and isnull(t.eair_disch_fac_no,0) = ob.eair_disch_fac_no
+        where 1=1
+        and t.plant_cd = #{plantCd}
+
+        <if test="mgDeptCd !=null and !mgDeptCd.equals('')">
+        and t.mg_dept_cd = #{mgDeptCd}
+        </if>
+        order by t.eair_outlet_no, t.eair_prevent_fac_no, t.serial desc, t.eair_serial_prevent_fac_no
+    </select>
+
+    <insert id="createOplogBaseMst" parameterType="com.she.env.air.model.OplogBaseMst">
+        <selectKey keyProperty="eairOplogBaseMstNo" resultType="int" order="BEFORE">
+            select next value for seq_eair_oplog_base_mst as eairOplogBaseMstNo
+        </selectKey>
+            insert into eair_oplog_base_mst(
+                eair_oplog_base_mst_no
+                ,plant_cd
+                ,mg_dept_cd
+                ,create_user_id
+                ,create_dt
+            )
+            values(
+                #{eairOplogBaseMstNo}
+                ,#{plantCd}
+                ,#{mgDeptCd}
+                ,#{createUserId}
+                ,getDate()
+            )
+    </insert>
+
+    <update id="updateOPlogBaseMst" parameterType="com.she.env.air.model.OplogBaseMst">
+        update eair_oplog_base_mst
+            set plant_cd = #{plantCd}
+            ,mg_dept_cd = #{mgDeptCd}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where eair_oplog_base_mst_no = #{eairOplogBaseMstNo}
+    </update>
+
+    <insert id="createOplogBaseDept" parameterType="com.she.env.air.model.OplogBaseDept" >
+        insert into eair_oplog_base_dept(
+            eair_oplog_base_mst_no
+            ,dept_cd
+        )
+        values(
+            #{eairOplogBaseMstNo}
+            ,#{deptCd}
+        )
+    </insert>
+
+    <delete id="delOplogBaseDept">
+        delete from eair_oplog_base_dept where eair_oplog_base_mst_no = #{eairOplogBaseMstNo}
+    </delete>
+
+    <insert id="createOplogBase" parameterType="com.she.env.air.model.OplogBase">
+        insert into eair_oplog_base(
+            eair_oplog_base_mst_no
+            ,eair_outlet_no
+            ,eair_prevent_fac_no
+            ,eair_serial_prevent_fac_no
+            ,eair_disch_fac_no
+            ,oplog_disch_yn
+            ,oplog_prevent_yn
+        )
+        values(
+            #{eairOplogBaseMstNo}
+            ,#{eairOutletNo}
+            ,#{eairPreventFacNo}
+            ,#{eairSerialPreventFacNo}
+            ,#{eairDischFacNo}
+            ,#{oplogDischYn}
+            ,#{oplogPreventYn}
+        )
+
+    </insert>
+
+    <delete id="delOplogBase">
+        delete from eair_oplog_base where eair_oplog_base_mst_no = #{eairOplogBaseMstNo}
+    </delete>
+    
+    <select id="getOplogBaseMst" resultType="com.she.env.air.model.OplogBaseMst">
+        select 
+            m.eair_oplog_base_mst_no
+            ,m.plant_cd
+            ,m.mg_dept_cd
+            ,m.create_user_id
+            ,m.create_dt
+            ,m.update_user_id
+            ,m.update_dt
+        from eair_oplog_base_mst m
+        where plant_cd = #{plantCd}
+        and mg_dept_cd = #{mgDeptCd}
+    </select>
+
+    <select id="getOplogBaseDept" resultType="com.she.env.air.model.OplogBaseDept">
+        select 
+            bd.eair_oplog_base_mst_no
+            ,bd.dept_cd
+            ,cd.dept_nm
+        from eair_oplog_base_dept bd
+        inner join com_dept cd 
+        on bd.dept_cd = cd.dept_cd
+        where eair_oplog_base_mst_no = #{eairOplogBaseMstNo}
+    </select>
+   
+</mapper>

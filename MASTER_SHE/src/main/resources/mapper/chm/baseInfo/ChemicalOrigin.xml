@@ -1,0 +1,42 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.baseInfo.mapper.ChemicalOriginMapper">
+
+    <select id= "getChemicalOrigins" resultType= "com.she.chm.model.ChemicalOrigin">
+        /* ChemicalOriginMapper.getChemicalOrigins [ChemicalOrigin.xml] */
+        select co.origin_cd
+            ,co.origin_nm_en
+            ,co.origin_nm_kr
+            ,co.eu_yn
+            ,case
+                when co.eu_yn = 'Y' then '해당'
+                else '미해당'
+            end as eu_yn_nm
+            ,co.use_yn
+            ,case
+                when co.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,co.sort_order
+            ,co.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,co.create_dt
+            ,co.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,co.update_dt
+        from chm_origin co
+        inner join com_user createUser
+        on co.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on co.update_user_id = updateUser.user_id
+        where 1=1
+        and co.origin_nm_kr like '%' + #{originNmKr} + '%'
+        <if test= "useYn != null and !useYn.equals('')">
+        and co.use_yn = #{useYn}
+        </if>
+        order by co.sort_order
+    </select>
+   
+
+</mapper>

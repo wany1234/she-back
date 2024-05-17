@@ -1,0 +1,1150 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.preOper.mapper.PreOperCheckResultMapper">
+
+
+    <select id= "getNewFacilityCheckItemResults" resultType= "com.she.safety.model.FacilityCheckItemResult">
+        /* PreOperCheckResultMapper.getNewFacilityCheckItemResults [PreOperCheckResult.xml] */
+        select sft.saf_facility_type_cd
+             , sft.saf_facility_type_nm
+             , sfci.saf_facility_check_item_no
+             , sfci.saf_facility_check_nm
+        from saf_pre_operation_check_item sfci
+                 inner join saf_facility_type sft
+                on sfci.saf_facility_type_cd = sft.saf_facility_type_cd
+        where sfci.use_yn = 'Y'
+          and sft.use_yn = 'Y'
+          and sfci.saf_facility_type_cd = #{safFacilityTypeCd}
+          and sfci.plant_cd = #{plantCd}
+        order by sfci.sort_order
+    </select>
+
+    <!-- =============================================================================== -->
+    <!-- 설비점검계획 목록 조회 -->
+    <select id="getFacilChkPlans" parameterType="map" resultType="com.she.safety.model.FacilChkMaster">
+        /* PreOperCheckResultMapper.getFacilChkPlans [PreOperCheckResult.xml] */
+        SELECT p.saf_facil_chk_no
+        , p.plant_cd
+        , pl.code_nm AS plant_nm
+        , p.saf_facil_chk_title
+        , p.dept_cd
+        , d.dept_nm
+        , p.chk_step_cd
+        , p.saf_facility_check_ymd
+        , cs.code_nm AS chk_step_nm
+        , p.create_user_id
+        , u.user_nm AS create_user_nm
+        , CASE WHEN r.chk_end_yn = 'Y' THEN '완료' ELSE '미완료' END AS chkEndYnNm
+        , CONVERT(CHAR(10), p.create_dt, 23) AS create_dt
+        , ISNULL(apr.code_nm, '결재요청전') as bizApprStepNm
+        , ISNULL(apr2.code_nm, '결재요청전') as rBizApprStepNm
+        , r.saf_check_type_cd
+		, cs1.code_nm as saf_check_type_nm
+		, r.p_dept_cd as p_dept_cd
+		, d1.dept_nm as p_dept_nm
+        , req.appr_rqst_no AS apprRqstNo
+        , (select stuff((select ',' +  b.dept_nm from saf_pre_operation_chk_itm_fac a
+												INNER JOIN saf_facility_mst fmst
+													 ON a.saf_facility_cd = fmst.saf_facility_cd
+                                                INNER JOIN com_dept b
+                                                    on fmst.dept_cd = b.dept_cd
+													 where a.saf_facil_chk_no = p.saf_facil_chk_no
+													  group by b.dept_nm
+													  for xml path('')
+                                               ), 1, 1, '')
+								) as tDeptNm
+        , case
+            when dbo.GET_USER_NM(p.update_user_id) = '' then dbo.GET_USER_NM(p.create_user_id)
+            else dbo.GET_USER_NM(p.update_user_id) end    as writer_user_nm
+        , case when p.update_dt is null then convert(date, p.create_dt) else convert(date, p.update_dt) end   as writer_dt
+        FROM saf_pre_operation_chk_plan p
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') pl
+        ON p.plant_cd = pl.code
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHK_STEP2') cs
+        ON p.chk_step_cd = cs.code
+        LEFT OUTER JOIN saf_pre_operation_chk_foreach_item r
+		ON p.saf_facil_chk_no = r.saf_facil_chk_no
+		LEFT JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_PREOPERATION_CHECK') cs1
+        ON r.saf_check_type_cd = cs1.code
+        LEFT OUTER JOIN com_dept d
+        ON p.dept_cd = d.dept_cd
+        LEFT OUTER JOIN com_dept d1
+		ON r.p_dept_cd = d1.dept_cd
+        LEFT OUTER JOIN com_user u
+        ON p.create_user_id = u.user_id
+        LEFT OUTER JOIN com_appr_rqst req
+        ON p.appr_rqst_no = req.appr_rqst_no
+        LEFT OUTER JOIN com_appr_rqst req2
+        ON p.r_appr_rqst_no = req2.appr_rqst_no
+        LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') apr
+        ON req.biz_appr_step_cd = apr.code
+        LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') apr2
+        ON req2.biz_appr_step_cd = apr2.code
+        WHERE 1=1
+        <if test="plantCd != null and !plantCd.equals('')">
+            AND p.plant_cd in (select value from dbo.FN_GET_Split(#{plantCd},','))
+        </if>
+        <if test="checkStepCd != null and !checkStepCd.equals('')">
+            AND p.chk_step_cd = #{checkStepCd}
+        </if>
+        <if test="deptCd != null and !deptCd.equals('')">
+            <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+            AND EXISTS (SELECT 1 WHERE ISNULL(#{deptCd}, '') = ''
+                        UNION ALL
+                        SELECT 1 WHERE #{deptSubYn} = 'Y' AND p.dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{deptCd}))
+                        UNION ALL
+                        SELECT 1 WHERE #{deptSubYn} = 'N' AND p.dept_cd = #{deptCd}
+                        )
+            <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if>
+        <if test="tDeptCd != null and !tDeptCd.equals('')">
+        	<!-- 하위부서 포함여부 관련 쿼리 시작 -->
+        	AND EXISTS (
+        				SELECT 1
+        				FROM  saf_pre_operation_chk_itm_fac a
+        				INNER JOIN saf_facility_mst fmst
+						ON a.saf_facility_cd = fmst.saf_facility_cd
+        				where a.saf_facil_chk_no = p.saf_facil_chk_no
+
+        				<choose>
+        					<when test='tDeptSubYn == "Y"'>
+        						and fmst.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{tDeptCd}))
+        					</when>
+        					<when test='tDeptSubYn == "N"'>
+        						and fmst.dept_cd = #{tDeptCd}
+        					</when>
+        				</choose>
+        				)
+        	<!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if>
+        <if test="pDeptCd != null and !pDeptCd.equals('')">
+           <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+           AND EXISTS (SELECT 1 WHERE ISNULL(#{pDeptCd}, '') = ''
+                       UNION ALL
+                       SELECT 1 WHERE #{pDeptSubYn} = 'Y' AND r.p_dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{pDeptCd}))
+                       UNION ALL
+                       SELECT 1 WHERE #{pDeptSubYn} = 'N' AND r.p_dept_cd = #{pDeptCd}
+                       )
+           <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if>
+        <if test="chkEndYn != null and !chkEndYn.equals('')">
+           AND r.chk_end_yn = #{chkEndYn}
+        </if>
+        <if test="safCheckTypeCd != null and !safCheckTypeCd.equals('')">
+            AND p.saf_check_type_cd = #{safCheckTypeCd}
+        </if>
+        <if test="year != null and !year.equals('')">
+            AND datepart(yy, p.create_dt) = #{year}
+        </if>
+        <if test= "startYmd != null and !startYmd.equals('') and endYmd != null and !endYmd.equals('')">
+            and convert(date, p.saf_facility_check_ymd) between convert(date, #{startYmd}) and convert(date, #{endYmd})
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(keyword)">
+           AND p.saf_facil_chk_title like '%' + #{keyword} + '%'
+        </if>
+        order by writer_dt desc
+    </select>
+    <!-- 설비점검계획 상세 조회 -->
+    <select id="getFacilChkPlan" resultType="com.she.safety.model.FacilChkMaster">
+        /* PreOperCheckResultMapper.getFacilChkPlan [PreOperCheckResult.xml] */
+        SELECT p.saf_facil_chk_no
+             , p.plant_cd
+             , pl.code_nm AS plant_nm
+             , p.saf_facility_check_no
+             , p.saf_facil_chk_title
+             , p.dept_cd
+             , d.dept_nm
+             , p.chk_step_cd
+             , cs.code_nm AS chk_step_nm
+             , p.create_user_id
+             , u.user_nm AS create_user_nm
+             , CONVERT(CHAR(10), p.create_dt, 23) AS create_dt
+             , req.biz_appr_step_cd
+             , p.appr_rqst_no
+             , req2.biz_appr_step_cd as r_biz_appr_step_cd
+             , p.r_appr_rqst_no
+             , p.saf_check_type_cd
+             ,sc.saf_chng_no
+             ,sc.chng_num
+             , case when isnull(p.appr_rqst_no, 0) = 0 then 'Y' else 'N' end no_plan_yn -- 계획에 대한 결재번호가 없으면 무계획 결과등록한 데이터로 인식
+        FROM saf_pre_operation_chk_plan p
+                 INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') pl
+                            ON p.plant_cd = pl.code
+                 INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHK_STEP2') cs
+                            ON p.chk_step_cd = cs.code
+                 LEFT OUTER JOIN com_dept d
+                                 ON p.dept_cd = d.dept_cd
+                 LEFT OUTER JOIN com_user u
+                                 ON p.create_user_id = u.user_id
+                 LEFT OUTER JOIN saf_chng_ref_work scrw
+                                 ON scrw.ref_table_nm = 'saf_pre_operation_chk_plan'
+                                 AND scrw.ref_table_id = p.saf_facil_chk_no
+                 LEFT OUTER JOIN saf_chng sc
+                                 ON scrw.saf_chng_no = sc.saf_chng_no
+                 LEFT OUTER JOIN com_appr_rqst req
+                                 ON p.appr_rqst_no = req.appr_rqst_no
+                 LEFT OUTER JOIN com_appr_rqst req2
+                                 ON p.r_appr_rqst_no = req2.appr_rqst_no
+        WHERE p.saf_facil_chk_no = #{safFacilChkNo}
+    </select>
+
+     <!-- 설비점검 결과 목록 조회 -->
+    <select id="getFacilChkResults" resultType="com.she.safety.model.FacilChkResult">
+        /* PreOperCheckResultMapper.getFacilChkResults [PreOperCheckResult.xml] */
+
+        SELECT r.saf_facil_chk_no
+             , r.saf_facility_cd
+             , sft.saf_facility_type_nm
+             , r.chk_sch_ymd
+             , fmst.facility_nm
+             , fmst.facility_mgr_num
+             , fmst.dept_cd
+             , cd.dept_nm
+             , r.chk_end_yn
+             , CASE WHEN r.chk_end_yn = 'Y' THEN '완료' ELSE '미완료' END AS chkEndYnNm
+             , r.chk_ymd
+             ,stuff((
+                select ',' + cu.user_nm
+                from saf_pre_operation_chk_user chkuser
+                         inner join saf_pre_operation_chk_rslt rslt
+                                    on chkuser.saf_facil_chk_no = rslt.saf_facil_chk_no
+                                        and chkUser.saf_facility_cd = rslt.saf_facility_cd
+                         inner join com_user cu
+                                    on cu.user_id = chkUser.user_id
+                where rslt.saf_facil_chk_no = r.saf_facil_chk_no
+                  and rslt.saf_facility_cd = r.saf_facility_cd
+                for xml path('')
+                ), 1, 1, '') as chkUserNm
+        FROM saf_pre_operation_chk_rslt r
+                 INNER JOIN saf_facility_mst fmst
+                            ON r.saf_facility_cd = fmst.saf_facility_cd
+                 INNER JOIN saf_facility_type sft
+                            ON fmst.saf_facility_type_cd = sft.saf_facility_type_cd
+                 LEFT OUTER JOIN com_dept cd
+                                 ON fmst.dept_cd = cd.dept_cd
+        WHERE r.saf_facil_chk_no = #{safFacilChkNo}
+
+        order by r.saf_facility_cd, r.chk_sch_ymd
+    </select>
+    
+    <select id= "getFacilChkUser" resultType= "String">
+        /* PreOperCheckResultMapper.getNewFacilityCheckItemResults [PreOperCheckResult.xml] */
+        select user_id
+        from saf_pre_operation_chk_user
+        where saf_facil_chk_no = #{safFacilChkNo}
+          and saf_facility_cd = #{safFacilityCd}
+    </select>
+
+    <!-- 설비점검 계획 삭제 -->
+    <delete id= "deleteFacilChkUser">
+        /* PreOperCheckResultMapper.deleteFacilChkUser [PreOperCheckResult.xml] */
+        delete from saf_pre_operation_chk_user
+        where saf_facil_chk_no = #{safFacilChkNo}
+            and saf_facility_cd = #{safFacilityCd}
+    </delete>
+
+    <delete id= "deleteForEachFacility">
+        /* PreOperCheckResultMapper.deleteForEachFacility [PreOperCheckResult.xml] */
+        delete from saf_pre_operation_chk_itm_fac
+        where saf_facil_chk_no = #{safFacilChkNo}
+          and saf_check_type_cd = #{safCheckTypeCd}
+    </delete>
+
+    <!-- 설비점검 계획 삭제 -->
+    <delete id= "deleteFacilChkPlan">
+        /* PreOperCheckResultMapper.deleteFacilChkPlan [PreOperCheckResult.xml] */
+        delete from saf_pre_operation_chk_plan
+        where saf_facil_chk_no = #{safFacilChkNo}
+    </delete>
+
+    <!-- 설비점검계획별 결과 삭제 -->
+    <delete id= "deletePlanFacilChkResults">
+        /* PreOperCheckResultMapper.deletePlanFacilChkResults [PreOperCheckResult.xml] */
+        delete from saf_pre_operation_chk_rslt
+        where saf_facil_chk_no = #{safFacilChkNo}
+    </delete>
+
+    <!-- 설비점검 결과 삭제 -->
+    <delete id= "deleteFacilChkResult">
+        /* PreOperCheckResultMapper.deleteFacilChkResult [PreOperCheckResult.xml] */
+        delete from saf_pre_operation_chk_rslt
+        where saf_facil_chk_no = #{safFacilChkNo}
+
+    </delete>
+
+    <!-- 설비점검 결과 삭제 -->
+    <delete id= "deleteFacilChkItem">
+        /* PreOperCheckResultMapper.deleteFacilChkItem [PreOperCheckResult.xml] */
+        delete from saf_pre_operation_chk_itm_rslt
+        where saf_facil_chk_no = #{safFacilChkNo}
+        <if test="safFacilityCd != null and !safFacilityCd.equals('')">
+            AND saf_facility_cd = #{safFacilityCd}
+        </if>
+        <if test="safCheckTypeCd != null and !safCheckTypeCd.equals('')">
+            AND saf_check_type_cd = #{safCheckTypeCd}
+        </if>
+
+        delete from saf_pre_operation_chk_itm_fac
+        where saf_facil_chk_no = #{safFacilChkNo}
+        <if test="safFacilityCd != null and !safFacilityCd.equals('')">
+            AND saf_facility_cd = #{safFacilityCd}
+        </if>
+        <if test="safCheckTypeCd != null and !safCheckTypeCd.equals('')">
+            AND saf_check_type_cd = #{safCheckTypeCd}
+        </if>
+
+    </delete>
+
+
+    <!-- 설비점검 결과 삭제 -->
+    <delete id= "deleteForEachItem">
+        /* PreOperCheckResultMapper.deleteForEachItem [PreOperCheckResult.xml] */
+        delete from saf_pre_operation_chk_foreach_item
+        where saf_facil_chk_no = #{safFacilChkNo}
+        <if test="safCheckTypeCd != null and !safCheckTypeCd.equals('')">
+            AND saf_check_type_cd = #{safCheckTypeCd}
+        </if>
+    </delete>
+
+    <delete id= "deleteFacility">
+        /* PreOperCheckResultMapper.deleteForEachItem [PreOperCheckResult.xml] */
+        delete from saf_pre_operation_chk_itm_fac
+        where saf_facil_chk_no = #{safFacilChkNo}
+    </delete>
+    <!-- 설비점검 계획 등록 -->
+    <insert id="createFacilChkPlan" parameterType="com.she.safety.model.FacilChkMaster">
+        /* PreOperCheckResultMapper.createFacilChkPlan [PreOperCheckResult.xml] */
+        <selectKey keyProperty= "safFacilChkNo" resultType= "int" order= "BEFORE">
+            SELECT NEXT VALUE FOR seq_saf_pre_operation_chk_plan AS safFacilChkNo
+        </selectKey>
+        INSERT INTO saf_pre_operation_chk_plan (
+        saf_facil_chk_no
+        , plant_cd
+        , saf_facility_check_no
+        , saf_facility_check_sch_ymd
+        , saf_facility_check_ymd
+        , saf_check_type_cd
+        , saf_facil_chk_title
+        , create_user_id
+        , create_dt
+        , dept_cd
+        , chk_step_cd
+        ) VALUES (
+        #{safFacilChkNo}
+        , #{plantCd}
+        , #{safFacilityCheckNo}
+        , #{safFacilityCheckSchYmd}
+        , #{createDt}
+        , #{safCheckTypeCd}
+        , #{safFacilChkTitle}
+        , #{createUserId}
+        , getdate()
+        , #{deptCd}
+        , #{chkStepCd}
+        )
+    </insert>
+
+    <!-- 설비점검 계획 등록 -->
+    <insert id="createFacilChkUser" parameterType="map">
+        /* PreOperCheckResultMapper.createFacilChkUser [PreOperCheckResult.xml] */
+        INSERT INTO saf_pre_operation_chk_user (
+        saf_facil_chk_no
+        , user_id
+        , saf_facility_cd
+        ) VALUES (
+        #{safFacilChkNo}
+        , #{userId}
+        , #{safFacilityCd}
+        )
+    </insert>
+
+    <!-- 설비점검 계획 수정 -->
+    <update id="updateFacilChkPlan" parameterType="com.she.safety.model.FacilChkMaster">
+        /* PreOperCheckResultMapper.updateFacilChkPlan [PreOperCheckResult.xml] */
+        UPDATE saf_pre_operation_chk_plan
+        SET plant_cd = #{plantCd}
+          , saf_facil_chk_title = #{safFacilChkTitle}
+          , saf_check_type_cd = #{safCheckTypeCd}
+          , saf_facility_check_sch_ymd = #{safFacilityCheckSchYmd}
+          , saf_facility_check_ymd = #{createDt}
+          , dept_cd = #{deptCd}
+          , update_user_id = #{updateUserId}
+          , update_dt = getdate()
+        WHERE saf_facil_chk_no = #{safFacilChkNo}
+    </update>
+
+    <!-- 설비점검 결과 등록 -->
+    <insert id="createFacilChkResult" parameterType="com.she.safety.model.FacilChkResult">
+        /* PreOperCheckResultMapper.createFacilChkResult [PreOperCheckResult.xml] */
+        INSERT INTO saf_pre_operation_chk_rslt
+            (
+                     saf_facil_chk_no
+                   , saf_facility_cd
+                   , saf_facility_check_no
+                   , chk_sch_ymd
+                   , chk_ymd
+                   , chk_result_cd
+                   , chk_result
+                   , chk_end_yn
+                ) VALUES (
+                   #{safFacilChkNo}
+                 , #{safFacilityCd}
+                 , #{safFacilityCheckNo}
+                 , #{chkSchYmd}
+                 , #{chkYmd}
+                 , #{chkResultCd}
+                 , #{chkResult}
+                 , #{chkEndYn}
+                 )
+    </insert>
+
+    <!-- 설비점검결과 상세 조회 -->
+    <select id="getForEachTypes" resultType="com.she.safety.model.ForEachType">
+        /* PreOperCheckResultMapper.getForEachTypes [PreOperCheckResult.xml] */
+        SELECT r.saf_facil_chk_no
+             , r.saf_check_type_cd
+             , cs.code_nm as saf_check_type_nm
+             , r.chk_user_nm
+             , r.chk_sch_ymd
+             , r.chk_end_yn
+             , r.chk_result
+             , r.p_dept_cd
+             , cd.dept_nm as p_dept_nm
+             <!-- , r.p_dept_nm -->
+        FROM saf_pre_operation_chk_foreach_item r
+                 INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_PREOPERATION_CHECK') cs
+                            ON r.saf_check_type_cd = cs.code
+                 left outer join com_dept cd on r.p_dept_cd = cd.dept_cd
+        WHERE 1=1
+          AND r.saf_facil_chk_no = #{safFacilChkNo}
+          order by r.saf_check_type_cd
+    </select>
+    <!-- 설비점검별 항목 목록 조회 -->
+    <select id="getFacilChkItems" resultType="com.she.safety.model.FacilChkItemResult">
+        /* PreOperCheckResultMapper.getFacilChkItems [PreOperCheckResult.xml] */
+        select ir.saf_facil_chk_no
+             , ir.saf_facility_check_item_no -- 항목명(key)
+             , ir.chk_result
+             , ir.chk_result_two
+             , ir.chk_ymd
+             , cs.code_nm as chkYmdNm
+             , '개선요청' as improvement
+             , ir.remark
+             , ir.sort_order
+             , ir.check_yn
+             , ir.saf_check_type_cd
+             , ir.saf_facil_sys_no
+             -- 상위분류
+        FROM saf_pre_operation_chk_itm_rslt ir
+        INNER JOIN dbo.LANG_CODE_MASTER('kr', 'SAF_PREOPERATION_YEAR') cs
+        ON ir.chk_ymd = cs.code
+        where 1=1
+          and ir.saf_facil_chk_no = #{safFacilChkNo}
+          and ir.saf_check_type_cd = #{safCheckTypeCd}
+        <if test="parentYn != null and !parentYn.equals('')">
+            AND ir.parent_yn = #{parentYn}
+        </if>
+          and ir.check_yn = 'Y'
+        order by ir.sort_order
+    </select>
+
+    <select id="getForEachFacilitys" resultType="com.she.baseInfo.model.FacilityMst">
+        /* PreOperCheckResultMapper.getForEachFacilitys [PreOperCheckResult.xml] */
+        SELECT
+            r.saf_facil_chk_no
+             , r.saf_check_type_cd
+             , cs.code_nm as saf_check_type_nm
+             , sft.saf_facility_type_nm
+             , fmst.facility_nm
+             , fmst.facility_mgr_num
+             , fmst.saf_facility_cd
+             , cd.dept_nm
+        FROM saf_pre_operation_chk_itm_fac r
+         INNER JOIN saf_facility_mst fmst
+                    ON r.saf_facility_cd = fmst.saf_facility_cd
+         INNER JOIN saf_facility_type sft
+                    ON fmst.saf_facility_type_cd = sft.saf_facility_type_cd
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_PREOPERATION_CHECK') cs
+                    ON r.saf_check_type_cd = cs.code
+         INNER JOIN com_dept cd
+                    ON cd.dept_cd = fmst.dept_cd
+         WHERE 1=1
+           and r.saf_facil_chk_no = #{safFacilChkNo}
+           and r.saf_check_type_cd = #{safCheckTypeCd}
+    </select>
+
+    <!-- 설비점검계획 설비별 점검항목 조회 -->
+    <select id="getFacilChkPlanItems" resultType="com.she.safety.model.FacilChkItemResult">
+        /* PreOperCheckResultMapper.getFacilChkPlanItems [PreOperCheckResult.xml] */
+        with a as (select distinct
+                    i.saf_facility_check_nm
+                   ,i.data_lvl_cd
+                   ,i.saf_facility_check_item_no
+                   ,case when parent.saf_facility_check_nm is NULL then 'Y' else 'N' end as checking
+                   from saf_pre_operation_check_item i
+                    left outer join saf_pre_operation_check_item parent
+                    on i.saf_facility_check_item_no = parent.p_saf_facility_check_nm
+                    )
+        select ir.saf_facil_chk_no
+              ,case when a.data_lvl_cd ='ECL01' then ir.saf_facility_check_item_no
+              when a.data_lvl_cd ='ECL02' then '　　' + ir.saf_facility_check_item_no
+              else '　　　　' +  ir.saf_facility_check_item_no end as saf_facility_check_item_no
+             , ir.saf_facility_cd
+             , ir.chk_result
+             , ir.chk_result_two
+             , ir.p_saf_facility_check_item_no
+             , ir.chk_ymd
+             , ir.chk_impr
+             , ir.remark
+             , ir.sort_order
+             , ir.check_yn
+             , a.checking
+             , cs.code_nm as saf_check_type_nm
+             , case when a.data_lvl_cd = 'ECL01' then 'Y' else 'N' end as parentYn
+             -- 상위분류
+         FROM saf_pre_operation_chk_itm_rslt ir
+         inner join a
+            on ir.p_saf_facility_check_item_no = a.saf_facility_check_item_no
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_PREOPERATION_CHECK') cs
+                    ON ir.saf_check_type_cd = cs.code
+        where 1=1
+          and ir.saf_facil_chk_no = #{safFacilChkNo}
+          and ir.saf_check_type_cd = #{safCheckTypeCd}
+        order by ir.sort_order
+    </select>
+
+    <select id="getNewFacilChkItems" resultType="com.she.safety.model.FacilChkItemResult">
+        /* PreOperCheckResultMapper.getNewFacilChkItems [PreOperCheckResult.xml] */ --
+        with chkItem as (
+        select saf_facility_check_item_no
+                ,saf_check_type_cd
+                ,plant_cd
+                ,data_lvl_cd
+                ,p_saf_facility_check_nm
+                ,saf_facility_check_nm
+                ,sort_order as fir_sort_order -- 대분류 정렬순서
+                ,sort_order as sec_sort_order -- 중분류 정렬순서
+                ,sort_order as thi_sort_order -- 소분류 정렬순서
+                ,saf_facility_check_item_no as p_saf_facility_check_item_no
+        from saf_pre_operation_check_item
+        where isnull(p_saf_facility_check_nm, 0) = 0 -- 최상위 항목이 대분류인 경우만 조회
+        and data_lvl_cd = 'ECL01'
+        and use_yn = 'Y'
+        and plant_cd = #{plantCd}
+        and saf_check_type_cd = #{safCheckTypeCd}
+        union all
+        select b.saf_facility_check_item_no
+                ,b.saf_check_type_cd
+                ,b.plant_cd
+                ,b.data_lvl_cd
+                ,b.p_saf_facility_check_nm
+                ,b.saf_facility_check_nm
+                ,c.fir_sort_order -- 대분류 정렬순서
+                ,case when b.data_lvl_cd = 'ECL03' then c.sec_sort_order else b.sort_order end sec_sort_order -- 중분류 정렬순서
+                ,b.sort_order as thi_sort_order -- 소분류 정렬순서
+                ,b.saf_facility_check_item_no as p_saf_facility_check_item_no
+        from saf_pre_operation_check_item b
+        inner join chkItem c on b.p_saf_facility_check_nm = c.saf_facility_check_item_no
+        where use_yn = 'Y'
+        )
+        select case when i.data_lvl_cd ='ECL01' then i.saf_facility_check_nm
+                    when i.data_lvl_cd ='ECL02' then '　　' + i.saf_facility_check_nm
+                    else '　　　　' +  i.saf_facility_check_nm
+                end as saf_facility_check_item_no
+                ,ROW_NUMBER() OVER(order by plant_cd, saf_check_type_cd, fir_sort_order, sec_sort_order, data_lvl_cd, thi_sort_order) as sort_order
+                ,case when (select sum(case when isnull(saf_facility_check_nm, '') = '' then 0 else 1 end)
+                            from saf_pre_operation_check_item poci
+                            where poci.p_saf_facility_check_nm = i.saf_facility_check_item_no) > 0
+                    then 'N'
+                    else 'Y'
+                end as checking
+                ,i.p_saf_facility_check_item_no
+                ,cs.code_nm as saf_check_type_nm
+                ,case when i.data_lvl_cd = 'ECL01' then 'Y' else 'N' end as parentYn
+                <if test='noPlanYn != null and noPlanYn.equals("Y")'>
+                -- 무계획 결과등록일 경우 점검시기 및 점검결과 default 데이터 조회
+                ,'SPY04' as chk_ymd
+                ,'A' as chk_result
+                </if>
+        from chkItem i
+        INNER JOIN dbo.LANG_CODE_MASTER('kr', 'SAF_PREOPERATION_CHECK') cs ON saf_check_type_cd = cs.code
+        order by plant_cd, saf_check_type_cd, fir_sort_order, sec_sort_order, data_lvl_cd, thi_sort_order
+    </select>
+
+    <!-- 점검유형별 설비 추가 -->
+    <insert id="createForEachFacility" parameterType="com.she.safety.model.ForEachType">
+        /* PreOperCheckResultMapper.createForEachFacility [PreOperCheckResult.xml] */
+        INSERT INTO saf_pre_operation_chk_itm_fac
+                    (
+                     saf_check_type_cd
+                     ,saf_facility_cd
+                     ,saf_facil_chk_no
+                    )
+                    VALUES
+                    (
+                     #{safCheckTypeCd}
+                    ,#{safFacilityCd}
+                    ,#{safFacilChkNo}
+                    )
+    </insert>
+
+    <!-- 점검항목별 결과 저장 및 수정 -->
+    <update id="updateFacilChkItem" parameterType="com.she.safety.model.FacilChkItemResult">
+        /* PreOperCheckResultMapper.updateFacilChkItem [PreOperCheckResult.xml] */
+        MERGE saf_pre_operation_chk_itm_rslt ir
+            USING ( SELECT 0 AS col ) AS t
+            ON ir.saf_facil_chk_no = #{safFacilChkNo}
+            AND ir.saf_facility_check_item_no = #{safFacilityCheckItemNo}
+            AND ir.saf_check_type_cd = #{safCheckTypeCd}
+            WHEN MATCHED THEN
+        UPDATE SET chk_result = #{chkResult,jdbcType=CHAR}
+           , remark = #{remark,jdbcType=VARCHAR}
+            , chk_result_two = #{chkResultTwo,jdbcType=VARCHAR}
+            , chk_ymd = #{chkYmd,jdbcType=VARCHAR}
+            , chk_impr = #{chkImpr,jdbcType=VARCHAR}
+            , check_yn = #{checkYn}
+            , p_saf_facility_check_item_no = #{pSafFacilityCheckItemNo}
+            , sort_order = #{sortOrder}
+            WHEN NOT MATCHED THEN
+        <selectKey keyProperty= "safFacilSysNo" resultType= "int" order= "BEFORE">
+            SELECT next value for seq_saf_pre_operation_chk_itm_rslt
+        </selectKey>
+        INSERT (
+              saf_facil_chk_no
+            , saf_facility_check_item_no
+            , saf_check_type_cd
+            , chk_result
+            , chk_result_two
+            , saf_facil_sys_no
+            , remark
+            , check_yn
+            , chk_ymd
+            , chk_impr
+            , parent_yn
+            , p_saf_facility_check_item_no
+            , sort_order
+        ) VALUES (
+              #{safFacilChkNo}
+            , #{safFacilityCheckItemNo}
+            , #{safCheckTypeCd}
+            , case when isnull(#{chkResult}, '') = '' then 'A' else #{chkResult,jdbcType=CHAR} end
+            , #{chkResultTwo,jdbcType=VARCHAR}
+            , #{safFacilSysNo}
+            , #{remark,jdbcType=VARCHAR}
+            , #{checkYn}
+            , case when isnull(#{chkYmd}, '') = '' then 'SPY04' else #{chkYmd,jdbcType=VARCHAR} end
+            , #{chkImpr}
+            , #{parentYn}
+            , #{pSafFacilityCheckItemNo}
+            , #{sortOrder}
+        );
+    </update>
+
+    <update id="updateFacilChkItemSec" parameterType="com.she.safety.model.FacilChkItemResult">
+        /* PreOperCheckResultMapper.updateFacilChkItemSec [PreOperCheckResult.xml] */
+        UPDATE saf_pre_operation_chk_itm_rslt
+        SET chk_result = #{chkResult}
+            , remark = #{remark}
+            , chk_result_two = #{chkResultTwo}
+            , chk_ymd = #{chkYmd}
+            , chk_impr = #{chkImpr}
+            , check_yn = #{checkYn}
+            , p_saf_facility_check_item_no = #{pSafFacilityCheckItemNo}
+            , sort_order = #{sortOrder}
+        WHERE saf_facil_chk_no = #{safFacilChkNo}
+          AND saf_facility_check_item_no = #{safFacilityCheckItemNo}
+          AND saf_facility_cd = #{safFacilityCd}
+          AND saf_check_type_cd = #{safCheckTypeCd}
+
+    </update>
+
+    <!-- 점검항목별 결과 저장 및 수정 -->
+    <update id="updateForEachItem" parameterType="com.she.safety.model.FacilChkItemResult">
+        /* PreOperCheckResultMapper.updateForEachItem [PreOperCheckResult.xml] */
+        MERGE saf_pre_operation_chk_foreach_item ir
+            USING ( SELECT 0 AS col ) AS t
+            ON ir.saf_facil_chk_no = #{safFacilChkNo}
+            AND ir.saf_check_type_cd = #{safCheckTypeCd}
+            WHEN MATCHED THEN
+        UPDATE SET chk_user_nm = #{chkUserNm}
+            , chk_sch_ymd = #{chkSchYmd}
+            , chk_end_yn = #{chkEndYn}
+            , chk_result = #{chkResult}
+            WHEN NOT MATCHED THEN
+            INSERT (
+                saf_facil_chk_no
+                , saf_check_type_cd
+                , chk_user_nm
+                , chk_sch_ymd
+                , chk_end_yn
+                , chk_result
+                , p_dept_cd
+                , create_dt
+                )
+                VALUES (
+                  #{safFacilChkNo}
+                , #{safCheckTypeCd}
+                , #{chkUserNm}
+                , #{chkSchYmd}
+                , #{chkEndYn}
+                , #{chkResult}
+                , #{pDeptCd}
+                , getDate());
+    </update>
+
+    <!-- 점검결과 전체완료 -->
+    <update id="updateFacilChkResults" parameterType="com.she.safety.model.FacilChkMaster">
+        /* PreOperCheckResultMapper.updateFacilChkResults [PreOperCheckResult.xml] */
+        UPDATE saf_pre_operation_chk_plan
+        SET chk_step_cd = 'CHS04'
+          ,update_user_id = #{updateUserId}
+          ,update_dt = getdate()
+        WHERE saf_facil_chk_no = #{safFacilChkNo}
+    </update>
+
+    <update id="completeFacilChkMaster" parameterType="map">
+        /* PreOperCheckResultMapper.completeFacilChkMaster [PreOperCheckResult.xml] */
+        UPDATE saf_pre_operation_chk_plan
+        SET chk_step_cd = #{chkStepCd}
+        <if test="apprRqstNo != null and apprRqstNo > 0">
+            , appr_rqst_no = #{apprRqstNo}
+        </if>
+        WHERE saf_facility_check_no = #{safFacilityCheckNo}
+    </update>
+
+    <!-- 결재완료 후 설비점검계획 진행단계 변경 -->
+    <update id="completeFacilChkPlan" parameterType="map">
+        /* PreOperCheckResultMapper.completeFacilChkPlan [PreOperCheckResult.xml] */
+        UPDATE saf_pre_operation_chk_plan
+        SET chk_step_cd = #{chkStepCd}
+        <if test="apprRqstNo != null and apprRqstNo > 0">
+            , appr_rqst_no = #{apprRqstNo}
+        </if>
+        WHERE saf_facil_chk_no = #{safFacilChkNo}
+    </update>
+
+    <!-- 결재완료 후 설비점검계획 진행단계 변경 -->
+    <update id="completeResultFacilChkPlan" parameterType="map">
+        /* PreOperCheckResultMapper.completeFacilChkPlan [PreOperCheckResult.xml] */
+        UPDATE saf_pre_operation_chk_plan
+        SET chk_step_cd = #{chkStepCd}
+        <if test="rApprRqstNo != null and rApprRqstNo > 0">
+            , r_appr_rqst_no = #{rApprRqstNo}
+        </if>
+        WHERE saf_facil_chk_no = #{safFacilChkNo}
+    </update>
+
+    <!-- 설비점검 사업장별 실적집계 -->
+    <select id="getFacilChkResultStatus" resultType="HashMap">
+        /* PreOperCheckResultMapper.getFacilChkResultStatus [PreOperCheckResult.xml] */
+        WITH b AS
+        (
+            SELECT 1 mon
+            UNION ALL
+            SELECT mon + 1
+            FROM b
+            WHERE mon + 1 &lt;= 12
+        ),
+        p as (
+            SELECT sfcp.saf_facil_chk_no
+                   , sfcp.plant_cd
+                   , sfcp.saf_facility_check_ymd
+            FROM saf_pre_operation_chk_plan sfcp
+            WHERE 1=1
+            and sfcp.chk_step_cd = 'CHS02'
+            or sfcp.chk_step_cd = 'CHS01'
+        ),
+        r as (
+            SELECT sfcp.saf_facil_chk_no
+                   , sfcp.plant_cd
+                   , saf_facility_check_ymd
+            FROM saf_pre_operation_chk_plan sfcp
+            where sfcp.chk_step_cd = 'CHS04'
+        ),
+        a as (
+            SELECT  *
+            FROM (
+            select p.plant_cd
+                   ,convert(varchar, b.mon) + '_plan' as mon
+                   ,count(p.saf_facility_check_ymd) as cnt
+            from b
+            left outer join p
+            on DATEPART(yy, p.saf_facility_check_ymd) = #{year}
+            and DATEPART(mm, p.saf_facility_check_ymd) = b.mon
+            where isnull(p.plant_cd, '') != ''
+            group by p.plant_cd
+        ,b.mon
+        union all
+        select r.plant_cd
+        ,convert(varchar, b.mon) + '_result' as mon
+        ,count(r.saf_facility_check_ymd) as cnt
+        from b
+        left outer join r
+        on DATEPART(yy, r.saf_facility_check_ymd) = #{year}
+        and DATEPART(mm, r.saf_facility_check_ymd) = b.mon
+        where isnull(r.plant_cd, '') != ''
+        group by r.plant_cd
+        ,b.mon
+        ) d
+        pivot
+        (
+        sum(cnt)
+        for mon in ([1_plan], [1_result], [2_plan], [2_result], [3_plan], [3_result], [4_plan], [4_result], [5_plan], [5_result], [6_plan], [6_result], [7_plan], [7_result], [8_plan], [8_result], [9_plan], [9_result], [10_plan], [10_result], [11_plan], [11_result], [12_plan], [12_result])
+        ) piv
+        )
+        select  plant.code as plant_cd, plant.code_nm as plant_nm
+        ,isnull([1_plan], 0) as '01_plan', isnull([2_plan], 0) as '02_plan', isnull([3_plan], 0) as '03_plan', isnull([4_plan], 0) as '04_plan', isnull([5_plan], 0) as '05_plan'
+        ,isnull([6_plan], 0) as '06_plan', isnull([7_plan], 0) as '07_plan', isnull([8_plan], 0) as '08_plan', isnull([9_plan], 0) as '09_plan', isnull([10_plan], 0) as '10_plan'
+        ,isnull([11_plan], 0) as '11_plan', isnull([12_plan], 0) as '12_plan'
+        ,isnull([1_result], 0) as '01_result', isnull([2_result], 0) as '02_result', isnull([3_result], 0) as '03_result', isnull([4_result], 0) as '04_result', isnull([5_result], 0) as '05_result'
+        ,isnull([6_result], 0) as '06_result', isnull([7_result], 0) as '07_result', isnull([8_result], 0) as '08_result', isnull([9_result], 0) as '09_result', isnull([10_result], 0) as '10_result'
+        ,isnull([11_result], 0) as '11_result', isnull([12_result], 0) as '12_result'
+        ,isnull([1_plan], 0) + isnull([2_plan], 0) + isnull([3_plan], 0) + isnull([4_plan], 0) + isnull([5_plan], 0) + isnull([6_plan], 0) + isnull([7_plan], 0) + isnull([8_plan], 0) + isnull([9_plan], 0) + isnull([10_plan], 0) + isnull([11_plan], 0) + isnull([12_plan], 0) as sum_plan
+        ,isnull([1_result], 0) + isnull([2_result], 0) + isnull([3_result], 0) + isnull([4_result], 0) + isnull([5_result], 0) + isnull([6_result], 0) + isnull([7_result], 0) + isnull([8_result], 0) + isnull([9_result], 0) + isnull([10_result], 0) + isnull([11_result], 0) + isnull([12_result], 0) as sum_result
+        ,isnull([1_plan], 0) + isnull([2_plan], 0) + isnull([3_plan], 0) + isnull([4_plan], 0) + isnull([5_plan], 0) + isnull([6_plan], 0) + isnull([7_plan], 0) + isnull([8_plan], 0) + isnull([9_plan], 0) + isnull([10_plan], 0) + isnull([11_plan], 0) + isnull([12_plan], 0) +
+        isnull([1_result], 0) + isnull([2_result], 0) + isnull([3_result], 0) + isnull([4_result], 0) + isnull([5_result], 0) + isnull([6_result], 0) + isnull([7_result], 0) + isnull([8_result], 0) + isnull([9_result], 0) + isnull([10_result], 0) + isnull([11_result], 0) + isnull([12_result], 0) as sum
+        from com_code_master plant
+        left outer join a
+        on a.plant_cd = plant.code
+        where plant.code_group_cd = 'COM_PLANT_CD'
+        and plant.code != '0000'
+        <if test= "plantCd != null and !''.equals(plantCd)">
+            and plant.code in (select value from dbo.FN_GET_Split(#{plantCd},','))
+        </if>
+    </select>
+
+    <!-- 설비점검 사업장별 실적 세부집계 -->
+    <select id="getFacilChkResultStatusSub" resultType="HashMap">
+        /* PreOperCheckResultMapper.getFacilChkResultStatusSub [PreOperCheckResult.xml] */
+        WITH b AS
+        (
+        SELECT 1 mon
+        UNION ALL
+        SELECT mon + 1
+        FROM b
+        WHERE mon + 1 &lt;= 12
+        ),
+        p as (
+            SELECT sfcp.plant_cd
+                   , spofi.saf_check_type_cd
+                   , sfcp.dept_cd
+                   , sfm.saf_facility_type_cd
+                   , sfcp.saf_facility_check_ymd
+            FROM saf_pre_operation_chk_plan sfcp
+            inner join saf_pre_operation_chk_itm_fac cif
+            on sfcp.saf_facil_chk_no = cif.saf_facil_chk_no
+            INNER JOIN saf_facility_mst sfm
+            ON cif.saf_facility_cd = sfm.saf_facility_cd
+            INNER JOIN saf_pre_operation_chk_foreach_item spofi
+            on spofi.saf_facil_chk_no = cif.saf_facil_chk_no
+            WHERE sfcp.chk_step_cd = 'CHS02'
+            or sfcp.chk_step_cd = 'CHS01'
+        ),
+        r as (
+        SELECT sfcp.plant_cd
+        , spofi.saf_check_type_cd
+        , sfcp.dept_cd
+        , sfm.saf_facility_type_cd
+        , sfcp.saf_facility_check_ymd
+        FROM saf_pre_operation_chk_plan sfcp
+        inner join saf_pre_operation_chk_itm_fac cif
+        on sfcp.saf_facil_chk_no = cif.saf_facil_chk_no
+        INNER JOIN saf_facility_mst sfm
+        ON cif.saf_facility_cd = sfm.saf_facility_cd
+        INNER JOIN saf_pre_operation_chk_foreach_item spofi
+        on spofi.saf_facil_chk_no = cif.saf_facil_chk_no
+        and cif.saf_check_type_cd = spofi.saf_check_type_cd
+        WHERE sfcp.chk_step_cd = 'CHS04'
+        ),
+        a as (
+        select  *
+        from (
+        select
+		 p.plant_cd
+		,p.saf_check_type_cd
+        ,p.saf_facility_type_cd
+        ,p.dept_cd
+        ,convert(varchar, b.mon) + '_plan' as mon
+        ,count(p.saf_facility_check_ymd) as cnt
+        from b
+        left outer join p
+        on DATEPART(yy, p.saf_facility_check_ymd) = #{year}
+        and DATEPART(mm, p.saf_facility_check_ymd) = b.mon
+        where 1=1
+        <if test= "plantCd != null and !''.equals(plantCd)">
+            and p.plant_cd in (select value from dbo.FN_GET_Split(#{plantCd},','))
+        </if>
+        <if test= "safCheckTypeCd != null and !''.equals(safCheckTypeCd)">
+            and p.saf_check_type_cd = #{safCheckTypeCd}
+        </if>
+        <if test= "safFacilityTypeCd != null and !''.equals(safFacilityTypeCd)">
+            and p.saf_facility_type_cd = #{safFacilityTypeCd}
+        </if>
+        <if test= "deptCd != null and !''.equals(deptCd)">
+            <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+            AND EXISTS (SELECT 1 WHERE ISNULL(#{deptCd}, '') = ''
+                        UNION ALL
+                        SELECT 1 WHERE #{deptSubYn} = 'Y' AND p.dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{deptCd}))
+                        UNION ALL
+                        SELECT 1 WHERE #{deptSubYn} = 'N' AND p.dept_cd = #{deptCd}
+                        )
+            <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if>
+       group by
+		 p.plant_cd
+		,p.saf_check_type_cd
+        ,p.saf_facility_type_cd
+        ,p.dept_cd
+        ,b.mon
+        union all
+        select
+         r.plant_cd
+		,r.saf_check_type_cd
+        ,r.saf_facility_type_cd
+        ,r.dept_cd
+        ,convert(varchar, b.mon) + '_result' as mon
+        ,count(r.saf_facility_check_ymd) as cnt
+        from b
+        left outer join r
+        on DATEPART(yy, r.saf_facility_check_ymd) = #{year}
+        and DATEPART(mm, r.saf_facility_check_ymd) = b.mon
+        where 1=1
+        <if test= "plantCd != null and !''.equals(plantCd)">
+            and r.plant_cd in (select value from dbo.FN_GET_Split(#{plantCd},','))
+        </if>
+        <if test= "safCheckTypeCd != null and !''.equals(safCheckTypeCd)">
+            and r.saf_check_type_cd = #{safCheckTypeCd}
+        </if>
+        <if test= "safFacilityTypeCd != null and !''.equals(safFacilityTypeCd)">
+            and r.saf_facility_type_cd = #{safFacilityTypeCd}
+        </if>
+        <if test= "deptCd != null and !''.equals(deptCd)">
+            and r.dept_cd = #{deptCd}
+        </if>
+        group by
+         r.plant_cd
+		,r.saf_check_type_cd
+        ,r.saf_facility_type_cd
+        ,r.dept_cd
+        ,b.mon
+        ) d
+        pivot
+        (
+        sum(cnt)
+        for mon in ([1_plan], [1_result], [2_plan], [2_result], [3_plan], [3_result], [4_plan], [4_result], [5_plan], [5_result], [6_plan], [6_result], [7_plan], [7_result], [8_plan], [8_result], [9_plan], [9_result], [10_plan], [10_result], [11_plan], [11_result], [12_plan], [12_result])
+        ) piv
+        )
+        select  a.plant_cd, pl.code_nm as plant_nm, a.saf_check_type_cd, checkType.code_nm as saf_check_type_nm
+        ,a.saf_facility_type_cd, sft.saf_facility_type_nm
+        ,a.dept_cd, cd.dept_nm
+        ,isnull([1_plan], 0) as '01_plan', isnull([2_plan], 0) as '02_plan', isnull([3_plan], 0) as '03_plan', isnull([4_plan], 0) as '04_plan', isnull([5_plan], 0) as '05_plan'
+        ,isnull([6_plan], 0) as '06_plan', isnull([7_plan], 0) as '07_plan', isnull([8_plan], 0) as '08_plan', isnull([9_plan], 0) as '09_plan', isnull([10_plan], 0) as '10_plan'
+        ,isnull([11_plan], 0) as '11_plan', isnull([12_plan], 0) as '12_plan'
+        ,isnull([1_result], 0) as '01_result', isnull([2_result], 0) as '02_result', isnull([3_result], 0) as '03_result', isnull([4_result], 0) as '04_result', isnull([5_result], 0) as '05_result'
+        ,isnull([6_result], 0) as '06_result', isnull([7_result], 0) as '07_result', isnull([8_result], 0) as '08_result', isnull([9_result], 0) as '09_result', isnull([10_result], 0) as '10_result'
+        ,isnull([11_result], 0) as '11_result', isnull([12_result], 0) as '12_result'
+        ,isnull([1_plan], 0) + isnull([2_plan], 0) + isnull([3_plan], 0) + isnull([4_plan], 0) + isnull([5_plan], 0) + isnull([6_plan], 0) + isnull([7_plan], 0) + isnull([8_plan], 0) + isnull([9_plan], 0) + isnull([10_plan], 0) + isnull([11_plan], 0) + isnull([12_plan], 0) as sum_plan
+        ,isnull([1_result], 0) + isnull([2_result], 0) + isnull([3_result], 0) + isnull([4_result], 0) + isnull([5_result], 0) + isnull([6_result], 0) + isnull([7_result], 0) + isnull([8_result], 0) + isnull([9_result], 0) + isnull([10_result], 0) + isnull([11_result], 0) + isnull([12_result], 0) as sum_result
+        ,isnull([1_plan], 0) + isnull([2_plan], 0) + isnull([3_plan], 0) + isnull([4_plan], 0) + isnull([5_plan], 0) + isnull([6_plan], 0) + isnull([7_plan], 0) + isnull([8_plan], 0) + isnull([9_plan], 0) + isnull([10_plan], 0) + isnull([11_plan], 0) + isnull([12_plan], 0) +
+        isnull([1_result], 0) + isnull([2_result], 0) + isnull([3_result], 0) + isnull([4_result], 0) + isnull([5_result], 0) + isnull([6_result], 0) + isnull([7_result], 0) + isnull([8_result], 0) + isnull([9_result], 0) + isnull([10_result], 0) + isnull([11_result], 0) + isnull([12_result], 0) as sum
+        from a
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_PREOPERATION_CHECK') checkType
+        on a.saf_check_type_cd = checkType.code
+        inner join saf_facility_type sft
+        on a.saf_facility_type_cd = sft.saf_facility_type_cd
+        inner join com_dept cd
+        on a.dept_cd = cd.dept_cd
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') pl
+        ON a.plant_cd = pl.code
+    </select>
+
+    <!-- 설비점검 결과 목록 조회 -->
+    <select id="getFacilChkResultTable" resultType="com.she.safety.model.FacilChkResult">
+        /* PreOperCheckResultMapper.getFacilChkResultTable [PreOperCheckResult.xml] */
+        <if test="dtlYn =='N'.toString()">
+            select
+                p.saf_facil_chk_no
+                ,p.saf_facility_check_ymd
+                ,p.saf_facil_chk_title
+                ,p.dept_cd
+                ,cd.dept_nm
+                ,case when p.chk_step_cd = 'CHS04' then '완료' else '미완료' end as chk_step_nm
+                ,p.dept_cd
+                , stuff((
+                    select ', ' + checkType.code_nm
+                    from saf_pre_operation_chk_foreach_item cfi
+                    inner join dbo.LANG_CODE_MASTER('KR', 'SAF_PREOPERATION_CHECK') checkType
+                    on checkType.code = cfi.saf_check_type_cd
+                    where cfi.saf_facil_chk_no = p.saf_facil_chk_no
+                    for xml path('')),1,1,'') as safCheckTypeNm
+                , stuff((
+                    select ', ' + fm.facility_nm
+                    from saf_pre_operation_chk_itm_fac cif
+                    inner join saf_facility_mst fm
+                    on cif.saf_facility_cd = fm.saf_facility_cd
+                    where cif.saf_facil_chk_no = p.saf_facil_chk_no
+                    for xml path('')),1,1,'') as facility_nm
+                ,stuff((
+                    select ',' + chkuser.chk_user_nm
+                    from saf_pre_operation_chk_foreach_item chkuser
+                    where chkuser.saf_facil_chk_no = p.saf_facil_chk_no
+                    for xml path('')
+                    ), 1, 1, '') as chkUserNm
+            from saf_pre_operation_chk_plan p
+            INNER JOIN com_dept cd
+            ON p.dept_cd = cd.dept_cd
+            where 1=1
+            <choose>
+                <when test="completeYn != null and completeYn == 'Y'.toString()">
+                and p.chk_step_cd = 'CHS04'
+                </when>
+                <when test="completeYn != null and completeYn == 'N'.toString()">
+                and p.chk_step_cd != 'CHS04'
+                </when>
+            </choose>
+            and saf_facility_check_ymd between  #{startDate} and #{endDate}
+            <if test="plantCd !=null and !plantCd.equals('')">
+            and p.plant_cd = #{plantCd}
+            </if>
+        </if>
+        <if test="dtlYn =='Y'.toString()">
+            SELECT
+                p.saf_facil_chk_no
+                , cif.saf_facility_cd
+                , sft.saf_facility_type_nm
+                , p.saf_facility_check_ymd
+                , fmst.facility_nm
+                , fmst.facility_mgr_num
+                , fmst.dept_cd
+                , cd.dept_nm
+                , case when p.chk_step_cd = 'CHS04' then '완료' else '미완료' end as chk_step_nm
+                , p.saf_facil_chk_title
+                ,stuff((
+                    select ',' + cu.user_nm
+                    from saf_pre_operation_chk_user chkuser
+                    inner join saf_pre_operation_chk_rslt rslt
+                    on chkuser.saf_facil_chk_no = rslt.saf_facil_chk_no
+                    and chkUser.saf_facility_cd = rslt.saf_facility_cd
+                    inner join com_user cu
+                    on cu.user_id = chkUser.user_id
+                    where rslt.saf_facil_chk_no = p.saf_facil_chk_no
+                    and rslt.saf_facility_cd = cif.saf_facility_cd
+                    for xml path('')
+                    ), 1, 1, '') as chkUserNm
+            FROM  saf_pre_operation_chk_plan p
+            inner join saf_pre_operation_chk_itm_fac cif
+            on p.saf_facil_chk_no = cif.saf_facil_chk_no
+            INNER JOIN saf_pre_operation_chk_foreach_item spofi
+            on spofi.saf_facil_chk_no = cif.saf_facil_chk_no
+            and cif.saf_check_type_cd = spofi.saf_check_type_cd
+            INNER JOIN saf_facility_mst fmst
+            ON cif.saf_facility_cd = fmst.saf_facility_cd
+            INNER JOIN saf_facility_type sft
+            ON fmst.saf_facility_type_cd = sft.saf_facility_type_cd
+            INNER JOIN com_dept cd
+            ON fmst.dept_cd = cd.dept_cd
+            WHERE 1=1
+            <choose>
+                <when test="completeYn != null and completeYn == 'Y'.toString()">
+                and p.chk_step_cd = 'CHS04'
+                </when>
+
+                <when test="completeYn != null and completeYn == 'N'.toString()">
+                and p.chk_step_cd != 'CHS04'
+                </when>
+            </choose>
+
+            <if test="deptCd !=null and !deptCd.equals('')">
+            AND p.dept_cd = #{deptCd}
+            </if>
+            <if test="safFacilityTypeCd !=null and !safFacilityTypeCd.equals('')">
+            AND sft.saf_facility_type_cd = #{safFacilityTypeCd}
+            </if>
+            <if test="plantCd !=null and !plantCd.equals('')">
+            AND p.plant_cd in (select value from dbo.FN_GET_Split(#{plantCd},','))
+            </if>
+            and saf_facility_check_ymd between  #{startDate} and #{endDate}
+            <if test="safCheckTypeCd !=null and !safCheckTypeCd.equals('')">
+            and cif.saf_check_type_cd = #{safCheckTypeCd}
+            </if>
+        </if>
+
+
+
+    </select>
+
+    <select id="getPreOperChkPsns" resultType="com.she.safety.model.SafPreOperChkPsn">
+        select  saf_facil_chk_no
+                ,saf_pre_operation_chk_psn_no
+                ,inspector_class_cd
+                ,user_id
+                ,user_nm
+                ,dept_cd
+                ,dept_nm
+                ,duty_nm
+                ,check_sch_hour
+                ,check_sch_minute
+                ,check_sch_ehour
+                ,check_sch_eminute
+                ,check_hour
+                ,check_minute
+                ,check_ehour
+                ,check_eminute
+                ,remark_rslt
+        from saf_pre_operation_chk_psn
+        where saf_facil_chk_no = #{safFacilChkNo}
+        and inspector_class_cd = #{inspectorClassCd}
+    </select>
+
+    <insert id="createPreOperChkPsn" parameterType="com.she.safety.model.SafPreOperChkPsn">
+        <selectKey resultType="int" keyProperty="safPreOperationChkPsnNo" order="BEFORE">
+            select next value for seq_saf_pre_operation_chk_psn as safPreOperationChkPsnNo
+        </selectKey>
+        insert into saf_pre_operation_chk_psn
+        (
+        saf_facil_chk_no
+        ,saf_pre_operation_chk_psn_no
+        ,inspector_class_cd
+        ,user_id
+        ,user_nm
+        ,dept_cd
+        ,dept_nm
+        ,duty_nm
+        ,check_sch_hour
+        ,check_sch_minute
+        ,check_sch_ehour
+        ,check_sch_eminute
+        ,check_hour
+        ,check_minute
+        ,check_ehour
+        ,check_eminute
+        ,remark_rslt
+        )
+        values
+        (
+        #{safFacilChkNo}
+        ,#{safPreOperationChkPsnNo}
+        ,#{inspectorClassCd}
+        ,#{userId}
+        ,#{userNm}
+        ,#{deptCd}
+        ,#{deptNm}
+        ,#{dutyNm}
+        ,#{checkSchHour}
+        ,#{checkSchMinute}
+        ,#{checkSchEhour}
+        ,#{checkSchEminute}
+        ,#{checkHour}
+        ,#{checkMinute}
+        ,#{checkEhour}
+        ,#{checkEminute}
+        ,#{remarkRslt}
+        )
+    </insert>
+
+    <delete id="deletePreOperChkPsn">
+        delete from saf_pre_operation_chk_psn
+        where saf_facil_chk_no = #{safFacilChkNo}
+    </delete>
+</mapper>

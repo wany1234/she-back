@@ -1,0 +1,25 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.mgtLaw.mapper.SheLawMakingMapper">
+    <select id= "getLawmakingList" resultType= "com.she.mgt.model.MgtLawMaking">
+        SELECT is_nm
+              ,is_cls_nm + '(' + asnd_ofi_nm + ')' AS is_cls_nm
+              ,pntc_no + '(' + pntc_dt + ')' AS pntc_no
+              ,'다운로드' temp
+              ,st_yd, ed_yd, file_name, file_down_link, detail_url
+          FROM law_making
+         WHERE 1=1
+        <if test = "isNm != null and !isNm.equals('')">
+           AND is_nm LIKE '%' + #{isNm} + '%'
+        </if>
+        <if test = "mgrGovCd != null and !mgrGovCd.equals('')">
+           AND mgr_govcd = #{mgrGovCd}
+        </if>
+        <if test = "stYd != null and !stYd.equals('') and edYd != null and !edYd.equals('')">
+           AND (CONVERT(date, st_Yd) BETWEEN CONVERT(date, #{stYd}) AND CONVERT(date, #{edYd}) OR
+                CONVERT(date, ed_yd) BETWEEN CONVERT(date, #{stYd}) AND CONVERT(date, #{edYd}))
+        </if>
+         ORDER BY is_nm;
+    </select>
+</mapper>

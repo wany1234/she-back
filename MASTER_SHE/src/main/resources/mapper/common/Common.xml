@@ -1,0 +1,295 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.common.mapper.CommonMapper">
+    <select id= "getDepts" resultType= "com.she.common.model.Dept">
+        select 
+            d.dept_cd            -- 부서코드
+            ,d.dept_nm            -- 부서명
+            ,d.create_user_id    -- 생성자
+            ,d.create_dt        -- 생성일
+            ,d.update_user_id    -- 수정자
+            ,d.update_dt        -- 수정일
+        from com_dept d
+        order by d.dept_nm
+    </select>
+
+    <!-- ///// menu CRUD ///// -->
+    <!-- menu 목록 조회 -->
+    <select id= "getMenus" resultType= "com.she.common.model.Menu">
+        select
+        cmn.menu_id
+        ,cmn.task_grp_cd
+        ,cmn.menu_nm
+        ,cmn.up_menu_id
+        ,cmn.menu_lvl
+        ,cmn.front_end_url
+        ,cmn.sort_order
+        ,cmn.use_yn
+        ,cmn.create_user_id
+        ,cmn.create_dt
+        ,cmn.update_user_id
+        ,cmn.update_dt
+        ,cmn.bbs_no
+        from dbo.LANG_MENU(#{defaultParam.lang}) cmn
+        where 1 = 1
+        <if test= "taskGrpCd != null and !taskGrpCd.equals('')">
+            and cmn.task_grp_cd = #{taskGrpCd}
+        </if>
+        and cmn.menu_nm like '%' + #{menuNm} + '%'
+        <if test= "upMenuId != null and !upMenuId.equals('')">
+            and cmn.up_menu_id = #{upMenuId}
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+            and cmn.use_yn = #{useYn}
+        </if>
+        <if test= "menuLvl != null">
+            and cmn.menu_lvl = #{menuLvl}
+        </if>
+        order by sort_order
+    </select>
+    
+    <!-- menu 상세 조회 -->
+    <select id= "getMenu" resultType= "com.she.common.model.Menu">
+        select
+        cmn.menu_id
+        ,cmn.task_grp_cd
+        ,cmn.menu_nm
+        ,cmn.menu_nm_en
+        ,cmn.menu_nm_ja
+        ,cmn.menu_nm_zh_tw
+        ,cmn.menu_nm_zh_cn
+        ,cmn.up_menu_id
+        ,cmn.menu_lvl
+        ,cmn.front_end_url
+        ,cmn.sort_order
+        ,cmn.use_yn
+        ,cmn.create_user_id
+        ,cmn.create_dt
+        ,cmn.update_user_id
+        ,cmn.update_dt
+        ,cmn.bbs_no
+        from com_menu cmn
+        where 1 = 1
+        and cmn.menu_id = #{menuId}
+    </select>
+
+    <insert id= "createMenu" parameterType= "com.she.common.model.Menu">
+        <!-- menu 단일건 조회 -->
+        insert into com_menu
+        (menu_id
+        ,task_grp_cd
+        ,menu_nm
+        ,menu_nm_en
+        ,menu_nm_ja
+        ,menu_nm_zh_cn
+        ,menu_nm_zh_tw
+        ,up_menu_id
+        ,menu_lvl
+        ,front_end_url
+        ,icon
+        ,color
+        ,sort_order
+        ,use_yn
+        ,create_user_id
+        ,create_dt
+        ,bbs_no
+        )
+        values
+        (#{menuId}
+        ,#{taskGrpCd}
+        ,#{menuNm}
+        ,#{menuNmEn}
+        ,#{menuNmJa}
+        ,#{menuNmZhTw}
+        ,#{menuNmZhCn}
+        ,#{upMenuId}
+        ,#{menuLvl}
+        ,#{frontEndUrl}
+        ,#{icon}
+        ,#{color}
+        ,#{sortOrder}
+        ,#{useYn}
+        ,#{createUserId}
+        ,getDate()
+        ,#{bbsNo}
+        )
+    </insert>
+
+    <!-- 업무별 사용 메뉴 개수 조회 -->
+    <select id= "getMenuCount" parameterType= "com.she.common.model.Menu" resultType= "int">
+        select case when convert(numeric, right(max(menu_id), len(max(menu_id))-3)) + 1 is null then convert(varchar, #{menuLvl}) + '0001'
+                    else convert(numeric, right(max(menu_id), len(max(menu_id))-3)) + 1
+                end
+        from com_menu
+        where 1 = 1
+        and left(menu_id, 3) = #{taskGrpCd}
+        <!-- and menu_lvl = #{menuLvl} -->
+        -- and use_yn = 'Y'
+    </select>
+    <!-- menu 등록 -->
+
+    <!-- [MSSQL용]메뉴 트리를 구성할 기초 정보 조회 -->
+    <select id= "getMenuTreeBases" resultType= "com.she.common.model.MenuTreeBase">
+        with menutree as (
+        select cmn.menu_id
+        ,cmn.menu_nm
+        ,cmn.menu_nm_en
+        ,cmn.menu_nm_ja
+        ,cmn.menu_nm_zh_tw
+        ,cmn.menu_nm_zh_cn
+        ,cmn.menu_lvl
+        ,cmn.up_menu_id
+        ,cmn.task_grp_cd
+        ,cmn.sort_order
+        ,cmn.front_end_url
+        ,cmn.use_yn
+        ,convert(varchar(255), convert(varchar(255), cmn.sort_order)) tree_sort_order
+        ,convert(varchar(255), cmn.menu_nm) menu_full_path
+        ,cmn.color
+        ,cmn.icon
+        ,cmn.bbs_no
+        from com_menu cmn
+        where 1 = 1
+        <choose>
+            <when test= "upMenuId != null and !upMenuId.equals('')">
+                and cmn.menu_id = #{upMenuId}
+            </when>
+            <when test= "changeForUpMenuId != null and !changeForUpMenuId.equals('')">
+                and cmn.up_menu_id = #{changeForUpMenuId}
+            </when>
+            <otherwise>
+                and cmn.menu_lvl = 1
+            </otherwise>
+        </choose>
+        union all
+        select cmnn.menu_id
+        ,cmnn.menu_nm
+        ,cmnn.menu_nm_en
+        ,cmnn.menu_nm_ja
+        ,cmnn.menu_nm_zh_tw
+        ,cmnn.menu_nm_zh_cn
+        ,cmnn.menu_lvl
+        ,cmnn.up_menu_id
+        ,cmnn.task_grp_cd
+        ,cmnn.sort_order
+        ,cmnn.front_end_url
+        ,cmnn.use_yn
+        ,convert(varchar(255), tree.tree_sort_order + convert(varchar(255), cmnn.sort_order)) tree_sort_order
+        ,convert(varchar(255), tree.menu_full_path + ' / ' + cmnn.menu_nm) menu_full_path
+        ,cmnn.color
+        ,cmnn.icon
+        ,cmnn.bbs_no
+        from com_menu cmnn
+        inner join menutree tree
+        on cmnn.up_menu_id = tree.menu_id
+        where 1 = 1
+        )
+        select menu_id
+        ,menu_id as id
+        ,menu_nm
+        ,menu_nm_en
+        ,menu_nm_ja
+        ,menu_nm_zh_tw
+        ,menu_nm_zh_cn
+        ,menu_nm as label
+        ,menu_lvl
+        ,up_menu_id
+        ,task_grp_cd
+        ,front_end_url
+        ,sort_order
+        <!-- ,
+        (select stuff((select ',' + cag.auth_grp_nm
+						from dbo.LANG_MENU('kr') men
+        inner join com_auth_grp_menu agm on men.menu_id = agm.menu_id
+		inner join com_auth_grp cag on cag.auth_grp_no = agm.auth_grp_no
+		where menutree.menu_id = men.menu_id 
+		for xml path('')),1,1,'')) as accessYn
+        ,(select stuff((select ',' + cag.auth_grp_nm
+						from dbo.LANG_MENU('kr') men
+        inner join com_auth_grp_menu agm on men.menu_id = agm.menu_id
+		inner join com_auth_grp cag on cag.auth_grp_no = agm.auth_grp_no
+		where menutree.menu_id = men.menu_id and write_yn = 'Y'
+		for xml path('')),1,1,''))  as writeYn 
+		-->
+		,(select stuff((select ',' + cag.auth_grp_nm
+						from dbo.LANG_MENU('kr') men
+        inner join com_auth_grp_menu agm on men.menu_id = agm.menu_id
+		inner join com_auth_grp cag on cag.auth_grp_no = agm.auth_grp_no
+		where menutree.menu_id = men.menu_id 
+		for xml path('')),1,1,'')) as accessYn
+        ,(select stuff((select ',' + cag.auth_grp_nm
+						from dbo.LANG_MENU('kr') men
+        inner join com_auth_grp_menu agm on men.menu_id = agm.menu_id
+		inner join com_auth_grp cag on cag.auth_grp_no = agm.auth_grp_no
+		where menutree.menu_id = men.menu_id and write_yn = 'Y'
+		for xml path('')),1,1,''))  as writeYn
+        ,tree_sort_order
+        ,menu_full_path
+        ,use_yn
+        ,(case when use_yn = 'Y' then '사용' else '미사용' end) as use_yn_nm
+        ,menutree.color
+        ,menutree.icon
+        ,menutree.bbs_no
+        from menutree
+        where 1 = 1
+        <if test= "taskGrpCd != null and !taskGrpCd.equals('')">
+            and task_grp_cd = #{taskGrpCd}
+        </if>
+        and menu_nm like '%' + #{menuNm} + '%'
+        <if test= "useYn != null and !useYn.equals('')">
+            and use_yn = #{useYn}
+        </if>
+        <if test= "menuLvl != null">
+            and menu_lvl = #{menuLvl}
+        </if>
+        order by sort_order, tree_sort_order
+        --order by tree_sort_order
+    </select>
+
+    <!-- 메뉴 수정 -->
+    <update id= "updateMenu" parameterType= "com.she.common.model.Menu">
+        update com_menu
+        set task_grp_cd = #{taskGrpCd}
+        ,menu_nm = #{menuNm}
+        ,menu_nm_en = #{menuNmEn}
+        ,menu_nm_ja = #{menuNmJa}
+        ,menu_nm_zh_cn = #{menuNmZhCn}
+        ,menu_nm_zh_tw = #{menuNmZhTw}
+        ,up_menu_id = #{upMenuId}
+        ,menu_lvl = #{menuLvl}
+        ,front_end_url = #{frontEndUrl}
+        ,sort_order = #{sortOrder}
+        ,use_yn = #{useYn}
+        ,icon = #{icon}
+        ,color = #{color}
+        ,update_user_id = #{updateUserId}
+        ,update_dt = getdate()
+        ,bbs_no = #{bbsNo}
+        where 1 = 1
+        and menu_id = #{menuId}
+    </update>
+
+    <!-- 하위메뉴 수정 -->
+    <update id= "updateSubMenu" parameterType= "com.she.common.model.MenuTreeBase">
+        update com_menu
+        set task_grp_cd = #{taskGrpCd}
+        ,menu_lvl = #{menuLvl}
+        ,update_user_id = #{updateUserId}
+        ,update_dt = getdate()
+        where 1 = 1
+        and menu_id = #{menuId}
+    </update>
+
+    <!-- 하위메뉴 수정2 -->
+    <update id= "updateSubMenuUseYn" parameterType= "com.she.common.model.MenuTreeBase">
+        update com_menu
+        set use_yn = #{useYn}
+        ,update_user_id = #{updateUserId}
+        ,update_dt = getdate()
+        where 1 = 1
+        and menu_id = #{menuId}
+    </update>
+    
+    <!-- ///// menu CRUD end ///// -->
+</mapper>

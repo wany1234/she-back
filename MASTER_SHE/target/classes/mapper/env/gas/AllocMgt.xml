@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.env.gas.mapper.AllocMgtMapper">
+
+    <!-- 할당량 관리 신규등록 -->
+    <insert id="createAllocMgt" parameterType="com.she.env.gas.model.GhgAlloc"> 
+        /* AllocMgtMapper.createAllogcMgt [AllocMgt.xml]  */       
+       <selectKey keyProperty="ghgAllocNo" resultType="int" order="BEFORE">
+            select next value for seq_ghg_alloc_mgt as ghg_alloc_no
+       </selectKey>
+       insert into ghg_alloc_mgt(
+              ghg_alloc_no
+             ,plant_cd
+             ,year
+             ,prev_amount
+             ,amount
+             ,est_emissions
+             ,next_amount
+             ,create_user_id
+             ,create_dt
+         )
+         values(
+             #{ghgAllocNo}
+             ,#{plantCd}
+             ,#{year}
+             ,#{prevAmount}
+             ,#{amount}
+             ,#{estEmissions}
+             ,#{nextAmount}
+             ,#{createUserId}
+             ,getdate()
+       )
+    </insert>
+    
+    <!-- 할당량 관리 수정 -->
+    <update id="updateAllocMgt" parameterType="com.she.env.gas.model.GhgAlloc">
+        /* AllocMgtMapper.updateAllocMgt [AllocMgt.xml]  */
+        update ghg_alloc_mgt
+            set 
+            prev_amount = #{prevAmount}
+            ,amount = #{amount}
+            ,est_emissions = #{estEmissions}
+            ,next_amount = #{nextAmount}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getdate()
+         where ghg_alloc_no =#{ghgAllocNo}    
+    </update>
+    
+    <!-- 할당량 관리 조회 -->
+     <select id="getAllocMgts" resultType="com.she.env.gas.model.GhgAlloc">
+        /* AllocMgtMapper.getAllocMgts [AllocMgt.xml]  */
+        select 
+          m.ghg_alloc_no
+          ,m.plant_cd
+          ,dbo.GET_CODE_NM(m.plant_cd ,'com_plant_cd') as plant_nm
+          ,m.year
+          ,format(m.prev_amount, '##0.##') as prev_amount
+          ,format(m.amount, '##0.##') as amount
+          ,format(m.est_emissions, '##0.##') as est_emissions
+          ,format(m.next_amount, '##0.##') as next_amount
+          ,m.create_user_id   
+          ,dbo.GET_USER_NM(m.create_user_id) as create_user_nm
+          ,m.create_dt
+          ,update_user_id
+          ,dbo.GET_USER_NM(m.update_user_id) as create_user_nm
+          ,update_dt
+          , case
+               when dbo.GET_USER_NM(m.update_user_id) = '' then dbo.GET_USER_NM(m.create_user_id)
+               else dbo.GET_USER_NM(m.update_user_id) end    as writer_user_nm
+          , case when m.update_dt is null then convert(date, m.create_dt) else convert(date, m.update_dt) end   as writer_dt
+      from ghg_alloc_mgt m
+      where 1=1
+      <if test="plantCd !=null and !plantCd.equals('')">
+       and m.plant_cd = #{plantCd}
+      </if>
+      <if test="fromYear !=null and !fromYear.equals('') and toYear !=null and !toYear.equals('')">
+       and m.year between #{fromYear} and #{toYear}
+      </if>
+      order by writer_dt desc
+     </select>
+     
+         <!-- 할당량 관리 상세 -->
+     <select id="getAllocMgt" resultType="com.she.env.gas.model.GhgAlloc">
+        /* AllocMgtMapper.updateAllocMgt [AllocMgt.xml]  */
+        select 
+          m.ghg_alloc_no
+          ,m.plant_cd
+          ,dbo.GET_CODE_NM(m.plant_cd ,'com_plant_cd') as plant_nm
+          ,m.year
+          ,format(m.prev_amount, '##0.##') as prev_amount 
+          ,format(m.amount, '##0.##') as amount
+          ,format(m.est_emissions, '##0.##') as est_emissions
+          ,format(m.next_amount, '##0.##') as next_amount
+          ,m.create_user_id   
+          ,dbo.GET_USER_NM(m.create_user_id) as create_user_nm
+          ,m.create_dt
+          ,update_user_id
+          ,dbo.GET_USER_NM(m.update_user_id) as create_user_nm
+          ,update_dt
+      from ghg_alloc_mgt m
+      where 1=1
+      and m.ghg_alloc_no = #{ghgAllocNo}
+     </select>
+     
+     <select id="checkDuple" resultType="int">
+        select count(*)
+        from ghg_alloc_mgt
+        where plant_cd = #{plantCd}
+        and year = #{year}
+     </select>
+
+</mapper>

@@ -1,0 +1,566 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.common.mapper.AttachFileMapper">
+    <!-- 첨부파일아이디 생성 -->
+    <select id="getNewAttachFileId" resultType="hashMap">
+        /* AttachFileMapper.getNewAttachFileId [AttachFile.xml] */
+        select 'F' + replicate('0', 19-len(convert(varchar(100), next value for seq_attach_file_id))) + convert(varchar(100), next value for seq_attach_file_id) as attach_file_id
+    </select>
+    
+    <update id="applyUploadFiles" parameterType="com.she.common.model.AttachFileGrp">
+        /* AttachFileMapper.applyUploadFiles [AttachFile.xml] */
+        update com_attach_file
+        set task_key = #{taskKey}
+        where attach_file_id = #{attachFileId}
+    </update>
+    
+    <update id="applyUploadSafFiles" parameterType="com.she.common.model.AttachFileGrp">
+        /* AttachFileMapper.applyUploadSafFiles [AttachFile.xml] */
+        update saf_attach_file
+        set task_key = #{taskKey}
+        where attach_file_id = #{attachFileId}
+    </update>
+
+    <!-- 첨부 파일 정보 저장 -->
+    <insert id= "createAttachFile" parameterType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.createAttachFile [AttachFile.xml] */
+        <selectKey keyProperty= "fileNo" resultType= "int" order= "BEFORE">
+            select (next value for seq_file_no) as file_no
+        </selectKey>
+
+        insert into com_attach_file
+        (file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_down_path
+        ,content_type
+        ,picture_explan
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt)
+        values
+        (#{fileNo}
+        ,#{attachFileId}
+        ,#{taskClassNm}
+        ,case when isnull(#{taskKey}, '') in ('', '0') then 'TEMP' else #{taskKey} end
+        ,#{fileOrgNm}
+        ,#{fileSaveNm}
+        ,#{fileExt}
+        ,#{fileSize}
+        ,#{filePath}
+<!--         ,#{fileDownPath} + CAST(#{fileNo} as varchar) + '/' + CAST(#{taskClassNm} as varchar) -->
+        ,#{fileDownPath}
+        ,#{contentType}
+        ,#{pictureExplan}
+        ,#{encryptYn}
+        ,#{createUserId}
+        ,getdate())
+    </insert>
+
+    <!-- PSM 첨부 파일 정보 저장 -->
+    <insert id= "createSafAttachFile" parameterType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.createSafAttachFile [AttachFile.xml] */
+        <selectKey keyProperty= "fileNo" resultType= "int" order= "BEFORE">
+            select (next value for seq_saf_file_no) as file_no
+        </selectKey>
+
+        insert into saf_attach_file
+        (file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_down_path
+        ,content_type
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt)
+        values
+        (#{fileNo}
+        ,#{attachFileId}
+        ,#{taskClassNm}
+        ,case when isnull(#{taskKey}, '') in ('', '0') then 'TEMP' else #{taskKey} end
+        ,#{fileOrgNm}
+        ,#{fileSaveNm}
+        ,#{fileExt}
+        ,#{fileSize}
+        ,#{filePath}
+        <!-- ,#{fileDownPath} + CAST(#{fileNo} as varchar) + '/' + CAST(#{taskClassNm} as varchar) -->
+        ,#{fileDownPath}
+        ,#{contentType}
+        ,#{encryptYn}
+        ,#{createUserId}
+        ,getdate())
+    </insert>
+
+    <!-- 업무그룹별 첨부 파일 조회 -->
+    <select id= "getUploadFiles" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getUploadFiles [AttachFile.xml] */
+        select file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_down_path
+        ,file_org_nm as name
+        ,content_type
+        ,picture_explan
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt
+        from com_attach_file
+        where 1 = 1
+        and task_class_nm = #{taskClassNm} 
+        and task_key = #{taskKey}
+        order by file_no desc
+    </select>
+    
+    <!-- 첨부파일아이디별 첨부 파일 조회 -->
+    <select id= "getUploadFilesById" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getUploadFilesById [AttachFile.xml] */
+        select file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_down_path
+        ,file_org_nm as name
+        ,content_type
+        ,picture_explan
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt
+        from com_attach_file
+        where 1 = 1
+        and attach_file_id = #{attachFileId}
+        order by file_no desc
+    </select>
+
+    <!-- PSM 첨부 파일 List 조회 -->
+    <select id= "getSafAttachFileList" resultType= "com.she.common.model.SafAttachFile">
+        /* AttachFileMapper.getSafAttachFileList [AttachFile.xml] */
+        with A as (
+            select task_key
+                , count(*) as file_cnt
+            from saf_attach_file saf
+            where saf.task_class_nm = #{taskClassNm}
+            and saf.use_yn is null
+            and saf.task_key != 'TEMP'
+            group by task_key
+        ),
+        B as (
+            select docu_grp_no
+                , max(convert(numeric, rev_num)) as rev_num
+            from saf_she_docu
+            where 1 = 1
+            and (del_yn is null or del_yn = '')
+            and use_yn = 'Y'
+            group by docu_grp_no
+        )
+        select ssd.she_docu_no
+            , ssd.docu_grp_no
+            , ssd.docu_class_cd
+            , ssd.docu_kind_cd
+            , mgt.code_nm as docu_kind_nm
+            , ssd.plant_cd
+            , ccm.code_nm as plant_nm
+            , ssd.dept_cd
+            , ssd.docu_title
+            , ssd.rev_num
+            , ssd.rev_contents
+            , ssd.rev_ymd
+            , ssd.docu_contents
+            , ssd.use_yn
+            , ssd.del_yn
+            , ssd.create_user_id
+            , convert(char(19), ssd.create_dt, 23) as create_dt
+            , ssd.update_user_id
+            , convert(char(19), ssd.update_dt, 23) as update_dt
+            , A.file_cnt
+            , ssd.ref_table_id
+            , ssd.she_docu_no as key1
+            , ssd.process_cd
+            , cp.process_nm
+            , case
+                 when dbo.GET_USER_NM(ssd.update_user_id) = '' then dbo.GET_USER_NM(ssd.create_user_id)
+                 else dbo.GET_USER_NM(ssd.update_user_id) end    as writer_user_nm
+            , case when ssd.update_dt is null then convert(date, ssd.create_dt) else convert(date, ssd.update_dt) end   as writer_dt
+        from saf_she_docu ssd
+        left outer join A
+        on ssd.she_docu_no = A.task_key
+        left outer join com_code_master ccm
+        on ssd.plant_cd = ccm.code
+        and ccm.code_group_cd = 'COM_PLANT_CD'
+        left outer join com_code_master mgt
+        on ssd.docu_kind_cd = mgt.code
+        and mgt.code_group_cd = 'MGT_DOCU_KND01'
+        left outer join com_process cp
+        on ssd.process_cd = cp.process_cd
+        <if test= "taskFlag != '' and !taskFlag.equals('')">
+            inner join B
+            on ssd.docu_grp_no = B.docu_grp_no
+            and ssd.rev_num = B.rev_num
+        </if>
+        where 1=1
+        <choose>
+            <when test="mgtEditable == 'true'">
+                and ssd.docu_kind_cd in (select code from com_code_master
+                                        where code_group_cd = 'MGT_DOCU_KND01')
+            </when>
+            <otherwise>
+                and ssd.docu_kind_cd = #{docuKindCd}
+            </otherwise>
+        </choose>
+        <if test= "taskKey != 0">
+            and ssd.docu_grp_no = #{taskKey}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            and ccm.code = #{plantCd}
+        </if>
+        <if test= "refTableId != null and !refTableId.equals('')">
+            and ssd.ref_table_id = #{refTableId}
+        </if>
+        <if test= "docuTitle != null and !docuTitle.equals('')">
+            and ssd.docu_title like '%' +  #{docuTitle} + '%'
+        </if>
+        <if test= "processCd != null and !processCd.equals('')">
+            and ssd.process_cd = #{processCd}
+        </if>
+        and ssd.use_yn = 'Y'
+        and (ssd.del_yn is null or ssd.del_yn = '')
+        order by writer_dt desc, ssd.docu_grp_no desc, convert(numeric, ssd.rev_num) desc
+    </select>
+
+    <!-- PSM 첨부 파일 List 조회 -->
+    <select id= "getDiagramList" resultType= "com.she.common.model.Diagram">
+        /* AttachFileMapper.getDiagramList [AttachFile.xml] */
+        with A as (
+            select diag_grp_no
+                , max(convert(numeric, rev_num)) as rev_num
+            from saf_diagram
+            where 1 = 1
+            and (del_yn is null or del_yn = '')
+            and use_yn = 'Y'
+            group by diag_grp_no
+        )
+        SELECT sd.diagram_seq
+              , sd.diagram_no
+              , sd.diag_grp_no
+              , sd.diag_kind_no
+              , sdk.diag_kind_nm
+              , sd.plant_cd
+              , ccm.code_nm as plant_nm
+              , sd.dept_cd
+              , sd.process_cd
+              , cp.process_nm
+              , sd.diag_title
+              , sd.rev_num
+              , sd.rev_ymd
+              , sd.diag_contents
+              , sd.diag_sys_num
+              , sd.diag_sys_url
+              , sd.rev_contents
+              , sd.use_yn
+              , sd.del_yn
+              , sd.create_user_id
+              , convert(char(19), sd.create_dt, 23) as create_dt
+              , sd.update_user_id
+              , convert(char(19), sd.update_dt, 23) as update_dt
+              , sd.diagram_seq as key1
+			  , sd.chng_num
+              , case
+                 when dbo.GET_USER_NM(sd.update_user_id) = '' then dbo.GET_USER_NM(sd.create_user_id)
+                 else dbo.GET_USER_NM(sd.update_user_id) end    as writer_user_nm
+            , case when sd.update_dt is null then convert(date, sd.create_dt) else convert(date, sd.update_dt) end   as writer_dt
+          FROM saf_diagram sd
+         INNER JOIN saf_diag_kind sdk
+            ON sd.diag_kind_no = sdk.diag_kind_no
+          LEFT OUTER JOIN com_code_master ccm
+            ON sd.plant_cd = ccm.code
+           AND ccm.code_group_cd = 'COM_PLANT_CD'
+          LEFT OUTER JOIN com_process cp
+            ON sd.process_cd = cp.process_cd
+          LEFT OUTER JOIN saf_chng_ref_work scrw
+            ON scrw.ref_table_nm = 'saf_diagram'
+           AND scrw.ref_table_id = sd.diagram_seq
+
+        <if test= "taskFlag != '' and !taskFlag.equals('')">
+            inner join A
+            on sd.diag_grp_no = A.diag_grp_no
+            and sd.rev_num = A.rev_num
+        </if>
+        where 1=1
+        <if test= "diagClassCd != '' and !diagClassCd.equals('')">
+            and sdk.diag_class_cd = #{diagClassCd}
+        </if>
+        <if test= "taskKey != 0">
+            and sd.diag_grp_no = #{taskKey}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            and sd.plant_cd = #{plantCd}
+        </if>
+        <if test= "diagTitle != null and !diagTitle.equals('')">
+            and sd.diag_title like '%' +  #{diagTitle} + '%'
+        </if>
+        <if test= "processCd != null and !processCd.equals('')">
+            and sd.process_cd = #{processCd}
+        </if>
+        and sd.use_yn = 'Y'
+        and (sd.del_yn is null or sd.del_yn = '')
+        order by writer_dt desc
+    </select>
+
+    <!-- PSM 첨부 파일 조회 -->
+    <select id= "getSafUploadFiles" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getSafUploadFiles [AttachFile.xml] */
+        select file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_down_path
+        ,file_org_nm as name
+        ,content_type
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt
+        from saf_attach_file
+        where 1 = 1
+        and task_class_nm = #{taskClassNm}
+        and task_key = #{taskKey}
+        and use_yn is null
+        order by file_no desc
+    </select>
+    
+    <!-- PSM 첨부파일아이디별 첨부 파일 조회 -->
+    <select id= "getSafUploadFilesById" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getSafUploadFilesById [AttachFile.xml] */
+        select file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_down_path
+        ,file_org_nm as name
+        ,content_type
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt
+        from saf_attach_file
+        where 1 = 1
+        and attach_file_id = #{attachFileId}
+        and use_yn is null
+        order by file_no desc
+    </select>
+
+    <!-- 단일 첨부 파일 조회 -->
+    <select id= "getUploadFile" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getUploadFile [AttachFile.xml] */
+        select file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_down_path
+        ,file_org_nm as name
+        ,content_type
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt
+        from com_attach_file
+        where 1 = 1
+        and file_no = #{fileNo}
+    </select>
+
+    <!-- 단일 첨부 파일 조회 -->
+    <select id= "getSafFile" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getSafFile [AttachFile.xml] */
+        select file_no
+             ,attach_file_id
+             ,task_class_nm
+             ,task_key
+             ,file_org_nm
+             ,file_save_nm
+             ,file_ext
+             ,file_size
+             ,file_path
+             ,file_down_path
+             ,file_org_nm as name
+             ,content_type
+             ,encrypt_yn
+             ,create_user_id
+             ,create_dt
+        from saf_attach_file
+        where file_no = #{fileNo}
+    </select>
+
+    <!-- 단일 첨부 파일 조회 (개선 조치 첨부파일 제일 처음꺼)-->
+    <select id= "getFirstUploadFile" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getFirstUploadFile [AttachFile.xml] */
+        select file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_down_path
+        ,file_org_nm as name
+        ,content_type
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt
+        from com_attach_file
+        where 1 = 1
+        and file_no = (select min(file_no) 
+                        from com_attach_file
+                        where 1=1
+                        and task_class_nm = #{taskClassNm}
+                        and task_key = #{taskKey})
+    </select>
+
+    <!-- 단일 첨부 파일 조회 -->
+    <select id= "getSafUploadFile" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getSafUploadFile [AttachFile.xml] */
+        select file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_org_nm as name
+        ,content_type
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt
+        from com_attach_file
+        where 1 = 1
+        and file_no = #{fileNo}
+        and task_class_nm = #{taskClassNm}
+        union all
+        select file_no
+        ,attach_file_id
+        ,task_class_nm
+        ,task_key
+        ,file_org_nm
+        ,file_save_nm
+        ,file_ext
+        ,file_size
+        ,file_path
+        ,file_org_nm as name
+        ,content_type
+        ,encrypt_yn
+        ,create_user_id
+        ,create_dt
+        from saf_attach_file
+        where 1 = 1
+        and file_no = #{fileNo}
+        and task_class_nm = #{taskClassNm}
+        and use_yn is null
+    </select>
+
+    <select id= "getUploadFilePath" resultType= "String">
+        /* AttachFileMapper.getUploadFilePath [AttachFile.xml] */
+        select code_nm as upload_file_path
+        from com_code_master
+        where code_group_cd = 'COM_UPLOAD_FILE_PATH'
+        and code = #{code}
+    </select>
+
+    <delete id= "deleteFile">
+        /* AttachFileMapper.deleteFile [AttachFile.xml] */
+        delete
+        from com_attach_file
+        where 1 = 1
+        and file_no = #{fileNo}
+    </delete>
+
+    <delete id= "deleteFilesAll">
+        /* AttachFileMapper.deleteFilesAll [AttachFile.xml] */
+        DELETE FROM com_attach_file
+         WHERE task_key = #{taskKey}
+           AND task_class_nm = #{taskClassNm}
+    </delete>
+
+    <update id= "safDeleteFile">
+        /* AttachFileMapper.safDeleteFile [AttachFile.xml] */
+        update saf_attach_file
+        set use_yn = 'N'
+        where file_no = #{fileNo}
+    </update>
+
+    <select id= "getFileList" resultType= "com.she.common.model.AttachFile">
+        /* AttachFileMapper.getFileList [AttachFile.xml] */
+        select file_no
+            , attach_file_id
+            , task_class_nm
+            , task_key
+            , file_org_nm
+            , file_down_path
+            , file_path
+            , picture_explan
+            , encrypt_yn
+        from com_attach_file
+        where 1=1
+        and task_key = #{taskKey}
+        and task_class_nm = #{taskClassNm}
+        union
+        select file_no
+            , attach_file_id
+            , task_class_nm
+            , task_key
+            , file_org_nm
+            , file_down_path
+            , file_path
+            , '' as picture_explan
+            , encrypt_yn
+        from saf_attach_file
+        where 1=1
+        and isnull(use_yn, 'Y') != 'N'
+        and task_key = #{taskKey}
+        and task_class_nm = #{taskClassNm}
+    </select>
+
+    <update id="editExplain" parameterType="com.she.common.model.AttachFile">
+        /* AttachFileMapper.editExplain [AttachFile.xml] */
+        update com_attach_file
+        set picture_explan = #{pictureExplan}
+        where file_no = #{fileNo}
+    </update>
+</mapper>

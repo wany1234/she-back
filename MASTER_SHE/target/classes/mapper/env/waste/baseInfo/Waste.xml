@@ -1,0 +1,125 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.waste.baseInfo.mapper.WasteMapper">
+    <select id= "getWastes" resultType= "com.she.env.waste.model.Waste">
+        select t.plant_cd as plantCd, plant.code_nm as plantNm, t.ewst_waste_no, t.ewst_waste_nm, tc.ewst_class_cd, tc.ewst_class_nm, tm.ewst_dispo_mtd_cd, tm.ewst_dispo_mtd_nm
+            , t.ewst_phase_cd, pc.code_nm as ewst_phase_nm, sap_cd
+            , t.ewst_dispo_div_cd, dc.code_nm as ewst_dispo_div_nm
+            , t.ewst_dispo_cy_cd, cc.code_nm as ewst_dispo_cy_nm
+            , t.sort_order, t.use_yn
+            , case when t.use_yn = 'Y' then '사용'else '미사용' end as use_yn_nm
+            , t.create_user_id, cu.user_nm as create_user_nm, t.create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, t.update_dt
+            , case
+                 when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+                 else dbo.GET_USER_NM(t.update_user_id) end    as writer_user_nm
+            , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+        from ewst_waste t
+        inner join ewst_class tc
+        on t.ewst_class_cd = tc.ewst_class_cd
+        inner join ewst_dispo_mtd tm
+        on t.ewst_dispo_mtd_cd = tm.ewst_dispo_mtd_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_PHASE') pc
+        on t.ewst_phase_cd = pc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_DIV') dc
+        on t.ewst_dispo_div_cd = dc.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_CY') cc
+        on t.ewst_dispo_cy_cd = cc.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on plant.code = t.plant_cd
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left outer join com_user uu
+        on t.update_user_id = uu.user_id
+        where 1=1
+        <if test="ewstDispoMtdCd !=null and !ewstDispoMtdCd.equals('')">
+        and tm.ewst_dispo_mtd_cd = #{ewstDispoMtdCd}
+        </if>
+        <if test="ewstWasteNm !=null and !ewstWasteNm.equals('')">
+        and t.ewst_waste_nm like '%' + #{ewstWasteNm} + '%'
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+        and t.use_yn = #{useYn}
+        </if>
+        <if test= "ewstClassCd != null and !ewstClassCd.equals('')">
+        and tc.ewst_class_cd = #{ewstClassCd}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and t.plant_cd = #{plantCd}
+        </if>        
+        order by writer_dt desc, t.plant_cd
+    </select>
+    
+    <select id= "getWaste" resultType= "com.she.env.waste.model.Waste">
+        select t.plant_cd, t.ewst_waste_no, t.ewst_waste_nm, t.ewst_class_cd, t.ewst_dispo_mtd_cd
+            , t.ewst_phase_cd, sap_cd
+            , t.ewst_dispo_div_cd
+            , t.ewst_dispo_cy_cd
+            , t.sort_order, t.use_yn
+            , t.create_user_id, t.create_dt
+            , t.update_user_id, t.update_dt
+        from ewst_waste t
+        where t.ewst_waste_no = #{ewstWasteNo}
+    </select>
+    
+    <insert id= "createWaste" parameterType= "com.she.env.waste.model.Waste">
+        <selectKey keyProperty= "ewstWasteNo" resultType= "int" order= "BEFORE">
+            select next value for seq_ewst_waste as ewst_waste_no
+          </selectKey>
+        insert into ewst_waste (
+            ewst_waste_no
+            , ewst_waste_nm
+            , ewst_class_cd
+            , ewst_dispo_mtd_cd
+            , ewst_phase_cd
+            , ewst_dispo_div_cd
+            , ewst_dispo_cy_cd
+            , sort_order
+            , sap_cd
+            , use_yn
+            , plant_cd
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{ewstWasteNo}
+            , #{ewstWasteNm}
+            , #{ewstClassCd}
+            , #{ewstDispoMtdCd}
+            , #{ewstPhaseCd}
+            , #{ewstDispoDivCd}
+            , #{ewstDispoCyCd}
+            , #{sortOrder}
+            , #{sapCd}
+            , #{useYn}
+            , #{plantCd}
+            , #{createUserId}
+            , getdate()
+        )
+    </insert>
+    
+    <update id= "updateWaste" parameterType= "com.she.env.waste.model.Waste">
+        update ewst_waste
+        set ewst_waste_nm = #{ewstWasteNm}
+            , ewst_class_cd = #{ewstClassCd}
+            , ewst_dispo_mtd_cd = #{ewstDispoMtdCd}
+            , sap_cd = #{sapCd}
+            , ewst_phase_cd = #{ewstPhaseCd}
+            , ewst_dispo_div_cd = #{ewstDispoDivCd}
+            , ewst_dispo_cy_cd = #{ewstDispoCyCd}
+            , sort_order = #{sortOrder}
+            , use_yn = #{useYn}
+            , plant_cd = #{plantCd}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+           where ewst_waste_no = #{ewstWasteNo}
+    </update>
+    
+    <select id="dupleCheck" resultType="int">
+        select count(*) 
+        from ewst_waste
+        where ewst_waste_nm = #{ewstWasteNm}
+        and plant_cd = #{plantCd}
+    </select>
+</mapper>

@@ -1,0 +1,340 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.baseInfo.mapper.ChemicalPermitClsMapper">
+
+    <select id= "getChemicalPermitClses" resultType= "com.she.chm.model.ChemicalPermitCls">
+        /* ChemicalPermitClsMapper.getChemicalPermitClses [ChemicalPermitCls.xml] */
+        with A as (
+            select cpcri.permit_cls_no
+                ,cri.regul_law_cd
+                ,regulLaw.code_nm as regul_law_nm
+            from  chm_regul_itm cri
+            inner join com_code_master regulLaw
+            on cri.regul_law_cd = regulLaw.code
+            and regulLaw.code_group_cd = 'CHM_REGUL_LAW'
+            and regulLaw.use_yn = 'Y'
+            inner join chm_permit_cls_regul_itm cpcri
+            on cri.regul_itm_no = cpcri.regul_itm_no
+            group by cpcri.permit_cls_no, cri.regul_law_cd, regulLaw.code_nm
+        )
+        ,B as (
+            select cpcri.permit_cls_no, cri.regul_itm_no
+            from chm_regul_itm cri
+            inner join chm_permit_cls_regul_itm cpcri
+            on cri.regul_itm_no = cpcri.regul_itm_no
+        )
+        select cpc.permit_cls_no
+            ,cpc.permit_cls_nm
+            ,cpc.permit_cls_cd
+            ,cpc.permit_kind_cd
+            ,permitKing.code_nm as permit_kind_nm
+            ,cpc.confirm_yn
+            ,cpc.attach_yn
+            ,cpc.sort_order
+            ,cpc.main_org
+            ,cpc.permit_law
+            ,cpc.permit_period
+            ,cpc.permit_url
+            ,cpc.plant_cd
+            ,permitPlant.code_nm as plant_nm
+            ,cpc.use_yn
+            ,case
+                when cpc.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,cpc.need_yn
+            ,case
+                when cpc.need_yn = 'Y' then '필수'
+                else '선택'
+            end as need_yn_nm
+            ,cpc.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cpc.create_dt
+            ,cpc.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cpc.update_dt
+
+            ,A.regul_law_nm
+            ,stuff((
+                select ', ' + x.regul_itm_nm
+                from chm_regul_itm x
+                inner join B
+                on B.regul_itm_no = x.regul_itm_no
+                where A.regul_law_cd = x.regul_law_cd
+                and A.permit_cls_no = B.permit_cls_no
+                for xml path('')
+            ), 1, 1, '') as regul_itm_nms
+            , case
+                 when dbo.GET_USER_NM(cpc.update_user_id) = '' then dbo.GET_USER_NM(cpc.create_user_id)
+                 else dbo.GET_USER_NM(cpc.update_user_id) end as writer_user_nm
+            , case when cpc.update_dt is null then convert(date, cpc.create_dt) else convert(date, cpc.update_dt) end   as writer_dt
+        from chm_permit_cls cpc
+
+        left outer join A
+        on cpc.permit_cls_no = A.permit_cls_no
+
+        inner join com_code_master permitKing
+        on cpc.permit_kind_cd = permitKing.code
+        and permitKing.code_group_cd = 'CHM_PERMIT_KND'
+        and permitKing.use_yn = 'Y'
+        inner join com_user createUser
+        on cpc.create_user_id = createUser.user_id
+        inner join com_code_master permitPlant
+        on cpc.plant_cd = permitPlant.code
+        and permitPlant.code_group_cd = 'COM_PLANT_CD'
+        and permitPlant.use_yn = 'Y'
+        left outer join com_user updateUser
+        on cpc.update_user_id = updateUser.user_id
+        where 1=1
+        and cpc.permit_cls_nm like '%' + #{permitClsNm} + '%'
+        <if test= "permitKindCd != null and !permitKindCd.equals('')">
+        and cpc.permit_kind_cd = #{permitKindCd}
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+        and cpc.use_yn = #{useYn}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            <choose>
+              <when test= "plantCd.equals('0000')">
+                  and isnull(cpc.plant_cd, '') != ''
+              </when>
+              <otherwise>
+                  and cpc.plant_cd in (#{plantCd}, '0000')
+              </otherwise>
+            </choose>
+        </if>
+        order by writer_dt desc, cpc.sort_order
+    </select>
+
+    <select id= "getChemicalPermitCls" resultType= "com.she.chm.model.ChemicalPermitCls">
+        /* ChemicalPermitClsMapper.getChemicalPermitCls [ChemicalPermitCls.xml] */
+        select cpc.permit_cls_no
+            ,cpc.permit_cls_nm
+            ,cpc.permit_cls_cd
+            ,cpc.permit_kind_cd
+            ,permitKing.code_nm as permit_kind_nm
+            ,cpc.confirm_yn
+            ,cpc.attach_yn
+            ,cpc.sort_order
+            ,cpc.main_org
+            ,cpc.permit_law
+            ,cpc.permit_period
+            ,cpc.permit_url
+            ,cpc.plant_cd
+            ,permitPlant.code_nm as plant_nm
+            ,cpc.use_yn
+            ,cpc.need_yn
+            ,cpc.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cpc.create_dt
+            ,cpc.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cpc.update_dt
+        from chm_permit_cls cpc
+        inner join com_code_master permitKing
+        on cpc.permit_kind_cd = permitKing.code
+        and permitKing.code_group_cd = 'CHM_PERMIT_KND'
+        and permitKing.use_yn = 'Y'
+        inner join com_code_master permitPlant
+        on cpc.plant_cd = permitPlant.code
+        and permitPlant.code_group_cd = 'COM_PLANT_CD'
+        and permitPlant.use_yn = 'Y'
+        inner join com_user createUser
+        on cpc.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cpc.update_user_id = updateUser.user_id
+        where 1=1
+        and cpc.permit_cls_no = #{permitClsNo}
+    </select>
+
+
+
+    <select id= "getChemicalPermitClsList" resultType= "com.she.chm.model.ChemicalPermitCls">
+        /* ChemicalPermitClsMapper.getChemicalPermitClsList [ChemicalPermitCls.xml] */
+        select cpc.permit_cls_no
+            ,cpc.permit_cls_nm
+            ,cpc.permit_cls_cd
+            ,cpc.permit_kind_cd
+            ,permitKing.code_nm as permit_kind_nm
+            ,cpc.confirm_yn
+            ,cpc.attach_yn
+            ,cpc.sort_order
+            ,cpc.main_org
+            ,cpc.permit_law
+            ,cpc.permit_period
+            ,cpc.permit_url
+            ,cpc.plant_cd
+            ,permitPlant.code_nm as plant_nm
+            ,cpc.use_yn
+            ,cpc.need_yn
+            ,cpc.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cpc.create_dt
+            ,cpc.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cpc.update_dt
+        from chm_permit_cls cpc
+        inner join com_code_master permitKing
+            on cpc.permit_kind_cd = permitKing.code
+            and permitKing.code_group_cd = 'CHM_PERMIT_KND'
+        inner join com_code_master permitPlant
+            on cpc.plant_cd = permitPlant.code
+            and permitPlant.code_group_cd = 'COM_PLANT_CD'
+        left outer join com_user createUser
+            on cpc.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+            on cpc.update_user_id = updateUser.user_id
+        where 1=1
+        <if test= "permitKindCd != null and !permitKindCd.equals('')">
+        and cpc.permit_kind_cd = #{permitKindCd}
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+        and cpc.use_yn = #{useYn}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            <choose>
+              <when test= "plantCd.equals('0000')">
+                  and isnull(cpc.plant_cd, '') != ''
+              </when>
+              <otherwise>
+                  and cpc.plant_cd in (#{plantCd}, '0000')
+              </otherwise>
+            </choose>
+        </if>
+    </select>
+
+    <insert id= "createChemicalPermitCls" parameterType= "com.she.chm.model.ChemicalPermitCls">
+        <selectKey keyProperty= "permitClsNo" resultType= "int" order= "BEFORE">
+            select next value for seq_chm_permit_cls as permit_cls_no
+          </selectKey>
+          /* ChemicalPermitClsMapper.createChemicalPermitCls [ChemicalPermitCls.xml] */
+        insert into chm_permit_cls
+            (permit_cls_no
+            ,permit_cls_nm
+            ,permit_cls_cd
+            ,permit_kind_cd
+            ,confirm_yn
+            ,attach_yn
+            ,sort_order
+            ,main_org
+            ,permit_law
+            ,permit_period
+            ,permit_url
+            ,plant_cd
+            ,use_yn
+            ,need_yn
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{permitClsNo}
+            ,#{permitClsNm}
+            ,#{permitClsCd}
+            ,#{permitKindCd}
+            ,#{confirmYn}
+            ,#{attachYn}
+            ,#{sortOrder}
+            ,#{mainOrg}
+            ,#{permitLaw}
+            ,#{permitPeriod}
+            ,#{permitUrl}
+            ,#{plantCd}
+            ,#{useYn}
+            ,#{needYn}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+
+    <update id= "updateChemicalPermitCls" parameterType= "com.she.chm.model.ChemicalPermitCls">
+        /* ChemicalPermitClsMapper.updateChemicalPermitCls [ChemicalPermitCls.xml] */
+        update chm_permit_cls
+        set permit_cls_nm = #{permitClsNm}
+            ,permit_cls_cd = #{permitClsCd}
+            ,permit_kind_cd = #{permitKindCd}
+            ,confirm_yn = #{confirmYn}
+            ,attach_yn = #{attachYn}
+            ,main_org = #{mainOrg}
+            ,permit_law = #{permitLaw}
+            ,permit_period = #{permitPeriod}
+            ,permit_url = #{permitUrl}
+            ,need_yn = #{needYn}
+            ,plant_cd = #{plantCd}
+            ,sort_order = #{sortOrder}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where permit_cls_no = #{permitClsNo}
+    </update>
+
+    <select id= "getCheckChemicalPermitCls" resultType= "HashMap">
+        /* ChemicalPermitClsMapper.getCheckChemicalPermitCls [ChemicalPermitCls.xml] */
+        select count(*) as cnt
+            ,'permitClsNm' as gubun
+        from chm_permit_cls
+        where 1=1
+        and permit_cls_nm = #{permitClsNm}
+        <if test= "permitClsNo != null and permitClsNo > 0">
+        and permit_cls_no not in (#{permitClsNo})
+        </if>
+        union all
+        select count(*) as cnt
+            ,'permitClsCd' as gubun
+        from chm_permit_cls
+        where 1=1
+        and permit_cls_cd = #{permitClsCd}
+        <if test= "permitClsNo != null and permitClsNo > 0">
+        and permit_cls_no not in (#{permitClsNo})
+        </if>
+    </select>
+
+    <select id= "getChemicalPermitReguls" resultType= "com.she.chm.model.ChemicalRegulItem">
+        /* ChemicalPermitClsMapper.getChemicalPermitReguls [ChemicalPermitCls.xml] */
+        select cri.regul_itm_no
+            ,cri.regul_itm_cd
+            ,cri.regul_itm_nm
+            ,cri.contents
+            ,cri.regul_law_cd
+            ,regulLaw.code_nm as regul_law_nm
+            ,cpc.permit_cls_no
+        from chm_permit_cls cpc
+        inner join chm_permit_cls_regul_itm cpcri
+        on cpc.permit_cls_no = cpcri.permit_cls_no
+        inner join chm_regul_itm cri
+        on cpcri.regul_itm_no = cri.regul_itm_no
+        and cri.use_yn = 'Y'
+        inner join com_code_master regulLaw
+        on cri.regul_law_cd = regulLaw.code
+        and regulLaw.code_group_cd = 'CHM_REGUL_LAW'
+        and regulLaw.use_yn = 'Y'
+        inner join com_user createUser
+        on cpc.create_user_id = createUser.user_id
+        and createUser.use_yn = 'Y'
+        left outer join com_user updateUser
+        on cpc.update_user_id = updateUser.user_id
+        and updateUser.use_yn = 'Y'
+        where 1=1
+        and cpc.permit_cls_no = #{permitClsNo}
+        order by cpc.sort_order
+    </select>
+
+    <insert id= "createChemicalPermitReguls">
+        /* ChemicalPermitClsMapper.createChemicalPermitReguls [ChemicalPermitCls.xml] */
+        insert into chm_permit_cls_regul_itm
+            (permit_cls_no
+            ,regul_itm_no
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{permitClsNo}
+            ,#{regulItmNo}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+
+    <delete id= "deleteChemicalPermitReguls">
+        /* ChemicalPermitClsMapper.deleteChemicalPermitReguls [ChemicalPermitCls.xml] */
+        delete from chm_permit_cls_regul_itm
+        where permit_cls_no = #{permitClsNo}
+    </delete>
+
+</mapper>

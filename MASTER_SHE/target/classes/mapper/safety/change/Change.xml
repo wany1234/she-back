@@ -1,0 +1,889 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.safety.change.mapper.ChangeMapper">
+
+    <select id="getChanges" resultType="com.she.safety.model.Change">
+        /* ChangeMapper.getChanges [Change.xml] */
+        SELECT sc.saf_chng_no
+              ,sc.chng_num
+              ,sc.plant_cd
+              ,plant.code_nm as plant_nm
+              ,sc.rqst_dept_cd
+              ,cd.dept_nm as rqst_dept_nm
+              ,sc.rqst_user_id
+              ,cu.user_nm as rqst_user_nm
+              ,sc.rqst_dt
+              ,sc.confirm_dt
+              ,sc.commi_yn
+              ,sc.biz_nm
+              ,sc.chng_att_cd
+              ,changeAtt.code_nm as chng_att_nm
+              ,sc.moc_lvl_cd
+              ,mocLvl.code_nm as moc_lvl_nm
+              ,sc.prev_moc_lvl_cd
+              ,prvMocLvl.code_nm as prev_moc_lvl_nm
+              ,sc.chng_contents
+              ,sc.chng_ref_law
+              ,sc.chk_opinion
+              ,sc.chng_step_cd
+              ,changeStep.code_nm as chng_step_nm
+              ,sc.create_user_id
+              ,createUser.user_nm as create_user_nm
+              ,convert(char(10), sc.create_dt, 23) as create_dt 
+              ,sc.update_user_id
+              ,updateUser.user_nm as update_user_nm
+              ,convert(char(10), sc.update_dt, 23) as update_dt
+
+               <choose>
+                   <when test='chngStepCd.equals("CGSPA")'>
+                       ,case when chng_step_cd = 'CGSPA' and biz_appr_step_cd = 'BAPSG' then '결재요청전'
+                         else bizAppr.code_nm end biz_appr_step_nm
+                       ,case when chng_step_cd = 'CGSPA' and biz_appr_step_cd = 'BAPSG' then null
+                         else sc.appr_rqst_no end as appr_rqst_no
+                       ,case when chng_step_cd = 'CGSPA' and biz_appr_step_cd = 'BAPSG' then null
+                         else car.biz_appr_step_cd end as biz_appr_step_cd
+                   </when>
+                   <when test='chngStepCd.equals("CGSP2")'>
+                        ,case when chng_step_cd = 'CGSP2' and biz_appr_step_cd = 'BAPSG' then '결재요청전'
+                         else bizAppr.code_nm end biz_appr_step_nm
+                          ,case when chng_step_cd = 'CGSP2' and biz_appr_step_cd = 'BAPSG' then null
+                         else sc.appr_rqst_no end as appr_rqst_no
+                       ,case when chng_step_cd = 'CGSP2' and biz_appr_step_cd = 'BAPSG' then null
+                         else car.biz_appr_step_cd end as biz_appr_step_cd
+                   </when>
+                   <otherwise>
+                     ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+                     ,sc.appr_rqst_no
+                     ,car.biz_appr_step_cd
+                   </otherwise>
+               </choose>
+               
+          FROM saf_chng sc
+          LEFT OUTER JOIN com_appr_rqst car
+            ON sc.appr_rqst_no = car.appr_rqst_no
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') bizAppr
+            ON car.biz_appr_step_cd = bizAppr.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_STEP') changeStep
+            ON sc.chng_step_cd = changeStep.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_ATT') changeAtt
+            ON sc.chng_att_cd = changeAtt.code
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_MOC_LVL') mocLvl
+            ON sc.moc_lvl_cd = mocLvl.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_MOC_LVL') prvMocLvl
+            ON sc.prev_moc_lvl_cd = prvMocLvl.code
+         INNER JOIN com_user cu 
+            ON sc.rqst_user_id = cu.user_id
+         INNER JOIN com_dept cd
+            ON sc.rqst_dept_cd = cd.dept_cd
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            ON sc.plant_cd = plant.code
+          LEFT OUTER JOIN com_user createUser 
+            ON sc.create_user_id = createUser.user_id
+          LEFT OUTER JOIN com_user updateUser 
+            ON sc.update_user_id = updateUser.user_id
+         WHERE 1=1
+           AND sc.biz_nm like '%' + #{bizNm} + '%'
+        <if test="rqstStartDt != null and !rqstStartDt.equals('') and rqstEndDt != null and !rqstEndDt.equals('')">
+           AND convert(datetime, sc.rqst_dt) between convert(datetime, #{rqstStartDt}) and convert(datetime, #{rqstEndDt})
+        </if>
+        <if test="rqstDeptCd != null and !rqstDeptCd.equals('')">
+           <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+           AND EXISTS (SELECT 1 WHERE ISNULL(#{rqstDeptCd}, '') = ''
+                       UNION ALL
+                       SELECT 1 WHERE #{rqstDeptSubYn} = 'Y' AND sc.rqst_dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{rqstDeptCd}))
+                       UNION ALL
+                       SELECT 1 WHERE #{rqstDeptSubYn} = 'N' AND sc.rqst_dept_cd = #{rqstDeptCd}
+                       )
+           <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if>
+        <if test="chngStepCd != null and !chngStepCd.equals('')">
+            <choose>
+                <when test='chngStepCd.equals("CGSP99")'>
+                    and sc.chng_step_cd in ('CGSP3', 'CGSP4')
+                </when>
+                <when test='chngStepCd.equals("CGSP98")'>
+                    and sc.chng_step_cd in ('CGSP1', 'CGSPA', 'CGSP2')
+                </when>
+                <when test= "@org.apache.commons.lang3.StringUtils@isNotBlank(chngStepCd)">
+                    AND sc.chng_step_cd = #{chngStepCd}
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="chngRefWorkCd != null and !chngRefWorkCd.equals('')">
+           AND exists(SELECT 1
+                        FROM saf_chng_chk_itm_rslt sccir
+                       WHERE sc.saf_chng_no = sccir.saf_chng_no
+                         AND sccir.chng_ref_work_cd = #{chngRefWorkCd}
+                         AND sccir.chng_rslt_yn = 'Y')
+        </if>
+        <if test="chngAttCd != null and !chngAttCd.equals('')">
+           AND sc.chng_att_cd = #{chngAttCd}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+           AND sc.plant_cd = #{plantCd}
+        </if>
+          ORDER BY sc.rqst_dt desc
+    </select>
+    
+    <select id="getChange" resultType="com.she.safety.model.Change">
+        /* ChangeMapper.getChange [Change.xml] */
+        SELECT sc.saf_chng_no
+              ,sc.chng_num
+              ,sc.plant_cd
+              ,sc.rqst_dept_cd
+              ,cd.dept_nm as rqst_dept_nm
+              ,sc.rqst_user_id
+              ,cu.user_nm as rqst_user_nm
+              ,sc.rqst_dt
+              ,sc.confirm_dt
+              ,sc.commi_yn
+              ,sc.biz_nm
+              ,sc.chng_att_cd
+              ,sc.moc_lvl_cd
+              ,sc.prev_moc_lvl_cd
+              ,sc.chng_contents
+              ,sc.chng_ref_law
+              ,sc.chk_opinion
+              ,sc.chng_step_cd
+              ,sc.create_user_id
+              ,createUser.user_nm as create_user_nm
+              ,convert(char(10), sc.create_dt, 23) as create_dt 
+              ,sc.update_user_id
+              ,updateUser.user_nm as update_user_nm
+              ,convert(char(10), sc.update_dt, 23) as update_dt 
+              ,sc.appr_rqst_no
+              ,car.biz_appr_step_cd
+          FROM saf_chng sc
+          LEFT OUTER JOIN com_appr_rqst car
+            ON sc.appr_rqst_no = car.appr_rqst_no
+         INNER JOIN com_user cu 
+            ON sc.rqst_user_id = cu.user_id
+         INNER JOIN com_dept cd
+            ON sc.rqst_dept_cd = cd.dept_cd
+          LEFT OUTER JOIN com_user createUser 
+            ON sc.create_user_id = createUser.user_id
+          LEFT OUTER JOIN com_user updateUser 
+            ON sc.update_user_id = updateUser.user_id
+         WHERE sc.saf_chng_no = #{safChngNo}
+    </select>
+    
+    <select id="getChangeTypes" resultType="com.she.safety.model.ChangeType">
+        /* ChangeMapper.getChangeTypes [Change.xml] */
+        SELECT saf_chng_no
+              ,chng_type_cd
+              ,changeType.code_nm as chng_type_nm
+              ,chng_cls_cd
+              ,changeCls.code_nm as chng_cls_nm
+          FROM saf_chng_type sct
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_TYPE') changeType
+            ON sct.chng_type_cd = changeType.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_CLS') changeCls
+            ON sct.chng_cls_cd = changeCls.code
+         WHERE sct.saf_chng_no = #{safChngNo}
+    </select>
+    
+    <select id="getChangeOperations" resultType="com.she.safety.model.ChangeOperation">
+        /* ChangeMapper.getChangeOperations [Change.xml] */
+        SELECT sco.saf_chng_no
+              ,sco.chng_operation_cd
+              ,changeOperation.code_nm as chng_operation_nm
+              ,sco.chng_cls_cd
+              ,changeCls.code_nm as chng_cls_nm
+          FROM saf_chng_operation sco
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_OPERATION') changeOperation
+            ON sco.chng_operation_cd = changeOperation.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_CLS2') changeCls
+            ON sco.chng_cls_cd = changeCls.code
+         WHERE sco.saf_chng_no = #{safChngNo}
+    </select>
+    
+    <select id="getChangeEffects" resultType="com.she.safety.model.ChangeEffect">
+        /* ChangeMapper.getChangeEffects [Change.xml] */
+        SELECT sce.saf_chng_no
+              ,sce.chng_effect_cd
+              ,changeEffect.code_nm as chng_effect_nm
+          FROM saf_chng_effect sce
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_EFFECT') changeEffect
+            ON sce.chng_effect_cd = changeEffect.code
+         WHERE sce.saf_chng_no = #{safChngNo}
+    </select>
+    
+    <select id="getChangeNum" resultType="HashMap">
+        SELECT case when max(chng_num) is null then convert(varchar, year(getdate())) + '-001'
+                    else left(max(chng_num), 4) + '-' + REPLICATE('0',3 - LEN(convert(varchar, convert(numeric, right(max(chng_num), 3)) + 1))) + convert(varchar, convert(numeric, right(max(chng_num), 3)) + 1)
+                end as chng_num
+          FROM saf_chng
+    </select>
+    
+    <insert id="createChange" parameterType="com.she.safety.model.Change">
+        /* ChangeMapper.createChange [Change.xml] */
+        <selectKey keyProperty="safChngNo,chngNum" resultType="com.she.safety.model.Change" order="BEFORE">
+            SELECT next value for seq_saf_chng as safChngNo
+                   ,(SELECT case when max(chng_num) is null or left(max(chng_num), 4) != convert(varchar, year(getdate())) then convert(varchar, year(getdate())) + '-00001'
+                                 else left(max(chng_num), 4) + '-' + REPLICATE('0',5 - LEN(convert(varchar, convert(numeric, right(max(chng_num), 5)) + 1))) + convert(varchar, convert(numeric, right(max(chng_num), 5)) + 1)
+                             end as chng_num
+                       FROM saf_chng) as chngNum
+        </selectKey>
+        INSERT INTO saf_chng
+            (saf_chng_no
+            ,plant_cd
+            ,chng_num
+            ,rqst_dept_cd
+            ,rqst_user_id
+            ,rqst_dt
+            ,confirm_dt
+            ,commi_yn
+            ,biz_nm
+            ,chng_att_cd
+            ,prev_moc_lvl_cd
+            ,moc_lvl_cd
+            ,chng_contents
+            ,chng_ref_law
+            ,chk_opinion
+            ,chng_step_cd
+            ,create_user_id
+            ,create_dt)
+        VALUES 
+            (#{safChngNo}
+            ,#{plantCd}
+            ,#{chngNum}
+            ,#{rqstDeptCd}
+            ,#{rqstUserId}
+            ,#{rqstDt}
+            ,#{confirmDt}
+            ,#{commiYn}
+            ,#{bizNm}
+            ,#{chngAttCd}
+            ,#{prevMocLvlCd}
+            ,#{mocLvlCd}
+            ,#{chngContents}
+            ,#{chngRefLaw}
+            ,#{chkOpinion}
+            ,#{chngStepCd}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+    
+    <update id="updateChange" parameterType="com.she.safety.model.Change">
+        /* ChangeMapper.updateChange [Change.xml] */
+        UPDATE saf_chng
+           SET chng_num = #{chngNum}
+              ,plant_cd = #{plantCd}
+              ,rqst_dept_cd = #{rqstDeptCd}
+              ,rqst_user_id = #{rqstUserId}
+              ,rqst_dt = #{rqstDt}
+              ,confirm_dt = #{confirmDt}
+              ,commi_yn = #{commiYn}
+              ,biz_nm = #{bizNm}
+              ,chng_att_cd = #{chngAttCd}
+              ,prev_moc_lvl_cd = #{prevMocLvlCd}
+              ,moc_lvl_cd = #{mocLvlCd}
+              ,chng_contents = #{chngContents}
+              ,chng_ref_law = #{chngRefLaw}
+              ,chk_opinion = #{chkOpinion}
+              ,chng_step_cd = #{chngStepCd}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = convert(char(10), getDate(), 23)
+         WHERE saf_chng_no = #{safChngNo}
+    </update>
+    
+    <delete id="deleteChange">
+        /* ChangeMapper.deleteChange [Change.xml] */
+        DELETE FROM saf_chng
+         WHERE saf_chng_no = #{safChngNo}
+    </delete>
+ 
+    <insert id="createChangeType" parameterType="com.she.safety.model.ChangeType">
+        /* ChangeMapper.createChangeType [Change.xml] */
+        INSERT INTO saf_chng_type
+            (saf_chng_no
+            ,chng_type_cd
+            ,chng_cls_cd)
+        VALUES
+            (#{safChngNo}
+            ,#{chngTypeCd}
+            ,#{chngClsCd})
+    </insert>
+    
+    <delete id="deleteChangeType">
+        /* ChangeMapper.deleteChangeType [Change.xml] */
+        DELETE FROM saf_chng_type
+         WHERE saf_chng_no = #{safChngNo}
+    </delete>
+ 
+    <insert id="createChangeOperation" parameterType="com.she.safety.model.ChangeOperation">
+        /* ChangeMapper.createChangeOperation [Change.xml] */
+        INSERT INTO saf_chng_operation
+            (saf_chng_no
+            ,chng_operation_cd
+            ,chng_cls_cd)
+        VALUES
+            (#{safChngNo}
+            ,#{chngOperationCd}
+            ,#{chngClsCd})
+    </insert>
+    
+    <delete id="deleteChangeOperation">
+        /* ChangeMapper.deleteChangeOperation [Change.xml] */
+        DELETE FROM saf_chng_operation
+         WHERE saf_chng_no = #{safChngNo}
+    </delete>
+ 
+    <insert id="createChangeEffect" parameterType="com.she.safety.model.ChangeEffect">
+        /* ChangeMapper.createChangeEffect [Change.xml] */
+        INSERT INTO saf_chng_effect
+            (saf_chng_no
+            ,chng_effect_cd)
+        VALUES
+            (#{safChngNo}
+            ,#{chngEffectCd})
+    </insert>
+    
+    <delete id="deleteChangeEffect">
+        /* ChangeMapper.deleteChangeEffect [Change.xml] */
+        DELETE FROM saf_chng_effect
+         WHERE saf_chng_no = #{safChngNo}
+    </delete>
+    
+    <select id="getChangeCommi" resultType="com.she.safety.model.ChangeCommi">
+        /* ChangeMapper.getChangeCommi [Change.xml] */
+        SELECT scc.saf_chng_commi_no
+              ,scc.saf_chng_no
+              ,scc.commi_dt
+              ,scc.commi_contents
+              ,cd.dept_nm
+              ,scc.create_user_id
+              ,createUser.user_nm as create_user_nm
+              ,convert(char(10), scc.create_dt, 23) as create_dt 
+              ,scc.update_user_id
+              ,updateUser.user_nm as update_user_nm
+              ,convert(char(10), scc.update_dt, 23) as update_dt 
+          FROM saf_chng_commi scc
+         INNER JOIN com_user createUser 
+            ON scc.create_user_id = createUser.user_id
+         INNER JOIN com_dept cd
+            ON createUser.dept_cd = cd.dept_cd
+          LEFT OUTER JOIN com_user updateUser 
+            ON scc.update_user_id = updateUser.user_id
+         WHERE scc.saf_chng_no = #{safChngNo}
+    </select>
+    
+    <insert id="createChangeCommi" parameterType="com.she.safety.model.ChangeCommi">
+        /* ChangeMapper.createChangeCommi [Change.xml] */
+        <selectKey keyProperty="safChngCommiNo" resultType="int" order="BEFORE">
+            SELECT next value for seq_saf_chng_commi as saf_chng_commi_no
+        </selectKey>
+        INSERT INTO saf_chng_commi
+            (saf_chng_commi_no
+            ,saf_chng_no
+            ,commi_dt
+            ,commi_contents
+            ,create_user_id
+            ,create_dt)
+        VALUES
+            (#{safChngCommiNo}
+            ,#{safChngNo}
+            ,#{commiDt}
+            ,#{commiContents}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+    
+    <update id="updateChangeCommi" parameterType="com.she.safety.model.ChangeCommi">
+        /* ChangeMapper.updateChangeCommi [Change.xml] */
+        UPDATE saf_chng_commi
+           SET commi_dt = #{commiDt}
+              ,commi_contents = #{commiContents}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = convert(char(10), getDate(), 23)
+         WHERE saf_chng_commi_no = #{safChngCommiNo}
+    </update>
+    
+    <select id="getChangeCommiPsn" resultType="com.she.safety.model.ChangeCommiPsn">
+        /* ChangeMapper.getChangeCommiPsn [Change.xml] */
+        SELECT sccp.saf_chng_commi_no
+              ,sccp.dept_cd
+              ,cd.dept_nm
+              ,sccp.user_id
+              ,cu.user_nm
+              ,sccp.position_nm
+              ,sccp.mgr_desc
+          FROM saf_chng_commi_psn sccp
+         INNER JOIN com_dept cd
+            ON sccp.dept_cd = cd.dept_cd
+         INNER JOIN com_user cu
+            ON sccp.user_id = cu.user_id
+         WHERE sccp.saf_chng_commi_no = #{safChngCommiNo}
+    </select>
+    
+    <insert id="createChangeCommiPsn" parameterType="com.she.safety.model.ChangeCommiPsn">
+        /* ChangeMapper.createChangeCommiPsn [Change.xml] */
+        INSERT INTO saf_chng_commi_psn
+            (saf_chng_commi_no
+            ,dept_cd
+            ,user_id
+            ,position_nm
+            ,mgr_desc)
+        VALUES
+            (#{safChngCommiNo}
+            ,#{deptCd}
+            ,#{userId}
+            ,#{positionNm}
+            ,#{mgrDesc})
+    </insert>
+    
+    <delete id="deleteChangeCommiPsn">
+        /* ChangeMapper.deleteChangeCommiPsn [Change.xml] */
+        DELETE FROM saf_chng_commi_psn
+         WHERE saf_chng_commi_no = #{safChngCommiNo}
+        <if test="userId != null and !userId.equals('')">
+           AND user_id = #{userId}
+        </if>
+    </delete>
+    
+    <select id="getChangeCheckItemResult" resultType="com.she.safety.model.ChangeCheckItemResult">
+        /* ChangeMapper.getChangeCheckItemResult [Change.xml] */
+        SELECT sccir.saf_chng_chk_itm_rslt_no
+              ,sccir.saf_chng_no
+              ,sccir.chng_ref_work_cd
+              ,refWork.code_nm as chng_ref_work_nm
+              ,sccir.end_sch_dt
+              ,sccir.mgr_id
+              ,sccir.mgr_dept_cd
+              ,mgr.user_nm as mgr_nm
+              ,dbo.GET_DEPT_NM(sccir.mgr_dept_cd) as mgr_dept_nm
+              ,sccir.contents
+              ,sccir.chk_id
+              ,chk.user_nm as chk_nm
+              ,sccir.end_dt
+              ,sccir.chng_rslt_yn
+              ,createUser.user_nm as create_user_nm
+              ,sccir.create_user_id
+              ,sccir.create_dept_cd
+              ,convert(char(10), sccir.create_dt, 23) as create_dt 
+              ,sccir.update_user_id
+              ,updateUser.user_nm as update_user_nm
+              ,sccir.update_dept_cd
+              ,convert(char(10), sccir.update_dt, 23) as update_dt 
+              ,case when isnull(sccir.chng_rslt_yn, '') = '' then ''
+                when sccir.end_sch_dt &lt;= getdate() and isnull(sccir.end_dt, '') = '' then 'plan'
+                when sccir.end_sch_dt &gt; getdate() or sccir.end_dt &gt; getdate() then 'delay'
+                when sccir.end_dt &lt;= getdate() then 'comp'
+                else 'plan'
+               end as check_status
+              , refWork.use_yn
+          FROM saf_chng_chk_itm_rslt sccir
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_REF_WORK') refWork
+            ON sccir.chng_ref_work_cd = refWork.code
+          LEFT OUTER JOIN com_user mgr 
+            ON sccir.mgr_id = mgr.user_id
+          LEFT OUTER JOIN com_user chk 
+            ON sccir.chk_id = chk.user_id
+          LEFT OUTER JOIN com_user createUser 
+            ON sccir.create_user_id = createUser.user_id
+          LEFT OUTER JOIN com_user updateUser 
+            ON sccir.update_user_id = updateUser.user_id
+        WHERE sccir.saf_chng_no = #{safChngNo}
+        <if test="order != null and !order.equals('')">
+            <choose>
+                <when test= "'default'.equals(order)">
+                  ORDER BY refWork.sort_order
+                </when>
+                <otherwise>
+                  ORDER BY sccir.chng_rslt_yn desc, refWork.sort_order
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    
+    <insert id="createChangeCheckItemResult" parameterType="com.she.safety.model.ChangeCheckItemResult">
+        /* ChangeMapper.createChangeCheckItemResult [Change.xml] */
+        <selectKey keyProperty="safChngChkItmRsltNo" resultType="int" order="BEFORE">
+            SELECT next value for seq_saf_chng_chk_itm_rslt as safChngChkItmRsltNo
+        </selectKey>
+        INSERT INTO saf_chng_chk_itm_rslt
+            (saf_chng_chk_itm_rslt_no
+            ,saf_chng_no
+            ,chng_ref_work_cd
+            ,end_sch_dt
+            ,mgr_id
+            ,mgr_dept_cd
+            ,contents
+            ,chk_id
+            ,end_dt
+            ,chng_rslt_yn
+            ,create_user_id
+            ,create_dt)
+        VALUES 
+            (#{safChngChkItmRsltNo}
+            ,#{safChngNo}
+            ,#{chngRefWorkCd}
+            ,#{endSchDt}
+            ,#{mgrId}
+            ,#{mgrDeptCd}
+            ,#{contents}
+            ,#{chkId}
+            ,#{endDt}
+            ,#{chngRsltYn}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+ 
+    <update id="updateChangeCheckItemResult" parameterType="com.she.safety.model.ChangeCheckItemResult">
+        UPDATE saf_chng_chk_itm_rslt
+           SET chng_ref_work_cd = #{chngRefWorkCd}
+              ,end_sch_dt = #{endSchDt}
+              ,mgr_id = #{mgrId}
+              ,mgr_dept_cd = #{mgrDeptCd}
+              ,contents = #{contents}
+              ,chk_id = #{chkId}
+              ,end_dt = #{endDt}
+              ,chng_rslt_yn = #{chngRsltYn}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = convert(char(10), getDate(), 23)
+         WHERE saf_chng_chk_itm_rslt_no = #{safChngChkItmRsltNo}
+    </update>
+    
+    <delete id="deleteChangeCheckItemResult">
+        /* ChangeMapper.deleteChangeCheckItemResult [Change.xml] */
+        DELETE FROM saf_chng_chk_itm_rslt
+         WHERE saf_chng_no = #{safChngNo}
+    </delete>
+    
+    <select id="getChangeRefWork" resultType="com.she.safety.model.ChangeRefWork">
+        /* ChangeMapper.getChangeRefWork [Change.xml] */
+        SELECT scrw.saf_chng_ref_work_no
+              ,scrw.saf_chng_no
+              ,scrw.chng_ref_work_cd
+              ,refWork.code_nm as chng_ref_work_nm
+              ,scrw.ref_table_nm
+              ,scrw.ref_table_id
+              ,scrw.create_user_id
+              ,createUser.user_nm as create_user_nm
+              ,convert(char(10), scrw.create_dt, 23) as create_dt 
+              ,scrw.update_user_id
+              ,updateUser.user_nm as update_user_nm
+              ,convert(char(10), scrw.update_dt, 23) as update_dt 
+          FROM saf_chng_ref_work scrw
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_REF_WORK') refWork
+            ON scrw.chng_ref_work_cd = refWork.code
+          LEFT OUTER JOIN com_user createUser 
+            ON scrw.create_user_id = createUser.user_id
+          LEFT OUTER JOIN com_user updateUser 
+            ON scrw.update_user_id = updateUser.user_id
+         WHERE 1=1
+        <if test="safChngNo != null and safChngNo > 0">
+           AND saf_chng_no = #{safChngNo}
+        </if>
+        <if test="chngRefWorkCd != null and !''.equals(chngRefWorkCd)">
+           AND scrw.chng_ref_work_cd = #{chngRefWorkCd}
+        </if>
+        <if test="refTableId != null and !''.equals(refTableId)">
+           AND scrw.ref_table_id = #{refTableId}
+        </if>
+        <if test="refTableNm != null and !''.equals(refTableNm)">
+           AND scrw.ref_table_nm = #{refTableNm}
+        </if>
+    </select>
+ 
+    <delete id="deleteChangeRefWork">
+        /* ChangeMapper.deleteChangeRefWork [Change.xml] */
+        DELETE FROM saf_chng_ref_work
+         WHERE saf_chng_no = #{safChngNo}
+    </delete>
+    
+    <insert id="createChangeRefWork" parameterType="com.she.safety.model.ChangeRefWork">
+        /* ChangeMapper.createChangeRefWork [Change.xml] */
+        <selectKey keyProperty="safChngRefWorkNo" resultType="int" order="BEFORE">
+            SELECT next value for seqs_saf_chng_ref_work as safChngRefWorkNo
+        </selectKey>
+        INSERT INTO saf_chng_ref_work
+            (saf_chng_ref_work_no
+            ,saf_chng_no
+            ,chng_ref_work_cd
+            ,ref_table_nm
+            ,ref_table_id
+            ,create_user_id
+            ,create_dt)
+        VALUES
+            (#{safChngRefWorkNo}
+            ,#{safChngNo}
+            ,#{chngRefWorkCd}
+            ,#{refTableNm}
+            ,#{refTableId}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+ 
+    <update id="updateChangeRefWork" parameterType="com.she.safety.model.ChangeRefWork">
+        /* ChangeMapper.createChangeRefWork [Change.xml] */
+        UPDATE saf_chng_ref_work
+           SET chng_ref_work_cd = #{chngRefWorkCd}
+              ,ref_table_nm = #{refTableNm}
+              ,ref_table_id = #{refTableId}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = convert(char(10), getDate(), 23)
+         WHERE saf_chng_ref_work_no = #{safChngRefWorkNo}
+    </update>
+    
+    <select id="getRefWorkDetailInfo" resultType="com.she.safety.model.ChangeRefWorkView">
+        /* ChangeMapper.getRefWorkDetailInfo [Change.xml] */
+        SELECT scrwiv.type_cd
+              ,scrwiv.cls_nm
+              ,scrwiv.cls_cd
+              ,scrwiv.ref_table_id
+              ,scrwiv.ref_work_nm
+              ,scrwiv.plant_cd
+              ,plant.code_nm as plant_nm
+              ,scrwiv.ref_table_nm
+              ,convert(char(10), scrwiv.ref_work_dt, 23) as ref_work_dt 
+              ,scrwiv.step_nm
+          FROM saf_chng_ref_work_info_v scrwiv
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            ON scrwiv.plant_cd = plant.code
+         WHERE 1=1
+        <if test="refTableId != null and !refTableId.equals('')">
+           AND scrwiv.ref_table_id = #{refTableId}
+        </if>
+        <if test="refTableNm != null and !refTableNm.equals('')">
+           AND scrwiv.ref_table_nm = #{refTableNm}
+        </if>
+    </select>
+    
+    <update id="apprProcessChange">
+        /* ChangeMapper.apprProcessChange [Change.xml] */
+        UPDATE saf_chng
+           SET appr_rqst_no = #{apprRqstNo}
+          <if test="chngStepCd != null and !chngStepCd.equals('')">
+              ,chng_step_cd = #{chngStepCd}
+          </if>
+          <if test="confirmDt != null and !confirmDt.equals('')">
+              ,confirm_dt = convert(varchar(10),getdate(), 23)
+          </if>
+         WHERE saf_chng_no = #{safChngNo}
+    </update>
+    
+    <update id="completeChange">
+        /* ChangeMapper.completeChange [Change.xml] */
+        UPDATE saf_chng
+           SET chng_step_cd = 'CGSP4'
+              ,confirm_dt = convert(varchar(10),getdate(), 23)
+         WHERE saf_chng_no = #{safChngNo}
+    </update>
+    
+    <select id="getChangeDashboadBase" resultType="com.she.safety.model.ChangeDashboardBase">
+        /* ChangeMapper.getChangeDashboadBase [Change.xml] */
+        SELECT sc.saf_chng_no
+              ,sc.chng_step_cd
+              ,chngStep.code_nm as chng_step_nm
+              ,sc.chng_num
+              ,sc.biz_nm
+              ,cd.dept_nm as rqst_dept_nm
+              ,lvl.code_nm as prev_moc_lvl_nm
+              ,lvl2.code_nm as moc_lvl_nm
+              ,scc.saf_chng_commi_no
+              ,scc.commi_dt
+              ,scc.commi_contents
+              ,sc.commi_yn
+          FROM saf_chng sc
+         INNER JOIN com_dept cd
+            ON sc.rqst_dept_cd = cd.dept_cd
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHNG_STEP') chngStep
+            ON sc.chng_step_cd = chngStep.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_MOC_LVL') lvl
+            ON sc.prev_moc_lvl_cd = lvl.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_MOC_LVL') lvl2
+            ON sc.moc_lvl_cd = lvl2.code
+          LEFT OUTER JOIN saf_chng_commi scc
+            ON sc.saf_chng_no = scc.saf_chng_no
+         WHERE 1=1
+        <if test="rqstStartDt != null and !rqstStartDt.equals('') and rqstEndDt != null and !rqstEndDt.equals('')">
+           AND convert(datetime, sc.rqst_dt) between convert(datetime, #{rqstStartDt}) and convert(datetime, #{rqstEndDt})
+        </if>
+        <if test="rqstDeptCd != null and !rqstDeptCd.equals('')">
+           AND sc.rqst_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{rqstDeptCd}))
+        </if>
+        <if test="lvlCd != null and !lvlCd.equals('')">
+           AND (sc.prev_moc_lvl_cd = #{lvlCd} OR sc.moc_lvl_cd = #{lvlCd})
+        </if>
+        <if test="chngStepCd != null and !chngStepCd.equals('')">
+           AND sc.chng_step_cd = #{chngStepCd}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+           AND sc.plant_cd = #{plantCd}
+        </if>
+    </select>
+    
+    <select id="getChangeElectLaws" resultType="com.she.safety.model.ChangeElectLaw">
+        /* ChangeMapper.getChangeElectLaws [Change.xml] */
+        SELECT et.elect_att_cd
+              ,taskGrp.code_nm as elect_att_nm
+              ,et.ref_law_cd
+              ,lawClass.code_nm as ref_law_nm
+              ,scelr.saf_chng_elect_law_result_no
+              ,scelr.saf_chng_no
+              ,scelr.chng_rslt_yn
+              ,scelr.mgr_id
+              ,scelr.mgr_nm
+              ,scelr.remark
+              ,taskGrp.sort_order, lawClass.sort_order
+          FROM (SELECT elect_att_cd
+                      ,ref_law_cd
+                  FROM saf_elect_titl a
+                 <!-- 현재 선해임명을 조회하는 곳에서 INNER JOIN이 걸려있음으로 해당 부분을 JOIN함 -->
+                 INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ELECT_CLS') electCls
+                    ON a.elect_cls_cd = electCls.code
+                 INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_ELECT_TYPE') elect
+                    ON a.elect_type_cd = elect.code
+                 WHERE a.use_yn = 'Y'
+                 GROUP BY elect_att_cd
+                         ,ref_law_cd) as et
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'TASK_GRP') taskGrp
+            ON et.elect_att_cd = taskGrp.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') lawClass
+            ON et.ref_law_cd = lawClass.code
+          LEFT OUTER JOIN saf_chng_elect_law_result scelr
+            ON et.elect_att_cd = scelr.elect_att_cd
+           AND et.ref_law_cd = scelr.ref_law_cd
+           AND scelr.saf_chng_no = #{safChngNo}
+         WHERE 1=1
+         UNION ALL
+        SELECT scelr.elect_att_cd
+              ,taskGrp.code_nm as elect_att_nm
+              ,scelr.ref_law_cd
+              ,lawClass.code_nm as ref_law_nm
+              ,scelr.saf_chng_elect_law_result_no
+              ,scelr.saf_chng_no
+              ,scelr.chng_rslt_yn
+              ,scelr.mgr_id
+              ,scelr.mgr_nm
+              ,scelr.remark
+              ,taskGrp.sort_order, lawClass.sort_order
+          FROM saf_chng_elect_law_result scelr
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'TASK_GRP') taskGrp
+            ON scelr.elect_att_cd = taskGrp.code
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') lawClass
+            ON scelr.ref_law_cd = lawClass.code
+         INNER JOIN (SELECT elect_att_cd
+                           ,ref_law_cd
+                       FROM saf_elect_titl a
+                      <!-- 현재 선해임명을 조회하는 곳에서 INNER JOIN이 걸려있음으로 해당 부분을 JOIN함 -->
+                      INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ELECT_CLS') electCls
+                         ON a.elect_cls_cd = electCls.code
+                      INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_ELECT_TYPE') elect
+                         ON a.elect_type_cd = elect.code
+                      GROUP BY elect_att_cd
+                            ,ref_law_cd
+                     HAVING max(a.use_yn) = 'N') as et
+            ON et.elect_att_cd = scelr.elect_att_cd
+           AND et.ref_law_cd = scelr.ref_law_cd
+         WHERE scelr.saf_chng_no = #{safChngNo}
+         ORDER BY taskGrp.sort_order, lawClass.sort_order
+    </select>
+    
+    <select id="getChangeElectResults" resultType="com.she.safety.model.ChangeElectResult">
+        /* ChangeMapper.getChangeElectResults [Change.xml] */
+        SELECT et.saf_elect_titl_no
+              ,et.elect_att_cd
+              ,et.ref_law_cd
+              ,et.elect_titl_nm
+              ,sceir.saf_chng_elect_item_result_no
+              ,sceir.saf_chng_elect_law_result_no
+          FROM saf_elect_titl et
+          LEFT OUTER JOIN saf_chng_elect_item_result sceir
+            ON et.saf_elect_titl_no = sceir.saf_elect_titl_no
+           AND sceir.saf_chng_elect_law_result_no = #{safChngElectLawResultNo}
+         WHERE et.use_yn = 'Y'
+           AND et.ref_law_cd = #{refLawCd}
+         UNION ALL
+        SELECT et.saf_elect_titl_no
+              ,et.elect_att_cd
+              ,et.ref_law_cd
+              ,et.elect_titl_nm
+              ,sceir.saf_chng_elect_item_result_no
+              ,sceir.saf_chng_elect_law_result_no
+          FROM saf_chng_elect_item_result sceir
+         INNER JOIN saf_elect_titl et
+            ON et.saf_elect_titl_no = sceir.saf_elect_titl_no
+         WHERE et.use_yn = 'N'
+           AND sceir.saf_chng_elect_law_result_no = #{safChngElectLawResultNo}
+    </select>
+    
+    <insert id="createChangeElectLaw" parameterType="com.she.safety.model.ChangeElectLaw">
+        /* ChangeMapper.createChangeElectLaw [Change.xml] */
+        <selectKey keyProperty="safChngElectLawResultNo" resultType="com.she.safety.model.ChangeElectLaw" order="BEFORE">
+            SELECT next value for seq_saf_chng_elect_law_result as safChngElectLawResultNo
+        </selectKey>
+        INSERT INTO saf_chng_elect_law_result
+                   (saf_chng_elect_law_result_no
+                   ,saf_chng_no
+                   ,elect_att_cd
+                   ,ref_law_cd
+                   ,chng_rslt_yn
+                   ,mgr_id
+                   ,mgr_nm
+                   ,remark
+                   ,create_user_id
+                   ,create_dt)
+             VALUES (#{safChngElectLawResultNo}
+                    ,#{safChngNo}
+                    ,#{electAttCd}
+                    ,#{refLawCd}
+                    ,#{chngRsltYn}
+                    ,#{mgrId}
+                    ,#{mgrNm}
+                    ,#{remark}
+                    ,#{createUserId}
+                    ,getdate())
+    </insert>
+    
+    <update id="updateChangeElectLaw" parameterType="com.she.safety.model.ChangeElectLaw">
+        /* ChangeMapper.updateChangeElectLaw [Change.xml] */
+        UPDATE saf_chng_elect_law_result
+           SET chng_rslt_yn = #{chngRsltYn}
+              ,mgr_id = #{mgrId}
+              ,mgr_nm = #{mgrNm}
+              ,remark = #{remark}
+              ,update_user_id = #{updateUserId} 
+              ,update_dt = GETDATE()
+         WHERE saf_chng_elect_law_result_no = #{safChngElectLawResultNo}
+    </update>
+    
+    <delete id="deleteChangeElectLaw">
+        /* ChangeMapper.deleteChangeElectLaw [Change.xml] */
+        DELETE FROM saf_chng_elect_law_result
+         WHERE saf_chng_no = #{safChngNo}
+    </delete>
+    
+    <insert id="createChangeElectResult" parameterType="com.she.safety.model.ChangeElectResult">
+        /* ChangeMapper.createChangeElectResult [Change.xml] */
+        <selectKey keyProperty="safChngElectItemResultNo" resultType="com.she.safety.model.ChangeElectResult" order="BEFORE">
+            SELECT next value for seq_saf_chng_elect_item_result as safChngElectItemResultNo
+        </selectKey>
+        INSERT INTO saf_chng_elect_item_result
+                   (saf_chng_elect_item_result_no
+                   ,saf_chng_elect_law_result_no
+                   ,saf_elect_titl_no)
+             VALUES (#{safChngElectItemResultNo}
+                    ,#{safChngElectLawResultNo}
+                    ,#{safElectTitlNo})
+    </insert>
+    
+    <delete id="deleteChangeElectResult">
+        /* ChangeMapper.deleteChangeElectResult [Change.xml] */
+        DELETE FROM saf_chng_elect_item_result
+         WHERE saf_chng_elect_law_result_no = #{safChngElectLawResultNo}
+    </delete>
+    
+    <delete id="deleteAllChangeElectResult">
+        /* ChangeMapper.deleteAllChangeElectResult [Change.xml] */
+        DELETE FROM saf_chng_elect_item_result
+         WHERE saf_chng_elect_law_result_no in (SELECT saf_chng_elect_law_result_no
+                                                  FROM saf_chng_elect_law_result
+                                                 WHERE saf_chng_no = #{safChngNo})
+    </delete>
+    
+</mapper>

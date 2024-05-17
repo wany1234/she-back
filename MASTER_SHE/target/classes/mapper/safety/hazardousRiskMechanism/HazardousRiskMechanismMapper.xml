@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.hazardousRiskMechanism.mapper.HazardousRiskMechanismMapper">
+
+    <sql id="searchSql">
+        <if test="parameter.plantCd != null and !''.equals(parameter.plantCd)">
+            AND scm.plant_cd    = #{parameter.plantCd}
+        </if>
+        <if test="parameter.machineTypeCd != null and !''.equals(parameter.machineTypeCd)">
+            AND scm.machine_type_cd = #{parameter.machineTypeCd}
+        </if>
+        <if test="parameter.inspYn != null and !''.equals(parameter.inspYn)">
+            AND scm.insp_yn = #{parameter.inspYn}
+        </if>
+        <if test="parameter.startDate != null and !''.equals(parameter.startDate) and parameter.endDate != null and !''.equals(parameter.endDate)">
+            AND scm.next_isnp_dt BETWEEN #{parameter.startDate} AND #{parameter.endDate}
+        </if>
+        <if test="parameter.itemNo != null and !''.equals(parameter.itemNo)">
+            AND scm.item_no like '%' + #{parameter.itemNo} + '%'
+        </if>
+    </sql>
+    <select id= "getSafCheckMachines" resultType= "com.she.safety.model.SafCheckMachine">
+        /* HazardousRiskMechanismMapper.getSafCheckMachines [HazardousRiskMechanismMapper.xml] */
+        SELECT scm.check_machine_no
+            , scm.plant_cd
+            , plant.code_nm as plant_nm
+            , scm.item_no
+            , scm.volume
+            , scm.license_number
+            , convert(char(10), scm.insp_issue_dt, 23) AS insp_issue_dt
+            , convert(char(10), scm.recent_insp_dt, 23) AS recent_insp_dt
+            , convert(char(10), scm.next_isnp_dt, 23) AS next_isnp_dt
+            , scm.insp_cycle_cd
+            , icc.code_nm as insp_cycle_nm
+            , scm.insp_fee
+            , scm.remark
+            , STUFF((SELECT ','+ alarmCycle.code_nm
+                   FROM check_alarm_cycle scac
+                   INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ALARM_CYCLE') alarmCycle
+                      ON scac.alarm_cycle_cd = alarmCycle.code
+                   WHERE check_machine_no = scm.check_machine_no
+                   FOR XML PATH('')
+            ), 1, 1, '') as alarm_nm
+            , mtc.code_nm AS machine_type_nm
+            , CASE scm.insp_yn 
+                WHEN 'Y' THEN '대상'
+                ELSE '미대상'
+            END AS insp_txt
+        FROM check_machine scm
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            ON scm.plant_cd = plant.code
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'INSP_CYCLE_CD') icc
+            ON icc.code = scm.insp_cycle_cd
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MACHINE_TYPE_CD') mtc
+            ON mtc.code = scm.machine_type_cd
+        WHERE 1=1
+        <include refid="searchSql"/>
+        ORDER BY scm.create_dt DESC
+    </select>
+    
+    <select id= "getSearchSafCheckLogs" resultType= "com.she.safety.model.SafCheckLog">
+        /* HazardousRiskMechanismMapper.getSearchSafCheckLogs [HazardousRiskMechanismMapper.xml] */
+        SELECT scl.check_log_no
+            , scm.item_no
+            , format(convert(datetime, scl.insp_dt), 'yyyy-MM-dd') as insp_dt
+            , scl.remark
+        FROM check_log scl, check_machine scm
+        WHERE scm.check_machine_no = scl.check_machine_no
+        <include refid="searchSql"/>
+        ORDER BY scl.check_machine_no DESC, scl.check_log_no DESC
+    </select>
+    
+    <insert id= "createSafCheckMachine" parameterType= "com.she.safety.model.SafCheckMachine">
+        /* HazardousRiskMechanismMapper.createSafCheckMachine [HazardousRiskMechanismMapper.xml] */
+        <selectKey keyProperty= "checkMachineNo" resultType= "int" order= "BEFORE">
+            SELECT (next value for seq_saf_check_machine) as checkMachineNo
+        </selectKey>
+        INSERT INTO check_machine (
+            check_machine_no
+            , plant_cd
+            , machine_type_cd
+            , pressure_cls_cd
+            , item_no
+            , volume
+            , license_number
+            , insp_issue_dt
+            , recent_insp_dt
+            , next_isnp_dt
+            , insp_cycle_cd
+            , insp_yn
+            , insp_fee
+            , exclude_desc
+            , remark
+            , maker_nm
+            , contents
+            , design_press_kg
+            , design_press_mpa
+            , manage_no
+            , insp_pass_dt
+            , pnid
+            , insp_certi_no
+            , psv
+            , oper_presssure
+            , oper_temp
+            , design_pressure
+            , design_temp
+            , service
+            , part
+            , max_pressure
+            , coordi_user_id
+            , install_place
+            , install_dt
+            , withdraw_dt
+            , pass_number
+            , ewr_no
+            , design_basis_weight
+            , design_basis_class
+            , create_user_id
+            , create_dt
+        ) VALUES (
+            #{checkMachineNo}
+            , #{plantCd}
+            , #{machineTypeCd}
+            , #{pressureClsCd}
+            , #{itemNo}
+            , #{volume}
+            , #{licenseNumber}
+            , convert(datetime, #{inspIssueDt})
+            , convert(datetime, #{recentInspDt})
+            , convert(datetime, #{nextIsnpDt})
+            , #{inspCycleCd}
+            , #{inspYn}
+            , #{inspFee}
+            , #{excludeDesc}
+            , #{remark}
+            , #{makerNm}
+            , #{contents}
+            , #{designPressKg}
+            , #{designPressMpa}
+            , #{manageNo}
+            , convert(datetime, #{inspPassDt})
+            , #{pnid}
+            , #{inspCertiNo}
+            , #{psv}
+            , #{operPresssure}
+            , #{operTemp}
+            , #{designPressure}
+            , #{designTemp}
+            , #{service}
+            , #{part}
+            , #{maxPressure}
+            , #{coordiUserId}
+            , #{installPlace}
+            , convert(datetime, #{installDt})
+            , convert(datetime, #{withdrawDt})
+            , #{passNumber}
+            , #{ewrNo}
+            , #{designBasisWeight}
+            , #{designBasisClass}
+            , #{createUserId}
+            , GETDATE()
+        )
+    </insert>
+    
+    <insert id= "createSafCheckLog" parameterType= "com.she.safety.model.SafCheckLog">
+        /* HazardousRiskMechanismMapper.createSafCheckLog [HazardousRiskMechanismMapper.xml] */
+        <selectKey keyProperty= "checkLogNo" resultType= "int" order= "BEFORE">
+            SELECT (next value for seq_saf_check_log) as checkLogNo
+        </selectKey>
+        INSERT INTO check_log (
+            check_log_no
+            , check_machine_no
+            , check_list_no
+            , insp_dt
+            , remark
+            , create_user_id
+            , create_dt
+        ) VALUES (
+            #{checkLogNo}
+            , #{checkMachineNo}
+            , #{checkListNo}
+            , convert(datetime, #{inspDt})
+            , #{remark}
+            , #{createUserId}
+            , GETDATE()
+        )
+    </insert>
+    
+    <insert id= "createSafCheckUser" parameterType= "com.she.safety.model.SafCheckUser">
+        /* HazardousRiskMechanismMapper.createSafCheckUser [HazardousRiskMechanismMapper.xml] */
+        <selectKey keyProperty= "checkUserNo" resultType= "int" order= "BEFORE">
+            SELECT (next value for seq_saf_check_user) as checkUserNo
+        </selectKey>
+        INSERT INTO check_user (
+            check_user_no
+            , check_machine_no
+            , check_list_no
+            , alarm_user_id
+        ) VALUES (
+            #{checkUserNo}
+            , #{checkMachineNo}
+            , #{checkListNo}
+            , #{alarmUserId}
+        )
+    </insert>
+    
+    <insert id= "createAlarmCycs" parameterType= "com.she.manage.model.AlarmCycle">
+        /* HazardousRiskMechanismMapper.createAlarmCycs [HazardousRiskMechanismMapper.xml] */
+        <selectKey keyProperty= "alarmCycleNo" resultType= "int" order= "BEFORE">
+            SELECT (next value for seq_saf_check_alarm_cycle) as alarmCycleNo
+        </selectKey>
+        INSERT INTO check_alarm_cycle (
+            check_alarm_cycle_no
+            , check_machine_no
+            , check_list_no
+            , alarm_cycle_cd
+        ) VALUES (
+            #{alarmCycleNo}
+            , #{checkMachineNo}
+            , #{checkListNo}
+            , #{alarmCycleCd}
+        )
+    </insert>
+    
+    <select id="getSafCheckMachine" resultType= "com.she.safety.model.SafCheckMachine">
+        /* HazardousRiskMechanismMapper.getSafCheckMachine [HazardousRiskMechanismMapper.xml] */
+        SELECT scm.check_machine_no
+            , scm.plant_cd
+            , scm.machine_type_cd
+            , scm.pressure_cls_cd
+            , scm.item_no
+            , scm.volume
+            , scm.license_number
+            , scm.insp_issue_dt
+            , scm.recent_insp_dt
+            , scm.next_isnp_dt
+            , scm.insp_cycle_cd
+            , scm.insp_yn
+            , scm.insp_fee
+            , scm.exclude_desc
+            , scm.remark
+            , scm.maker_nm
+            , scm.contents
+            , scm.design_press_kg
+            , scm.design_press_mpa
+            , scm.manage_no
+            , scm.insp_pass_dt
+            , scm.pnid
+            , scm.insp_certi_no
+            , scm.psv
+            , scm.oper_presssure
+            , scm.oper_temp
+            , scm.design_pressure
+            , scm.design_temp
+            , scm.service
+            , scm.part
+            , scm.max_pressure
+            , scm.coordi_user_id
+            , scm.install_place
+            , scm.install_dt
+            , scm.withdraw_dt
+            , scm.pass_number
+            , scm.ewr_no
+            , scm.design_basis_weight
+            , scm.design_basis_class
+            , scm.create_user_id
+            , scm.create_dt
+        FROM check_machine scm
+        WHERE scm.check_machine_no = #{checkMachineNo}
+    </select>
+    
+    <select id= "getSafCheckLogs" resultType= "com.she.safety.model.SafCheckLog">
+        /* HazardousRiskMechanismMapper.getSafCheckLogs [HazardousRiskMechanismMapper.xml] */
+        SELECT scm.check_machine_no
+            , scl.check_log_no
+            , scm.item_no
+            , format(convert(datetime, scl.insp_dt), 'yyyy-MM-dd') as insp_dt
+            , scl.remark
+        FROM check_log scl, check_machine scm
+        WHERE scm.check_machine_no = scl.check_machine_no
+            AND scl.check_machine_no = #{checkMachineNo}
+        ORDER BY scl.check_machine_no DESC, scl.check_log_no DESC
+    </select>
+    
+    <select id= "getSafCheckUsers" resultType= "com.she.safety.model.SafCheckUser">
+        /* HazardousRiskMechanismMapper.getSafCheckUsers [HazardousRiskMechanismMapper.xml] */
+        SELECT scu.check_user_no
+            , scu.check_machine_no
+            , scu.alarm_user_id
+            , cu.user_nm
+            , cu.position_nm
+            , cd.dept_nm
+        FROM check_user scu
+        INNER JOIN com_user cu
+            ON cu.user_id = scu.alarm_user_id
+        INNER JOIN com_dept cd
+            ON cd.dept_cd = cu.dept_cd
+        WHERE scu.check_machine_no = #{checkMachineNo}
+        ORDER BY scu.check_user_no
+    </select>
+    
+    <select id="getAlarmCycles" resultType= "com.she.manage.model.AlarmCycle">
+        SELECT scac.check_machine_no
+            , scac.alarm_cycle_cd
+            , alarmCycle.code_nm as alarm_cycle_nm
+        FROM check_alarm_cycle scac
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ALARM_CYCLE') alarmCycle
+           ON scac.alarm_cycle_cd = alarmCycle.code
+        WHERE check_machine_no = #{checkMachineNo}
+    </select>
+    
+    <update id= "updateSafCheckMachine" parameterType= "com.she.safety.model.SafCheckMachine">
+        /* HazardousRiskMechanismMapper.updateSafCheckMachine [HazardousRiskMechanismMapper.xml] */
+        UPDATE check_machine
+        SET plant_cd = #{plantCd}
+            , machine_type_cd = #{machineTypeCd}
+            , pressure_cls_cd = #{pressureClsCd}
+            , item_no = #{itemNo}
+            , volume = #{volume}
+            , license_number = #{licenseNumber}
+            , insp_issue_dt = convert(datetime, #{inspIssueDt})
+            , recent_insp_dt = convert(datetime, #{recentInspDt})
+            , next_isnp_dt = convert(datetime, #{nextIsnpDt})
+            , insp_cycle_cd = #{inspCycleCd}
+            , insp_yn = #{inspYn}
+            , insp_fee = #{inspFee}
+            , exclude_desc = #{excludeDesc}
+            , remark = #{remark}
+            , maker_nm = #{makerNm}
+            , contents = #{contents}
+            , design_press_kg = #{designPressKg}
+            , design_press_mpa = #{designPressMpa}
+            , manage_no = #{manageNo}
+            , insp_pass_dt = convert(datetime, #{inspPassDt})
+            , pnid = #{pnid}
+            , insp_certi_no = #{inspCertiNo}
+            , psv = #{psv}
+            , oper_presssure = #{operPresssure}
+            , oper_temp = #{operTemp}
+            , design_pressure = #{designPressure}
+            , design_temp = #{designTemp}
+            , service = #{service}
+            , part = #{part}
+            , max_pressure = #{maxPressure}
+            , coordi_user_id = #{coordiUserId}
+            , install_place = #{installPlace}
+            , install_dt = convert(datetime, #{installDt})
+            , withdraw_dt = convert(datetime, #{withdrawDt})
+            , pass_number = #{passNumber}
+            , ewr_no = #{ewrNo}
+            , design_basis_weight = #{designBasisWeight}
+            , design_basis_class = #{designBasisClass}
+            , update_user_id = #{updateUserId}
+            , update_dt = GETDATE()
+        WHERE check_machine_no = #{checkMachineNo}
+    </update>
+    
+    <update id= "updateSafCheckLog" parameterType= "com.she.safety.model.SafCheckLog">
+        /* HazardousRiskMechanismMapper.updateSafCheckLog [HazardousRiskMechanismMapper.xml] */
+        UPDATE check_log
+        SET insp_dt = convert(datetime, #{inspDt})
+            , remark = #{remark}
+            , update_user_id = #{updateUserId}
+            , update_dt = GETDATE()
+        WHERE check_machine_no = #{checkMachineNo}
+            AND check_log_no = #{checkLogNo}
+    </update>
+    
+    <delete id="deleteSafCheckLog" parameterType= "com.she.safety.model.SafCheckLog">
+        /* HazardousRiskMechanismMapper.deleteSafCheckLog [HazardousRiskMechanismMapper.xml] */
+        DELETE FROM check_log
+        WHERE check_machine_no = #{checkMachineNo}
+            AND check_log_no = #{checkLogNo}
+    </delete>
+    
+    <delete id="deleteSafCheckUser" parameterType= "com.she.safety.model.SafCheckUser">
+        /* HazardousRiskMechanismMapper.deleteSafCheckUser [HazardousRiskMechanismMapper.xml] */
+        DELETE FROM check_user
+        WHERE check_machine_no = #{checkMachineNo}
+            AND check_user_no = #{checkUserNo}
+    </delete>
+    
+    <delete id="deleteSafCheckUserAll" parameterType= "com.she.safety.model.SafCheckMachine">
+        /* HazardousRiskMechanismMapper.deleteSafCheckUserAll [HazardousRiskMechanismMapper.xml] */
+        DELETE FROM check_user
+        WHERE check_machine_no = #{checkMachineNo}
+    </delete>
+    
+    <delete id="deleteSafCheckLogAll" parameterType= "com.she.safety.model.SafCheckMachine">
+        /* HazardousRiskMechanismMapper.deleteSafCheckLogAll [HazardousRiskMechanismMapper.xml] */
+        DELETE FROM check_log
+        WHERE check_machine_no = #{checkMachineNo}
+    </delete>
+    
+    <delete id="deletesafCheckMachine" parameterType= "com.she.safety.model.SafCheckMachine">
+        /* HazardousRiskMechanismMapper.deletesafCheckMachine [HazardousRiskMechanismMapper.xml] */
+        DELETE FROM check_machine
+        WHERE check_machine_no = #{checkMachineNo}
+    </delete>
+    
+    <delete id="deleteAlarmCycs" parameterType= "com.she.manage.model.AlarmCycle">
+        /* HazardousRiskMechanismMapper.deleteAlarmCycs [HazardousRiskMechanismMapper.xml] */
+        DELETE FROM check_alarm_cycle
+        WHERE check_machine_no = #{checkMachineNo}
+    </delete>
+</mapper>

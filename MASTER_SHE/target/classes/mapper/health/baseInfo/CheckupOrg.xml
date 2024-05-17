@@ -1,0 +1,112 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.health.baseInfo.mapper.CheckupOrgMapper">
+    <select id= "getCheckupOrgs" resultType= "com.she.health.model.CheckupOrg">
+        select hco.hea_checkup_org_no    -- 기관번호
+            ,hco.hea_checkup_org_nm    -- 기관명칭
+            ,hco.address                -- 주소
+            ,hco.business_no            -- 사업자번호
+            ,hco.charger_nm            -- 담당자명
+            ,hco.tel_no                -- 전화번호
+            ,hco.email                -- 이메일
+            ,hco.remark                -- 비고
+            ,hco.sort_order            -- 출력순서
+            ,hco.use_yn
+            ,case
+            when hco.use_yn = 'Y' then '사용'
+            else '미사용'
+            end as use_yn_nm    -- 사용여부
+            ,hco.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,hco.create_dt
+            ,hco.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,hco.update_dt
+            , case
+                 when dbo.GET_USER_NM(hco.update_user_id) = '' then dbo.GET_USER_NM(hco.create_user_id)
+                 else dbo.GET_USER_NM(hco.update_user_id) end    as writer_user_nm
+            , case when hco.update_dt is null then convert(date, hco.create_dt) else convert(date, hco.update_dt) end   as writer_dt
+        from hea_checkup_org hco
+        inner join com_user createUser
+        on hco.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on hco.update_user_id = updateUser.user_id
+        where 1=1
+        <if test= "useYn != null and !useYn.equals('')">
+        and hco.use_yn = #{useYn}
+        </if>
+        <if test= "heaCheckupOrgNm != null and !heaCheckupOrgNm.equals('')">
+        and hco.hea_checkup_org_nm like '%' + #{heaCheckupOrgNm} + '%'
+        </if>
+        order by writer_dt desc, sort_order
+    </select>
+
+    <select id= "getCheckupOrg" resultType= "com.she.health.model.CheckupOrg">
+        select hea_checkup_org_no    -- 기관번호
+            ,hea_checkup_org_nm    -- 기관명칭
+            ,address                -- 주소
+            ,business_no            -- 사업자번호
+            ,charger_nm            -- 담당자명
+            ,tel_no                -- 전화번호
+            ,email                -- 이메일
+            ,remark                -- 비고
+            ,sort_order            -- 출력순서
+            ,use_yn
+            ,case
+            when use_yn = 'Y' then '사용'
+            else '미사용'
+            end as use_yn_nm            -- 사용여부
+        from hea_checkup_org
+        where 1=1
+        and hea_checkup_org_no = #{heaCheckupOrgNo}
+        order by sort_order
+    </select>
+
+    <insert id= "createCheckupOrg" parameterType= "com.she.health.model.CheckupOrg">
+        <selectKey keyProperty= "heaCheckupOrgNo" resultType= "int" order= "BEFORE">
+            select (next value for seq_hea_checkup_org) as hea_checkup_org_no
+          </selectKey>
+        insert into hea_checkup_org
+            (hea_checkup_org_no
+            ,hea_checkup_org_nm
+            ,address
+            ,business_no
+            ,charger_nm
+            ,tel_no
+            ,email
+            ,sort_order
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+         values
+            (#{heaCheckupOrgNo}
+            ,#{heaCheckupOrgNm}
+            ,#{address}
+            ,#{businessNo}
+            ,#{chargerNm}
+            ,#{telNo}
+            ,#{email}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{createUserId}
+            ,getDate()
+            )
+    </insert>
+
+    <update id= "updateCheckupOrg" parameterType= "com.she.health.model.CheckupOrg">
+        update hea_checkup_org
+        set hea_checkup_org_nm = #{heaCheckupOrgNm}
+            ,address = #{address}
+            ,business_no = #{businessNo}
+            ,charger_nm = #{chargerNm}
+            ,tel_no = #{telNo}
+            ,email = #{email}
+            ,sort_order = #{sortOrder}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where hea_checkup_org_no = #{heaCheckupOrgNo}
+    </update>
+
+</mapper>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.baseInfo.facility.mapper.FacilityCheckItemMapper">
+
+    <select id="getFacilityCheckItems" resultType="com.she.baseInfo.model.FacilityCheckItem">
+        /* FacilityCheckItemMapper.getFacilityCheckItems [FacilityCheckItem.xml] */
+        select a.saf_facility_check_item_no
+            ,a.saf_facility_check_nm
+            ,a.plant_cd
+            ,plant.code_nm as plant_nm
+            ,a.saf_check_type_cd
+            ,c.code_nm as saf_check_type_nm
+            ,a.saf_facility_type_cd
+            ,b.saf_facility_type_nm
+            ,a.sort_order
+            ,a.use_yn
+            ,case when a.use_yn = 'Y'
+                        then '사용'else '미사용'
+                        end as use_yn_nm
+            , case
+                 when dbo.GET_USER_NM(a.update_user_id) = '' then dbo.GET_USER_NM(a.create_user_id)
+                 else dbo.GET_USER_NM(a.update_user_id) end    as writer_user_nm
+            , case when a.update_dt is null then convert(date, a.create_dt) else convert(date, a.update_dt) end   as writer_dt                        
+        from saf_facility_check_item a
+        inner join saf_facility_type b
+        on a.saf_facility_type_cd = b. saf_facility_type_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_FACILITY_CHECK') c
+        on a.saf_check_type_cd = c.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on a.plant_cd = plant.code
+        where 1=1
+        <if test="plantCd != null and !plantCd.equals('')">
+            and a.plant_cd = #{plantCd}
+        </if>
+        <if test="safCheckTypeCd != null and !safCheckTypeCd.equals('')">
+            and a.saf_check_type_cd = #{safCheckTypeCd}
+        </if>
+        <if test="safFacilityTypeCd != null and !safFacilityTypeCd.equals('')">
+            and a.saf_facility_type_cd = #{safFacilityTypeCd}
+        </if>
+        <if test="useYn != null and !useYn.equals('')">
+            and a.use_yn = #{useYn}
+        </if>
+        <if test="safFacilityCheckNm != null and !safFacilityCheckNm.equals('')">
+            and a.saf_facility_check_nm like '%' + #{safFacilityCheckNm} + '%'
+        </if>
+        order by writer_dt desc, a.plant_cd, a.saf_facility_type_cd, a.sort_order
+    </select>
+
+
+    <select id="getFacilityCheckItem" resultType="com.she.baseInfo.model.FacilityCheckItem">
+        /* FacilityCheckItemMapper.getFacilityCheckItem [FacilityCheckItem.xml] */
+        select a.saf_facility_check_item_no
+            ,a.saf_facility_check_nm
+            ,a.plant_cd
+            ,a.saf_check_type_cd
+            ,a.saf_facility_type_cd
+            ,b.saf_facility_type_nm
+            ,a.sort_order
+            ,a.use_yn
+        from saf_facility_check_item a
+        inner join saf_facility_type b
+        on a.saf_facility_type_cd = b. saf_facility_type_cd
+        where 1=1
+        and a.saf_facility_check_item_no = #{safFacilityCheckItemNo}
+    </select>
+
+
+    <insert id="createFacilityCheckItem" parameterType="com.she.baseInfo.model.FacilityCheckItem">
+        /* FacilityCheckItemMapper.createFacilityCheckItem [FacilityCheckItem.xml] */
+        <selectKey keyProperty="safFacilityCheckItemNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_facility_check_item  as safFacilityCheckItemNo
+        </selectKey>
+      insert into saf_facility_check_item 
+           (saf_facility_check_item_no
+           ,plant_cd
+           ,saf_check_type_cd
+           ,saf_facility_type_cd
+           ,saf_facility_check_nm
+           ,sort_order
+           ,use_yn
+           , create_user_id
+           , create_dt
+           , create_dept_cd
+           , create_dept_nm
+           , create_position_cd
+           , create_position_nm)
+     values
+           (#{safFacilityCheckItemNo}
+           ,#{plantCd}
+           ,#{safCheckTypeCd}
+           ,#{safFacilityTypeCd}
+           ,#{safFacilityCheckNm}
+           ,#{sortOrder}
+           ,#{useYn}
+           , #{createUserId}
+           , getDate()
+           , (select dept_cd from com_user where user_id = #{createUserId})
+           , (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
+           , (select position_cd from com_user where user_id = #{createUserId})
+           , (select position_nm from com_user where user_id = #{createUserId}))
+    </insert>
+
+    <update id="updateFacilityCheckItem" parameterType="com.she.baseInfo.model.FacilityCheckItem">
+        /* FacilityCheckItemMapper.updateFacilityCheckItem [FacilityCheckItem.xml] */
+        update saf_facility_check_item
+        set plant_cd = #{plantCd}
+            ,saf_check_type_cd = #{safCheckTypeCd}
+            ,saf_facility_type_cd = #{safFacilityTypeCd}
+            ,saf_facility_check_nm = #{safFacilityCheckNm}
+            ,sort_order = #{sortOrder}
+            ,use_yn =   #{useYn}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+            , update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
+            , update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
+            , update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
+            , update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
+        where saf_facility_check_item_no = #{safFacilityCheckItemNo}
+    </update>
+
+    <select id="checkFacilityCheckItem" resultType="HashMap">
+        /* FacilityCheckItemMapper.checkFacilityCheckItem [FacilityCheckItem.xml] */
+        select count(*) as cnt
+            ,'safFacilityCheckNm' as gubun
+        from saf_facility_check_item
+        where 1=1
+        and plant_cd = #{plantCd}
+        and saf_check_type_cd = #{safCheckTypeCd}
+        and saf_facility_type_cd = #{safFacilityTypeCd}
+        and saf_facility_check_nm = #{safFacilityCheckNm}
+        <if test="safFacilityCheckItemNo != null and safFacilityCheckItemNo > 0">
+        and saf_facility_check_item_no != #{safFacilityCheckItemNo}
+        </if>
+    </select>
+
+</mapper>

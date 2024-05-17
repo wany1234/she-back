@@ -1,0 +1,89 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.manage.mapper.NoticeMapper">
+    <select id= "getNotices" resultType= "com.she.manage.model.Notice">
+        select t.notice_no, t.com_notice_class_cd, c.code_nm as com_notice_class_nm, t.notice_title, t.notice_contents
+            , t.popup_yn
+            , (case when t.popup_yn = 'Y' then '팝업공지' else '일반공지' end) as popup_yn_nm
+            , t.popup_start_ymd, t.popup_end_ymd
+            , t.popup_start_ymd + '~' + t.popup_end_ymd as popup_period
+            , t.create_user_id, cu.user_nm as create_user_nm, convert(char(10), t.create_dt, 23) as create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, convert(char(10), t.update_dt, 23) as update_dt
+        from com_notice t
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_NOTICE_CLASS') c
+        on t.com_notice_class_cd = c.code
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left outer join com_user uu
+        on t.update_user_id = uu.user_id
+        where 1=1        
+        <if test= "fromDate != null and !fromDate.equals('')">
+        and t.create_dt between convert(datetime, #{fromDate}) and convert(datetime, #{toDate})+0.99999
+        </if>
+        <if test= "comNoticeClassCd != null and !comNoticeClassCd.equals('')">
+        and t.com_notice_class_cd = #{comNoticeClassCd}
+        </if> 
+        order by t.create_dt desc
+    </select>
+    
+    <select id= "getNotice" resultType= "com.she.manage.model.Notice">
+        select t.notice_no, t.com_notice_class_cd, t.notice_title, t.notice_contents
+            , t.popup_yn, t.popup_start_ymd, t.popup_end_ymd
+            , t.popup_start_ymd + '~' + t.popup_end_ymd as popup_period
+            , t.create_user_id, cu.user_nm as create_user_nm, t.create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, t.update_dt
+        from com_notice t
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left outer join com_user uu
+        on t.update_user_id = uu.user_id
+        where t.notice_no = #{noticeNo}    
+    </select>
+    
+    <insert id= "createNotice" parameterType= "com.she.manage.model.Notice">
+        <selectKey keyProperty= "noticeNo" resultType= "int" order= "BEFORE">
+            select next value for seq_com_notice as notice_no
+          </selectKey>
+        insert into com_notice (
+            notice_no
+            , com_notice_class_cd
+            , notice_title
+            , notice_contents
+            , popup_yn
+            , popup_start_ymd
+            , popup_end_ymd
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{noticeNo}
+            , #{comNoticeClassCd}
+            , #{noticeTitle}
+            , #{noticeContents}
+            , #{popupYn}
+            , #{popupStartYmd}
+            , #{popupEndYmd}
+            , #{createUserId}
+            , getdate()
+        )
+    </insert>
+    
+    <update id= "updateNotice" parameterType= "com.she.manage.model.Notice">
+        update com_notice
+        set com_notice_class_cd = #{comNoticeClassCd}
+            , notice_title = #{noticeTitle}
+            , notice_contents = #{noticeContents}
+            , popup_yn = #{popupYn}
+            , popup_start_ymd = #{popupStartYmd}
+            , popup_end_ymd = #{popupEndYmd}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+           where notice_no = #{noticeNo}
+    </update>
+    
+    <delete id= "deleteNotice">
+        delete com_notice
+        where notice_no = #{noticeNo}
+    </delete>
+</mapper>

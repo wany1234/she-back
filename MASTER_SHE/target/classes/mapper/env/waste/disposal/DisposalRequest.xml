@@ -1,0 +1,214 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.waste.disposal.mapper.DisposalRequestMapper">
+    <select id= "getDisposalRequests" resultType= "com.she.env.waste.model.DisposalRequest">
+        select t.plant_cd
+              ,plant.code_nm as plant_nm
+              ,t.ewst_dispo_req_no
+              ,wc.ewst_div_cd
+              ,wcc.code_nm as ewst_div_nm
+              ,wc.ewst_class_cd
+              ,wc.ewst_class_nm
+              ,wm.ewst_dispo_mtd_cd
+              ,wm.ewst_dispo_mtd_nm
+              ,w.ewst_waste_no
+              ,w.ewst_waste_nm
+              ,t.ewst_dispo_st_cd
+              ,dc.code_nm as ewst_dispo_st_nm
+              ,t.req_user_id
+              ,ru.user_nm as req_user_nm
+              ,t.req_dept_cd
+              ,rd.dept_nm as req_dept_nm
+              ,t.req_ymd
+              ,t.amt_gen
+              ,replace(convert(varchar, cast(t.amt_gen as money),1),'.00','') as amt_gen_list
+              ,t.env_unit_cd
+              ,uc.code_nm as env_unit_nm
+              ,t.remark
+              ,t.dispo_ymd
+              ,t.dispo_amt
+              ,w.ewst_dispo_div_cd
+              ,wdc.code_nm as ewst_dispo_div_cd
+              ,t.create_user_id
+              ,cu.user_nm as create_user_nm
+              ,t.create_dt
+              ,t.update_user_id
+              ,uu.user_nm as update_user_nm
+              ,t.update_dt
+              ,case when t.ewst_dispo_st_cd = '11' then 'true' else 'false' end as request_editable
+              , case
+                   when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+                   else dbo.GET_USER_NM(t.update_user_id) end    as writer_user_nm
+              , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+          from ewst_dispo_req t
+         inner join ewst_waste w
+            on t.ewst_waste_no = w.ewst_waste_no
+         inner join ewst_class wc
+            on w.ewst_class_cd = wc.ewst_class_cd
+         inner join ewst_dispo_mtd wm
+            on w.ewst_dispo_mtd_cd = wm.ewst_dispo_mtd_cd
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DIV') wcc
+            on wc.ewst_div_cd = wcc.code
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_ST') dc
+            on t.ewst_dispo_st_cd = dc.code
+         inner join com_user ru
+            on t.req_user_id = ru.user_id
+         inner join com_dept rd
+            on t.req_dept_cd = rd.dept_cd
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ENV_UNIT') uc
+            on t.env_unit_cd = uc.code
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_DIV') wdc
+            on w.ewst_dispo_div_cd = wdc.code
+         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            on plant.code = t.plant_cd
+         inner join com_user cu
+            on t.create_user_id = cu.user_id
+          left outer join com_user uu
+            on t.update_user_id = uu.user_id
+         where 1=1
+        <if test= "plantCd != null and !plantCd.equals('')">
+           and t.plant_cd = #{plantCd}
+        </if>        
+        <if test= "reqYmdFrom != null and !reqYmdFrom.equals('')">
+           and convert(datetime, t.req_ymd) between convert(datetime, #{reqYmdFrom}) and convert(datetime, #{reqYmdTo})+0.99999
+        </if>
+        <if test= "ewstDispoStCd != null and !ewstDispoStCd.equals('')">
+           and t.ewst_dispo_st_cd = #{ewstDispoStCd}
+        </if>
+        <if test= "ewstClassCd != null and !ewstClassCd.equals('')">
+           and w.ewst_class_cd = #{ewstClassCd}
+        </if>
+         <if test= "rqstDeptCd != null and !rqstDeptCd.equals('')">
+           and t.req_dept_cd = #{rqstDeptCd}
+        </if>
+        <if test= "ewstWasteNo != null and !ewstWasteNo.equals('')">
+            and w.ewst_waste_no = #{ewstWasteNo}
+        </if>
+         order by writer_dt desc, t.req_ymd desc, t.create_dt desc
+    </select>
+    
+    <select id= "getDisposalRequest" resultType= "com.she.env.waste.model.DisposalRequest">
+        select t.plant_cd, plant.code_nm as plant_nm, t.ewst_dispo_req_no, wc.ewst_div_cd, wcc.code_nm as ewst_div_nm, wc.ewst_class_cd, wc.ewst_class_nm, wm.ewst_dispo_mtd_cd, wm.ewst_dispo_mtd_nm, w.ewst_waste_no, w.ewst_waste_nm
+            , t.ewst_dispo_st_cd, dc.code_nm as ewst_dispo_st_nm, t.req_user_id, ru.user_nm as req_user_nm, t.req_dept_cd, rd.dept_nm as req_dept_nm, t.req_ymd
+            , t.amt_gen, t.env_unit_cd, uc.code_nm as env_unit_nm, t.remark, t.dispo_ymd, t.dispo_amt
+            , w.ewst_dispo_div_cd, wdc.code_nm as ewst_dispo_div_cd
+            , t.create_user_id, cu.user_nm as create_user_nm, t.create_dt
+            , t.update_user_id, uu.user_nm as update_user_nm, t.update_dt
+            , case when t.ewst_dispo_st_cd = '11' then 'true' else 'false' end as request_editable
+        from ewst_dispo_req t
+        inner join ewst_waste w
+        on t.ewst_waste_no = w.ewst_waste_no
+        inner join ewst_class wc
+        on w.ewst_class_cd = wc.ewst_class_cd
+        inner join ewst_dispo_mtd wm
+        on w.ewst_dispo_mtd_cd = wm.ewst_dispo_mtd_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DIV') wcc
+        on wc.ewst_div_cd = wcc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_ST') dc
+        on t.ewst_dispo_st_cd = dc.code
+        inner join com_user ru
+        on t.req_user_id = ru.user_id
+        inner join com_dept rd
+        on t.req_dept_cd = rd.dept_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ENV_UNIT') uc
+        on t.env_unit_cd = uc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EWST_DISPO_DIV') wdc
+        on w.ewst_dispo_div_cd = wdc.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on plant.code = t.plant_cd
+        inner join com_user cu
+        on t.create_user_id = cu.user_id
+        left outer join com_user uu
+        on t.update_user_id = uu.user_id
+        where t.ewst_dispo_req_no = #{ewstDispoReqNo}
+    </select>
+    
+    <insert id= "createDisposalRequest" parameterType= "com.she.env.waste.model.DisposalRequest">
+        <selectKey keyProperty= "ewstDispoReqNo" resultType= "int" order= "BEFORE">
+            select next value for seq_ewst_dispo_req as ewst_dispo_req_no
+          </selectKey>
+        insert into ewst_dispo_req (
+            ewst_dispo_req_no
+            , ewst_waste_no
+            , plant_cd
+            , ewst_dispo_st_cd
+            , req_user_id
+            , req_dept_cd
+            , req_ymd
+            , amt_gen
+            , env_unit_cd
+            , remark
+            , dispo_ymd
+            , dispo_amt
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{ewstDispoReqNo}
+            , #{ewstWasteNo}
+            , #{plantCd}
+            , #{ewstDispoStCd}
+            , #{reqUserId}
+            , #{reqDeptCd}
+            , #{reqYmd}
+            , #{amtGen}
+            , #{envUnitCd}
+            , #{remark}
+            , #{dispoYmd}
+            , #{dispoAmt}
+            , #{createUserId}
+            , getdate()
+        )
+    </insert>
+    
+    <update id= "updateDisposalRequest" parameterType= "com.she.env.waste.model.DisposalRequest">
+        update ewst_dispo_req
+        set ewst_waste_no = #{ewstWasteNo}
+            , ewst_dispo_st_cd = #{ewstDispoStCd}
+            , req_user_id = #{reqUserId}
+            , req_dept_cd = #{reqDeptCd}
+            , req_ymd = #{reqYmd}
+            , amt_gen = #{amtGen}
+            , env_unit_cd = #{envUnitCd}
+            , remark = #{remark}
+            , dispo_ymd = #{dispoYmd}
+            , dispo_amt = #{dispoAmt}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+           where ewst_dispo_req_no = #{ewstDispoReqNo}
+    </update>
+    
+    <update id= "updateDisposalRequestStatus">
+        update ewst_dispo_req
+        set ewst_dispo_st_cd = #{ewstDispoStCd}
+    
+        where ewst_dispo_req_no = #{ewstDispoReqNo}
+        
+        <if test= "ewstDispoStCd.equals('91')">
+            update ewst_dispo_req
+            set dispo_ymd = t.dispo_ymd
+                , dispo_amt = t.dispo_amt
+            from (
+                select rr.ewst_dispo_req_no, max(r.dispo_ymd) as dispo_ymd, sum(amt_gen) as dispo_amt
+                from ewst_dispo_result r
+                inner join ewst_dispo_result_req rr
+                on r.ewst_dispo_result_no = rr.ewst_dispo_result_no
+                where rr.ewst_dispo_req_no = #{ewstDispoReqNo}
+                group by rr.ewst_dispo_req_no
+            ) t
+            where ewst_dispo_req.ewst_dispo_req_no = t.ewst_dispo_req_no
+        </if>
+    </update>
+    
+    <update id= "updateDisposalRequestAmtGen">
+        update ewst_dispo_req
+        set amt_gen = #{amtGen}
+        where ewst_dispo_req_no = #{ewstDispoReqNo}
+    </update>
+    
+    <delete id= "deleteDisposalRequest">
+        delete ewst_dispo_req
+        where ewst_dispo_req_no = #{ewstDispoReqNo}
+    </delete>
+</mapper>

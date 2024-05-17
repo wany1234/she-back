@@ -1,0 +1,208 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.air.facility.mapper.DischFacMapper">
+    <select id= "getDischargeFacilities" resultType= "com.she.env.air.model.DischFac">
+        /* DischFacMapper.getDischargeFacilities [DischFac.xml] */
+        SELECT t.plant_cd
+              ,p.code_nm as plantNm
+              ,t.eair_disch_fac_no
+              ,t.eair_disch_fac_nm
+              ,o.eair_outlet_no
+              ,o.eair_outlet_nm
+              ,t.remark
+              ,t.sort_order
+              ,t.use_yn
+              ,t.cap_vol
+              ,t.vol
+              ,t.unit_cd
+              ,unit.code_nm as unit_nm
+              ,t.prevent_fac_exem_yn as preventFacExemYn
+              ,t.dept_cd
+              ,t.mg_dept_cd
+              ,mgtDept.dept_nm as mg_dept_nm
+              ,mgr_num as mgrNum
+              ,case when t.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+              ,t.create_user_id
+              ,cu.user_nm as create_user_nm
+              ,t.create_dt
+              ,t.update_user_id
+              ,uu.user_nm as update_user_nm
+              ,t.update_dt
+              ,t.sems_yn
+              , case
+                   when dbo.GET_USER_NM(t.update_user_id) = '' then dbo.GET_USER_NM(t.create_user_id)
+                   else dbo.GET_USER_NM(t.update_user_id) end    as writer_user_nm
+              , case when t.update_dt is null then convert(date, t.create_dt) else convert(date, t.update_dt) end   as writer_dt
+          FROM eair_disch_fac t
+          LEFT OUTER JOIN eair_outlet o
+            ON t.eair_outlet_no = o.eair_outlet_no
+         INNER JOIN com_user cu
+            ON t.create_user_id = cu.user_id
+          LEFT OUTER JOIN com_user uu
+            ON t.update_user_id = uu.user_id
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') p
+            ON t.plant_cd = p.code
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'ENV_UNIT') unit
+            ON t.unit_cd = unit.code
+         INNER JOIN com_dept mgtDept
+            ON t.mg_dept_cd = mgtDept.dept_cd
+         WHERE 1=1
+        <if test="useYn != null and !useYn.equals('')">
+           AND t.use_yn = #{useYn}
+        </if>
+        <if test= "eairDischFacNm != null and !eairDischFacNm.equals('')">
+           AND upper(t.eair_disch_fac_nm) like '%'+upper(#{eairDischFacNm})+'%'
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+           AND t.plant_cd = #{plantCd}
+        </if>
+        <if test="mgDeptCd != null and !mgDeptCd.equals('')">
+           AND t.mg_dept_cd in (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{mgDeptCd}))
+        </if>
+         ORDER BY writer_dt desc, t.plant_cd
+    </select>
+
+    <select id= "getDischargeFacility" resultType= "com.she.env.air.model.DischFac">
+        /* DischFacMapper.getDischargeFacility [DischFac.xml] */
+        SELECT t.plant_cd
+              ,t.eair_disch_fac_no
+              ,t.eair_disch_fac_nm
+              ,o.eair_outlet_no
+              ,o.eair_outlet_nm
+              ,t.remark
+              ,t.sort_order
+              ,t.use_yn
+              ,t.cap_vol
+              ,t.vol
+              ,t.unit_cd
+              ,t.sap_cd
+              ,t.prevent_fac_exem_yn
+              ,t.eair_disch_fac_num
+              ,t.dept_cd
+              ,t.mg_dept_cd
+              ,t.mgr_num
+              ,t.create_user_id
+              ,t.create_dt
+              ,t.update_user_id
+              ,t.update_dt
+              ,t.sems_yn
+          FROM eair_disch_fac t
+          LEFT OUTER JOIN eair_outlet o
+            ON t.eair_outlet_no = o.eair_outlet_no
+         WHERE t.eair_disch_fac_no = #{eairDischFacNo}
+    </select>
+
+    <insert id= "createDischargeFacility" parameterType= "com.she.env.air.model.DischFac">
+        /* DischFacMapper.createDischargeFacility [DischFac.xml] */
+        <selectKey keyProperty= "eairDischFacNo" resultType= "int" order= "BEFORE">
+            SELECT convert(varchar(5), replicate('0', 5-len(convert(varchar(5), next value for seq_eair_disch_fac)))
+                + convert(varchar(5), (SELECT current_value FROM sys.sequences WHERE lower(name)='seq_eair_disch_fac'))) as eair_disch_fac_no
+          </selectKey>
+        INSERT INTO eair_disch_fac
+            (eair_disch_fac_no
+            ,eair_disch_fac_nm
+            ,eair_disch_fac_num
+            ,eair_outlet_no
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,mgr_num
+            ,dept_cd
+            ,mg_dept_cd
+            ,cap_vol
+            ,vol
+            ,unit_cd
+            ,plant_cd
+            ,prevent_fac_exem_yn
+            ,sap_cd
+            ,create_user_id
+            ,create_dt
+            ,sems_yn)
+        VALUES
+            (#{eairDischFacNo}
+            ,#{eairDischFacNm}
+            ,#{eairDischFacNum}
+            ,#{eairOutletNo}
+            ,#{remark}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{mgrNum}
+            ,#{deptCd}
+            ,#{mgDeptCd}
+            ,#{capVol}
+            ,#{vol}
+            ,#{unitCd}
+            ,#{plantCd}
+            ,#{preventFacExemYn}
+            ,#{sapCd}
+            ,#{createUserId}
+            ,getdate()
+            ,#{semsYn})
+    </insert>
+
+    <update id= "updateDischargeFacility" parameterType= "com.she.env.air.model.DischFac">
+        /* DischFacMapper.updateDischargeFacility [DischFac.xml] */
+        UPDATE eair_disch_fac
+           SET eair_disch_fac_nm = #{eairDischFacNm}
+              ,eair_outlet_no = #{eairOutletNo}
+              ,remark = #{remark}
+              ,sort_order = #{sortOrder}
+              ,eair_disch_fac_num = #{eairDischFacNum}
+              ,use_yn = #{useYn}
+              ,cap_vol = #{capVol}
+              ,vol = #{vol}
+              ,sap_cd = #{sapCd}
+              ,unit_cd = #{unitCd}
+              ,mgr_num = #{mgrNum}
+              ,dept_cd = #{deptCd}
+              ,mg_dept_cd = #{mgDeptCd}
+              ,prevent_fac_exem_yn = #{preventFacExemYn}
+              ,update_user_id = #{updateUserId}
+              ,plant_cd = #{plantCd}
+              ,update_dt = getdate()
+              ,sems_yn = #{semsYn}
+         WHERE eair_disch_fac_no = #{eairDischFacNo}
+    </update>
+
+
+
+
+    <select id= "getFuels" resultType= "com.she.env.air.model.Fuel">
+        /* DischFacMapper.getFuels [DischFac.xml] */
+        SELECT b.eair_fuel_cd as code
+              ,b.eair_fuel_nm as name
+          FROM eair_disch_fac_fuel a
+          LEFT OUTER JOIN eair_fuel b
+            ON a.eair_fuel_cd = b.eair_fuel_cd
+         WHERE a.eair_disch_fac_no = #{eairDischFacNo}
+    </select>
+
+    <insert id= "createFuel">
+        /* DischFacMapper.createFuel [DischFac.xml] */
+        INSERT INTO eair_disch_fac_fuel
+            (eair_disch_fac_no
+            ,eair_fuel_cd)
+        VALUES
+            (#{eairDischFacNo}
+            ,#{eairFuelCd})
+    </insert>
+
+    <delete id= "deleteFuel">
+        /* DischFacMapper.deleteFuel [DischFac.xml] */
+        DELETE eair_disch_fac_fuel
+         WHERE eair_disch_fac_no = #{eairDischFacNo}
+    </delete>
+
+    <select id="checkDischargeFacility" resultType="int">
+        /* DischFacMapper.checkDischargeFacility [DischFac.xml] */
+        SELECT count(*)
+          FROM eair_disch_fac
+         WHERE 1=1
+           AND plant_cd = #{plantCd}
+           AND eair_disch_fac_nm = #{eairDischFacNm}
+        <if test="eairDischFacNo!= null and eairDischFacNo>0">
+           AND eair_disch_fac_no not in (#{eairDischFacNo})
+        </if>
+    </select>
+</mapper>

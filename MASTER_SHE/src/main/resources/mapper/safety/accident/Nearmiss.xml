@@ -1,0 +1,482 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.accident.mapper.NearmissMapper">
+
+    <select id= "getNearmissList" resultType= "com.she.safety.model.Nearmiss">
+        /* NearmissMapper.getNearmissList [Nearmiss.xml] */
+        select   a.saf_nearmiss_no
+               , a.plant_cd
+               , plant.code_nm as plant_nm
+               , a.nearmiss_title
+               , a.nearmiss_title as accident_title
+               , a.nearmiss_num
+               , a.process_step_cd
+               , b.code_nm as process_step_nm
+               , a.rpt_user_id
+               , a.rpt_dept_cd
+               , a.rpt_dt
+               , a.nearmiss_ymd
+               , a.nearmiss_ymd as accident_ymd
+               , a.nearmiss_hour
+               , a.nearmiss_minute
+               , a.dept_cd
+               , c.dept_nm
+               , a.area
+               , a.near_kind_cd
+               , d.code_nm as near_kind_nm
+               , d.code_nm as acc_kind_nms
+               , a.nearmiss_type_etc
+               , a.prcs_state_cd
+               , a.weth_cd
+               , a.contents
+               , a.bgn_meas
+               , a.prov_reason
+               , a.occ_ptn_cls_cd
+               , e.code_nm as occ_ptn_cls_nm
+               , e.code_nm as occ_kind_nm
+               , a.occ_ptn_m_cls_cd
+               , j.code_nm as occ_ptn_m_cls_nm
+               , j.code_nm as occ_att_nm
+               , a.imm_cause_cd
+               , k.code_nm as imm_cause_nm
+               , a.ind_cause_cd
+               , l.code_nm as ind_cause_nm
+               , a.origin_mat_cd
+               , m.code_nm as origin_mat_nm
+               , a.ass_mat_cd
+               , a.create_user_id
+               , convert(char(10), a.create_dt, 23) as create_dt
+               , a.update_user_id
+               , convert(char(10), a.update_dt, 23) as update_dt
+               , isnull(g.user_nm,f.user_nm) as show_user_nm
+               , isnull(i.dept_nm,h.dept_nm) as show_dept_nm
+               , a.cau_type_etc
+               , (select stuff(
+                               (select ',' + cm.code_nm
+                                  from saf_nearmiss_occtype sno
+                                 inner join com_code_master cm
+                                    on sno.occ_type_cd = cm.code
+                                   and cm.code_group_cd = 'SAF_OCC_TYPE'
+                                 where sno.saf_nearmiss_no = a.saf_nearmiss_no
+                                   for xml path('')
+                               ), 1, 1, '')
+                 ) as occ_type_nm
+               , (select stuff(
+                               (select ',' + cm.code_nm
+                                  from saf_nearmiss_occtype sno
+                                 inner join com_code_master cm
+                                    on sno.occ_type_cd = cm.code
+                                   and cm.code_group_cd = 'SAF_OCC_TYPE'
+                                 where sno.saf_nearmiss_no = a.saf_nearmiss_no
+                                   for xml path('')
+                               ), 1, 1, '')
+                 ) as accident_type_nms
+               , ar.biz_appr_step_cd
+               , cm.code_nm as biz_appr_step_nm
+               , case when a.update_dt is null then convert(date, a.create_dt) else convert(date, a.update_dt) end   as writer_dt
+          from saf_nearmiss a
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            on a.plant_cd = plant.code
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_NEARMISS_STEP') b
+            on a.process_step_cd = b.code
+          left join com_dept c
+            on a.dept_cd = c.dept_cd
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACCIDENT_KIND') d
+            on a.near_kind_cd = d.code
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACCIDENT_OCC_PTN_CLS') e
+            on a.occ_ptn_cls_cd = e.code
+          left join com_user f
+            on a.create_user_id = f.user_id
+          left join com_user g
+            on a.update_user_id = g.user_id
+          left join com_dept h
+            on f.dept_cd = h.dept_cd
+          left join com_dept i
+            on g.dept_cd = i.dept_cd
+          left join com_code_master j
+            on a.occ_ptn_m_cls_cd = j.code
+           and j.code_group_cd = a.occ_ptn_cls_cd
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACCIDENT_IMM_CAUSE') k
+            on a.imm_cause_cd = k.code
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACCIDENT_IND_CAUSE') l
+            on a.ind_cause_cd = l.code
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACCIDENT_ORGIN_MAT') m
+            on a.origin_mat_cd = m.code
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACCIDENT_ASS_MAT') n
+            on a.ass_mat_cd = n.code
+          left outer join com_appr_rqst ar
+            on ar.appr_rqst_no = a.appr_rqst_no
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm
+            on cm.code = ar.biz_appr_step_cd
+         where 1=1
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(startDate) and @org.apache.commons.lang3.StringUtils@isNotBlank(endDate)">
+           and convert(date, a.nearmiss_ymd) between convert(date, #{startDate}) and convert(date, #{endDate})
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(deptCd)">
+           <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+           AND EXISTS (SELECT 1 WHERE ISNULL(#{deptCd}, '') = ''
+                       UNION ALL
+                       SELECT 1 WHERE #{deptSubYn} = 'Y' AND a.dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{deptCd}))
+                       UNION ALL
+                       SELECT 1 WHERE #{deptSubYn} = 'N' AND a.dept_cd = #{deptCd}
+                       )
+           <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(area)">
+           and a.area like '%' + #{area} + '%'
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(nearmissTitle)">
+           and a.nearmiss_title like '%' + #{nearmissTitle} + '%'
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(processStepCd)">
+           and a.process_step_cd = #{processStepCd}
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(occTypeCd)">
+           and exists (
+                       select 1
+                         from saf_nearmiss_occtype o
+                        where occ_type_cd = #{occTypeCd}
+                          and a.saf_nearmiss_no = o.saf_nearmiss_no
+                      )
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(plantCd)">
+           and a.plant_cd = #{plantCd}
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(accidentType)">
+        and exists (select 1
+                    from saf_nearmiss_occtype sno
+                    where a.saf_nearmiss_no = sno.saf_nearmiss_no
+                    and sno.occ_type_cd = #{accidentType})
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(occKindCd)">
+           and a.occ_ptn_cls_cd = #{occKindCd}
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(occAttCd)">
+           and a.occ_ptn_m_cls_cd = #{occAttCd}
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(immCauseCd)">
+           and a.imm_cause_cd = #{immCauseCd}
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(indCauseCd)">
+           and a.ind_cause_cd = #{indCauseCd}
+        </if>
+         order by writer_dt desc, convert(date, a.nearmiss_ymd) desc
+    </select>
+    
+    <select id= "getNearmiss" resultType= "com.she.safety.model.Nearmiss">
+        /* NearmissMapper.getNearmiss [Nearmiss.xml] */
+        select   saf_nearmiss_no
+               , a.plant_cd
+               , a.nearmiss_title
+               , a.nearmiss_num
+               , a.process_step_cd
+               , a.rpt_user_id
+               , d.user_nm as show_user_nm
+               , a.rpt_dept_cd
+               , e.dept_nm as rpt_dept_nm
+               , a.rpt_dt
+               , a.nearmiss_ymd
+               , a.nearmiss_hour
+               , a.nearmiss_minute
+               , a.dept_cd
+               , c.dept_nm
+               , a.area
+               , a.near_kind_cd
+               , a.occ_type_cd
+               , a.nearmiss_type_etc
+               , a.prcs_state_cd
+               , a.weth_cd
+               , a.contents
+               , a.cau_type_cd
+               , a.cau_type_etc
+               , a.bgn_meas
+               , a.prov_reason
+               , a.occ_ptn_cls_cd
+               , a.occ_ptn_m_cls_cd
+               , a.imm_cause_cd
+               , a.ind_cause_cd
+               , a.origin_mat_cd
+               , a.ass_mat_cd
+               , a.create_user_id
+               , a.appr_rqst_no
+               , f.biz_appr_step_cd
+               , convert(varchar, a.create_dt, 120) as create_dt
+        from saf_nearmiss a
+        left join com_dept c
+        on a.dept_cd = c.dept_cd
+        left join com_user d
+        on a.rpt_user_id = d.user_id
+        left join com_dept e
+        on a.rpt_dept_cd = e.dept_cd
+        left outer join com_appr_rqst f
+        on a.appr_rqst_no = f.appr_rqst_no
+        where 1=1
+        <if test= "safNearmissNo != null and !safNearmissNo.equals('')">
+            and a.saf_nearmiss_no = #{safNearmissNo}
+        </if>
+    </select>
+    
+    <select id= "getNearmissVictim" resultType= "com.she.safety.model.NearmissVictim">
+        /* NearmissMapper.getNearmissVictim [Nearmiss.xml] */
+        select   saf_nearmiss_victim_no
+               , saf_nearmiss_no
+               , victim_nm
+               , victim_user_id
+               , victim_duty_nm
+               , victim_dept_cd
+               , victim_dept_nm
+               , victim_birthday
+               , victim_years
+          from saf_nearmiss_victim
+         where saf_nearmiss_no = #{safNearmissNo}
+    </select>
+    
+    <select id= "getNearmissOcctype" resultType= "com.she.safety.model.NearmissOcctype">
+        /* NearmissMapper.getNearmissOcctype [Nearmiss.xml] */
+        select   a.occ_type_cd
+               , b.code_nm as occ_type_nm
+               , a.saf_nearmiss_no
+          from saf_nearmiss_occtype a
+          left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_OCC_TYPE') b
+            on a.occ_type_cd = b.code
+         where saf_nearmiss_no = #{safNearmissNo}
+    </select>
+    
+    <select id= "createNearmissNum" resultType= "com.she.safety.model.Nearmiss">
+        /* NearmissMapper.createNearmissNum [Nearmiss.xml] */
+        select top 1 left(nearmiss_ymd,4) +'-'+right('0000'+convert(varchar,convert(int, right(nearmiss_num,4))+1),4) as nearmiss_num
+        from saf_nearmiss
+        where left(nearmiss_ymd,4) = left(#{nearmissYmd}, 4)
+        order by convert(int, right(nearmiss_num,4)) desc
+    </select>
+    
+    <insert id= "createNearmiss" parameterType= "com.she.safety.model.Nearmiss">
+        <selectKey keyProperty= "safNearmissNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_nearmiss
+        </selectKey>
+        /* NearmissMapper.createNearmiss [Nearmiss.xml] */
+        insert into saf_nearmiss
+               (
+                  saf_nearmiss_no
+                , plant_cd
+                , nearmiss_title
+                , nearmiss_num
+                , process_step_cd
+                , rpt_user_id
+                , rpt_dept_cd
+                , rpt_dt
+                , nearmiss_ymd
+                , nearmiss_hour
+                , nearmiss_minute
+                , dept_cd
+                , area
+                , near_kind_cd
+                , nearmiss_type_etc
+                , prcs_state_cd
+                , weth_cd
+                , contents
+                , bgn_meas
+                , prov_reason
+                , occ_ptn_cls_cd
+                , occ_ptn_m_cls_cd
+                , imm_cause_cd
+                , ind_cause_cd
+                , origin_mat_cd
+                , ass_mat_cd
+                , create_user_id
+                ,create_dept_cd
+                ,create_dept_nm
+                ,create_position_cd
+                ,create_position_nm
+                , create_dt
+               )
+               values
+               (
+                  #{safNearmissNo}
+                , #{plantCd}
+                , #{nearmissTitle}
+                , (
+                   select left(#{nearmissYmd}, 4) + '-' + right('0000' + convert(varchar, a.make_num), 4) as nearmiss_num
+                     from (
+                           select isnull(max(right(nearmiss_num, 4)) + 1, '1') as make_num
+                             from saf_nearmiss
+                            where left(nearmiss_ymd, 4) = left(#{nearmissYmd}, 4)
+                          ) a
+                  )
+                , #{processStepCd}
+                , #{rptUserId}
+                , #{rptDeptCd}
+                , getDate()
+                , #{nearmissYmd}
+                , #{nearmissHour}
+                , #{nearmissMinute}
+                , #{deptCd}
+                , #{area}
+                , #{nearKindCd}
+                , #{nearmissTypeEtc}
+                , #{prcsStateCd}
+                , #{wethCd}
+                , #{contents}
+                , #{bgnMeas}
+                , #{provReason}
+                , #{occPtnClsCd}
+                , #{occPtnMClsCd}
+                , #{immCauseCd}
+                , #{indCauseCd}
+                , #{originMatCd}
+                , #{assMatCd}
+                , #{createUserId}
+                ,(select dept_cd from com_user where user_id = #{createUserId})
+                ,(select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
+                ,(select position_cd from com_user where user_id = #{createUserId})
+                ,(select position_nm from com_user where user_id = #{createUserId})
+                , getDate()
+               )
+    </insert>
+    
+    <insert id= "createNearmissVictim" parameterType= "com.she.safety.model.NearmissVictim">
+        /* NearmissMapper.createNearmissVictim [Nearmiss.xml] */
+        insert into saf_nearmiss_victim
+               (
+                   saf_nearmiss_victim_no
+                 , saf_nearmiss_no
+                 , victim_nm
+                 , victim_user_id
+                 , victim_duty_nm
+                 , victim_dept_cd
+                 , victim_dept_nm
+                 , victim_birthday
+                 , victim_years
+               )
+               values
+               (
+                   next value for seq_saf_nearmiss_victim
+                 , #{safNearmissNo}
+                 , #{victimNm}
+                 , #{victimUserId}
+                 , #{victimDutyNm}
+                 , #{victimDeptCd}
+                 , #{victimDeptNm}
+                 , #{victimBirthday}
+                 , #{victimYears}
+               )
+    </insert>
+    
+    <delete id= "deleteNearmissVictim">
+        /* NearmissMapper.deleteNearmissVictim [Nearmiss.xml] */
+        delete from saf_nearmiss_victim
+         where saf_nearmiss_no = #{safNearmissNo}
+    </delete>
+    
+    <insert id= "createNearmissOcctype" parameterType= "com.she.safety.model.NearmissOcctype">
+        /* NearmissMapper.createNearmissOcctype [Nearmiss.xml] */
+        insert into saf_nearmiss_occtype
+               (
+                   occ_type_cd
+                 , saf_nearmiss_no
+               )
+               values
+               (
+                   #{occTypeCd}
+                 , #{safNearmissNo}
+               )
+    </insert>
+    
+    <delete id= "deleteNearmissOcctype">
+        /* NearmissMapper.deleteNearmissOcctype [Nearmiss.xml] */
+        delete from saf_nearmiss_occtype
+         where saf_nearmiss_no = #{safNearmissNo}
+    </delete>
+   
+   <update id= "updateNearmiss" parameterType= "com.she.safety.model.Nearmiss">
+           /* NearmissMapper.updateNearmiss [Nearmiss.xml] */
+           update saf_nearmiss
+           set   nearmiss_ymd = #{nearmissYmd}
+               , nearmiss_title = #{nearmissTitle}
+               , nearmiss_hour = #{nearmissHour}
+               , nearmiss_minute = #{nearmissMinute}
+               , dept_cd = #{deptCd}
+               , area = #{area}
+               , near_kind_cd = #{nearKindCd}
+               , nearmiss_type_etc = #{nearmissTypeEtc}
+               , prcs_state_cd = #{prcsStateCd}
+               , weth_cd = #{wethCd}
+               , contents = #{contents}
+               , bgn_meas = #{bgnMeas}
+               , prov_reason = #{provReason}
+               , occ_ptn_cls_cd = #{occPtnClsCd}
+               , occ_ptn_m_cls_cd = #{occPtnMClsCd}
+               , imm_cause_cd = #{immCauseCd}
+               , ind_cause_cd = #{indCauseCd}
+               , origin_mat_cd = #{originMatCd}
+               , ass_mat_cd = #{assMatCd}
+               , update_user_id = #{updateUserId}
+               , update_dt = getdate()
+               , update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
+               , update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
+               , update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
+               , update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
+         where saf_nearmiss_no= #{safNearmissNo}
+     </update>
+     
+    <update id= "compleNearmiss" parameterType= "com.she.safety.model.Nearmiss">
+        /* NearmissMapper.compleNearmiss [Nearmiss.xml] */
+        update saf_nearmiss
+           set   process_step_cd = #{processStepCd}
+               , nearmiss_ymd = #{nearmissYmd}
+               , nearmiss_hour = #{nearmissHour}
+               , nearmiss_minute = #{nearmissMinute}
+               , dept_cd = #{deptCd}
+               , area = #{area}
+               , near_kind_cd = #{nearKindCd}
+               , nearmiss_type_etc = #{nearmissTypeEtc}
+               , prcs_state_cd = #{prcsStateCd}
+               , weth_cd = #{wethCd}
+               , contents = #{contents}
+               , bgn_meas = #{bgnMeas}
+               , prov_reason = #{provReason}
+               , occ_ptn_cls_cd = #{occPtnClsCd}
+               , occ_ptn_m_cls_cd = #{occPtnMClsCd}
+               , imm_cause_cd = #{immCauseCd}
+               , ind_cause_cd = #{indCauseCd}
+               , origin_mat_cd = #{originMatCd}
+               , ass_mat_cd = #{assMatCd}
+               , update_user_id = #{updateUserId}
+               , update_dt = #{updateDt}
+         where saf_nearmiss_no= #{safNearmissNo}
+    </update>
+    
+    <update id= "apprNearmiss" parameterType= "com.she.safety.model.Nearmiss">
+        /* NearmissMapper.apprNearmiss [Nearmiss.xml] */
+        update saf_nearmiss
+           set   appr_rqst_no = #{apprRqstNo}
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(processStepCd)">
+               , process_step_cd = #{processStepCd}
+        </if>
+         where saf_nearmiss_no= #{safNearmissNo}
+    </update>
+    
+    <delete id= "deleteNearmiss"  parameterType= "com.she.safety.model.Nearmiss">
+        /* NearmissMapper.deleteNearmiss [Nearmiss.xml] */
+        delete from saf_nearmiss
+        where saf_nearmiss_no= #{safNearmissNo}
+    </delete>
+    
+    <delete id= "deleteImprAct"  parameterType= "com.she.safety.model.Nearmiss">
+        /* NearmissMapper.deleteImprAct [Nearmiss.xml] */
+        delete from saf_impr_act
+        where ref_table_id = #{safNearmissNo}
+        and impr_class_cd = 'ICL02'
+    </delete>
+    
+    <update id= "updateProcessStepCdStepCd" parameterType= "HashMap">
+           /* NearmissMapper.updateProcessStepCdStepCd [Nearmiss.xml] */
+           update saf_nearmiss
+           set  process_step_cd = #{processStepCd}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getdate()
+         where saf_nearmiss_no= #{safNearmissNo}
+     </update>
+    
+</mapper>

@@ -1,0 +1,145 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.baseinfo.mapper.CheckKindMapper">
+    <select id= "getCheckKindList" parameterType= "HashMap" resultType= "com.she.safety.model.CheckKind">
+    /* CheckKindMapper.getCheckKindList [CheckKind.xml] */
+        select sck.saf_check_kind_no
+            ,sck.saf_check_kind_nm
+            ,sck.sort_order
+            ,sck.plant_cd
+            ,plant.code_nm as plant_nm
+            ,sck.use_yn
+            ,case when sck.use_yn = 'Y' 
+                        then '사용'else '미사용'
+                        end as use_yn_nm
+            ,sck.chng_kind
+            ,kind.code_nm as chng_kind_nm
+            , case
+                 when dbo.GET_USER_NM(sck.update_user_id) = '' then dbo.GET_USER_NM(sck.create_user_id)
+                 else dbo.GET_USER_NM(sck.update_user_id) end    as writer_user_nm
+            , case when sck.update_dt is null then convert(date, sck.create_dt) else convert(date, sck.update_dt) end   as writer_dt
+        from saf_check_kind sck
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on sck.plant_cd = plant.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHECK_KIND_CD') kind
+        on kind.code = sck.chng_kind
+        where 1=1
+        and saf_check_kind_nm like '%' + #{safCheckKindNm} + '%'
+        <if test= "plantCd != null and !plantCd.equals('')">
+            and sck.plant_cd = #{plantCd}
+        </if>
+        <if test= "planUseYn != null and !planUseYn.equals('')">
+            and sck.plan_use_yn = #{planUseYn}
+        </if>
+        <if test= "facilityUseYn != null and !facilityUseYn.equals('')">
+            and sck.facility_use_yn = #{facilityUseYn}
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+            and sck.use_yn = #{useYn}
+        </if>
+        <if test= "patrolYn != null and !patrolYn.equals('')">
+            and sck.patrol_yn = #{patrolYn}
+        </if>
+        <if test= "subconUseYn != null and !subconUseYn.equals('')">
+            and sck.subcon_use_yn = #{subconUseYn}
+        </if>
+        <if test= "congYn != null and !congYn.equals('')">
+            and sck.cong_yn = #{congYn}
+        </if>
+        <if test= "chngKind != null and !chngKind.equals('')">
+            and sck.chng_kind = #{chngKind}
+        </if>
+         order by writer_dt desc, sort_order
+    </select>
+    
+    <select id= "getCheckKindItem" parameterType= "HashMap" resultType= "com.she.safety.model.CheckKind">
+    /* CheckKindMapper.getCheckKindItem [CheckKind.xml] */
+        select saf_check_kind_no
+            ,saf_check_kind_nm
+            ,plan_use_yn
+            ,item_use_yn
+            ,cong_yn
+            ,chng_kind
+            ,facility_use_yn
+            ,sort_order
+            ,use_yn
+            ,plant_cd
+            ,subcon_use_yn
+            ,patrol_yn
+        from saf_check_kind
+        where 1=1
+        <if test= "safCheckKindNo != null and !safCheckKindNo.equals('')">
+            and saf_check_kind_no = #{safCheckKindNo}
+        </if>
+    </select>
+    
+    <insert id= "createCheckKind" parameterType= "com.she.safety.model.CheckKind">
+      /* CheckKindMapper.createCheckKind [CheckKind.xml] */
+        <selectKey keyProperty= "safCheckKindNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_check_kind
+        </selectKey>
+           insert into saf_check_kind
+            (saf_check_kind_no
+            ,saf_check_kind_nm
+            ,plan_use_yn
+            ,item_use_yn
+            ,facility_use_yn
+            ,plant_cd
+            ,subcon_use_yn
+            ,patrol_yn
+            ,cong_yn
+            ,chng_kind
+            ,sort_order
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+     values
+           ( #{safCheckKindNo}
+           ,#{safCheckKindNm}
+           ,#{planUseYn}
+           ,#{itemUseYn}
+           ,#{facilityUseYn}
+           ,#{plantCd}
+           ,#{subconUseYn}
+           ,#{patrolYn}
+           ,#{congYn}
+           ,#{chngKind}
+           ,#{sortOrder}
+           ,#{useYn}
+           ,#{createUserId}
+           ,getdate()
+           )
+    </insert>
+    
+    <update id= "updateCheckKind" parameterType= "com.she.safety.model.CheckKind">
+     /* CheckKindMapper.updateCheckKind [CheckKind.xml] */
+        update saf_check_kind
+        set saf_check_kind_nm =#{safCheckKindNm}
+              ,plan_use_yn = #{planUseYn}
+              ,item_use_yn = #{itemUseYn}
+              ,facility_use_yn = #{facilityUseYn}
+              ,plant_cd = #{plantCd}
+              ,subcon_use_yn = #{subconUseYn}
+              ,chng_kind = #{chngKind}
+              ,patrol_yn = #{patrolYn}
+              ,sort_order = #{sortOrder}
+              ,use_yn = #{useYn}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         where 1=1
+         and saf_check_kind_no = #{safCheckKindNo}
+    </update>
+    
+    <select id= "checkCheckKind" resultType= "com.she.safety.model.CheckKind">
+     /* CheckKindMapper.checkCheckKind [CheckKind.xml] */
+        select saf_check_kind_no
+        from saf_check_kind
+        where 1=1
+        and plant_cd = #{plantCd}
+         and saf_check_kind_nm = #{safCheckKindNm}
+        <if test= "safCheckKindNo != 0">
+             and saf_check_kind_no != #{safCheckKindNo}
+         </if>
+    </select>    
+</mapper>

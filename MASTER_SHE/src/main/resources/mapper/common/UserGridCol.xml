@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.common.mapper.UserGridMapper">
+
+    <select id="getUserGridCols" resultType="com.she.common.model.UserGridCol">
+        /* UserGridMapper.getUserGridCols [User.xml] 사용자별 메뉴 그리드 컬럼설정 목록 */
+        select uf.user_id, uf.menu_id, uf.col_nm, uf.disp_ord, uf.width, uf.visible, uf.style
+        from user_grid_col uf
+        where (uf.user_id = #{userId} or (uf.user_id = 0 and not exists (select 1 from user_grid_col b where b.user_id = #{userId} and uf.menu_id = b.menu_id and uf.grid_id = b.grid_id)))
+        and uf.menu_id = #{menuId}
+        and uf.grid_id = #{gridId}
+        order by uf.disp_ord
+    </select>
+    
+    <update id="createUserGridCol" parameterType="com.she.common.model.UserGridCol">
+        /* UserGridMapper.createUserGridCol [User.xml]  사용자별 메뉴 그리드 컬럼설정 등록 */
+        insert into user_grid_col (
+            user_id, menu_id, grid_id, col_nm, disp_ord, width, visible,  style
+        ) 
+        values 
+        <foreach collection="userGridCols" item="item" index="index" separator=", ">
+            (
+                <choose>
+                    <when test="isAll == 'NO' or isAll.equals('NO')">
+                        #{userId}  
+                    </when>
+                    <otherwise>
+                        '0'
+                    </otherwise>
+                </choose>
+           , #{menuId}, #{gridId}, #{item.colNm}, #{item.dispOrd}, #{item.width}, #{item.visible}, #{item.style})
+        </foreach>
+    </update>
+
+    <delete id="deleteUserGridCol" parameterType="com.she.common.model.UserGridCol">
+        /* UserGridMapper.deleteUserGridCol [User.xml] 사용자별 메뉴 그리드 컬럼설정 삭제 */
+        delete from user_grid_col
+        where 1=1
+        <choose>
+            <when test="isAll == 'NO' or isAll.equals('NO')">
+                and user_id = #{userId}
+            </when>
+            <otherwise>
+                and user_id = '0'
+            </otherwise>
+        </choose>
+        and menu_id = #{menuId}
+        and grid_id = #{gridId}
+    </delete>
+    
+    <delete id="deleteUserGridColAll" parameterType="com.she.common.model.UserGridCol">
+        /* UserGridMapper.deleteUserGridColAll [User.xml] 전역초기화로 컬럼설정 삭제 */
+        delete from user_grid_col
+        where menu_id = #{menuId}
+        and grid_id = #{gridId}
+    </delete>
+
+
+</mapper>

@@ -1,0 +1,143 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.vendor.subconEval.mapper.SubconEvalResultMapper">
+
+    <select id= "getSubconEvalResult" resultType= "com.she.vendor.model.SubconEvalResult">
+        select sser.saf_subcon_eval_result_no
+            ,sser.plant_cd
+            ,sser.subcon_eval_cls_cd
+            ,subconEvalCls.code_nm as subcon_eval_cls_nm
+            ,sser.subcon_eval_att_cd
+            ,subconEvalAtt.code_nm as subcon_eval_att_nm
+            ,sser.eval_s_dt
+            ,sser.eval_e_dt
+            ,sser.eval_nm
+            ,sser.vendor_cd
+            ,cvm.vendor_nm
+            ,sser.eval_sum_pnt
+            ,sser.eval_all_pnt
+            ,sser.remarks
+            ,sser.status
+            ,step.code_nm as status_nm
+            ,sser.appr_rqst_no
+            , car.biz_appr_step_cd            
+            , isnull(step.code_nm, '결재요청전' ) as biz_appr_step_nm
+            ,sser.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,convert(char(10), sser.create_dt, 23) as create_dt 
+            ,sser.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,convert(char(10), sser.update_dt, 23) as update_dt
+            ,sser.const_no
+        from saf_subcon_eval_result sser
+        inner join chm_vendor_mst cvm
+        on sser.vendor_cd = cvm.vendor_cd
+        inner join com_code_master subconEvalCls
+        on sser.subcon_eval_cls_cd = subconEvalCls.code
+        and subconEvalCls.code_group_cd = 'SAF_SC_EVAL_CLS'
+        and subconEvalCls.use_yn = 'Y'
+        inner join com_code_master subconEvalAtt
+        on sser.subcon_eval_att_cd = subconEvalAtt.code
+        and subconEvalAtt.code_group_cd = 'SAF_SC_EVAL_ATT'
+        and subconEvalAtt.use_yn = 'Y'
+        inner join com_code_master step
+        on sser.status = step.code
+        and step.code_group_cd = 'COM_PROCESS_STEP'
+        left outer join com_appr_rqst car
+        on car.appr_rqst_no = sser.appr_rqst_no
+        left join com_code_master apprStep
+        on apprStep.code = car.biz_appr_step_cd
+        and apprStep.code_group_cd = 'COM_BIZ_APPR_STEP'
+        and apprStep.use_yn = 'Y'
+        inner join com_user createUser 
+        on sser.create_user_id = createUser.user_id
+        and createUser.use_yn = 'Y'
+        left outer join com_user updateUser 
+        on sser.update_user_id = updateUser.user_id
+        and updateUser.use_yn = 'Y'
+        where sser.saf_subcon_eval_result_no = #{safSubconEvalResultNo}
+    </select>
+    
+    <insert id= "createSubconEvalResult" parameterType= "com.she.vendor.model.SubconEvalResult">
+        <selectKey keyProperty= "safSubconEvalResultNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_subcon_eval_result as saf_subcon_eval_result_no
+          </selectKey>
+        insert into saf_subcon_eval_result
+            (saf_subcon_eval_result_no
+            ,plant_cd
+            ,subcon_eval_cls_cd
+            ,subcon_eval_att_cd
+            ,eval_s_dt
+            ,eval_e_dt
+            ,const_no
+            ,eval_nm
+            ,vendor_cd
+            ,eval_sum_pnt
+            ,eval_all_pnt
+            ,remarks
+            ,status
+            ,create_user_id
+            ,create_dt)
+        values 
+            (#{safSubconEvalResultNo}
+            ,#{plantCd}
+            ,#{subconEvalClsCd}
+            ,#{subconEvalAttCd}
+            ,#{evalSDt}
+            ,#{evalEDt}
+            ,#{constNo}
+            ,#{evalNm}
+            ,#{vendorCd}
+            ,#{evalSumPnt}
+            ,#{evalAllPnt}
+            ,#{remarks}
+            ,'PSREG'
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+    
+    <update id= "updateSubconEvalResult" parameterType= "com.she.vendor.model.SubconEvalResult">
+        update saf_subcon_eval_result
+        set subcon_eval_cls_cd = #{subconEvalClsCd}
+            ,subcon_eval_att_cd = #{subconEvalAttCd}
+            ,eval_s_dt = #{evalSDt}
+            ,plant_cd = #{plantCd}
+            ,eval_e_dt = #{evalEDt}
+            ,const_no = #{constNo}
+            ,eval_nm = #{evalNm}
+            ,vendor_cd = #{vendorCd}
+            ,eval_sum_pnt = #{evalSumPnt}
+            ,eval_all_pnt = #{evalAllPnt}
+            ,remarks = #{remarks}
+            ,status = #{status}
+            ,appr_rqst_no = #{apprRqstNo}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where saf_subcon_eval_result_no = #{safSubconEvalResultNo}
+    </update>
+        
+   <insert id= "createSubconEvalItemResult" parameterType= "com.she.vendor.model.SubconEvalItemResult">
+        insert into saf_subcon_eval_item_result
+            (saf_subcon_eval_result_no
+            ,saf_subcon_eval_item_no
+            ,eval_pnt
+            ,remarks)
+        values
+            (#{safSubconEvalResultNo}
+            ,#{safSubconEvalItemNo}
+            ,#{evalPnt}
+            ,#{remarks})
+    </insert>
+    
+    <delete id= "deleteSubconEvalResult">
+        delete from saf_subcon_eval_result
+        where saf_subcon_eval_result_no = #{safSubconEvalResultNo}
+    </delete>
+    
+    <delete id= "deleteSubconEvalItemResult">
+        delete from saf_subcon_eval_item_result
+        where saf_subcon_eval_result_no = #{safSubconEvalResultNo}
+    </delete>
+    
+</mapper>

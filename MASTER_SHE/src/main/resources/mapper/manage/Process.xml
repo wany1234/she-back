@@ -1,0 +1,182 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.manage.mapper.ProcessMapper">
+    <select id= "getProcesses" resultType= "com.she.manage.model.Process">
+        /* ProcessMapper.getProcesses [Process.xml] */
+        select p.process_cd
+            , p.process_nm
+            , p.sort_order
+            , p.use_yn
+            , case when p.use_yn = 'Y' then '사용'
+            else '미사용' end as use_yn_nm
+            , p.create_user_id
+            , cu.user_nm as create_user_nm
+            , convert(char(19), p.create_dt, 23) as create_dt
+            , p.update_user_id
+            , uu.user_nm as update_user_nm
+            , convert(char(19), p.update_dt, 23) as update_dt   
+            <choose>
+                <when test="plantCd != null and !plantCd.equals('')">
+                    ,#{plantCd} as searchPlantCd
+                </when>
+                <otherwise>
+                    ,'' as searchPlantCd
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="deptCd != null and !deptCd.equals('')">
+                    ,#{deptCd} as searchDeptCd
+                </when>
+                <otherwise>
+                    ,'' as searchDeptCd
+                </otherwise>
+            </choose>
+            , stuff((select ', ' + plant.code_nm
+                     from com_process_dept a
+                     inner join com_dept b
+                      on a.dept_cd = b.dept_cd
+                     left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+                     on plant.code = b.plant_cd
+                     where a.process_cd = p.process_cd
+                     group by plant.code_nm
+                     for xml path('')),1,1,'') as plant_nms
+            , stuff((select ', ' + b.dept_nm
+                     from com_process_dept a
+                     inner join com_dept b
+                     on a.dept_cd = b.dept_cd
+                     where a.process_cd = p.process_cd
+                     for xml path('')),1,1,'') as dept_nms
+            , case
+                 when dbo.GET_USER_NM(p.update_user_id) = '' then dbo.GET_USER_NM(p.create_user_id)
+                 else dbo.GET_USER_NM(p.update_user_id) end as writer_user_nm
+            , case when p.update_dt is null then convert(date, p.create_dt) else convert(date, p.update_dt) end   as writer_dt                     
+        from com_process p
+        inner join com_user cu
+         on p.create_user_id = cu.user_id
+        left outer join com_user uu
+         on p.update_user_id = uu.user_id
+        left outer join hea_process_hazard ph
+         on p.process_no = ph.process_no
+        where 1=1
+        <if test= "useYn != null and !useYn.equals('')">
+        and p.use_yn = #{useYn}
+        </if>    
+        <if test= "heaHazardCd != null and !heaHazardCd.equals('')">
+        and ph.hea_hazard_cd = #{heaHazardCd}
+        </if>
+        <if test= "processNm != null and !processNm.equals('')">
+        and upper(p.process_nm) like '%'+upper(#{processNm})+'%'
+        </if>
+        <if test= "deptCd != null and !deptCd.equals('')">
+        and p.process_cd in (select process_cd
+                            from com_process_dept
+                            where dept_cd = #{deptCd})
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            <choose>
+                <when test="plantCd.equals('-1000')">
+                    and not exists (
+                        select null
+                        from com_process_dept cpd
+                        inner join com_dept cd
+                        on cpd.dept_cd = cd.dept_cd
+                        where p.process_cd = cpd.process_cd
+                    )
+                </when>
+                <otherwise>
+                    and p.process_cd in (select process_cd
+                                        from com_process_dept cpd
+                                        inner join com_dept cd
+                                        on cpd.dept_cd = cd.dept_cd
+                                        where cd.plant_cd = #{plantCd})
+                </otherwise>
+            </choose>
+        </if>
+        order by writer_dt desc, p.sort_order
+    </select>
+    
+    <select id= "getProcess" resultType= "com.she.manage.model.Process">
+        /* ProcessMapper.getProcesses [Process.xml] */
+        select p.process_cd, p.process_nm, p.sort_order, p.use_yn
+            , p.create_user_id, cu.user_nm as create_user_nm, p.create_dt
+            , p.update_user_id, uu.user_nm as update_user_nm, p.update_dt
+        from com_process p
+        inner join com_user cu
+        on p.create_user_id = cu.user_id
+        left outer join com_user uu
+        on p.update_user_id = uu.user_id
+        where p.process_cd = #{processCd}    
+    </select>
+    
+    <select id="getProcessPlants" resultType="String">
+        /* ProcessMapper.getProcesses [Process.xml] */
+        select plant.code_nm as plant_nm
+        from com_process p
+        inner join com_process_dept cpd
+         on p.process_cd = cpd.process_cd
+        inner join com_dept cd
+         on cpd.dept_cd = cd.dept_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+         on plant.code = cd.plant_cd
+        where p.process_cd = #{processCd}
+        group by plant.code_nm
+    </select>
+    
+    <select id="getProcessDepts" resultType="String">
+        /* ProcessMapper.getProcesses [Process.xml] */
+        select cd.dept_nm
+        from com_process p
+        inner join com_process_dept cpd
+        on p.process_cd = cpd.process_cd
+        inner join com_dept cd
+        on cpd.dept_cd = cd.dept_cd
+        where p.process_cd = #{processCd}
+    </select>
+    
+    <insert id= "createProcess" parameterType= "com.she.manage.model.Process">
+        /* ProcessMapper.getProcesses [Process.xml] */
+        insert into com_process (
+            process_cd
+            , process_nm
+            , sort_order
+            , use_yn
+            , create_user_id
+            , create_dt
+        )
+        values (
+            #{processCd}
+            , #{processNm}
+            , #{sortOrder}
+            , #{useYn}
+            , #{createUserId}
+            , getdate()
+        )
+    </insert>
+    
+    <update id= "updateProcess" parameterType= "com.she.manage.model.Process">
+        /* ProcessMapper.getProcesses [Process.xml] */
+        update com_process
+        set process_nm = #{processNm}
+            , sort_order = #{sortOrder}
+            , use_yn = #{useYn}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+           where process_cd = #{processCd}
+    </update>
+    
+    <select id="getCheckProcesses" resultType="HashMap">
+        /* ProcessMapper.getProcesses [Process.xml] */
+        select count(*) as cnt
+            ,'processCd' as gubun
+        from com_process
+        where process_cd = #{processCd}
+        union all
+        select count(*) as cnt
+            ,'processNm' as gubun
+        from com_process
+        where process_nm = #{processNm}
+        and process_cd not in (#{processCd})
+    </select>
+    
+</mapper>

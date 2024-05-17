@@ -1,0 +1,30 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.manage.mapper.PositionMapper">
+    <select id= "getPositions" resultType= "com.she.manage.model.Position">
+        /* PositionMapper.getPositions [Position.xml] */
+        select p.position_cd
+            ,p.position_nm
+            ,p.sort_order
+            ,p.use_yn
+            ,case when p.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,p.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,p.create_dt
+            ,p.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,p.update_dt
+        from com_hr_position p
+        inner join com_user createUser
+        on p.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on p.update_user_id = updateUser.user_id
+        <if test= "useYn != null and !useYn.equals('')">
+            and p.use_yn = #{useYn}
+        </if>
+        order by p.sort_order
+    </select>
+</mapper>

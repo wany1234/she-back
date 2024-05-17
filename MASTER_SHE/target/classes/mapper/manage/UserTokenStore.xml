@@ -1,0 +1,69 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.security.mapper.UserTokenStoreMapper">
+
+    <!-- 사용자토큰정보 조회 -->
+    <select id= "getUserTokenStore" resultType= "com.she.security.model.token.UserTokenStore">
+        select t.user_token_store_no
+        , t.user_id
+        , t.refresh_token
+        , t.access_token
+        , t.update_dt
+        , t.ip_addr
+        , t.expired_time
+        from com_user_token_store t
+        where t.user_id = #{userId}
+    </select>
+
+    <!-- 사용자토큰정보 등록 -->
+    <insert id= "createUserTokenStore" parameterType= "com.she.security.model.token.UserTokenStore">
+        <selectKey keyProperty= "userTokenStoreNo" resultType= "long" order= "BEFORE">
+            select next value for seq_com_user_token_store as user_token_store_no
+          </selectKey>
+        INSERT INTO com_user_token_store
+        (user_token_store_no
+        ,user_id
+        ,refresh_token
+        ,access_token
+        ,ip_addr
+        ,expired_time
+        ,update_dt)
+        VALUES
+        (#{userTokenStoreNo}
+        , #{userId}
+        , #{refreshToken}
+        , #{accessToken}
+        , #{ipAddr}
+        , #{expiredTime}
+        , getDate())
+    </insert>
+
+    <!-- 사용자토큰정보 수정 -->
+    <update id= "updateUserTokenStore" parameterType= "com.she.security.model.token.UserTokenStore">
+        update com_user_token_store
+        set refresh_token = #{refreshToken}
+            , access_token = #{accessToken}
+            , ip_addr = #{ipAddr}
+            , expired_time = #{expiredTime}
+            , update_dt = getDate()
+        where user_token_store_no = #{userTokenStoreNo}
+    </update>
+
+    <!-- 사용자토큰정보 삭제 -->
+    <delete id= "removeUserTokenStore" parameterType= "String">
+        delete from com_user_token_store
+        where user_id = #{userId}
+    </delete>
+
+    <!-- 사용자토큰정보 초기화 -->
+    <update id= "clearUserTokenStore" parameterType= "String">
+        update com_user_token_store
+        set refresh_token = ''
+        , access_token = ''
+        , ip_addr = ''
+        , expired_time = ''
+        , update_dt = getDate()
+        where user_id = #{userId}
+    </update>
+</mapper>

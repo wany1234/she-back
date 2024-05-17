@@ -1,0 +1,174 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.baseInfo.mapper.ChemicalBranchMapper">
+
+    <select id= "getChemicalBranchs" resultType= "com.she.chm.model.ChemicalBranch">
+        /* ChemicalBranchMapper.getChemicalBranchs [ChemicalBranch.xml] */
+        select cb.branch_cd
+            ,cb.branch_nm_kr
+            ,cb.branch_nm_en
+            ,cb.branch_nm_ch
+            ,cb.branch_biz_num
+            ,cb.branch_addr_kr
+            ,cb.branch_addr_en
+            ,cb.branch_addr_ch
+            ,cb.branch_tel
+            ,cb.branch_ceo_kr
+            ,cb.branch_ceo_en
+            ,cb.branch_ceo_ch
+            ,cb.branch_charger_kr
+            ,cb.branch_charger_en
+            ,cb.branch_charger_ch
+            ,cb.branch_charger_tel
+            ,cb.use_yn
+            ,case
+                when cb.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,cb.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cb.create_dt
+            ,cb.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cb.update_dt
+        from chm_branch cb
+        inner join com_user createUser
+        on cb.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cb.update_user_id = updateUser.user_id
+        where 1=1
+        and cb.branch_nm_kr like '%' + #{branchNmKr} + '%'
+        <if test= "useYn != null and !useYn.equals('')">
+        and cb.use_yn = #{useYn}
+        </if>
+    </select>
+
+    <select id= "getChemicalBranch" resultType= "com.she.chm.model.ChemicalBranch">
+        /* ChemicalBranchMapper.getChemicalBranch [ChemicalBranch.xml] */
+        select cb.branch_cd
+            ,cb.branch_nm_kr
+            ,cb.branch_nm_en
+            ,cb.branch_nm_ch
+            ,cb.branch_biz_num
+            ,cb.branch_addr_kr
+            ,cb.branch_addr_en
+            ,cb.branch_addr_ch
+            ,cb.branch_tel
+            ,cb.branch_ceo_kr
+            ,cb.branch_ceo_en
+            ,cb.branch_ceo_ch
+            ,cb.branch_charger_kr
+            ,cb.branch_charger_en
+            ,cb.branch_charger_ch
+            ,cb.branch_charger_tel
+            ,cb.use_yn
+            ,case
+                when cb.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,cb.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cb.create_dt
+            ,cb.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cb.update_dt
+        from chm_branch cb
+        inner join com_user createUser
+        on cb.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cb.update_user_id = updateUser.user_id
+        where 1=1
+        and cb.branch_cd = #{branchCd}
+    </select>
+
+    <insert id= "createChemicalBranch" parameterType= "com.she.chm.model.ChemicalBranch">
+        /* ChemicalBranchMapper.createChemicalBranch [ChemicalBranch.xml] */
+        insert into chm_branch
+            (branch_cd
+            ,branch_nm_kr
+            ,branch_nm_en
+            ,branch_nm_ch
+            ,branch_biz_num
+            ,branch_addr_kr
+            ,branch_addr_en
+            ,branch_addr_ch
+            ,branch_tel
+            ,branch_ceo_kr
+            ,branch_ceo_en
+            ,branch_ceo_ch
+            ,branch_charger_kr
+            ,branch_charger_en
+            ,branch_charger_ch
+            ,branch_charger_tel
+            ,use_yn
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{branchCd}
+            ,#{branchNmKr}
+            ,#{branchNmEn}
+            ,#{branchNmCh}
+            ,#{branchBizNum}
+            ,#{branchAddrKr}
+            ,#{branchAddrEn}
+            ,#{branchAddrCh}
+            ,#{branchTel}
+            ,#{branchCeoKr}
+            ,#{branchCeoEn}
+            ,#{branchCeoCh}
+            ,#{branchChargerKr}
+            ,#{branchChargerEn}
+            ,#{branchChargerCh}
+            ,#{branchChargerTel}
+            ,#{useYn}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+
+    <update id= "updateChemicalBranch" parameterType= "com.she.chm.model.ChemicalBranch">
+        /* ChemicalBranchMapper.updateChemicalBranch [ChemicalBranch.xml] */
+        update chm_branch
+        set branch_nm_kr = #{branchNmKr}
+            ,branch_nm_en = #{branchNmEn}
+            ,branch_nm_ch = #{branchNmCh}
+            ,branch_biz_num = #{branchBizNum}
+            ,branch_addr_kr = #{branchAddrKr}
+            ,branch_addr_en = #{branchAddrEn}
+            ,branch_addr_ch = #{branchAddrCh}
+            ,branch_tel = #{branchTel}
+            ,branch_ceo_kr = #{branchCeoKr}
+            ,branch_ceo_en = #{branchCeoEn}
+            ,branch_ceo_ch = #{branchCeoCh}
+            ,branch_charger_kr = #{branchChargerKr}
+            ,branch_charger_en = #{branchChargerEn}
+            ,branch_charger_ch = #{branchChargerCh}
+            ,branch_charger_tel = #{branchChargerTel}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where branch_cd = #{branchCd}
+    </update>
+
+    <select id= "getCheckChemicalBranch" resultType= "HashMap">
+        /* ChemicalBranchMapper.getCheckChemicalBranch [ChemicalBranch.xml] */
+        select count(*) as cnt
+            ,'branchNmKr' as gubun
+        from chm_branch
+        where 1=1
+        and branch_nm_kr = #{branchNmKr}
+        <if test= "branchCdOrgin != null and !branchCdOrgin.equals('')">
+        and branch_cd not in (#{branchCdOrgin})
+        </if>
+        union all
+        select count(*) as cnt
+            ,'branchCd' as gubun
+        from chm_branch
+        where 1=1
+        and branch_cd = #{branchCd}
+        <if test= "branchCdOrgin != null and !branchCdOrgin.equals('')">
+        and branch_cd not in (#{branchCdOrgin})
+        </if>
+    </select>
+
+</mapper>

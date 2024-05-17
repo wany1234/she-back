@@ -1,0 +1,136 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.education.mapper.EduGroupMapper">
+    <select id= "getEduGroups" resultType= "com.she.safety.model.EduGroup">
+        select 
+             m.edu_grp_no
+            ,m.plant_cd
+            ,plant.code_nm as plant_nm
+            ,m.grp_nm
+            ,m.use_yn            
+            ,case when m.use_yn = 'Y' 
+                        then '사용'else '미사용'
+                        end as use_yn_nm            
+            ,m.sort_order
+            ,m.create_user_id
+            ,convert(char(10), m.create_dt, 23)  as createDt
+            ,m.update_user_id
+            ,convert(char(10), m.update_dt, 23)  as updateDt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+            , case
+                 when dbo.GET_USER_NM(m.update_user_id) = '' then dbo.GET_USER_NM(m.create_user_id)
+                 else dbo.GET_USER_NM(m.update_user_id) end    as writer_user_nm
+            , case when m.update_dt is null then convert(date, m.create_dt) else convert(date, m.update_dt) end   as writer_dt
+        from saf_edu_grp m
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code        
+        left outer join com_user cu on m.create_user_id = cu.user_id
+        left outer join com_user uu on m.update_user_id = uu.user_id 
+        where 1=1
+        <if test='groupNm != null and groupNm != ""'>
+        and m.grp_nm like '%'+#{groupNm}+'%'
+        </if>
+        <if test='plantCd != null and plantCd != ""'>
+        and m.plant_cd        =  #{plantCd}
+        </if>
+        <if test='useYn != null and useYn != ""'>
+        and m.use_yn        =  #{useYn}
+        </if>        
+        order by writer_dt desc, m.plant_cd
+    </select>
+
+
+    <select id= "getEduGroup" resultType= "com.she.safety.model.EduGroup">
+        select 
+             m.edu_grp_no
+            ,m.plant_cd
+            ,m.plant_cd
+            ,m.grp_nm
+            ,m.use_yn
+            ,case when m.use_yn = 'Y' 
+                        then '사용'else '미사용'
+                        end as use_yn_nm            
+            ,m.sort_order
+            ,m.create_user_id
+            ,convert(char(10), m.create_dt, 23)  as createDt
+            ,m.update_user_id
+            ,convert(char(10), m.update_dt, 23)  as updateDt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+        from saf_edu_grp m
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code        
+        left outer join com_user cu on m.create_user_id = cu.user_id
+        left outer join com_user uu on m.update_user_id = uu.user_id 
+        where edu_grp_no = #{eduGrpNo}
+        
+    </select>
+    
+    
+    <insert id= "createEduGroup" parameterType= "com.she.safety.model.EduGroup">
+        <selectKey keyProperty= "eduGrpNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_edu_grp as eduGrpNo
+        </selectKey>
+        insert into saf_edu_grp (
+             edu_grp_no
+            ,plant_cd
+            ,grp_nm
+            ,use_yn
+            ,sort_order
+            ,create_user_id
+            ,create_dt
+        ) values ( 
+            #{eduGrpNo}
+            ,#{plantCd}
+            ,#{grpNm}
+            ,#{useYn}
+            ,#{sortOrder}
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>    
+    
+    <update id= "updateEduGroup" parameterType= "com.she.safety.model.EduGroup">
+        update saf_edu_grp
+        SET 
+            plant_cd        =  #{plantCd}
+            ,grp_nm         =  #{grpNm}
+            ,use_yn         =  #{useYn}
+            ,sort_order     =  #{sortOrder}
+            ,update_user_id =  #{updateUserId}
+            ,update_dt      =  getDate()
+        where edu_grp_no = #{eduGrpNo}
+    </update>    
+    
+    <delete id= "deleteEduGroup" parameterType= "com.she.safety.model.EduGroup">
+        delete from saf_edu_grp where edu_grp_no = #{eduGrpNo}
+    </delete>        
+    
+     <!-- user -->
+    <select id= "getEduGroupUsers" resultType= "com.she.safety.model.EduGroupUser">
+        select 
+             m.edu_grp_no
+            ,m.user_id
+            ,u.user_nm
+            ,d.dept_cd
+            ,d.dept_nm
+            ,d.plant_cd
+            ,dbo.GET_CODE_NM_LANG('kr','COM_PLANT_CD',d.plant_cd) as plant_nm
+        from saf_edu_grp_user m 
+        inner join com_user u on m.user_id = u.user_id  
+        inner join com_dept d on u.dept_cd = d.dept_cd
+        where m.edu_grp_no = #{eduGrpNo}    
+    </select>
+    
+    <update id= "createEduGroupUsers" parameterType= "com.she.safety.model.EduGroup">
+        insert into saf_edu_grp_user (edu_grp_no ,user_id)
+        values(#{eduGrpNo}, #{userId});
+    </update>    
+    
+    <delete id= "deleteEduGroupUsers" parameterType= "com.she.safety.model.EduGroup">
+        delete from saf_edu_grp_user where edu_grp_no = #{eduGrpNo}
+    </delete>        
+        
+        
+    
+</mapper>

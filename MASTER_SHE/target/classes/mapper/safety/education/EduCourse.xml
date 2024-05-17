@@ -1,0 +1,257 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.education.mapper.EduCourseMapper">
+    <select id= "getEduCourses" resultType= "com.she.safety.model.EduCourse">
+          select
+            c.saf_edu_course_no
+            ,c.plant_cd as plant_cd
+            ,plant.code_nm as plant_nm
+            ,c.is_type_cd as is_type_cd
+            ,cc4.code_nm as is_type_nm            
+            ,c.edu_att_cd
+            ,cc1.code_nm as edu_att_nm
+            ,c.plant_cd
+            ,c.law_edu_tm
+            ,c.edu_type_cd
+            ,cc3.code_nm as edu_type_nm
+            ,c.edu_course_nm
+            
+            ,c.law_yn
+            ,case when c.law_yn = 'Y' 
+                        then '해당'else '미해당'
+                        end as law_yn_nm
+            ,c.law_perd_cd
+            ,cc2.code_nm as law_perd_nm
+            ,c.use_yn
+            ,case when c.use_yn = 'Y' 
+                        then '사용'else '미사용'
+                        end as use_yn_nm
+            ,c.sort_order
+            ,c.edu_object
+            ,c.dft_edu_tm
+            ,c.create_user_id
+            ,convert(char(10), c.create_dt, 23)  as createDt
+            ,c.update_user_id
+            ,convert(char(10), c.update_dt, 23)  as updateDt
+            
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+            , case
+                 when dbo.GET_USER_NM(c.update_user_id) = '' then dbo.GET_USER_NM(c.create_user_id)
+                 else dbo.GET_USER_NM(c.update_user_id) end    as writer_user_nm
+            , case when c.update_dt is null then convert(date, c.create_dt) else convert(date, c.update_dt) end   as writer_dt
+        from saf_edu_course c
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on plant.code = c.plant_cd        
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') cc1 on c.edu_att_cd = cc1.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_CYCLE') cc2 on c.law_perd_cd = cc2.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc3 on c.edu_type_cd = cc3.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') cc4 on c.is_type_cd = cc4.code        
+        left outer join com_user cu on c.create_user_id = cu.user_id
+        left outer join com_user uu on c.update_user_id = uu.user_id
+        where 1=1
+        <if test='eduAttCd != null and eduAttCd != ""'>
+        and c.edu_att_cd = #{eduAttCd}
+        </if>
+        <if test='eduTypeCd != null and eduTypeCd != ""'>
+        and c.edu_type_cd = #{eduTypeCd}
+        </if>
+        <if test='isTypeCd != null and isTypeCd!=""'>
+        and c.is_type_cd = #{isTypeCd}
+        </if>
+         <if test='safEduCourseNo != "0" and safEduCourseNo!=""'>
+        and c.saf_edu_course_no = #{safEduCourseNo}
+        </if>
+        
+        <if test='useYn != null and useYn != ""'>
+        and c.use_yn = #{useYn}
+        </if>
+        <if test='plantCd != null and plantCd != ""'>
+        and c.plant_cd = #{plantCd}
+        </if>        
+        <if test='eduCourseNm != null and eduCourseNm != ""'>
+        and c.edu_course_nm like '%'+#{eduCourseNm}+'%'
+        </if>
+        order by writer_dt desc, c.plant_cd
+    </select>
+
+    <select id= "getEduCourse" resultType= "com.she.safety.model.EduCourse">
+        select
+            c.saf_edu_course_no
+            ,c.edu_att_cd
+            ,cc1.code_nm as edu_att_nm
+            ,c.is_type_cd as is_type_cd
+            ,cc4.code_nm as is_type_nm  
+            ,c.edu_course_nm
+            ,c.edu_type_cd
+              ,c.plant_cd
+            ,cc3.code_nm as edu_type_nm
+            ,c.law_yn
+            ,case when c.law_yn = 'Y' 
+                        then '해당'else '미해당'
+                        end as law_yn_nm
+            ,c.law_perd_cd
+            ,cc2.code_nm as law_perd_nm
+            ,c.use_yn
+            ,case when c.use_yn = 'Y' 
+                        then '사용'else '미사용'
+                        end as use_yn_nm
+            ,c.sort_order
+            ,c.dft_edu_tm
+            ,c.law_edu_tm            
+            ,c.edu_day_num
+             ,c.edu_cost
+             ,c.edu_object
+             ,c.study_tgt
+             ,c.study_contents
+            ,c.create_user_id
+            ,c.create_dt
+            ,c.update_user_id
+            ,c.update_dt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+            ,(select count(*)
+                from saf_edu_mst sem
+                inner join com_appr_rqst car on car.appr_rqst_no = sem.p_appr_rqst_no
+                where sem.saf_edu_course_no = c.saf_edu_course_no
+                and car.biz_appr_step_cd != 'BAPSD') as plan_cnt -- 교육계획 결재 카운트 (결재중/결재완료 건만 카운트)
+        from saf_edu_course c
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') cc1 on c.edu_att_cd = cc1.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_CYCLE') cc2 on c.law_perd_cd = cc2.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc3 on c.edu_type_cd = cc3.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') cc4 on c.is_type_cd = cc4.code  
+        left outer join com_user cu on c.create_user_id = cu.user_id
+        left outer join com_user uu on c.update_user_id = uu.user_id
+        where 1=1
+        and c.saf_edu_course_no = #{safEduCourseNo}
+    </select>
+
+    <insert id= "createEduCourse" parameterType= "com.she.safety.model.EduCourse">
+        <selectKey keyProperty= "safEduCourseNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_edu_course
+        </selectKey>
+        insert into saf_edu_course
+        ( 
+            saf_edu_course_no
+            ,edu_att_cd
+            ,edu_type_cd
+            ,edu_course_nm
+            ,law_yn
+            ,law_perd_cd
+            ,law_edu_tm
+            ,edu_day_num
+            ,edu_cost
+            ,study_tgt
+            ,study_contents
+            ,plant_cd
+            ,use_yn
+            ,sort_order
+            ,dft_edu_tm
+            ,edu_object
+            ,is_type_cd
+            ,create_user_id
+            ,create_dt
+        )
+        VALUES
+        ( 
+            #{safEduCourseNo}
+            ,#{eduAttCd}
+            ,#{eduTypeCd}
+            ,#{eduCourseNm}
+            ,#{lawYn}
+            ,#{lawPerdCd}
+            ,#{lawEduTm}
+            ,#{eduDayNum}
+            ,#{eduCost}
+            ,#{studyTgt}
+            ,#{studyContents}
+            ,#{plantCd}
+            ,#{useYn}
+            ,#{sortOrder}
+            ,#{dftEduTm}
+            ,#{eduObject}
+            ,#{isTypeCd}
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>
+
+    <update id= "updateEduCourse" parameterType= "com.she.safety.model.EduCourse">
+        update saf_edu_course
+        SET edu_att_cd = #{eduAttCd}
+            ,edu_course_nm = #{eduCourseNm}
+            ,edu_type_cd = #{eduTypeCd}
+            ,law_yn = #{lawYn}
+            ,law_perd_cd = #{lawPerdCd}
+            ,use_yn = #{useYn}
+            ,edu_object = #{eduObject}
+            ,sort_order = #{sortOrder}
+            ,edu_cost = #{eduCost}
+            ,law_edu_tm = #{lawEduTm}            
+            ,plant_cd = #{plantCd}
+            ,dft_edu_tm = #{dftEduTm}
+            ,edu_day_num = #{eduDayNum}
+            ,study_tgt = #{studyTgt}
+            ,study_contents = #{studyContents}
+            ,is_type_Cd=#{isTypeCd}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where saf_edu_course_no = #{safEduCourseNo}
+    </update>
+    
+    <delete id= "deleteEduCourseGrp">
+        Delete From saf_edu_course_grp
+        Where saf_edu_course_no = #{safEduCourseNo}
+    </delete>
+    
+    <insert id= "insertEduCourseGrp" parameterType= "com.she.safety.model.EduCourseGrp">
+        Insert Into saf_edu_course_grp(
+            saf_edu_course_no
+            , saf_elect_titl_no
+            , edu_grp_no
+            , pre_edu_cd
+            , edu_com_yn
+            , edu_com_std
+            , edu_com_per
+            , edu_com_time
+            , edu_repeat_yn
+            , doc_keep_per
+            , law_desk
+            , use_yn) Values (
+            #{safEduCourseNo}
+            , #{safElectTitlNo}
+            , #{eduGrpNo}
+            , #{preEduCd}
+            , #{eduComYn}
+            , #{eduComStd}
+            , #{eduComPer}
+            , #{eduComTime}
+            , #{eduRepeatYn}
+            , #{docKeepPer}
+            , #{lawDesk}
+            , #{useYn})
+    </insert>
+    
+    <select id="getEduCourseGrp" parameterType = "int" resultType = "com.she.safety.model.EduCourseGrp">
+        Select ECG.saf_elect_titl_no, ECG.edu_grp_no, edu_com_yn, edu_com_std, pre_edu_cd, edu_com_per, edu_repeat_yn, doc_keep_per, law_desk, ECG.use_yn
+        From saf_edu_course_grp ECG
+        Where 1 = 1
+        <if test='safEduCourseNo != null and safEduCourseNo != ""'>
+            and ECG.saf_edu_course_no = #{safEduCourseNo}
+        </if>
+        
+    </select>
+    
+    <select id ="getEduCourseList" resultType= "com.she.safety.model.EduCourse">
+        Select saf_edu_course_no, edu_course_nm 
+        From saf_edu_course
+        Where use_yn = 'Y'
+    </select>
+    
+    <select id = "getEduCourseDepli" resultType = "int">
+        Select Count(*)
+        From saf_edu_course
+        Where edu_course_nm = #{eduCourseNm} And edu_att_cd = #{eduAttCd} And edu_type_cd = #{eduTypeCd} And plant_cd = #{plantCd}
+    </select>
+
+</mapper>

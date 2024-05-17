@@ -1,0 +1,264 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.tms.baseInfo.mapper.TmsStationMapper">
+
+    <select id= "getTmsStations" resultType= "com.she.env.tms.model.TmsStation">
+        /* TmsStationMapper.getTmsStations [TmsStation.xml] */
+        SELECT ets.station_code
+              ,ets.station_name
+              ,ets.plant_cd
+              ,plant.code_nm as plant_nm
+              ,ets.tms_type
+              ,tmsType.code_nm tms_type_nm
+              ,ets.setup_day
+              ,ets.comp
+              ,ets.model
+              ,ets.disp_order
+              ,ets.eair_disch_fac_no
+              ,edf.eair_disch_fac_nm as facility_nm
+              ,ets.eair_outlet_no
+              ,eo.main_disch_fac_nm as outlet_nm
+              ,ets.create_dt
+              ,ets.update_dt
+              , case
+                   when dbo.GET_USER_NM(ets.update_user_id) = '' then dbo.GET_USER_NM(ets.create_user_id)
+                   else dbo.GET_USER_NM(ets.update_user_id) end    as writer_user_nm
+              , case when ets.update_dt is null then convert(date, ets.create_dt) else convert(date, ets.update_dt) end   as writer_dt
+          FROM eair_tms_station ets
+         INNER JOIN com_code_master plant
+            ON ets.plant_cd = plant.code
+           AND plant.code_group_cd = 'COM_PLANT_CD'
+         INNER JOIN com_code_master tmsType
+            ON ets.tms_type = tmsType.code
+           AND tmsType.code_group_cd = 'TMS_TYPE'    
+         INNER JOIN eair_disch_fac edf
+            ON ets.eair_disch_fac_no = edf.eair_disch_fac_no
+         INNER JOIN eair_outlet eo
+            ON ets.eair_outlet_no = eo.eair_outlet_no    
+         WHERE 1=1
+        <if test= "plantCd != null and !''.equals(plantCd)">
+           AND ets.plant_cd = #{plantCd}
+        </if>
+        <if test= "tmsType != null and !''.equals(tmsType)">
+           AND ets.tms_Type = #{tmsType}
+        </if>
+        <if test= "stationName != null and !''.equals(stationName)">
+            AND ets.station_name like '%' + #{stationName} + '%'
+        </if>
+           ORDER BY writer_dt DESC
+    </select>
+
+    <select id= "getTmsStation" resultType= "com.she.env.tms.model.TmsStation">
+        /* TmsStationMapper.getTmsStation [TmsStation.xml] */
+        SELECT ets.station_code
+              ,ets.station_name
+              ,ets.plant_cd
+              ,plant.code_nm as plant_nm
+              ,ets.tms_type
+              ,tmsType.code_nm tms_type_nm
+              ,ets.setup_day
+              ,ets.comp
+              ,ets.model
+              ,ets.disp_order
+              ,ets.eair_disch_fac_no
+              ,edf.eair_disch_fac_nm as facility_nm
+              ,ets.eair_outlet_no
+              ,eo.main_disch_fac_nm as outlet_nm
+              ,ets.create_dt
+              ,ets.update_dt
+          FROM eair_tms_station ets
+         INNER JOIN com_code_master plant
+            ON ets.plant_cd = plant.code
+           AND plant.code_group_cd = 'COM_PLANT_CD'
+         INNER JOIN com_code_master tmsType
+            ON ets.tms_type = tmsType.code
+           AND tmsType.code_group_cd = 'TMS_TYPE'   
+         INNER JOIN eair_disch_fac edf
+            ON ets.eair_disch_fac_no = edf.eair_disch_fac_no
+         INNER JOIN eair_outlet eo
+            ON ets.eair_outlet_no = eo.eair_outlet_no
+         WHERE 1=1
+           AND ets.station_code = #{stationCode}
+    </select>
+
+    <insert id= "createTmsStation" parameterType= "com.she.env.tms.model.TmsStation">
+        /* TmsStationMapper.createTmsStation [TmsStation.xml] */
+        insert into eair_tms_station
+           (station_code
+           ,station_name
+           ,plant_cd
+           ,eair_disch_fac_no
+           ,eair_outlet_no
+           ,tms_type
+           ,setup_day
+           ,comp
+           ,model
+           ,disp_order
+           ,create_user_id
+           ,create_dt)
+        values
+            (REPLICATE('0',8 - LEN(#{stationCode})) + #{stationCode}
+            ,#{stationName}
+            ,#{plantCd}
+            ,#{eairDischFacNo}
+            ,#{eairOutletNo}
+            ,#{tmsType}
+            ,#{setupDay}
+            ,#{comp}
+            ,#{model}
+            ,#{dispOrder}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+
+    <update id= "updateTmsStation" parameterType= "com.she.env.tms.model.TmsStation">
+        /* TmsStationMapper.updateTmsStation [TmsStation.xml] */
+        update eair_tms_station
+           SET station_code = REPLICATE('0',8 - LEN(#{stationCode})) + #{stationCode}
+              ,station_name = #{stationName}
+              ,plant_cd = #{plantCd}
+              ,eair_disch_fac_no = #{eairDischFacNo}
+              ,eair_outlet_no = #{eairOutletNo}
+              ,tms_type = #{tmsType}
+              ,setup_day = #{setupDay}
+              ,comp = #{comp}
+              ,model = #{model}
+              ,disp_order = #{dispOrder}
+              ,update_dt = convert(char(10), getDate(), 23)
+              ,update_user_id = #{updateUserId}
+        where station_code = #{stationCodeOrign}
+    </update>
+ 
+    <select id= "getCheckTmsStation" resultType= "HashMap">
+        /* TmsStationMapper.getCheckTmsStation [TmsStation.xml] */
+        SELECT count(*) as cnt
+              ,'stationName' as gubun
+          FROM eair_tms_station ets
+         WHERE 1=1
+           AND ets.station_name = #{stationName}
+           AND ets.plant_cd = #{plantCd}
+        <if test= "stationCodeOrign != null and !''.equals(stationCodeOrign)">
+           AND station_code not in (#{stationCodeOrign})
+        </if>
+        UNION ALL
+        SELECT count(*) as cnt
+              ,'stationCode' as gubun
+          FROM eair_tms_station ets
+         WHERE 1=1
+           AND station_code = #{stationCode}
+           AND ets.plant_cd = #{plantCd}
+        <if test= "stationCodeOrign != null and !''.equals(stationCodeOrign)">
+           AND station_code not in (#{stationCodeOrign})
+        </if>
+    </select>
+    
+    <delete id="deleteTmsStation">
+        /* TmsStationMapper.deleteTmsStation [TmsStation.xml] */
+        DELETE FROM eair_tms_station
+         WHERE station_code = #{stationCode}
+    </delete>
+
+    <select id= "getDeleteCheckTmsStation" resultType= "int">
+        /* TmsStationMapper.getDeleteCheckTmsStation [TmsStation.xml] */
+        SELECT count(*) as cnt
+          FROM EAIR_TMS_STATION_ITEM etsi
+         INNER JOIN EAIR_TMS_STATION ets
+            ON etsi.station_code = ets.station_code
+         WHERE 1=1
+           AND etsi.station_code = #{stationCode}
+    </select>
+    
+    <select id="getOuletFacilitys" resultType="com.she.env.tms.model.OutletFacility">
+        /* TmsStationMapper.getOuletFacilitys [TmsStation.xml] */
+        With A as (
+            /**
+             - 배출시설과 배출구 사이에 방지시설이 있는 경우
+             - 보여줄 배출시설 정보와 최하위에 물려있는 방지시설 정보를 뽑는다.
+            */
+            Select edf.eair_disch_fac_no
+                  ,edf.eair_disch_fac_nm
+                  ,edf.plant_cd
+                  ,edf.mg_dept_cd
+                  ,edf.dept_cd
+                  ,epf.eair_prevent_fac_no
+              From eair_disch_fac edf
+             Inner join eair_prevent_disch_fac epdf
+                On edf.eair_disch_fac_no = epdf.eair_disch_fac_no
+             Inner join eair_prevent_fac epf
+                On epdf.eair_prevent_fac_no = epf.eair_prevent_fac_no
+             Where edf.use_yn = 'Y' -- 사용중인 배출시설의 배출구를 조회하는 부분임으로
+                And epf.use_yn = 'Y' -- 사용중인 방지시설의 배출구를 조회하는 부분임으로
+             Union all
+            Select A.eair_disch_fac_no
+                  ,A.eair_disch_fac_nm
+                  ,A.plant_cd
+                  ,A.mg_dept_cd
+                  ,A.dept_cd
+                  ,epf.eair_prevent_fac_no
+              From eair_prevent_fac epf
+             Inner join eair_prevent_prevent_fac epp
+                On epf.eair_prevent_fac_no = epp.c_eair_prevent_fac_no
+             Inner join A
+                On epp.eair_prevent_fac_no = A.eair_prevent_fac_no
+             Where epf.use_yn = 'Y' -- 사용중인 방지시설의 배출구를 조회하는 부분임으로
+        ), B as (
+            Select A.eair_disch_fac_no
+                  ,A.eair_disch_fac_nm
+                  ,A.plant_cd
+                  ,A.mg_dept_cd
+                  ,A.dept_cd
+                  ,eopf.eair_outlet_no
+              From A
+             Inner join eair_outlet_prevent_fac eopf
+                On A.eair_prevent_fac_no = eopf.eair_prevent_fac_no
+             Union all
+            Select edf.eair_disch_fac_no
+                  ,edf.eair_disch_fac_nm
+                  ,edf.plant_cd
+                  ,edf.mg_dept_cd
+                  ,edf.dept_cd
+                  ,eodf.eair_outlet_no
+              From eair_disch_fac edf
+             Inner join eair_outlet_disch_fac eodf
+                On edf.eair_disch_fac_no = eodf.eair_disch_fac_no
+        )
+        Select B.eair_disch_fac_no
+              ,B.eair_disch_fac_nm
+              ,B.plant_cd
+              ,plant.code_nm as plant_nm
+              ,B.mg_dept_cd
+              ,mgDept.dept_nm as mg_dept_nm
+              ,B.dept_cd
+              ,dept.dept_nm
+              ,perd.code_nm as air_perd_nm
+              ,eo.eair_outlet_no
+              ,eo.eair_outlet_nm
+              ,eo.main_disch_fac_nm
+              ,eo.eair_outlet_permit_no
+              ,eo.eair_outlet_diam
+              ,eo.eair_outlet_ht
+          From B
+         Inner join eair_outlet eo
+            On B.eair_outlet_no = eo.eair_outlet_no
+           And eo.use_yn = 'Y'
+         Inner JOIN com_code_master plant
+            On B.plant_cd = plant.code
+           And plant.code_group_cd = 'COM_PLANT_CD'
+         Inner JOIN com_dept mgDept
+            On B.mg_dept_cd = mgDept.dept_cd
+         Inner JOIN com_dept dept
+            On B.dept_cd = dept.dept_cd
+         Inner JOIN com_code_master perd
+            On eo.air_perd_cd = perd.code
+           And perd.code_group_cd = 'EAIR_SELF_TEST_PERD'
+         Where 1=1
+        <if test= "plantCd != null and !''.equals(plantCd)">
+           And B.plant_cd = #{plantCd}
+        </if>
+        <if test= "mgDeptCd != null and !''.equals(mgDeptCd)">
+           And B.mg_dept_cd = #{mgDeptCd}
+        </if>
+    </select>
+
+</mapper>

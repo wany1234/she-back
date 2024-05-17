@@ -1,0 +1,280 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.patrol.mapper.PatrolMstMapper">
+    
+    <!-- 연간순회점검 일정 목록 조회 -->
+    <select id= "getPatrolMsts" resultType= "com.she.safety.model.PatrolMaster">
+        SELECT 
+            spm.plant_cd
+            ,plant.code_nm as plant_nm
+            ,spm.dept_cd
+            ,cd.dept_nm
+            , (select stuff((select ',' +  b.dept_nm from saf_check_result a
+                            inner join com_dept b
+                             on a.pgp_dept_cd = b.dept_cd
+							 where a.patrol_mst_no = spm.patrol_mst_no
+							 group by b.dept_nm
+								for xml path('')
+                                  ), 1, 1, '')
+			) as pgp_dept_nm 
+            ,spm.year
+            ,spm.patrol_mst_no
+            ,spm.step_cd
+            ,spm.title
+            ,step.code_nm as step_nm
+            ,spm.check_plan_s_ymd
+            ,spm.check_plan_e_ymd
+            ,spm.vendor_cd
+            ,spm.check_perd
+            ,spm.appr_rqst_no
+            ,spm.create_user_id
+            ,cu.user_nm as create_user_nm
+            ,sck.saf_check_kind_nm
+            ,spm.saf_check_kind_no
+            , CASE WHEN apr.code = 'BAPSA' THEN apr.code_nm
+                    WHEN apr.code = 'BAPSG' THEN apr.code_nm
+                    ELSE '결재요청전' END AS bizApprStepNm
+             , req.appr_rqst_no
+            , case
+                 when dbo.GET_USER_NM(spm.update_user_id) = '' then dbo.GET_USER_NM(spm.create_user_id)
+                 else dbo.GET_USER_NM(spm.update_user_id) end    as writer_user_nm
+            , case when spm.update_dt is null then convert(date, spm.create_dt) else convert(date, spm.update_dt) end   as writer_dt
+            ,(select stuff((SELECT ',' + isnull(cd.dept_nm, vendor.vendor_nm)
+                            FROM saf_check_result scr
+                            LEFT OUTER JOIN com_dept cd
+                              ON cd.dept_cd = scr.tgt_dept_cd
+                            LEFT OUTER JOIN com_vendor_mst vendor
+                              ON vendor.vendor_cd = scr.tgt_vendor_cd
+                            WHERE scr.patrol_mst_no = spm.patrol_mst_no
+                            GROUP BY isnull(cd.dept_nm, vendor.vendor_nm)
+                            for xml path('')
+                ), 1, 1,'')
+             ) as tgt_nm 
+        FROM saf_patrol_mst spm
+        INNER JOIN com_code_master plant
+          ON plant.code_group_cd = 'COM_PLANT_CD'
+          and plant.code = spm.plant_cd
+        INNER JOIN com_user cu
+          ON cu.user_id =  spm.create_user_id
+        INNER JOIN com_dept cd
+          ON cd.dept_cd = spm.dept_cd
+        INNER JOIN com_code_master step
+           ON spm.step_cd = step.code
+          AND step.code_group_cd = 'SAF_PATROL_YEAR_STEP'           
+        LEFT OUTER JOIN saf_check_kind sck
+          ON spm.saf_check_kind_no = sck.saf_check_kind_no
+        LEFT OUTER JOIN com_appr_rqst req
+          ON spm.appr_rqst_no = req.appr_rqst_no
+        LEFT OUTER JOIN dbo.LANG_CODE_MASTER('kr', 'COM_BIZ_APPR_STEP') apr
+          ON req.biz_appr_step_cd = apr.code
+        WHERE 1=1
+        <if test= "deptCd != null and !deptCd.equals('')">
+            <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+            AND EXISTS (SELECT 1 WHERE ISNULL(#{deptCd}, '') = ''
+                        UNION ALL
+                        SELECT 1 WHERE #{deptSubYn} = 'Y' AND spm.dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{deptCd}))
+                        UNION ALL
+                        SELECT 1 WHERE #{deptSubYn} = 'N' AND spm.dept_cd = #{deptCd}
+                        )
+            <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if> 
+          <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(pgpDeptCd)">
+                           and exists (
+                                       select 1
+                                         from saf_check_result a
+                                        where a.patrol_mst_no = spm.patrol_mst_no
+                                        
+                                        <choose>
+                                            <when test='pgpDeptSubYn == "Y"'>
+                                                and a.pgp_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{pgpDeptCd}))
+                                            </when>
+                                            <when test='pfmDeptSubYn == "N"'>
+                                                and a.pgp_dept_cd = #{pgpDeptCd}
+                                            </when>
+                                        </choose>
+                                      )
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            and spm.plant_cd = #{plantCd}
+        </if>
+        <if test= "stepCd != null and !stepCd.equals('')">
+            and spm.step_cd = #{stepCd}
+        </if>
+        <if test= "startDate != null and endDate != null and !startDate.equals('') and !endDate.equals('')">
+            and ( spm.check_plan_s_ymd between #{startDate} and #{endDate} or
+                                spm.check_plan_e_ymd between #{startDate} and #{endDate} )
+        </if>
+        <if test= "safCheckKindNo != null and safCheckKindNo > 0">
+            and spm.saf_check_kind_no = #{safCheckKindNo}
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtDeptCd) or @org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)">
+            and EXISTS (
+                    select 1
+                    from saf_check_result scr
+                    where scr.patrol_mst_no = spm.patrol_mst_no
+                    and (
+                    <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtDeptCd)">
+                        
+                        <choose>
+                            <when test='tgtDeptSubYn == "Y"'>
+                                scr.tgt_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{tgtDeptCd}))
+                            </when>
+                            <when test='tgtDeptSubYn == "N"'>
+                                scr.tgt_dept_cd = #{tgtDeptCd}
+                            </when>
+                        </choose>
+                        
+                    </if>
+                    <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtDeptCd) and @org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)">
+                        or
+                    </if>
+                    <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)">
+                        scr.tgt_vendor_cd = #{tgtVendorCd}
+                    </if>
+                    )
+                )
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(keyword)">
+            and spm.title like '%' + #{keyword} + '%'
+        </if>
+        order by writer_dt desc
+    </select>
+    
+    <!-- 연간순회점검 일정 목록 상세조회 -->
+    <select id= "getPatrolMst" resultType= "com.she.safety.model.PatrolMaster">
+        SELECT 
+            spm.plant_cd
+            ,spm.patrol_mst_no
+            ,plant.code_nm as plant_nm
+            ,spm.dept_cd
+            ,cd.dept_nm
+            ,spm.year
+            ,spm.step_cd
+            ,spm.title
+            ,spm.check_plan_s_ymd
+            ,spm.check_plan_e_ymd
+            ,spm.vendor_cd
+            ,spm.check_perd
+            ,spm.appr_rqst_no
+            ,spm.create_user_id
+            ,spm.saf_check_kind_no
+            ,cu.user_nm as create_user_nm
+        FROM saf_patrol_mst spm
+        INNER JOIN com_code_master plant
+          ON plant.code_group_cd = 'COM_PLANT_CD'
+          and plant.code = spm.plant_cd
+        INNER JOIN com_user cu
+          ON cu.user_id =  spm.create_user_id
+        INNER JOIN com_dept cd
+          ON cd.dept_cd = spm.dept_cd
+        left outer join saf_check_kind sck
+           on spm.saf_check_kind_no = sck.saf_check_kind_no
+        WHERE spm.patrol_mst_no = #{patrolMstNo}
+    </select>
+    
+    <!-- 연간순회점검 일정별 점검계획 목록  -->
+    <select id= "getPatrolPlans" resultType= "com.she.safety.model.Patrol">
+        SELECT 
+            scr.tgt_dept_cd
+            ,cd.dept_nm as tgt_dept_nm
+            ,scr.tgt_vendor_cd
+            ,vendor.vendor_nm as tgt_vendor_nm
+            ,scr.pgp_dept_cd
+            ,cd2.dept_nm as pgp_dept_nm
+            ,scr.check_plan_step_cd
+            ,ccm.code_nm as check_plan_step_nm
+            ,scr.check_sch_ymd
+            ,scr.check_title
+        FROM saf_check_result scr
+        LEFT OUTER JOIN com_dept cd
+          ON cd.dept_cd = scr.tgt_dept_cd
+       	LEFT OUTER JOIN com_dept cd2
+          ON cd2.dept_cd = scr.pgp_dept_cd
+        LEFT OUTER JOIN com_vendor_mst vendor
+          ON vendor.vendor_cd = scr.tgt_vendor_cd
+        INNER JOIN com_code_master ccm
+          ON ccm.code_group_cd = 'SAF_CHK_STEP'
+         AND code = scr.check_step_cd
+        WHERE scr.patrol_mst_no = #{patrolMstNo}
+    </select>
+    
+    <insert id= "createPatrolMst" parameterType= "com.she.safety.model.PatrolMaster">
+        insert into saf_patrol_mst
+             (patrol_mst_no
+             ,plant_cd
+             ,dept_cd
+             ,year
+             ,saf_check_kind_no
+             ,title
+             ,step_cd
+             ,check_plan_s_ymd
+             ,check_plan_e_ymd
+             ,check_perd
+             ,appr_rqst_no
+             ,create_user_id
+             ,create_dt)
+        values
+            (#{patrolMstNo}
+            ,#{plantCd}
+            ,#{deptCd}
+            ,#{year}
+            ,#{safCheckKindNo}
+            ,#{title}
+            ,#{stepCd}
+            ,#{checkPlanSYmd}
+            ,#{checkPlanEYmd}
+            ,#{checkPerd}
+            ,#{apprRqstNo}
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+
+    <select id="getSequenceNumber" resultType="int">
+        select next value for seq_saf_patrol_mst as patrol_mst_no
+    </select>
+    
+    <update id= "updatePatrolMst" parameterType= "com.she.safety.model.PatrolMaster">
+        update saf_patrol_mst 
+         set
+            plant_cd = #{plantCd}
+            ,dept_cd = #{deptCd}
+            ,year = #{year}
+            ,saf_check_kind_no = #{safCheckKindNo}
+            ,title = #{title}
+            ,step_cd = #{stepCd}
+            ,check_plan_s_ymd = #{checkPlanSYmd}
+            ,check_plan_e_ymd = #{checkPlanEYmd}
+            ,check_perd = #{checkPerd}
+            ,appr_rqst_no = #{apprRqstNo}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+
+            where patrol_mst_no = #{patrolMstNo}
+    </update>
+    
+    <update id= "updatePlanStep" parameterType= "int">
+        update saf_check_result 
+         set
+            check_step_cd = 'CHS01'
+            where patrol_mst_no = #{patrolMstNo}
+    </update>
+    
+    <update id= "completeResultPatrolMst" parameterType= "int">
+        update saf_patrol_mst 
+         set step_cd = 'COMPLT'
+            where patrol_mst_no = #{patrolMstNo}
+    </update>
+    
+    <update id= "completePatrolMst" parameterType= "int">
+        update saf_patrol_mst 
+         set step_cd = 'CMPLT'
+             ,appr_rqst_no = 9999
+            where patrol_mst_no = #{patrolMstNo}
+    </update>
+    
+    <update id= "deletePatrolMst" parameterType= "int">
+        delete from saf_patrol_mst 
+            where patrol_mst_no = #{patrolMstNo}
+    </update>
+</mapper>

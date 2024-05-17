@@ -1,0 +1,427 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.vendor.baseInfo.mapper.VendorMasterMapper">
+
+    <select id= "getChemicalVendorMasters" resultType= "com.she.vendor.model.ChemicalVendorMaster">
+        select cvm.vendor_cd
+            ,STUFF((
+            select ',' + ccm.code_nm
+            from com_vendor_plant cvp
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') ccm
+             on ccm.code = cvp.plant_cd
+            where cvp.vendor_cd = cvm.vendor_cd
+            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as plant_nms
+            ,cvm.origin_cd
+            ,co.origin_nm_kr
+            ,co.origin_nm_en
+            ,cvm.vendor_nm
+            ,cvm.vendor_addr
+            ,cvm.factory_addr
+            ,cvm.biz_num
+            ,cvm.charger_dept
+            ,cvm.vendor_tel
+            ,cvm.vendor_fax
+            ,cvm.email
+            ,cvm.charger_nm
+            ,cvm.charger_tel
+            ,cvm.chief_nm
+            ,cvm.purchase_org_cd
+            ,cvm.purchase_org_nm
+            ,cvm.agency_nm
+            ,cvm.agency_tel
+            ,cvm.agency_charger
+            ,cvm.vendor_type_cd
+            ,vendorType.code_nm as vendor_type_nm
+            ,cvm.vendor_att_cd
+            ,vendorAtt.code_nm as vendor_att_nm
+            ,cvm.use_yn
+            ,case
+                when cvm.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,cvm.sort_order
+            ,convert(varchar(10), cvm.reg_dt, 120) as reg_dt
+            ,cvm.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cvm.create_dt
+            ,cvm.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cvm.update_dt
+            ,count(*) over() as total_cnt
+            , case
+                 when dbo.GET_USER_NM(cvm.update_user_id) = '' then dbo.GET_USER_NM(cvm.create_user_id)
+                 else dbo.GET_USER_NM(cvm.update_user_id) end as writer_user_nm
+            , case when cvm.update_dt is null then convert(date, cvm.create_dt) else convert(date, cvm.update_dt) end   as writer_dt
+        from com_vendor_mst cvm
+        inner join chm_origin co
+        on cvm.origin_cd = co.origin_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_VENDOR_TYPE') vendorType
+         on cvm.vendor_type_cd = vendorType.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_VENDOR_ATT') vendorAtt
+         on cvm.vendor_att_cd = vendorAtt.code
+        left outer join com_user createUser
+        on cvm.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cvm.update_user_id = updateUser.user_id
+        where 1=1
+        and cvm.vendor_nm like '%' + #{vendorNm} + '%'
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and vendor_cd in (select scvm.vendor_cd
+                    from com_vendor_mst scvm
+                    left join com_vendor_plant scvp
+                    on scvp.vendor_cd = scvm.vendor_cd
+                    where plant_cd = #{plantCd}
+                    )
+        </if>
+        <if test= "vendorTypeCd != null and !vendorTypeCd.equals('')">
+        and cvm.vendor_type_cd = #{vendorTypeCd}
+        </if>
+        <if test= "vendorAttCd != null and !vendorAttCd.equals('')">
+        and cvm.vendor_att_cd = #{vendorAttCd}
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+        and cvm.use_yn = #{useYn}
+        </if>
+        <choose>
+            <when test= 'orderByExpression != null and orderByExpression.equals("plant_nms asc") '>
+                ORDER BY plant_nms asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("plant_nms desc") '>
+                ORDER BY plant_nms desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_type_nm asc") '>
+                ORDER BY vendor_type_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_type_nm desc") '>
+                ORDER BY vendor_type_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_att_nm asc") '>
+                ORDER BY vendor_att_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_att_nm desc") '>
+                ORDER BY vendor_att_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("origin_nm_kr asc") '>
+                ORDER BY origin_nm_kr asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("origin_nm_kr desc") '>
+                ORDER BY origin_nm_kr desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_nm asc") '>
+                ORDER BY vendor_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_nm desc") '>
+                ORDER BY vendor_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("biz_num asc") '>
+                ORDER BY biz_num asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("biz_num desc") '>
+                ORDER BY biz_num desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_tel asc") '>
+                ORDER BY vendor_tel asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_tel desc") '>
+                ORDER BY vendor_tel desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("charger_nm asc") '>
+                ORDER BY charger_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("charger_nm desc") '>
+                ORDER BY charger_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_addr asc") '>
+                ORDER BY vendor_addr asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_addr desc") '>
+                ORDER BY vendor_addr desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("use_yn_nm asc") '>
+                ORDER BY use_yn_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("use_yn_nm desc") '>
+                ORDER BY use_yn_nm desc
+            </when>
+            <otherwise>
+                order by writer_dt desc, cvm.sort_order
+            </otherwise>
+        </choose>
+        <if test= "pageSize != null and pageSize > -1">
+        OFFSET ((#{pageNumber} - 1) * #{pageSize}) ROWS
+        FETCH NEXT #{pageSize} ROWS ONLY
+        </if>
+    </select>
+
+    <select id= "getChemicalVendorMaster" resultType= "com.she.vendor.model.ChemicalVendorMaster">
+         select cvm.vendor_cd
+            ,cvm.origin_cd
+            ,co.origin_nm_kr
+            ,co.origin_nm_en
+            ,cvm.vendor_nm
+            ,cvm.vendor_addr
+            ,cvm.factory_addr
+            ,cvm.biz_num
+            ,cvm.charger_dept
+            ,cvm.vendor_tel
+            ,cvm.vendor_fax
+            ,cvm.email
+            ,cvm.charger_nm
+            ,cvm.charger_tel
+            ,cvm.chief_nm
+            ,cvm.purchase_org_cd
+            ,cvm.purchase_org_nm
+            ,cvm.agency_nm
+            ,cvm.agency_tel
+            ,cvm.agency_charger
+            ,cvm.vendor_type_cd
+            ,vendorType.code_nm as vendor_type_nm
+            ,cvm.vendor_att_cd
+            ,vendorAtt.code_nm as vendor_att_nm
+            ,cvm.portal_use_yn
+            ,cvm.portal_id
+            ,cvm.use_yn
+            ,case
+                when cvm.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            <!-- ,cvm.supply_yn -->
+            <!-- ,case
+                when cvm.supply_yn = 'Y' then '공급O'
+                else '공급X'
+            end as supply_yn_nm -->
+            <!-- ,cvm.seller_yn
+            ,case
+                when cvm.seller_yn = 'Y' then '판매O'
+                else '판매X'
+            end as seller_yn_nm -->
+            ,cvm.sort_order
+            ,convert(varchar(10), cvm.reg_dt, 120) as reg_dt
+            ,cvm.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cvm.create_dt
+            ,cvm.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cvm.update_dt
+        from com_vendor_mst cvm
+        inner join chm_origin co
+        on cvm.origin_cd = co.origin_cd
+        <!-- and co.use_yn = 'Y' -->
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_VENDOR_TYPE') vendorType
+         on cvm.vendor_type_cd = vendorType.code
+        <!-- and vendorType.use_yn = 'Y' -->
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_VENDOR_ATT') vendorAtt
+         on cvm.vendor_att_cd = vendorAtt.code
+        <!-- and vendorAtt.use_yn = 'Y' -->
+        left outer join com_user createUser
+        on cvm.create_user_id = createUser.user_id
+        <!-- and createUser.use_yn = 'Y' -->
+        left outer join com_user updateUser
+        on cvm.update_user_id = updateUser.user_id
+        <!-- and updateUser.use_yn = 'Y' -->
+        where 1=1
+        and cvm.vendor_cd = #{vendorCd}
+    </select>
+
+    <select id= "getChemicalVendorMasterPlants" resultType= "java.util.HashMap">
+        select vendor_cd as vendorCd
+            ,plant_cd as plantCd
+        from com_vendor_plant
+        where vendor_cd = #{vendorCd}
+    </select>
+
+    <select id= "getChemicalVendorMasterWorkers" resultType= "com.she.vendor.model.VendorWorker">
+        select cvw.vendor_worker_no
+            ,cvw.vendor_cd
+            ,cvm.vendor_nm
+            ,cvw.worker_nm
+            ,cvw.birth_ymd
+            ,cvw.gender_cd
+            ,sexType.code_nm as gender_nm
+            ,cvw.worker_job
+            ,cvw.spe_commts
+        from com_vendor_worker cvw
+        inner join com_vendor_mst cvm
+        on cvw.vendor_cd = cvm.vendor_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_SEX_TYPE') sexType
+        on cvw.gender_cd = sexType.code
+        where 1=1
+        <if test= "vendorCd != null and !vendorCd.equals('')">
+        and cvw.vendor_cd = #{vendorCd}
+        </if>
+        <if test= "workerNm != null and !workerNm.equals('')">
+        and cvw.worker_nm = #{workerNm}
+        </if>
+    </select>
+
+    <insert id= "createChemicalVendorMaster" parameterType= "com.she.vendor.model.ChemicalVendorMaster">
+        insert into com_vendor_mst
+            (vendor_cd
+            ,origin_cd
+            ,vendor_nm
+            ,vendor_addr
+            ,factory_addr
+            ,biz_num
+            ,charger_dept
+            ,vendor_tel
+            ,vendor_fax
+            ,email
+            ,charger_nm
+            ,charger_tel
+            ,chief_nm
+            ,purchase_org_cd
+            ,purchase_org_nm
+            ,agency_nm
+            ,agency_tel
+            ,agency_charger
+            ,vendor_type_cd
+            ,vendor_att_cd
+            ,portal_use_yn
+            ,portal_id
+            ,portal_pwd
+            ,use_yn
+            <!-- ,supply_yn -->
+            <!-- ,seller_yn -->
+            ,sort_order
+            ,reg_dt
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{vendorCd}
+            ,#{originCd}
+            ,#{vendorNm}
+            ,#{vendorAddr}
+            ,#{factoryAddr}
+            ,#{bizNum}
+            ,#{chargerDept}
+            ,#{vendorTel}
+            ,#{vendorFax}
+            ,#{email}
+            ,#{chargerNm}
+            ,#{chargerTel}
+            ,#{chiefNm}
+            ,#{purchaseOrgCd}
+            ,#{purchaseOrgNm}
+            ,#{agencyNm}
+            ,#{agencyTel}
+            ,#{agencyCharger}
+            ,#{vendorTypeCd}
+            ,#{vendorAttCd}
+            ,#{portalUseYn}
+            ,#{portalId}
+            ,#{portalPwd}
+            ,#{useYn}
+            <!-- ,#{supplyYn} -->
+            <!-- ,#{sellerYn} -->
+            ,#{sortOrder}
+            ,#{regDt}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+
+    <insert id= "createChemicalVendorMasterPlants" parameterType= "java.util.HashMap">
+        insert into com_vendor_plant
+            (vendor_cd
+            ,plant_cd
+            )
+        values
+            (#{vendorCd}
+            ,#{plantCd}
+            )
+    </insert>
+
+    <insert id= "createChemicalVendorMasterWorkers" parameterType= "com.she.vendor.model.VendorWorker">
+        insert into com_vendor_worker
+            (vendor_worker_no
+            ,vendor_cd
+            ,worker_nm
+            ,birth_ymd
+            ,gender_cd
+            ,worker_job
+            ,spe_commts
+            )
+        values
+            (next value for seq_com_vendor_worker
+            ,#{vendorCd}
+            ,#{workerNm}
+            ,#{birthYmd}
+            ,#{genderCd}
+            ,#{workerJob}
+            ,#{speCommts}
+            )
+    </insert>
+
+    <update id= "updateChemicalVendorMaster" parameterType= "com.she.vendor.model.ChemicalVendorMaster">
+        update com_vendor_mst
+        set origin_cd = #{originCd}
+            ,vendor_nm = #{vendorNm}
+            ,vendor_addr = #{vendorAddr}
+            ,factory_addr = #{factoryAddr}
+            ,biz_num = #{bizNum}
+            ,charger_dept = #{chargerDept}
+            ,vendor_tel = #{vendorTel}
+            ,vendor_fax = #{vendorFax}
+            ,email = #{email}
+            ,charger_nm = #{chargerNm}
+            ,charger_tel = #{chargerTel}
+            ,chief_nm = #{chiefNm}
+            ,purchase_org_cd = #{purchaseOrgCd}
+            ,purchase_org_nm = #{purchaseOrgNm}
+            ,agency_nm = #{agencyNm}
+            ,agency_tel = #{agencyTel}
+            ,agency_charger = #{agencyCharger}
+            ,vendor_type_cd = #{vendorTypeCd}
+            ,vendor_att_cd = #{vendorAttCd}
+            ,portal_use_yn = #{portalUseYn}
+            <!-- ,supply_yn = #{supplyYn} -->
+            <!-- ,seller_yn = #{sellerYn} -->
+            ,sort_order = #{sortOrder}
+            ,use_yn = #{useYn}
+            ,reg_dt = #{regDt}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where vendor_cd = #{vendorCd}
+    </update>
+    <update id= "updateChemicalVendorMasterPwdReset" parameterType= "com.she.vendor.model.ChemicalVendorMaster">
+        update com_vendor_mst
+        set portal_pwd = #{portalPwd}
+        where vendor_cd = #{vendorCd}
+    </update>
+    <select id= "getCheckChemicalVendorMaster" resultType= "HashMap">
+        select count(*) as cnt
+            ,'vendorCd' as gubun
+        from com_vendor_mst
+        where 1=1
+        and vendor_cd = #{vendorCd}
+        <if test= "vendorCdOrigin != null and !vendorCdOrigin.equals('')">
+        and vendor_cd not in (#{vendorCdOrigin})
+        </if>
+    </select>
+
+    <delete id= "deleteChemicalVendorMasterPlants" >
+        delete from com_vendor_plant
+        where vendor_cd = #{vendorCd}
+    </delete>
+
+    <delete id= "deleteChemicalVendorMasterWorkers" >
+        delete from com_vendor_worker
+        where vendor_cd = #{vendorCd}
+    </delete>
+
+    <select id="getCheckPortalId" resultType="int">
+        select
+            count(*)
+        from com_vendor_mst
+        where 1=1
+          and portal_id = #{portalId}
+    </select>
+
+    <select id="getCheckBizNum" resultType="int">
+        select
+            count(*)
+        from com_vendor_mst
+        where 1=1
+          and biz_num = #{bizNum}
+    </select>
+</mapper>

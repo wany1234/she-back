@@ -1,0 +1,162 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.psm.processChart.mapper.InterLockMapper">
+    
+    <select id= "getInterLockLists" resultType= "com.she.psm.model.InterLock">
+        select sil.inter_lock_seq
+            , sil.plant_cd
+            , ccm.code_nm as plant_nm
+            , sil.inter_lock_no
+            , sil.facility_nm
+            , sil.temperature
+            , sil.pressure
+            , sil.liquid_level
+            , sil.etc
+            , sil.detector_num
+            , sil.last_opr_facil
+            , sil.opr_stop_range
+            , sil.period
+            , sil.remark
+            , sil.use_yn
+            , sil.rev_num
+            , sil.rev_contents
+            , sil.creater_id
+            , convert(char(19), sil.create_dt, 23) as create_dt
+            , sil.updater_id
+            , convert(char(19), sil.update_dt, 23) as update_dt
+            , case
+                 when dbo.GET_USER_NM(sil.updater_id) = '' then dbo.GET_USER_NM(sil.creater_id)
+                 else dbo.GET_USER_NM(sil.updater_id) end    as writer_user_nm
+            , case when sil.update_dt is null then convert(date, sil.create_dt) else convert(date, sil.update_dt) end   as writer_dt
+        from saf_inter_lock sil
+        left outer join com_code_master ccm
+        on sil.plant_cd = ccm.code
+        and ccm.code_group_cd = 'COM_PLANT_CD'
+        where 1=1
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and sil.plant_cd = #{plantCd}
+        </if>
+        <if test= "facilityNm != null and !facilityNm.equals('')">
+        and sil.facility_nm like '%' + #{facilityNm} + '%'
+        </if>
+        <if test= "interLockNo != null and !interLockNo.equals('')">
+        and sil.inter_lock_no like '%' + #{interLockNo} + '%'
+        </if>
+        order by writer_dt desc, sil.plant_cd, sil.inter_lock_seq desc
+    </select>
+    
+    <select id= "getInterLock" resultType= "com.she.psm.model.InterLock">
+        select sil.inter_lock_seq
+            , sil.plant_cd
+            , ccm.code_nm as plant_nm
+            , sil.inter_lock_no
+            , sil.facility_nm
+            , sil.temperature
+            , sil.pressure
+            , sil.liquid_level
+            , sil.etc
+            , sil.detector_num
+            , sil.last_opr_facil
+            , sil.opr_stop_range
+            , sil.period
+            , sil.remark
+            , sil.use_yn
+            , sil.rev_num
+            , sil.rev_contents
+            , sil.creater_id
+            , convert(char(19), sil.create_dt, 23) as create_dt
+            , sil.updater_id
+            , convert(char(19), sil.update_dt, 23) as update_dt
+        from saf_inter_lock sil
+        left outer join com_code_master ccm
+        on sil.plant_cd = ccm.code
+        and ccm.code_group_cd = 'COM_PLANT_CD'
+        where 1=1
+        and sil.inter_lock_seq = #{interLockSeq}
+    </select>
+    
+    <insert id= "createInterLock" parameterType= "com.she.psm.model.InterLock">
+           <selectKey keyProperty= "interLockSeq" resultType= "com.she.psm.model.InterLock" order= "BEFORE">
+            select (next value for seq_saf_inter_lock) as interLockSeq
+          </selectKey>
+          insert into saf_inter_lock
+          (
+          inter_lock_seq
+          ,plant_cd
+        ,inter_lock_no
+        ,facility_nm
+        ,temperature
+        ,pressure
+        ,liquid_level
+        ,etc
+        ,detector_num
+        ,last_opr_facil
+        ,opr_stop_range
+        ,period
+        ,remark
+        ,use_yn
+        ,rev_num
+        ,rev_contents
+        ,creater_id
+        ,create_dt
+          )
+          values
+          (
+          #{interLockSeq}
+          ,#{plantCd}
+        ,#{interLockNo}
+        ,#{facilityNm}
+        ,#{temperature}
+        ,#{pressure}
+        ,#{liquidLevel}
+        ,#{etc}
+        ,#{detectorNum}
+        ,#{lastOprFacil}
+        ,#{oprStopRange}
+        ,#{period}
+        ,#{remark}
+        ,#{useYn}
+        ,#{revNum}
+        ,#{revContents}
+        ,#{createrId}
+        ,getDate()
+          )
+    </insert>
+    
+    <update id= "updateInterLock" parameterType= "com.she.psm.model.InterLock">
+        update saf_inter_lock 
+        set plant_cd = #{plantCd}
+            ,inter_lock_no = #{interLockNo}
+            ,facility_nm = #{facilityNm}
+            ,temperature = #{temperature}
+            ,pressure = #{pressure}
+            ,liquid_level = #{liquidLevel}
+            ,etc = #{etc}
+            ,detector_num = #{detectorNum}
+            ,last_opr_facil = #{lastOprFacil}
+            ,opr_stop_range = #{oprStopRange}
+            ,period = #{period}
+            ,remark = #{remark}
+            ,use_yn = #{useYn}
+            ,rev_num = #{revNum}
+            ,rev_contents = #{revContents}
+            ,creater_id = #{createrId}
+            ,create_dt = #{createDt}
+            ,updater_id = #{updaterId}
+            ,update_dt = getdate()
+        where inter_lock_seq = #{interLockSeq}
+    </update>
+    
+    <select id= "checkInterLock" resultType= "int">
+        select count(*)
+        from saf_inter_lock
+        where inter_lock_seq != #{interLockSeq}
+        and inter_lock_no = #{interLockNo}
+    </select>
+    
+    <delete id= "deleteInterLock" parameterType= "com.she.psm.model.InterLock">
+        delete saf_inter_lock
+        where inter_lock_seq = #{interLockSeq}
+    </delete>
+</mapper>

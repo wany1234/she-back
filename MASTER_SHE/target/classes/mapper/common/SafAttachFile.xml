@@ -1,0 +1,135 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.common.mapper.SafAttachFileMapper">
+    <insert id= "createSafSheDocu" parameterType= "com.she.common.model.SafAttachFile">
+        /* SafAttachFileMapper.createSafSheDocu [SafAttachFile.xml] */
+        <selectKey keyProperty= "sheDocuNo,docuGrpNo,useYn" resultType= "com.she.common.model.SafAttachFile" order= "BEFORE">
+            select (next value for seq_saf_she_doc_no) as sheDocuNo
+            <if test= "docuGrpNo != 0">
+                ,#{docuGrpNo} as docuGrpNo
+            </if>
+            <if test= "docuGrpNo == 0">
+                ,(next value for seq_saf_docu_grp_no) as docuGrpNo
+            </if>
+            ,'Y' as useYn
+        </selectKey>
+
+        insert into saf_she_docu
+        (
+            she_docu_no
+            ,docu_grp_no
+            ,docu_class_cd
+            ,docu_kind_cd
+            ,plant_cd
+            ,dept_cd
+            ,docu_title
+            ,rev_num
+            ,rev_ymd
+            ,enf_ymd
+            ,docu_contents
+            ,rev_contents
+            ,ref_table_id
+            ,process_cd
+            ,use_yn
+            ,del_yn
+            ,create_user_id
+            ,create_dt
+        )
+        values
+        (
+            #{sheDocuNo}
+            ,#{docuGrpNo}
+            ,#{docuClassCd}
+            ,#{docuKindCd}
+            ,#{plantCd}
+            ,#{deptCd}
+            ,#{docuTitle}
+            ,#{revNum}
+            ,#{revYmd}
+            ,#{enfYmd}
+            ,#{docuContents}
+            ,#{revContents}
+            ,#{refTableId}
+            ,#{processCd}
+            ,#{useYn}
+            ,#{delYn}
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>
+    
+    <select id= "checkSheDocu" parameterType= "com.she.common.model.SafAttachFile">
+        /* SafAttachFileMapper.checkSheDocu [SafAttachFile.xml] */
+        select count(*) as cnt
+        from saf_she_docu
+        where 1 = 1
+        and docu_grp_no = #{docuGrpNo}
+        and she_docu_no &lt;&gt; #{sheDocuNo}
+        and rev_num = #{revNum}
+    </select>
+    
+    <update id= "updateSheDocu" parameterType= "com.she.common.model.SafAttachFile">
+        /* SafAttachFileMapper.updateSheDocu [SafAttachFile.xml] */
+        update saf_she_docu
+        set docu_class_cd = #{docuClassCd}
+            ,docu_kind_cd = #{docuKindCd}
+            ,process_cd = #{processCd}
+            ,plant_cd = #{plantCd}
+            ,dept_cd = #{deptCd}
+            ,docu_title = #{docuTitle}
+            ,rev_num = #{revNum}
+            ,rev_ymd = #{revYmd}
+            ,enf_ymd = #{enfYmd}
+            ,docu_contents = #{docuContents}
+            ,rev_contents = #{revContents}
+            ,use_yn = #{useYn}
+            ,del_yn = #{delYn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where she_docu_no = #{sheDocuNo}
+    </update>
+    
+    <!-- PSM 첨부 파일 정보 저장 -->
+    <insert id= "createBeforeFile">
+        /* SafAttachFileMapper.createBeforeFile [SafAttachFile.xml] */
+        <selectKey keyProperty= "fileNo" resultType= "int" order= "BEFORE">
+            select (next value for seq_saf_file_no) as file_no
+        </selectKey>
+
+        insert into saf_attach_file (
+            file_no
+            , attach_file_id
+            , task_class_nm
+            , task_key
+            , file_org_nm
+            , file_save_nm
+            , file_ext
+            , file_size
+            , file_path
+            , file_down_path
+            , content_type
+            , encrypt_yn
+            , create_user_id
+            , create_dt
+            , use_yn
+        )
+        select #{fileNo}
+            , attach_file_id
+            , task_class_nm
+            , #{newTaskKey}
+            , file_org_nm
+            , file_save_nm
+            , file_ext
+            , file_size
+            , file_path
+            , file_down_path
+            , content_type
+            , encrypt_yn
+            , create_user_id
+            , create_dt
+            , null
+        from saf_attach_file
+        where file_no = #{beforFileNo}
+    </insert>
+</mapper>

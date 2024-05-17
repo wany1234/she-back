@@ -1,0 +1,297 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.chem.mapper.ChemPermitProdHisMapper">
+
+    <!-- 인허가신고 조회 -->
+    <select id= "getChemPermitProdHises" parameterType= "HashMap" resultType= "com.she.chm.model.ChemPermitProdHis">
+        /* ChemPermitProdHisMapper.getChemPermitProdHises [ChemPermitProdHis.xml] */
+        WITH a AS (
+            select max(attachFile.file_no) as file_no
+                   ,max(attachFile.file_org_nm) as file_nm
+                   ,max(attachFile.file_ext) as file_ext
+                   ,attachFile.task_key
+            from com_attach_file attachFile 
+            where attachFile.task_class_nm = 'PERMIT_PROD'
+            group by attachFile.task_key
+        )
+        select *
+        from (
+        SELECT cpph.permit_prod_his_no
+            ,cpph.permit_prod_his_grp_no        as permitProdHisGrpNo
+            , ROW_NUMBER() OVER (PARTITION BY cpph.permit_prod_his_grp_no ORDER BY cpph.create_dt desc) as dataBoard
+            ,cpph.permit_cls_no
+            ,cpc.permit_cls_nm
+            ,cpph.plant_cd
+            ,plant.code_nm as plant_nm
+            ,cpph.permit_org
+            ,cpph.use_dept_cd
+            ,dept.dept_nm as use_dept_nm
+            ,cpph.stor_fac
+            ,cpph.permit_num
+            ,cpph.permit_emp_nm
+            --,permitUser.user_nm as permit_emp_nm
+            ,cpph.permit_dt
+            ,cpph.permit_desc
+            ,cpph.use_yn
+            ,(case when isnull(cpph.use_yn,'Y') = 'Y' then '사용' else '사용안함' end) as use_yn_nm
+            ,cpph.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,convert(char(10), cpph.create_dt, 23) as create_dt
+            ,cpph.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,convert(char(10), cpph.update_dt, 23) as update_dt
+            ,A.file_no
+            ,A.file_nm
+            ,A.file_ext
+            , case
+                 when dbo.GET_USER_NM(cpph.update_user_id) = '' then dbo.GET_USER_NM(cpph.create_user_id)
+                 else dbo.GET_USER_NM(cpph.update_user_id) end as writer_user_nm
+            , case when cpph.update_dt is null then convert(date, cpph.create_dt) else convert(date, cpph.update_dt) end   as writer_dt
+          FROM chm_permit_prod_his cpph
+            inner join com_code_master plant on cpph.plant_cd = plant.code
+                and plant.code_group_cd = 'COM_PLANT_CD'
+            inner join chm_permit_cls cpc on cpph.permit_cls_no = cpc.permit_cls_no
+            left outer join com_dept dept on cpph.use_dept_cd = dept.dept_cd
+            --left outer join com_user permitUser on cpph.permit_emp_id = permitUser.user_id
+            left outer join com_user createUser on cpph.create_user_id = createUser.user_id
+            left outer join com_user updateUser on cpph.update_user_id = updateUser.user_id
+            left outer join A on convert(varchar, cpph.permit_prod_his_no) = A.task_key
+        where 1=1
+        <if test= "useYn != null and !useYn.equals('')">
+            and isnull(cpph.use_Yn, 'N') = #{useYn}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            <choose>
+              <when test= "plantCd.equals('0000')">
+                  and isnull(cpph.plant_cd, '') != ''
+              </when>
+              <otherwise>
+                  and cpph.plant_cd in (#{plantCd}, '0000')
+              </otherwise>
+            </choose>
+        </if>
+        <if test= "permitClsNo != null and permitClsNo > 0">
+            and cpph.permit_cls_no = #{permitClsNo}
+        </if>
+        <if test= "(fromYmd != null and !fromYmd.equals('')) or (toYmd != null and !toYmd.equals(''))">
+            and convert(datetime, cpph.permit_dt) between convert(datetime, #{fromYmd}) and convert(datetime, #{toYmd})
+        </if>
+        ) A
+        where dataBoard = '1'
+        and permitProdHisGrpNo is not null
+
+        order by writer_dt desc, plant_cd, create_dt desc
+    </select>
+
+    <!-- 인허가신고 상세정보 조회 -->
+    <select id= "getChemPermitProdHis" resultType= "com.she.chm.model.ChemPermitProdHis">
+        /* ChemPermitProdHisMapper.getChemPermitProdHis [ChemPermitProdHis.xml] */
+        SELECT cpph.permit_prod_his_no
+            ,cpph.permit_prod_his_grp_no
+            ,cpph.permit_cls_no
+            ,cpc.permit_cls_nm
+            ,cpph.plant_cd
+            ,plant.code_nm as plant_nm
+            ,cpph.permit_org
+            ,cpph.use_dept_cd
+            ,dept.dept_nm as use_dept_nm
+            ,cpph.stor_fac
+            ,cpph.permit_num
+            ,cpph.permit_emp_nm
+            --,permitUser.user_nm as permit_emp_nm
+            ,cpph.permit_dt
+            ,cpph.permit_desc
+            ,cpph.use_yn
+            ,(case when isnull(cpph.use_yn,'Y') = 'Y' then '사용' else '사용안함' end) as use_yn_nm
+            ,cpph.rev_num
+            ,cpph.rev_contents
+            ,cpph.rev_ymd
+            ,cpph.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,convert(char(10), cpph.create_dt, 23) as create_dt
+            ,cpph.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,convert(char(10), cpph.update_dt, 23) as update_dt
+          FROM chm_permit_prod_his cpph
+            inner join com_code_master plant on cpph.plant_cd = plant.code
+                and plant.code_group_cd = 'COM_PLANT_CD'
+            inner join chm_permit_cls cpc on cpph.permit_cls_no = cpc.permit_cls_no
+            left outer join com_dept dept on cpph.use_dept_cd = dept.dept_cd
+            --left outer join com_user permitUser on cpph.permit_emp_id = permitUser.user_id
+            left outer join com_user createUser on cpph.create_user_id = createUser.user_id
+            left outer join com_user updateUser on cpph.update_user_id = updateUser.user_id
+        where 1=1
+        and cpph.permit_prod_his_no = #{permitProdHisNo}
+    </select>
+    
+    <select id="getChemPermitProdHisProd" resultType="com.she.chm.model.Chemprod">
+        /* ChemPermitProdHisMapper.getChemPermitProdHisProd [ChemPermitProdHis.xml] */
+        select c.chem_prod_nm_kr
+            ,c.chem_prod_nm_en
+            ,c.chem_prod_no
+        from chm_permit_ref_prod a
+        inner join com_chemprod c
+        on a.chem_prod_no = c.chem_prod_no
+        where 1=1
+        and a.permit_prod_his_no = #{permitProdHisNo}
+    </select>
+
+    <!-- 인허가신고 중복검사 -->
+    <select id= "checkChemPermitProdHis" resultType= "HashMap">
+        /* ChemPermitProdHisMapper.checkChemPermitProdHis [ChemPermitProdHis.xml] */
+        select count(*) as cnt
+        from chm_permit_prod_his cpph
+        where cpph.plant_cd = #{plantCd}
+        and cpph.dept_cd = #{permitClsNo}
+        and convert(char(10), cpph.permit_dt, 23) = #{permitDt}
+        <if test= "permitProdHisNo != null and permitProdHisNo > 0">
+        and cpph.permit_prod_his_no not in (#{permitProdHisNo})
+        </if>
+    </select>
+
+    <!-- 인허가신고 신규등록 -->
+    <insert id= "createChemPermitProdHis" parameterType= "com.she.chm.model.ChemPermitProdHis">
+        <selectKey keyProperty= "permitProdHisNo" resultType= "int" order= "BEFORE">
+            select next value for seq_chm_permit_prod_his as permit_prod_his_no
+          </selectKey>
+        /* ChemPermitProdHisMapper.createChemPermitProdHis [ChemPermitProdHis.xml] */
+        insert into chm_permit_prod_his
+            (permit_prod_his_no
+            ,permit_prod_his_grp_no
+            ,permit_cls_no
+            ,plant_cd
+            ,permit_org
+            ,use_dept_cd
+            ,stor_fac
+            ,permit_num
+            ,permit_emp_Nm
+            ,permit_dt
+            ,permit_desc
+            ,use_yn
+            ,rev_num
+            ,rev_contents
+            ,rev_ymd
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{permitProdHisNo}
+    <choose>
+        <when test="permitProdHisGrpNo == 0">
+            , #{permitProdHisNo}
+        </when>
+        <otherwise>
+            , #{permitProdHisGrpNo}
+        </otherwise>
+    </choose>
+            , #{permitClsNo}
+            , #{plantCd}
+            , #{permitOrg}
+            , #{useDeptCd}
+            , #{storFac}
+            , #{permitNum}
+            , #{permitEmpNm}
+            , #{permitDt}
+            , #{permitDesc}
+            , #{useYn}
+    <choose>
+        <when test="permitProdHisGrpNo == 0">
+            , 1
+        </when>
+        <otherwise>
+            , #{revNum}
+        </otherwise>
+    </choose>
+            , #{revContents}
+            , convert(varchar(10), getdate(), 120)
+            , #{createUserId}
+            , getDate())
+    </insert>
+
+    <!-- 인허가신고 수정 -->
+    <update id= "updateChemPermitProdHis" parameterType= "com.she.chm.model.ChemPermitProdHis">
+        /* ChemPermitProdHisMapper.updateChemPermitProdHis [ChemPermitProdHis.xml] */
+        update chm_permit_prod_his
+        set permit_cls_no = #{permitClsNo}
+            ,plant_cd = #{plantCd}
+            ,permit_org = #{permitOrg}
+            ,use_dept_cd = #{useDeptCd}
+            ,stor_fac = #{storFac}
+            ,permit_num = #{permitNum}
+            ,permit_emp_Nm = #{permitEmpNm}
+            ,permit_dt = #{permitDt}
+            ,permit_desc = #{permitDesc}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where permit_prod_his_no = #{permitProdHisNo}
+    </update>
+    
+    <delete id="deleteChemPermitProdHisProd">
+        /* ChemPermitProdHisMapper.deleteChemPermitProdHisProd [ChemPermitProdHis.xml] */
+        delete from chm_permit_ref_prod
+        where permit_prod_his_no = #{permitProdHisNo}
+    </delete>
+
+    <select id= "getChemPermitProdHisRevisionList" resultType= "com.she.chm.model.ChemPermitProdHis">
+        /* ChemPermitProdHisMapper.getChemPermitProdHisRevisionList [ChemPermitProdHis.xml] */
+        SELECT cpph.permit_prod_his_no
+        ,cpph.permit_prod_his_grp_no
+        ,cpph.permit_cls_no
+        ,cpc.permit_cls_nm
+        ,cpph.plant_cd
+        ,cpph.permit_org
+        ,cpph.use_dept_cd
+        ,cpph.rev_num
+        ,cpph.rev_contents
+        ,cpph.rev_ymd
+        ,dept.dept_nm as use_dept_nm
+        ,cpph.stor_fac
+        ,cpph.permit_num
+        ,cpph.permit_emp_nm
+        --,permitUser.user_nm as permit_emp_nm
+        ,cpph.permit_dt
+        ,cpph.permit_desc
+        ,cpph.create_user_id
+        ,createUser.user_nm as create_user_nm
+        ,convert(char(10), cpph.create_dt, 23) as create_dt
+        ,cpph.update_user_id
+        ,updateUser.user_nm as update_user_nm
+        ,convert(char(10), cpph.update_dt, 23) as update_dt
+        , case
+        when dbo.GET_USER_NM(cpph.update_user_id) = '' then dbo.GET_USER_NM(cpph.create_user_id)
+        else dbo.GET_USER_NM(cpph.update_user_id) end as writer_user_nm
+        , case when cpph.update_dt is null then convert(date, cpph.create_dt) else convert(date, cpph.update_dt) end   as writer_dt
+        FROM chm_permit_prod_his cpph
+        inner join chm_permit_cls cpc on cpph.permit_cls_no = cpc.permit_cls_no
+        left outer join com_dept dept on cpph.use_dept_cd = dept.dept_cd
+        left outer join com_user createUser on cpph.create_user_id = createUser.user_id
+        left outer join com_user updateUser on cpph.update_user_id = updateUser.user_id
+        where 1=1
+        and cpph.permit_prod_his_grp_no = (select permit_prod_his_grp_no from chm_permit_prod_his where permit_prod_his_no = #{permitProdHisNo} )
+        order by permit_prod_his_no desc
+    </select>
+    
+    <insert id="createChemPermitProdHisProd">
+        /* ChemPermitProdHisMapper.createChemPermitProdHisProd [ChemPermitProdHis.xml] */
+        insert into chm_permit_ref_prod
+            (permit_prod_his_no
+            ,chem_prod_no)
+            values (#{permitProdHisNo}
+            ,#{chemProdNo})
+    </insert>
+
+    <delete id = "revDeleteChemPermitProdHisStatus" parameterType = "com.she.chm.model.ChemPermitProdHis">
+        /* ChemPermitProdHisMapper.revDeleteChemPermitProdHisStatus [ChemPermitProdHis.xml] */
+        DELETE chm_permit_prod_his
+        WHERE permit_prod_his_no = #{permitProdHisNo}
+    </delete>
+
+    <delete id = "deleteChemPermitProdHisStatus">
+        /* ChemPermitProdHisMapper.deleteChemPermitProdHisStatus [ChemPermitProdHis.xml] */
+        DELETE chm_permit_prod_his
+        WHERE permit_prod_his_grp_no = (select distinct permit_prod_his_grp_no from chm_permit_prod_his
+                                        where permit_prod_his_no = #{permitProdHisNo})
+    </delete>
+
+</mapper>

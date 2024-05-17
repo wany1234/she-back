@@ -1,0 +1,862 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.wholeProcess.mapper.MatCheckRequestMapper">
+
+    <select id= "getMatCheckRequests" resultType= "com.she.chm.model.MatCheckRequest">
+        /* MatCheckRequestMapper.getMatCheckRequests [MatCheckRequest.xml] */
+        select cmcr.mat_chk_rqst_no
+            ,cmcr.chem_prod_no
+            ,cmcr.vendor_cd
+            ,cmcr.vendor_nm
+            ,cmcr.origin_cd
+            ,co.origin_nm_kr
+            ,co.origin_nm_en
+            ,cmcr.makecp_cd
+            ,cmcr.makecp_nm
+            ,cmcr.makeorigin_cd
+            ,makeCo.origin_nm_kr as make_origin_nm_kr
+            ,makeCo.origin_nm_en as make_origin_nm_en
+            ,cmcr.sap_mat_cd
+            ,cmcr.chem_prod_nm_kr
+            ,cmcr.chem_prod_nm_en
+            ,cmcr.chem_code
+            ,cmcr.mix_yn
+            , (case when cmcr.mix_yn = 'Y' then '혼합'
+            else '단일'
+            end) mix_yn_nm
+            ,cmcr.biz_cat_cd
+            ,biz.code_nm as biz_cat_nm
+            ,cmcr.prod_cat_cd
+            ,prod.code_nm as prod_cat_nm
+            ,cmcr.property
+            ,property.code_nm as property_nm
+            ,cmcr.specific_gravity
+            ,cmcr.expect_amt
+            ,cmcr.etc_desc
+            ,cmcr.rqst_type
+            ,mcrCls.code_nm as rqst_type_nm
+            ,format(convert(datetime, cmcr.rqst_dt), 'yyyy-MM-dd') as rqst_dt
+            ,cmcr.chk_rqster_id
+            ,requester.user_nm as chk_rqster_nm
+            ,cd.dept_nm
+            ,cmcr.chk_rqst_desc
+            ,cmcr.chk_rqst_state
+            ,mcrStep.code_nm as chk_rqst_state_nm
+            ,cmcr.chk_dt
+            ,cmcr.reviewer_id
+            ,reviewer.user_nm as reviewer_nm
+            ,cmcr.chk_result
+            ,cmcr.chk_result_yn
+            ,cmcr.chk_result_fin_yn
+            ,cmcr.chk_result_fin_user_id
+            ,cmcr.chk_result_fin_dt
+            ,cmcr.chk_result_env
+            ,cmcr.chk_result_env_yn
+            ,cmcr.chk_result_env_fin_yn
+            ,cmcr.chk_result_env_fin_user_id
+            ,cmcr.chk_result_env_fin_dt
+            ,cmcr.chk_result_hea
+            ,cmcr.hs_num
+            ,cmcr.usage_cd
+            ,usage.code_nm as usage_nm
+            ,cmcr.usage_etc
+            ,cmcr.cfm_mtd_cd
+            ,ingredient.code_nm as cfm_mtd_nm
+            ,cmcr.make_yn
+            ,cmcr.imp_yn
+            ,cmcr.buy_yn
+            ,cmcr.using_yn
+            ,cmcr.sales_yn
+            ,cmcr.exp_yn
+            ,cmcr.licensing_yn
+            ,cmcr.spc_chem_yn
+            ,cmcr.sap_mat_yn
+            ,cmcr.sap_if_cd
+            ,cmcr.plant_cd
+            ,cmcr.dgr_yn
+            ,cmcr.stck_area
+            ,cmcr.air_pol_yn
+            ,cmcr.wtr_pol_yn
+            ,plant.code_nm as plant_nm
+            ,cmcr.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cmcr.create_dt
+            ,cmcr.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cmcr.update_dt
+            ,cmcr.chemprod_regul_itm_no
+            ,cri.dgr_nm as chemprod_regul_itm_nm
+            ,cmcr.branch_cd
+            ,cmcr.rqst_no
+            ,cmcr.rqst_itm_no
+            ,cmcr.bds_code
+            ,cmcr.msds_file_nm
+            , case
+                 when dbo.GET_USER_NM(cmcr.update_user_id) = '' then dbo.GET_USER_NM(cmcr.create_user_id)
+                 else dbo.GET_USER_NM(cmcr.update_user_id) end    as writer_user_nm
+            , case when cmcr.update_dt is null then convert(date, cmcr.create_dt) else convert(date, cmcr.update_dt) end   as writer_dt
+            ,case when cmcr.chk_rqst_state = 'MCRS0' then ''
+                when cmcr.chk_rqst_state = 'MCRS2' and isnull(chk_result_yn, 'N') = 'N' then '검토중'
+                else '검토완료' end as chk_result_link
+            ,case when cmcr.chk_rqst_state = 'MCRS0' then ''
+                when cmcr.chk_rqst_state = 'MCRS2' and isnull(chk_result_env_yn, 'N') = 'N' then '검토중'
+                else '검토완료' end as chk_result_env_link
+        from chm_mat_chk_rqst cmcr
+        left outer join chm_origin co
+        on cmcr.origin_cd = co.origin_cd
+        left outer join chm_origin makeCo
+        on cmcr.origin_cd = makeCo.origin_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on cmcr.plant_cd = plant.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_PROPERTIES') property
+        on cmcr.property = property.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_MCR_STEP') mcrStep
+        on cmcr.chk_rqst_state = mcrStep.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_MCR_CLS') mcrCls
+        on cmcr.rqst_type = mcrCls.code
+
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_BIZ_CAT') biz
+        on cmcr.biz_cat_cd = biz.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_PROD_CAT') prod
+        on cmcr.prod_cat_cd = prod.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_USAGE') usage
+        on cmcr.usage_cd = usage.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_INGREDIENT_MTD') ingredient
+        on cmcr.cfm_mtd_cd = ingredient.code
+        left outer join com_user requester
+            on cmcr.chk_rqster_id = requester.user_id
+        left outer join com_user reviewer
+            on cmcr.reviewer_id = reviewer.user_id
+        left outer join com_dept cd
+            on requester.dept_cd = cd.dept_cd
+        left outer join com_user createUser
+            on cmcr.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+            on cmcr.update_user_id = updateUser.user_id
+        left outer join chm_dgr_att_amt cri
+            on cmcr.chemprod_regul_itm_no = cri.chm_dgr_att_amt_no
+        where 1=1
+        <if test= "search != null and !search.equals('')">
+        and (cmcr.chem_prod_nm_kr like '%' + #{search} + '%'
+            or cmcr.chem_prod_nm_en like '%' + #{search} + '%'
+            or exists(select 1
+                from com_chem c
+                inner join com_chemprod_chem ccpc
+                on ccpc.chem_no = c.chem_no
+                where c.use_yn = 'Y'
+                and ccpc.chem_prod_no = cmcr.chem_prod_no
+                and (c.cas_no like '%' + #{search} + '%'
+                    or c.chem_nm_kr like '%' + #{search} + '%'
+                    or c.chem_nm_en like '%' + #{search} + '%')
+                )
+            )
+        </if>
+        <if test= "vendorNm != null and !vendorNm.equals('')">
+        and (isnull(cmcr.makecp_nm, '') like '%' + #{vendorNm} + '%'
+            or isnull(cmcr.vendor_nm, '') like '%' + #{vendorNm} + '%')
+        </if>
+        <if test= "chkRqstState != null and !chkRqstState.equals('')">
+        and cmcr.chk_rqst_state = #{chkRqstState}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            <choose>
+              <when test= "plantCd.equals('0000')">
+                  and isnull(cmcr.plant_cd, '') != ''
+              </when>
+              <otherwise>
+                  and cmcr.plant_cd in (#{plantCd}, '0000')
+              </otherwise>
+            </choose>
+        </if>
+        <if test= "rqstType != null and !rqstType.equals('')">
+        and cmcr.rqst_type = #{rqstType}
+        </if>
+        <if test= "(rqstStart != null and !rqstStart.equals('')) or (rqstEnd != null and !rqstEnd.equals(''))">
+        and convert(datetime, cmcr.rqst_dt) between convert(datetime, #{rqstStart}) and convert(datetime, #{rqstEnd})
+        </if>
+        ORDER BY writer_dt desc, cmcr.rqst_dt desc
+    </select>
+
+    <select id= "getMatCheckRequest" resultType= "com.she.chm.model.MatCheckRequest">
+        /* MatCheckRequestMapper.getMatCheckRequest [MatCheckRequest.xml] */
+        select cmcr.mat_chk_rqst_no
+            ,cmcr.chem_prod_no
+            ,cmcr.vendor_cd
+            ,cmcr.vendor_nm
+            ,cmcr.origin_cd
+            ,co.origin_nm_kr
+            ,co.origin_nm_en
+            ,cmcr.makecp_cd
+            ,cmcr.makecp_nm
+            ,cmcr.makeorigin_cd
+            ,makeCo.origin_nm_kr as make_origin_nm_kr
+            ,makeCo.origin_nm_en as make_origin_nm_en
+            ,cmcr.sap_mat_cd
+            ,cmcr.chem_prod_nm_kr
+            ,cmcr.chem_prod_nm_en
+            ,cmcr.chem_code
+            ,cmcr.mix_yn
+            , (case when cmcr.mix_yn = 'Y' then '혼합'
+            else '단일'
+            end) mix_yn_nm
+            ,cmcr.biz_cat_cd
+            ,biz.code_nm as biz_cat_nm
+            ,cmcr.prod_cat_cd
+            ,prod.code_nm as prod_cat_nm
+            ,cmcr.property
+            ,property.code_nm as property_nm
+            ,cmcr.specific_gravity
+            ,cmcr.expect_amt
+            ,cmcr.etc_desc
+            ,cmcr.rqst_type
+            ,mcrCls.code_nm as rqst_type_nm
+            ,cmcr.rqst_dt
+            ,cmcr.chk_rqster_id
+            ,requester.user_nm as chk_rqster_nm
+            ,cd.dept_nm
+            ,cmcr.chk_rqst_desc
+            ,cmcr.chk_rqst_state
+            ,mcrStep.code_nm as chk_rqst_state_nm
+            ,cmcr.chk_dt
+            ,cmcr.reviewer_id
+            ,reviewer.user_nm as reviewer_nm
+            ,cmcr.chk_result
+            ,cmcr.chk_result_yn
+            ,cmcr.chk_result_fin_yn
+            ,cmcr.chk_result_fin_user_id
+            ,chkResultFinUser.user_nm as chkResultFinUserNm
+            ,convert(char(16), cmcr.chk_result_fin_dt, 120) as chkResultFinDt
+            ,cmcr.chk_result_env
+            ,cmcr.chk_result_env_yn
+            ,cmcr.chk_result_env_fin_yn
+            ,cmcr.chk_result_env_fin_user_id
+            ,chkResultEnvFinUser.user_nm as chkResultEnvFinUserNm
+            ,convert(char(16), cmcr.chk_result_env_fin_dt, 120) as chkResultEnvFinDt
+            ,cmcr.chk_result_hea
+            ,cmcr.hs_num
+            ,cmcr.usage_cd
+            ,usage.code_nm as usage_nm
+            ,cmcr.usage_etc
+            ,cmcr.cfm_mtd_cd
+            ,ingredient.code_nm as cfm_mtd_nm
+            ,cmcr.make_yn
+            ,cmcr.imp_yn
+            ,cmcr.buy_yn
+            ,cmcr.using_yn
+            ,cmcr.sales_yn
+            ,cmcr.exp_yn
+            ,cmcr.licensing_yn
+            ,cmcr.spc_chem_yn
+            ,cmcr.sap_mat_yn
+            ,cmcr.sap_if_cd
+            ,cmcr.plant_cd
+            ,cmcr.dgr_yn
+            ,cmcr.stck_area
+            ,cmcr.air_pol_yn
+            ,cmcr.wtr_pol_yn
+            ,plant.code_nm as plant_nm
+            ,cmcr.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cmcr.create_dt
+            ,cmcr.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cmcr.update_dt
+            ,cmcr.chemprod_regul_itm_no
+            ,cri.dgr_nm as chemprod_regul_itm_nm
+            ,cmcr.branch_cd
+            ,cmcr.rqst_no
+            ,cmcr.rqst_itm_no
+            ,cmcr.bds_code
+            ,cmcr.msds_file_nm
+<!--             20220401 추가 -->
+            ,cmcr.msds_num 
+            ,cmcr.secret_num
+            ,cmcr.secret_approval
+            ,cmcr.secret_expiration
+<!--             ㅡㅡㅡㅡㅡㅡㅡㅡㅡ -->
+        from chm_mat_chk_rqst cmcr
+        left outer join chm_origin co
+        on cmcr.origin_cd = co.origin_cd
+        left outer join chm_origin makeCo
+        on cmcr.origin_cd = makeCo.origin_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on cmcr.plant_cd = plant.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_PROPERTIES') property
+        on cmcr.property = property.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_MCR_STEP') mcrStep
+        on cmcr.chk_rqst_state = mcrStep.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_MCR_CLS') mcrCls
+        on cmcr.rqst_type = mcrCls.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_BIZ_CAT') biz
+        on cmcr.biz_cat_cd = biz.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_PROD_CAT') prod
+        on cmcr.prod_cat_cd = prod.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_USAGE') usage
+        on cmcr.usage_cd = usage.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_INGREDIENT_MTD') ingredient
+        on cmcr.cfm_mtd_cd = ingredient.code
+        left outer join com_user requester
+            on cmcr.chk_rqster_id = requester.user_id
+        left outer join com_user reviewer
+            on cmcr.reviewer_id = reviewer.user_id
+        left outer join com_dept cd
+            on requester.dept_cd = cd.dept_cd
+        left outer join com_user createUser
+            on cmcr.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+            on cmcr.update_user_id = updateUser.user_id
+        left outer join com_user chkResultFinUser
+            on cmcr.chk_result_fin_user_id = chkResultFinUser.user_id
+        left outer join com_user chkResultEnvFinUser
+            on cmcr.chk_result_env_fin_user_id = chkResultEnvFinUser.user_id
+        left outer join chm_dgr_att_amt cri
+            on cmcr.chemprod_regul_itm_no = cri.chm_dgr_att_amt_no
+        where 1=1
+        and cmcr.mat_chk_rqst_no = #{matChkRqstNo}
+    </select>
+
+    <select id= "checkMatCheckRequest" resultType= "HashMap">
+        /* MatCheckRequestMapper.checkMatCheckRequest [MatCheckRequest.xml] */
+        select count(*) as cnt
+        from chm_mat_chk_rqst cmcr
+        where cmcr.sap_mat_cd = #{sapMatCd}
+        and cmcr.makecp_cd = #{makecpCd}
+        and cmcr.vendor_cd = #{vendorCd}
+        <if test= "matChkRqstNo != null and matChkRqstNo > 0">
+        and cmcr.mat_chk_rqst_no not in (#{matChkRqstNo})
+        </if>
+    </select>
+
+    <!-- 중복검사 -->
+    <!-- <select id= "checkMsds" resultType= "HashMap">
+        select count(*) as cnt
+        from chm_msds_rqst cmr
+        where cmr.chem_prod_nm_kr = #{chemProdNmKr}
+        and cmr.chem_prod_nm_en = #{chemProdNmEn}
+        and cmr.makecp_cd = #{makecpCd}
+        and cmr.vendor_cd = #{vendorCd}
+        <if test= "msdsRqstNo != null and msdsRqstNo > 0">
+        and msds_rqst_no not in (#{msdsRqstNo})
+        </if>
+    </select> -->
+
+    <insert id= "createMatCheckRequest" parameterType= "com.she.chm.model.MatCheckRequest">
+        <selectKey keyProperty= "matChkRqstNo" resultType= "int" order= "BEFORE">
+            select next value for seq_mat_chk_rqst_no as mat_chk_rqst_no
+          </selectKey>
+        /* MatCheckRequestMapper.createMatCheckRequest [MatCheckRequest.xml] */
+        insert into chm_mat_chk_rqst
+            (
+              mat_chk_rqst_no
+             ,chem_prod_no
+             ,vendor_cd
+             ,vendor_nm
+             ,origin_cd
+             ,makecp_cd
+             ,makecp_nm
+             ,makeorigin_cd
+             ,sap_mat_cd
+             ,chem_prod_nm_kr
+             ,chem_prod_nm_en
+             ,chem_code
+             ,mix_yn
+             ,biz_cat_cd
+             ,prod_cat_cd
+             ,property
+             ,specific_gravity
+             ,expect_amt
+             ,etc_desc
+             ,rqst_type
+             ,rqst_dt
+             ,chk_rqster_id
+             ,chk_rqst_desc
+             ,chk_rqst_state
+             ,chk_dt
+             ,reviewer_id
+             ,chk_result
+             ,chk_result_env
+             ,chk_result_hea
+             ,hs_num
+             ,usage_cd
+             ,usage_etc
+             ,cfm_mtd_cd
+             ,make_yn
+             ,imp_yn
+             ,buy_yn
+             ,using_yn
+             ,sales_yn
+             ,exp_yn
+             ,licensing_yn
+             ,spc_chem_yn
+             ,sap_mat_yn
+             ,plant_cd
+             ,dgr_yn
+             ,stck_area
+             ,air_pol_yn
+             ,wtr_pol_yn
+             ,chemprod_regul_itm_no
+             ,mat_rq_att_cd
+             ,create_user_id
+             ,create_dt
+             ,msds_num 
+             ,secret_num 
+             ,secret_approval 
+             ,secret_expiration
+            )
+        values
+            (
+              #{matChkRqstNo}
+             ,#{chemProdNo}
+             ,#{vendorCd}
+             ,#{vendorNm}
+             ,#{originCd}
+             ,#{makecpCd}
+             ,#{makecpNm}
+             ,#{makeoriginCd}
+             ,#{sapMatCd}
+             ,#{chemProdNmKr}
+             ,#{chemProdNmEn}
+             ,#{chemCode}
+             ,#{mixYn}
+             ,#{bizCatCd}
+             ,#{prodCatCd}
+             ,#{property}
+             ,#{specificGravity}
+             ,#{expectAmt}
+             ,#{etcDesc}
+             ,#{rqstType}
+             ,#{rqstDt}
+             ,#{chkRqsterId}
+             ,#{chkRqstDesc}
+             ,'MCRS0'
+             ,#{chkDt}
+             ,#{reviewerId}
+             ,#{chkResult}
+             ,#{chkResultEnv}
+             ,#{chkResultHea}
+             ,#{hsNum}
+             ,#{usageCd}
+             ,#{usageEtc}
+             ,#{cfmMtdCd}
+             ,#{makeYn}
+             ,#{impYn}
+             ,#{buyYn}
+             ,#{usingYn}
+             ,#{salesYn}
+             ,#{expYn}
+             ,#{licensingYn}
+             ,#{spcChemYn}
+             ,#{sapMatYn}
+             ,#{plantCd}
+             ,#{dgrYn}
+             ,#{stckArea}
+             ,#{airPolYn}
+             ,#{wtrPolYn}
+             ,#{chemprodRegulItmNo}
+             ,#{matRqAttCd}
+             ,#{createUserId}
+             ,getdate()
+             ,#{msdsNum} 
+             ,#{secretNum}
+             ,#{secretApproval}
+             ,#{secretExpiration}
+            )
+    </insert>
+
+    <update id= "updateMatCheckRequest" parameterType= "com.she.chm.model.MatCheckRequest">
+        /* MatCheckRequestMapper.updateMatCheckRequest [MatCheckRequest.xml] */
+        update chm_mat_chk_rqst
+        set chem_prod_no = #{chemProdNo}
+            ,vendor_cd = #{vendorCd}
+            ,vendor_nm = #{vendorNm}
+            ,origin_cd = #{originCd}
+            ,makecp_cd = #{makecpCd}
+            ,makecp_nm = #{makecpNm}
+            ,makeorigin_cd = #{makeoriginCd}
+            ,sap_mat_cd = #{sapMatCd}
+            ,chem_prod_nm_kr = #{chemProdNmKr}
+            ,chem_prod_nm_en = #{chemProdNmEn}
+            ,chem_code = #{chemCode}
+            ,mix_yn = #{mixYn}
+            ,biz_cat_cd = #{bizCatCd}
+            ,prod_cat_cd = #{prodCatCd}
+            ,property = #{property}
+            ,specific_gravity = #{specificGravity}
+            ,expect_amt = #{expectAmt}
+            ,etc_desc = #{etcDesc}
+            ,rqst_type = #{rqstType}
+            ,rqst_dt = #{rqstDt}
+            ,chk_rqster_id = #{chkRqsterId}
+            ,chk_rqst_desc = #{chkRqstDesc}
+            ,chk_rqst_state = #{chkRqstState}
+            ,chk_dt = #{chkDt}
+            ,reviewer_id = #{reviewerId}
+            ,hs_num = #{hsNum}
+            ,usage_cd = #{usageCd}
+            ,usage_etc = #{usageEtc}
+            ,cfm_mtd_cd = #{cfmMtdCd}
+            ,make_yn = #{makeYn}
+            ,imp_yn = #{impYn}
+            ,buy_yn = #{buyYn}
+            ,using_yn = #{usingYn}
+            ,sales_yn = #{salesYn}
+            ,exp_yn = #{expYn}
+            ,licensing_yn = #{licensingYn}
+            ,spc_chem_yn = #{spcChemYn}
+            ,sap_mat_yn = #{sapMatYn}
+            ,plant_cd = #{plantCd}
+            ,dgr_yn = #{dgrYn}
+            ,stck_area = #{stckArea}
+            ,air_pol_yn = #{airPolYn}
+            ,wtr_pol_yn = #{wtrPolYn}
+            ,chemprod_regul_itm_no = #{chemprodRegulItmNo}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getdate()
+            ,msds_num = #{msdsNum}
+            ,secret_num = #{secretNum}
+            ,secret_approval = #{secretApproval}
+            ,secret_expiration = #{secretExpiration}
+        where mat_chk_rqst_no = #{matChkRqstNo}
+    </update>
+    
+    <delete id="deleteMatCheckRequest">
+        /* MatCheckRequestMapper.deleteMatCheckRequest [MatCheckRequest.xml] */
+        delete from chm_mat_chk_rqst
+        where mat_chk_rqst_no = #{matChkRqstNo}
+    </delete>
+
+    <select id= "getMatCheckRequestCompos" resultType= "com.she.chm.model.MatCheckRequestCompo">
+        /* MatCheckRequestMapper.getMatCheckRequestCompos [MatCheckRequest.xml] */
+        select cmcrc.mat_chk_rqst_compo_no
+            ,cmcrc.mat_chk_rqst_no
+            ,cmcrc.chem_no
+            ,cc.cas_no
+            ,cc.chem_nm_kr
+            ,cc.chem_nm_en
+            ,cmcrc.limit_low
+            ,cmcrc.limit_high
+            ,cmcrc.limit_repval
+            ,cmcrc.chem_content
+            ,cmcrc.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cmcrc.create_dt
+            ,cmcrc.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cmcrc.update_dt
+            ,cmcrc.substitute
+            ,cmcrc.secret_whether
+        from chm_mat_chk_rqst_compo  cmcrc
+        inner join chm_mat_chk_rqst cmcr
+        on cmcrc.mat_chk_rqst_no = cmcr.mat_chk_rqst_no
+        inner join com_chem cc
+        on cmcrc.chem_no = cc.chem_no
+        <!-- and cc.use_yn = 'Y' -->
+        left outer join com_user createUser
+        on cmcrc.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cmcrc.update_user_id = updateUser.user_id
+        where 1=1
+        and cmcrc.mat_chk_rqst_no = #{matChkRqstNo}
+    </select>
+
+    <select id= "getMatCheckRequestCompoRegul" resultType= "com.she.chm.model.RegulItmMatVal">
+        /* MatCheckRequestMapper.getMatCheckRequestCompoRegul [MatCheckRequest.xml] */
+        select crimv.regul_itm_mat_val_no
+            ,crimv.regul_itm_no
+            ,crimv.mat_chk_rqst_no
+            ,crimv.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,crimv.create_dt
+            ,crimv.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,crimv.update_dt
+            ,cri.regul_itm_cd
+            ,cri.regul_itm_nm
+            ,cri.contents
+            ,cri.regul_law_cd
+            ,regulLaw.code_nm as regul_law_nm
+        from chm_regul_itm_mat_val crimv
+        inner join chm_regul_itm cri
+        on crimv.regul_itm_no = cri.regul_itm_no
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_REGUL_LAW') regulLaw
+        on cri.regul_law_cd = regulLaw.code
+        <!-- and regulLaw.use_yn = 'Y' -->
+        left outer join com_user createUser
+        on crimv.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on crimv.update_user_id = updateUser.user_id
+        where 1=1
+        and crimv.mat_chk_rqst_no = #{matChkRqstNo}
+    </select>
+
+    <insert id= "createMatCheckRequestCompoRegul" parameterType= "com.she.chm.model.RegulItmMatVal">
+        <selectKey keyProperty= "regulItmMatValNo" resultType= "int" order= "BEFORE">
+            select next value for seq_regul_itm_mat_val_no as regul_itm_mat_val_no
+          </selectKey>
+        /* MatCheckRequestMapper.createMatCheckRequestCompoRegul [MatCheckRequest.xml] */
+        insert into chm_regul_itm_mat_val
+            (regul_itm_mat_val_no
+            ,regul_itm_no
+            ,mat_chk_rqst_no
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{regulItmMatValNo}
+            ,#{regulItmNo}
+            ,#{matChkRqstNo}
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+
+    <delete id= "deleteMatCheckRequestCompoRegul">
+        /* MatCheckRequestMapper.deleteMatCheckRequestCompoRegul [MatCheckRequest.xml] */
+        delete from chm_regul_itm_mat_val
+        where mat_chk_rqst_no = #{matChkRqstNo}
+    </delete>
+
+    <insert id= "createMatCheckRequestCompo" parameterType= "com.she.chm.model.MatCheckRequestCompo">
+        <selectKey keyProperty= "matChkRqstCompoNo" resultType= "int" order= "BEFORE">
+            select next value for seq_mat_chk_rqst_compo_no as mat_chk_rqst_compo_no
+          </selectKey>
+        /* MatCheckRequestMapper.createMatCheckRequestCompo [MatCheckRequest.xml] */
+        insert into chm_mat_chk_rqst_compo
+            (mat_chk_rqst_compo_no
+            ,mat_chk_rqst_no
+            ,chem_no
+            ,limit_low
+            ,limit_high
+            ,limit_repval
+            ,chem_content
+            ,create_user_id
+            ,create_dt
+            ,substitute
+            ,secret_whether
+            )
+        values
+            (#{matChkRqstCompoNo}
+            ,#{matChkRqstNo}
+            ,#{chemNo}
+            ,#{limitLow}
+            ,#{limitHigh}
+            ,#{limitRepval}
+            ,#{chemContent}
+            ,#{createUserId}
+            ,getdate()
+            ,#{substitute}
+            ,#{secretWhether}
+            )
+    </insert>
+
+    <delete id= "deleteMatCheckRequestCompo">
+        /* MatCheckRequestMapper.deleteMatCheckRequestCompo [MatCheckRequest.xml] */
+        delete from chm_mat_chk_rqst_compo
+        where mat_chk_rqst_no = #{matChkRqstNo}
+    </delete>
+    
+    <select id="getChmMatChkRqstSeq" resultType="int">
+        select next value for seq_mat_chk_rqst_no as matChkRqstNo
+    </select>
+
+    <insert id= "saveSapMatCheckRequest" parameterType= "com.she.chm.model.MatCheckRequest">
+        /* MatCheckRequestMapper.saveSapMatCheckRequest [MatCheckRequest.xml] */
+        <selectKey keyProperty= "matChkRqstNo" resultType= "int" order= "BEFORE">
+          select next value for seq_mat_chk_rqst_no as matChkRqstNo
+        </selectKey>
+        merge chm_mat_chk_rqst a
+        using (select 'X' as DUAL) b
+        on (a.branch_cd = #{branchCd}
+            and a.rqst_no = #{rqstNo}
+            and a.rqst_itm_no = #{rqstItmNo}
+        )
+        when not matched then
+            insert
+                (mat_chk_rqst_no
+                ,branch_cd -- new 회사코드
+                ,rqst_no -- 요청번호
+                ,rqst_itm_no -- new 요청품목번호
+                ,rqst_dt -- 요청일
+                ,chk_rqster_id -- 요청자
+                ,sap_mat_cd -- 자재코드
+                ,plant_cd -- 사업장
+                ,chem_prod_nm_kr -- 자재명
+                ,chem_prod_nm_en -- 자재명
+                ,create_user_id
+                ,create_dt
+                )
+            values 
+                (#{matChkRqstNo}
+                ,#{branchCd}
+                ,#{rqstNo}
+                ,#{rqstItmNo}
+                ,format(#{rqstDt},'yyyy-MM-dd')
+                ,#{chkRqsterId}
+                ,#{sapMatCd}
+                ,#{plantCd}
+                ,#{chemProdNmKr}
+                ,#{chemProdNmEn}
+                ,#{createUserId}
+                ,getdate()
+                )
+        when matched
+            update set rqst_dt = #{rqstDt}-- 요청일
+                    ,chk_rqster_id = #{chkRqsterId} -- 요청자
+                    ,sap_mat_cd = #{sapMatCd} -- 자재코드
+                    ,plant_cd = #{plantCd} -- 사업장
+                    ,chem_prod_nm_kr = #{chemProdNmKr} -- 자재명
+                    ,chem_prod_nm_en = #{chemProdNmEn} -- 자재명
+                    ,update_user_id = #{updateUserId}
+                    ,update_dt = getdate()
+        /*
+        insert into chm_mat_chk_rqst
+            (mat_chk_rqst_no
+            ,chem_prod_nm_kr
+            ,chem_prod_nm_en
+            ,chk_rqst_state
+            ,rqst_dt
+            ,sap_mat_yn
+            ,sap_if_cd
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{matChkRqstNo}
+            ,concat(format(getdate(),'yyyyMMddHHmmss'), '-요청자재')
+            ,concat(format(getdate(),'yyyyMMddHHmmss'), '-요청자재')
+            ,'MCRS0'
+            ,getdate()
+            ,'Y'
+            ,format(getdate(),'yyyyMMddHHmmss')
+            ,#{createUserId}
+            ,getdate()
+        */
+    </insert>
+
+
+    <select id= "getRegulDbVertification" resultType= "com.she.chm.model.MatCheckRequestDbVerf">
+        /* MatCheckRequestMapper.getRegulDbVertification [MatCheckRequest.xml] */
+        WITH T1 AS (
+            SELECT S.ID, S.CHEM_NO FROM (
+            SELECT ROW_NUMBER() OVER(ORDER BY current_timestamp) AS ID,value AS CHEM_NO FROM STRING_SPLIT(#{chemNos}, ',')) S
+        )
+        , T2 AS (
+            SELECT S.ID, S.RPVAL FROM (
+            SELECT ROW_NUMBER() OVER(ORDER BY current_timestamp) AS ID,value AS RPVAL FROM STRING_SPLIT(#{limitRepvals}, ',')) S
+        )
+        , T3 AS (
+            SELECT  1 AS ID, T1.CHEM_NO, CC.CHEM_NM_KR, CC.CAS_NO
+            , LAW.CODE_NM AS LAW_NM, CRI.REGUL_ITM_NM, T2.RPVAL, CRICV.STND_VAL, CRICV.STND_SIGN, UNIT.CODE_NM AS UNIT_NM
+            , (CASE WHEN ISNULL(CRICV.STND_VAL, 0) &gt; 0 AND ISNULL(CRICV.STND_SIGN,'CSS00') &lt;&gt; 'CSS00' THEN 'Y' ELSE 'N' END) AS CHKYN
+            , CRI.REGUL_LAW_CD, CRICV.REGUL_ITM_NO
+            FROM T1
+            INNER JOIN T2 ON T1.ID = T2.ID
+            INNER JOIN COM_CHEM CC ON T1.CHEM_NO = CC.CHEM_NO
+            INNER JOIN CHM_REGUL_ITM_CHEM_VAL CRICV ON T1.CHEM_NO = CRICV.CHEM_NO
+            INNER JOIN CHM_REGUL_ITM CRI ON CRICV.REGUL_ITM_NO = CRI.REGUL_ITM_NO
+            LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_REGUL_LAW') LAW ON CRI.REGUL_LAW_CD = LAW.CODE
+            LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_STND_SIGN') UNIT ON CRICV.STND_SIGN = UNIT.CODE
+            UNION ALL
+            SELECT 2 AS ID, 0 AS CHEM_NO, '' AS CHEM_NM_KR, '' AS CAS_NO, LAW.CODE_NM AS LAW_NM, CRI.REGUL_ITM_NM
+            , NULL AS RPVAL, NULL AS STND_VAL, NULL AS STND_SIGN, NULL AS UNIT_NM, 'X' AS CHKYN
+             ,CRI.REGUL_LAW_CD, CRICV.REGUL_ITM_NO
+            FROM T1
+            INNER JOIN T2 ON T1.ID = T2.ID
+            INNER JOIN COM_CHEM CC ON T1.CHEM_NO = CC.CHEM_NO
+            INNER JOIN CHM_REGUL_ITM_CHEM_VAL CRICV ON T1.CHEM_NO = CRICV.CHEM_NO
+            INNER JOIN CHM_REGUL_ITM CRI ON CRICV.REGUL_ITM_NO = CRI.REGUL_ITM_NO
+            LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_REGUL_LAW') LAW ON CRI.REGUL_LAW_CD = LAW.CODE
+            LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_STND_SIGN') UNIT ON CRICV.STND_SIGN = UNIT.CODE
+            GROUP BY CRICV.REGUL_ITM_NO, CRI.REGUL_ITM_NM, CRI.REGUL_LAW_CD, CRICV.REGUL_ITM_NO, LAW.CODE_NM            
+            HAVING COUNT(T1.ID) = 1 AND 1 > 1
+        )
+        SELECT CONCAT(T3.LAW_NM, ' > ',  T3.REGUL_ITM_NM) AS LAW_ITEM_NM
+        , T3.CHEM_NM_KR, T3.CAS_NO, T3.RPVAL, T3.UNIT_NM, T3.STND_VAL
+        , T3.LAW_NM AS regulLawNm, T3.REGUL_ITM_NO AS regulItemNo, T3.REGUL_ITM_NM AS regulItemNm
+        , (CASE WHEN T3.CHKYN = 'X' THEN 'Y'
+            WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS01' AND T3.RPVAL = T3.STND_VAL THEN 'Y'
+            WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS02' AND T3.RPVAL &lt;= T3.STND_VAL THEN 'Y'
+            WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS03' AND T3.RPVAL &gt;= T3.STND_VAL THEN 'Y'
+            WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS04' AND T3.RPVAL &gt; T3.STND_VAL THEN 'Y'
+            WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS05' AND T3.RPVAL &lt; T3.STND_VAL THEN 'Y'
+            WHEN T3.CHKYN = 'N' THEN 'Y' ELSE 'N' END) AS CHK_VAL
+        , (CASE WHEN T3.CHKYN = 'X' THEN '규제해당'
+        WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS01' AND T3.RPVAL = T3.STND_VAL THEN '규제해당'
+        WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS02' AND T3.RPVAL &lt;= T3.STND_VAL THEN '규제해당'
+        WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS03' AND T3.RPVAL &gt;= T3.STND_VAL THEN '규제해당'
+        WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS04' AND T3.RPVAL &gt; T3.STND_VAL THEN '규제해당'
+        WHEN T3.CHKYN = 'Y' AND T3.STND_SIGN = 'CSS05' AND T3.RPVAL &lt; T3.STND_VAL THEN '규제해당'
+        WHEN T3.CHKYN = 'N' THEN '규제해당' ELSE '규제미해당' END) AS CHK_VAL_NM
+        , T3.REGUL_LAW_CD, T3.REGUL_ITM_NO, T3.CHEM_NO
+        FROM T3
+        ORDER BY T3.ID, T3.LAW_NM, T3.REGUL_ITM_NM, T3.CHEM_NM_KR
+    </select>
+
+
+    <update id= "confirmMatCheckRequest" parameterType= "com.she.chm.model.MatCheckRequest">
+        /* MatCheckRequestMapper.confirmMatCheckRequest [MatCheckRequest.xml] */
+        update chm_mat_chk_rqst
+        set chk_result = #{chkResult}
+            ,chk_result_yn = #{chkResultYn}
+            ,chk_result_fin_yn = #{chkResultFinYn}
+            ,chk_result_fin_user_id = #{chkResultFinUserId}
+            ,chk_result_fin_dt = getdate()
+        where mat_chk_rqst_no = #{matChkRqstNo}
+    </update>
+
+    <update id= "confirmEnvMatCheckRequest" parameterType= "com.she.chm.model.MatCheckRequest">
+        /* MatCheckRequestMapper.confirmEnvMatCheckRequest [MatCheckRequest.xml] */
+        update chm_mat_chk_rqst
+        set chk_result_env = #{chkResultEnv}
+            ,chk_result_env_yn = #{chkResultEnvYn}
+            ,chk_result_env_fin_yn = #{chkResultEnvFinYn}
+            ,chk_result_env_fin_user_id = #{chkResultEnvFinUserId}
+            ,chk_result_env_fin_dt = getdate()
+        where mat_chk_rqst_no = #{matChkRqstNo}
+    </update>
+
+    <update id= "rejectMatCheckRequest" parameterType= "com.she.chm.model.MatCheckRequest">
+        /* MatCheckRequestMapper.rejectMatCheckRequest [MatCheckRequest.xml] */
+        update chm_mat_chk_rqst
+        set chk_rqst_state = 'MCRS0'
+            ,chk_result = null
+            ,chk_result_yn = null
+            ,chk_result_fin_yn = null
+            ,chk_result_fin_user_id = null
+            ,chk_result_fin_dt = null
+            ,chk_result_env = null
+            ,chk_result_env_yn = null
+            ,chk_result_env_fin_yn = null
+            ,chk_result_env_fin_user_id = null
+            ,chk_result_env_fin_dt = null
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getdate()
+        where mat_chk_rqst_no = #{matChkRqstNo}
+    </update>
+    
+    <select id="searchChemNo" resultType="com.she.chm.model.Chem">
+    /* MatCheckRequestMapper.searchChemNo [MatCheckRequest.xml] */
+      select cc.chem_no
+            , cc.cas_no
+            , cc.chem_nm_kr
+            , cc.chem_nm_en
+            , cc.use_yn
+            , (case when cc.use_yn = 'Y' then '사용'
+                else '미사용'
+            end) use_yn_nm
+            , cc.create_user_id
+            ,createUser.user_nm as create_user_nm
+            , cc.create_dt
+            , cc.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            , cc.update_dt
+            , cc.mole_formula
+          from com_chem cc
+        left outer join com_user createUser
+        on cc.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cc.update_user_id = updateUser.user_id
+        where 1=1
+        and cc.use_yn = 'Y'
+        and cc.chem_nm_kr = #{chemNmkr}
+        order by cc.chem_no
+    </select>
+</mapper>

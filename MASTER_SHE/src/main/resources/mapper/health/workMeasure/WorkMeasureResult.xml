@@ -1,0 +1,475 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.health.workMeasure.mapper.WorkMeasureResultMapper">
+
+    <insert id= "createWorkMeasureResult" parameterType= "com.she.health.model.WorkMeasureResult">
+        /* WorkMeasureResultMapper.createWorkMeasureResult [WorkMeasureResult.xml] */
+        <selectKey keyProperty= "workMeasRsltNo" resultType= "int" order= "BEFORE">
+            select next value for seq_work_meas_rslt as workMeasRsltNo
+        </selectKey>
+        insert into work_meas_rslt
+            (work_meas_rslt_no
+            ,work_meas_plan_no
+            ,work_area_grade_cd
+            ,process_cd
+            ,dept_cd
+            ,work_place
+            ,hazard_cd
+            ,work_contents
+            ,worker_cnt
+            ,shift_type
+            ,occur_type
+            ,occur_time
+            ,meas_psn_nm
+            ,meas_start_time
+            ,meas_end_time
+            ,meas_dt
+            ,meas_cnt
+            ,meas_value
+            ,twa_prev
+            ,twa_curr
+            ,exposure_std
+            ,exposure_excess_flag
+            ,meas_method
+            ,remark
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{workMeasRsltNo}
+            ,#{workMeasPlanNo}
+            ,#{workAreaGradeCd}
+            ,#{processCd}
+            ,#{deptCd}
+            ,#{workPlace}
+            ,#{hazardCd}
+            ,#{workContents}
+            ,#{workerCnt}
+            ,#{shiftType}
+            ,#{occurType}
+            ,#{occurTime}
+            ,#{measPsnNm}
+            ,#{measStartTime}
+            ,#{measEndTime}
+            ,#{measDt}
+            ,#{measCnt}
+            ,#{measValue}
+            ,#{twaPrev}
+            ,#{twaCurr}
+            ,#{exposureStd}
+            ,#{exposureExcessFlag}
+            ,#{measMethod}
+            ,#{remark}
+            ,#{createUserId}
+            ,getdate())
+        update work_meas_plan
+        set update_user_id = #{createUserId},
+            update_dt = GETDATE()
+        where work_meas_plan_no = #{workMeasPlanNo};
+    </insert>
+
+    <select id= "getWorkMeasureResults" resultType= "com.she.health.model.WorkMeasureResult">
+        /* WorkMeasureResultMapper.getWorkMeasureResults [WorkMeasureResult.xml] */
+        SELECT wmr.work_meas_rslt_no
+             ,wmr.work_meas_plan_no
+             ,wmr.work_area_grade_cd
+             ,wmr.process_cd
+             ,cp.process_nm
+             ,wmr.dept_cd
+             ,cd.dept_nm
+             ,wmr.work_place
+             ,wmr.hazard_cd
+             ,ch.hazard_nm_ko as hazard_nm
+             ,wmr.work_contents
+             ,wmr.worker_cnt
+             ,wmr.shift_type
+             ,wmr.occur_type
+             ,wmr.occur_time
+             ,wmr.meas_psn_nm
+             ,wmr.meas_start_time
+             ,wmr.meas_end_time
+             ,wmr.meas_dt
+             ,wmr.meas_cnt
+             ,wmr.meas_value
+             ,wmr.twa_prev
+             ,wmr.twa_curr
+             ,wmr.exposure_std
+             ,wmr.exposure_excess_flag
+             ,wmr.meas_method
+             ,wmr.remark
+             ,wmr.create_user_id
+             ,wmr.create_dt
+             ,wmr.update_user_id
+             ,wmr.update_dt
+        from work_meas_rslt as wmr
+       inner join com_dept as cd
+          on wmr.dept_cd = cd.dept_cd
+       inner join com_process as cp
+          on wmr.process_cd = cp.process_cd
+        left outer join com_hazard as ch
+          on wmr.hazard_cd = ch.hazard_cd
+        where wmr.work_meas_plan_no = #{workMeasPlanNo}
+    </select>
+
+    <select id= "getWorkMeasureResult" resultType= "com.she.health.model.WorkMeasureResult">
+        /* WorkMeasureResultMapper.getWorkMeasureResult [WorkMeasureResult.xml] */
+        select wmr.work_meas_rslt_no
+              ,wmr.work_meas_plan_no
+              ,wmr.work_area_grade_cd
+              ,wmr.process_cd
+              ,cp.process_nm
+              ,wmr.dept_cd
+              ,cd.dept_nm
+              ,wmr.work_place
+              ,wmr.hazard_cd
+              ,ch.hazard_nm_ko as hazard_nm
+              ,wmr.work_contents
+              ,wmr.worker_cnt
+              ,wmr.shift_type
+              ,wmr.occur_type
+              ,wmr.occur_time
+              ,wmr.meas_psn_nm
+              ,wmr.meas_start_time
+              ,wmr.meas_end_time
+              ,wmr.meas_dt
+              ,wmr.meas_cnt
+              ,wmr.meas_value
+              ,wmr.twa_prev
+              ,wmr.twa_curr
+              ,wmr.exposure_std
+              ,wmr.exposure_excess_flag
+              ,wmr.meas_method
+              ,wmr.remark
+              ,wmr.create_user_id
+              ,wmr.create_dt
+              ,wmr.update_user_id
+              ,wmr.update_dt
+          from work_meas_rslt as wmr
+         inner join com_dept as cd
+            on wmr.dept_cd = cd.dept_cd
+         inner join com_process as cp
+            on wmr.process_cd = cp.process_cd
+          left outer join com_hazard as ch
+            on wmr.hazard_cd = ch.hazard_cd
+         where wmr.work_meas_rslt_no = #{workMeasRsltNo}
+    </select>
+
+    <update id= "updateWorkMeasureResult" parameterType= "com.she.health.model.WorkMeasureResult">
+        /* WorkMeasureResultMapper.updateWorkMeasureResult [WorkMeasureResult.xml] */
+        update work_meas_rslt
+           set work_area_grade_cd = #{workAreaGradeCd}
+              ,process_cd = #{processCd}
+              ,dept_cd = #{deptCd}
+              ,work_place = #{workPlace}
+              ,hazard_cd = #{hazardCd}
+              ,work_contents = #{workContents}
+              ,worker_cnt = #{workerCnt}
+              ,shift_type = #{shiftType}
+              ,occur_type = #{occurType}
+              ,occur_time = #{occurTime}
+              ,meas_psn_nm = #{measPsnNm}
+              ,meas_start_time = #{measStartTime}
+              ,meas_end_time = #{measEndTime}
+              ,meas_dt = #{measDt}
+              ,meas_cnt = #{measCnt}
+              ,meas_value = #{measValue}
+              ,twa_prev = #{twaPrev}
+              ,twa_curr = #{twaCurr}
+              ,exposure_std = #{exposureStd}
+              ,exposure_excess_flag = #{exposureExcessFlag}
+              ,meas_method = #{measMethod}
+              ,remark = #{remark}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         where work_meas_rslt_no = #{workMeasRsltNo}
+
+        update work_meas_plan
+        set update_user_id = #{updateUserId},
+            update_dt = GETDATE()
+        where work_meas_plan_no = #{workMeasPlanNo};
+    </update>
+
+    <delete id= "deleteWorkMeasureResult">
+        /* WorkMeasureResultMapper.deleteWorkMeasureResult [WorkMeasureResult.xml] */
+        delete from work_meas_rslt
+        where work_meas_rslt_no = #{workMeasRsltNo}
+    </delete>
+
+    <select id="getWorkMeasureResultStatus" resultType="HashMap">
+        /* WorkMeasureResultMapper.getWorkMeasureResultStatus [WorkMeasureResult.xml] */
+        <!-- 보안취약점 점검에서 예외처리가 안 될 경우 SP로 사용 -->
+        <!--EXEC SP_GET_WORK_MEASURE_RESULT_STATUS #{plantCd}, #{deptCd}, #{processCd}, #{hazardNm}, #{fromYear}, #{toYear}, #{yearPeriodStr}-->
+        SELECT  *
+          FROM (
+                SELECT CAST(YEAR(wmr.MEAS_DT) AS varchar) + '_' + wmp.HALF_YEAR_CD + '_' + wmr.work_area_grade_cd AS yearhalf -- 측정일년도_측정분기_유해인자대분류                 
+                      ,wmp.plant_cd -- 측정 사업장                   
+                      ,plant.code_nm as plant_nm -- 측정 사업장명                 
+                      ,wmr.dept_cd -- 측정 부서                 
+                      ,cd.dept_nm -- 측정 부서명
+                      ,cp.process_cd -- 측정 공정코드                 
+                      ,cp.process_nm -- 측정 공정명                  
+                      ,wmr.meas_value -- 측정치        
+                  FROM work_meas_plan wmp -- 측정계획
+                 INNER JOIN work_meas_rslt wmr -- 측정결과 (부서>공정>유해인자별 측정결과)                   
+                    ON wmp.work_meas_plan_no = wmr.work_meas_plan_no -- 작업환경측정 계획번호
+                   <![CDATA[
+                   AND wmr.MEAS_DT >= concat(#{fromYear}, '-01-01') -- 측정일 년도 시작일
+                   AND wmr.MEAS_DT <= concat(#{toYear}, '-12-31') -- 측정일 년도 종료일
+                   ]]>
+                <if test='deptCd != null and !deptCd.equals("")'><!-- 부서코드 -->
+                    <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+                    AND EXISTS (SELECT 1 WHERE ISNULL(#{deptCd}, '') = ''
+                    UNION ALL
+                    SELECT 1 WHERE #{deptSubYn} = 'Y' AND wmr.dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{deptCd}))
+                    UNION ALL
+                    SELECT 1 WHERE #{deptSubYn} = 'N' AND wmr.dept_cd = #{deptCd}
+                    )
+                    <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+                </if>
+                 <if test="plantCd != null and !plantCd.equals('')">
+                    AND wmp.plant_cd = #{plantCd} -- 측정사업장
+                 </if>
+                 <if test="processCd != null and !processCd.equals('')">
+                    AND wmr.process_cd = #{processCd} -- 측정공정
+                 </if>
+                   AND wmp.work_meas_state_cd = 'WMS40' -- WMS40:측정결과완료
+                 INNER JOIN com_code_master plant -- 측정 사업장코드                   
+                    ON wmp.plant_cd = plant.code -- 측정 사업장코드                    
+                   AND plant.code_group_cd = 'COM_PLANT_CD' -- 사업장코드명 묶음                    
+                 INNER JOIN com_dept cd -- 측정부서                 
+                    ON wmr.dept_cd = cd.dept_cd
+                 INNER JOIN com_process cp -- 공정 -- 측정 공정                   
+                    ON wmr.process_cd = cp.process_cd                   
+                 INNER JOIN com_hazard ch -- 유해인자 -- 측정 유해인자                    
+                    ON wmr.hazard_cd = ch.hazard_cd
+                 <if test="hazardNm != null and !hazardNm.equals('')">
+                   AND ch.hazard_nm_ko like '%' + #{hazardNm} + '%'
+                 </if>              
+                ) stat          
+                PIVOT -- 위의 쿼리를 meas_value로 집계하는 피봇 테이블 생성              
+                (
+                    count(meas_value) -- 측정치 존재 여부 카운트          
+                    for yearhalf in         
+                    <foreach collection= "yearPeriod" item= "yearhalf" index= "index" separator= "," open= "(" close= ")">
+                        ${yearhalf}
+                    </foreach>        
+                ) piv       
+    </select>
+    
+     <select id="getWorkMeasureResultChart" resultType="HashMap">
+        /* WorkMeasureResultMapper.getWorkMeasureResultChart [WorkMeasureResult.xml] */
+        <!-- 보안취약점 점검에서 예외처리가 안 될 경우 SP로 사용 -->
+        <!--EXEC SP_GET_WORK_MEASURE_RESULT_STATUS #{plantCd}, #{deptCd}, #{processCd}, #{hazardNm}, #{fromYear}, #{toYear}, #{yearPeriodStr}-->
+        <!--
+        WITH monthPeriod as (
+            SELECT convert(date, #{fromYear}) month
+             UNION ALL
+            SELECT dateadd(m, 1, convert(date, month))
+              FROM monthPeriod
+             WHERE datediff(m, dateadd(m, 1, convert(date, month)), convert(date, #{toYear})) &gt;= 0
+        ) select * from ( select left(month,7) as monthItem , ch.hazard_nm_ko, convert(float , wmr.meas_value) as meas_value from  work_meas_plan wmp
+
+			right join monthPeriod 
+			on left(month,7) = left(CONVERT(CHAR(10), wmp.meas_dt, 23),7)
+			
+			left OUTER JOIN work_meas_rslt wmr
+               ON wmr.work_meas_plan_no = wmp.work_meas_plan_no
+
+			left OUTER JOIN com_hazard ch
+               ON wmr.hazard_cd = ch.hazard_cd
+
+			LEFT OUTER JOIN com_process cp
+               ON wmr.process_cd = cp.process_cd
+
+			 WHERE 1=1  
+			 	AND wmr.dept_cd is not null
+          		AND wmr.process_cd is not null
+          		AND wmp.plant_cd is not null
+		  		AND wmp.work_meas_state_cd = 'WMS40'
+                <if test="deptCd != null and !deptCd.equals('')">
+                   AND wmr.dept_cd = #{deptCd}
+                </if>
+                <if test="plantCd != null and !plantCd.equals('')">
+		          AND wmp.plant_cd = #{plantCd}
+		        </if>
+		        <if test="processCd != null and !processCd.equals('')">
+		          AND wmr.process_cd = #{processCd}
+		        </if>
+		        <if test="hazardNm != null and !hazardNm.equals('')">
+		          AND ch.hazard_nm_ko like '%' + #{hazardNm} + '%'
+		        </if>
+                ) d
+            pivot
+            (
+            count(meas_value)
+            for monthItem in
+            <foreach collection= "monthPeriod" item= "monthItem" index= "index" separator= "," open= "(" close= ")">
+                ${monthItem}
+            </foreach>
+            ) piv
+            
+      		where not hazard_nm_ko is null
+        -->
+        WITH workMeas AS (
+            SELECT 
+                LEFT(CONVERT(CHAR(10), q.meas_dt, 23),7) AS meas_month
+                , q.*
+                , CONCAT(REPLACE(CONVERT(CHAR(10), q.meas_dt, 23), '-', ''), FORMAT(q.work_meas_plan_no, '0000000000')) AS checkMax
+            FROM (
+                SELECT 
+                    wmp.work_meas_plan_no
+                    , wmp.plant_cd          -- 사업부
+                    , wmp.meas_dt           -- 측정일
+                    , wmr.meas_start_time   -- 측정시작시간
+                    , wmr.meas_end_time     -- 측정종료시간
+                    , wmr.process_cd        -- 공정
+                    , wmr.hazard_cd         -- 유해인자
+                    , ch.hazard_nm_ko       -- 유해인자명
+                    , wmr.dept_cd           -- 부서
+                    , wmr.exposure_std      -- 노출기준
+                    , CONVERT(FLOAT , wmr.meas_value) AS meas_value        -- 측정값
+                    , 
+                    CASE ISNUMERIC(wmr.exposure_std)
+                        WHEN 1 THEN
+                            CASE
+                                WHEN (CONVERT(FLOAT , wmr.meas_value) - CONVERT(FLOAT , wmr.exposure_std)) / CONVERT(FLOAT , wmr.exposure_std) &gt; 1 THEN '100'
+                                WHEN (CONVERT(FLOAT , wmr.meas_value) - CONVERT(FLOAT , wmr.exposure_std)) / CONVERT(FLOAT , wmr.exposure_std) &gt; 0.5 THEN '50'
+                                WHEN (CONVERT(FLOAT , wmr.meas_value) - CONVERT(FLOAT , wmr.exposure_std)) / CONVERT(FLOAT , wmr.exposure_std) &gt; 0.3 THEN '30'
+                                ELSE ''
+                            END
+                        ELSE ''
+                    END AS exposure_excess_rate
+                FROM work_meas_plan wmp
+                LEFT OUTER JOIN (
+                    SELECT z.* 
+                    FROM work_meas_rslt z
+                    INNER JOIN (
+                        SELECT work_meas_plan_no, MAX(work_meas_rslt_no) AS work_meas_rslt_no
+                        FROM work_meas_rslt
+                        GROUP BY work_meas_plan_no
+                    ) y ON y.work_meas_rslt_no = z.work_meas_rslt_no
+                    WHERE 1 = 1
+                    <if test="processCd != null and !processCd.equals('')">
+                        AND z.process_cd = #{processCd}
+                    </if>
+                    <if test="deptCd != null and !deptCd.equals('')">
+                       AND z.dept_cd = #{deptCd}
+                    </if>
+                ) wmr ON wmr.work_meas_plan_no = wmp.work_meas_plan_no
+                LEFT OUTER JOIN com_hazard ch ON wmr.hazard_cd = ch.hazard_cd
+                WHERE wmp.half_year_cd != 'CHALF'       -- 수시 제외
+                AND wmp.work_meas_state_cd = 'WMS40'    -- 결과완료만
+                AND wmp.plant_cd is not null
+                <if test="plantCd != null and !plantCd.equals('')">
+                    AND wmp.plant_cd = #{plantCd}
+                </if>
+            ) q
+            WHERE 1=1
+            AND q.hazard_cd is not null
+            AND q.process_cd is not null
+            <if test="hazardNm != null and !hazardNm.equals('')">
+                AND q.hazard_nm_ko like '%' + #{hazardNm} + '%'
+            </if>
+            <if test="exposureExcessRate != null and !exposureExcessRate.equals('')">
+                AND CONVERT(FLOAT , q.exposure_excess_rate) &gt;= CONVERT(FLOAT , #{exposureExcessRate})
+            </if>
+        )
+        SELECT 
+            *
+        FROM (
+            SELECT
+                a.meas_month
+                , a.hazard_nm_ko
+                , a.meas_value
+            FROM workMeas a
+                
+            INNER JOIN (
+                SELECT 
+                    x.*
+                    , CONVERT(INT, RIGHT(x.checkMax, 10)) AS work_meas_plan_no
+                FROM (
+                    SELECT 
+                        meas_month
+                        , hazard_nm_ko
+                        <if test="plantCd != null and !plantCd.equals('')">
+                            , plant_cd
+                        </if>
+                        <if test="processCd != null and !processCd.equals('')">
+                            , process_cd
+                        </if>
+                        <if test="deptCd != null and !deptCd.equals('')">
+                            , dept_cd
+                        </if>
+                        , MAX(checkMax) AS checkMax
+                    FROM workMeas
+                    GROUP BY 
+                        meas_month
+                        , hazard_nm_ko
+                        <if test="plantCd != null and !plantCd.equals('')">
+                            , plant_cd
+                        </if>
+                        <if test="processCd != null and !processCd.equals('')">
+                            , process_cd
+                        </if>
+                        <if test="deptCd != null and !deptCd.equals('')">
+                            , dept_cd
+                        </if>
+                ) x
+            ) b 
+            ON a.work_meas_plan_no = b.work_meas_plan_no
+            AND a.meas_month = b.meas_month
+            AND a.process_cd = b.process_cd
+            AND a.hazard_nm_ko = b.hazard_nm_ko
+            
+            WHERE LEFT(a.meas_month, 4) BETWEEN LEFT(#{fromYear}, 4) AND LEFT(#{toYear}, 4)
+        
+        ) FINAL
+        PIVOT
+        (
+            SUM(meas_value)
+            FOR meas_month IN
+            <foreach collection= "monthPeriod" item= "monthItem" index= "index" separator= "," open= "(" close= ")">
+                ${monthItem}
+            </foreach>
+        ) piv
+    </select>
+
+    <select id= "getDeptWorkTempleteInfos" resultType= "com.she.manage.model.Dept">
+        /* WorkMeasureResultMapper.getDeptWorkTempleteInfos [WorkMeasureResult.xml] */
+        SELECT d.dept_cd
+              ,d.dept_nm
+              ,d.plant_cd
+              ,plant.code_nm as plant_nm
+          FROM com_dept d
+         INNER JOIN com_code_master plant
+            ON d.plant_cd = plant.code
+           AND plant.code_group_cd = 'COM_PLANT_CD'
+         WHERE 1=1
+           AND d.use_yn = 'Y'
+         ORDER BY plant.sort_order, d.dept_nm
+    </select>
+
+    <select id="getInitWorkMeasureResults" resultType="com.she.health.model.WorkMeasureResult">
+        select  wmp.work_meas_plan_no
+                ,ch.hazard_cls_cd as work_area_grade_cd
+                ,wmpt.process_cd
+                ,cp.process_nm
+                ,wmpt.dept_cd
+                ,d.dept_nm
+                ,wmph.hazard_cd
+                ,ch.hazard_nm_ko as hazard_nm
+                ,'' as meas_value
+        from work_meas_plan wmp
+        inner join work_meas_plan_target wmpt
+            on wmpt.work_meas_plan_no = wmp.work_meas_plan_no
+        inner join work_meas_plan_hazard wmph
+            on wmph.work_meas_plan_target_no = wmpt.work_meas_plan_target_no
+        inner join com_dept d
+            on d.dept_cd = wmpt.dept_cd
+        inner join com_process cp
+            on cp.process_cd = wmpt.process_cd
+        left outer join com_hazard ch
+            on ch.hazard_cd = wmph.hazard_cd
+        where wmp.work_meas_plan_no = #{workMeasPlanNo}
+    </select>
+</mapper>

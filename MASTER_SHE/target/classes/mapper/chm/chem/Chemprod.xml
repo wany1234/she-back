@@ -1,0 +1,1277 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.chem.mapper.ChemprodMapper">
+
+    <select id= "getChemprods" resultType= "HashMap">
+        /* ChemprodMapper.getChemprods [Chemprod.xml] */
+        <!-- 보안취약점 점검에서 예외처리가 안 될 경우 SP로 사용 -->
+        <!--EXEC SP_GET_CHEMPRODS #{search}, #{regulItmNoStr}, #{allRegulItmNos}, #{allSelectRegulItmNos}, #{useYn}, #{plantCd}, #{airPolYn}, #{wtrPolYn}, #{licensingYn}
+                              ,#{dgrYn}, #{chemprodRegulItmNo}, #{defaultParam.lang}-->
+        with A as (
+            select ccc.chem_prod_no
+            from com_chemprod ccc
+            left outer join chm_regul_itm_chemprod_val cci
+            on ccc.chem_prod_no = cci.chem_prod_no
+            where 1=1
+            and ccc.use_yn = 'Y'
+        <if test= "regulItmNos != null and regulItmNos.length > 0">
+            and cci.regul_itm_no in
+            <foreach collection= "regulItmNos" item= "regulItmNo" separator= "," open= "(" close= ")" >
+                #{regulItmNo}
+            </foreach>
+        </if>
+            group by ccc.chem_prod_no
+        ), B as (
+            select ccp.chem_prod_no
+                    ,ccp.sap_mat_cd
+                    ,ccp.chem_prod_nm_kr
+                    ,ccp.chem_prod_nm_en
+                    ,ccp.vendor_cd as vendor_cd
+                    ,vendor.vendor_nm as vendor_nm
+                    ,ccp.origin_cd as origin_cd
+                    ,vendorOrigin.origin_nm_kr as origin_nm
+                    ,ccp.maker_cd as maker_cd
+                    ,isnull(maker.vendor_nm,'') as maker_nm
+                    ,ccp.makeorigin_cd as maker_origin_cd
+                    ,makerOrigin.origin_nm_kr as maker_origin_nm
+                    ,ccp.plant_cd
+                    ,plant.code_nm as plant_nm
+                    ,ccp.property
+                    ,property.code_nm as property_nm
+                    ,ccp.fugacity
+                    ,ccp.mix_yn
+                    , (case when ccp.mix_yn = 'Y' then '혼합' else '단일' end) mix_yn_nm
+                    ,ccp.boilpoint
+                    ,ccp.melting_pnt
+                    ,ccp.mole_weight
+                    ,ccp.biz_cat_cd
+                    ,biz.code_nm as biz_cat_nm
+                    ,ccp.prod_cat_cd
+                    ,prod.code_nm as prod_cat_nm
+                    ,ccp.usage_cd
+                    ,usage.code_nm as usage_nm
+                    ,specific_gravity
+                    ,cas_no
+                    ,ccp.usage_etc
+                    ,ccp.hs_num
+                    ,ccp.stck_area
+                    ,ccp.air_pol_yn
+                    ,ccp.wtr_pol_yn
+                    ,ccp.licensing_yn
+                    ,(case when ccp.licensing_yn = 'Y' then '해당' else '해당안됨' end) licensing_yn_nm
+                    ,ccp.dgr_yn
+                    ,ccp.cfm_mtd_cd
+                    ,ingredient.code_nm as cfm_mtd_nm
+                    ,ccp.make_yn
+                    , (case when ccp.make_yn = 'Y' then '제조O' else '제조X' end) make_yn_nm
+                    ,ccp.imp_yn
+                    , (case when ccp.imp_yn = 'Y' then '수입O' else '수입X' end) imp_yn_nm
+                    ,ccp.buy_yn
+                    , (case when ccp.buy_yn = 'Y' then '구매O' else '구매X' end) buy_yn_nm
+                    ,ccp.using_yn
+                    , (case when ccp.using_yn = 'Y' then '사용O' else '사용X' end) using_yn_nm
+                    ,ccp.sales_yn
+                    , (case when ccp.sales_yn = 'Y' then '판매O' else '판매X' end) sales_yn_nm
+                    ,ccp.exp_yn
+                    , (case when ccp.exp_yn = 'Y' then '수출O' else '수출X' end) exp_yn_nm
+                    ,ccp.expl_low_limit
+                    ,ccp.expl_up_limit
+                    ,ccp.remark
+                    ,ccp.leak_thresh
+                    ,ccp.lc50
+                    ,ccp.flashing_pnt
+                    ,ccp.Ignition_pnt
+                    ,ccp.vapor_pressure
+                    ,ccp.extra_reaction_yn
+                    ,ccp.corrosiveness_yn
+                    ,ccp.daily_vol
+                    ,ccp.max_vol
+                    ,ccp.use_yn
+                    ,(case when ccp.use_yn = 'Y' then '사용' else '미사용' end) use_yn_nm
+                    ,ccp.create_user_id
+                    ,createUser.user_nm as create_user_nm
+                    ,ccp.create_dt
+                    ,ccp.update_user_id
+                    ,updateUser.user_nm as update_user_nm
+                    ,ccp.update_dt
+                    ,ccp.chemprod_regul_itm_no
+                    ,cri.dgr_nm as chemprod_regul_itm_nm
+            from com_chemprod ccp
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            on ccp.plant_cd = plant.code
+            inner join com_vendor_mst vendor
+            on ccp.vendor_cd = vendor.vendor_cd
+            inner join chm_origin vendorOrigin
+            on ccp.origin_cd = vendorOrigin.origin_cd
+            left outer join com_vendor_mst maker
+            on ccp.maker_cd = maker.vendor_Cd
+            inner join chm_origin makerOrigin
+            on ccp.makeorigin_cd = makerOrigin.origin_cd
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_PROPERTIES') property
+            on ccp.property = property.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_BIZ_CAT') biz
+            on ccp.biz_cat_cd = biz.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_PROD_CAT') prod
+            on ccp.prod_cat_cd = prod.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_USAGE') usage
+            on ccp.usage_cd = usage.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_INGREDIENT_MTD') ingredient
+            on ccp.cfm_mtd_cd = ingredient.code
+            left outer join com_user createUser
+            on ccp.create_user_id = createUser.user_id
+            left outer join com_user updateUser
+            on ccp.update_user_id = updateUser.user_id
+            inner join A
+            on ccp.chem_prod_no = A.chem_prod_no
+            left outer join chm_dgr_att_amt cri
+            on ccp.chemprod_regul_itm_no = cri.chm_dgr_att_amt_no
+            where 1=1
+            and (ccp.chem_prod_nm_kr like '%' + #{search} + '%'
+                or ccp.chem_prod_nm_en like '%' + #{search} + '%'
+                or ccp.sap_mat_cd like '%' + #{search} + '%'
+                <if test= "search != null and !search.equals('')">
+                    or exists(select 1
+                            from com_chem c
+                            inner join com_chemprod_chem ccpc
+                            on ccpc.chem_no = c.chem_no
+                            where c.use_yn = 'Y'
+                            and ccpc.chem_prod_no = ccp.chem_prod_no
+                            and (c.cas_no like '%' + #{search} + '%'
+                                or c.chem_nm_kr like '%' + #{search} + '%'
+                                or vendor.vendor_nm like '%' + #{search} + '%'
+                                or maker.vendor_nm like '%' + #{search} + '%')
+                    )
+                </if>
+            )
+            <if test= "useYn != null and !useYn.equals('')">
+                and ccp.use_yn = #{useYn}
+            </if>
+            <if test= "plantCd != null and !plantCd.equals('')">
+                <choose>
+                    <when test= "plantCd.equals('0000')">
+                        and isnull(ccp.plant_cd, '') != ''
+                    </when>
+                    <otherwise>
+                        and ccp.plant_cd in (#{plantCd}, '0000')
+                    </otherwise>
+                </choose>
+            </if>
+            <if test= "airPolYn != null and !airPolYn.equals('')">
+                and isnull(ccp.air_pol_yn, 'N') = #{airPolYn}
+            </if>
+            <if test= "wtrPolYn != null and !wtrPolYn.equals('')">
+                and isnull(ccp.wtr_pol_yn, 'N') = #{wtrPolYn}
+            </if>
+            <if test= "licensingYn != null and !licensingYn.equals('')">
+                and isnull(ccp.licensing_yn, 'N') = #{licensingYn}
+            </if>
+            <if test= "chemprodRegulItmNo != null and chemprodRegulItmNo > 0">
+                and ccp.chemprod_regul_itm_no = #{chemprodRegulItmNo}
+            </if>
+        ),C as (
+            select *
+            from
+            (
+                select cri.regul_itm_no,
+                case when isnull(cricv.chem_prod_no, 0) = 0 then 'N' else 'Y' end as value
+                ,ccp.chem_prod_no
+                from com_chemprod ccp
+                left outer join chm_regul_itm_chemprod_val cricv
+                on ccp.chem_prod_no = cricv.chem_prod_no
+                left outer join chm_regul_itm cri
+                on cri.regul_itm_no = cricv.regul_itm_no
+                and ccp.use_yn = 'Y'
+            ) d
+            pivot
+            (
+                max(value)
+                for regul_itm_no in (${allRegulItmNos})
+            ) piv
+        )
+        select B.chem_prod_no, B.sap_mat_cd , B.chem_prod_nm_kr , B.chem_prod_nm_en
+                , B.vendor_cd, B.vendor_nm, B.origin_cd, B.origin_nm, B.maker_cd, B.maker_nm, B.maker_origin_cd, B.maker_origin_nm, B.plant_cd, B.plant_nm
+                , B.property, B.property_nm,B.fugacity ,B.mix_yn, B.mix_yn_nm, B.boilpoint, B.melting_pnt, B.mole_weight
+                , B.biz_cat_cd, B.biz_cat_nm, B.prod_cat_cd, B.prod_cat_nm, B.usage_cd, B.usage_nm, B.specific_gravity, B.cas_no, B.usage_etc
+                , B.hs_num, B.stck_area, B.air_pol_yn, B.wtr_pol_yn, B.licensing_yn , B.licensing_yn_nm, B.dgr_yn, B.cfm_mtd_cd, B.cfm_mtd_nm
+                , B.make_yn, B.make_yn_nm, B.imp_yn, B.imp_yn_nm, B.buy_yn, B.buy_yn_nm
+                , B.using_yn , B.using_yn_nm , B.sales_yn , B.sales_yn_nm, B.exp_yn, B.exp_yn_nm
+                , B.expl_low_limit, B.expl_up_limit, B.leak_thresh, B.lc50, B.flashing_pnt, B.Ignition_pnt, B.vapor_pressure, B.extra_reaction_yn
+                , B.corrosiveness_yn, B.daily_vol, B.max_vol, B.remark, B.use_yn, B.use_yn_nm
+                , B.create_user_id, B.create_user_nm, B.create_dt, B.update_user_id, B.update_user_nm, B.update_dt, B.chemprod_regul_itm_no, B.chemprod_regul_itm_nm
+                , ${allSelectRegulItmNos}
+        from B
+        inner join C
+        on B.chem_prod_no = C.chem_prod_no
+    </select>
+    <!-- 부서별 취급물질 구성성분 조회 -->
+    <select id="getDeptChemprodChems" resultType="com.she.chm.model.DeptChemprod">
+        select c.cas_no
+                ,c.chem_nm_en
+                ,c.chem_nm_kr
+                ,c.chem_no
+                ,c.mole_formula
+        from rsa_dept_process_chemprod dpc
+        inner join com_chemprod cc
+        on dpc.chem_prod_no = cc.chem_prod_no
+        and cc.use_yn = 'Y'
+        inner join com_chemprod_chem ccc
+        on cc.chem_prod_no = ccc.chem_prod_no
+        and ccc.use_yn = 'Y'
+        inner join com_chem c
+        on ccc.chem_no = c.chem_no
+        and c.use_yn = 'Y'
+        where 1=1
+        <if test="chemProdNo != null and chemProdNo > 0">
+            and ccc.chem_prod_no = #{chemProdNo}
+        </if>
+        <if test="deptCd != null and !''.equals(deptCd)">
+            and dpc.dept_cd = #{deptCd}
+        </if>
+        <if test="processCd != null and !processCd.equals('')">
+            and dpc.process_cd = #{processCd}
+        </if>
+    </select>
+    <select id= "getChemprodsPage" resultType= "HashMap">
+        /* ChemprodMapper.getChemprodsPage [Chemprod.xml] */
+        <!-- 보안취약점 점검에서 예외처리가 안 될 경우 SP로 사용 -->
+        <!--EXEC SP_GET_CHEMPRODS_PAGE #{search}, #{regulItmNoStr}, #{allRegulItmNos}, #{allSelectRegulItmNos}, #{useYn}, #{plantCd}, #{deptCd}, #{safFacilityCd},
+                                   #{airPolYn}, #{wtrPolYn}, #{licensingYn}, #{dgrYn}, #{chemprodRegulItmNo}, #{pageNumber}, #{pageSize}, #{orderByExpression}, #{defaultParam.lang}-->
+        with A as (
+            select ccc.chem_prod_no
+            from com_chemprod ccc
+            left outer join chm_regul_itm_chemprod_val cci
+            on ccc.chem_prod_no = cci.chem_prod_no
+            where 1=1
+            <if test= "regulItmNos != null and regulItmNos.length > 0">
+                and cci.regul_itm_no in
+                <foreach collection= "regulItmNos" item= "regulItmNo" separator= "," open= "(" close= ")" >
+                    #{regulItmNo}
+                </foreach>
+            </if>
+            group by ccc.chem_prod_no
+        ), B as (
+            select ccp.chem_prod_no
+                    ,ccp.sap_mat_cd
+                    ,ccp.chem_prod_nm_kr
+                    ,ccp.chem_prod_nm_en
+                    ,ccp.vendor_cd
+                    ,vendor.vendor_nm
+                    ,ccp.origin_cd
+                    ,vendorOrigin.origin_nm_kr as origin_nm
+                    ,ccp.maker_cd as maker_cd
+                    ,isnull(maker.vendor_nm,'') as maker_nm
+                    ,ccp.makeorigin_cd as maker_origin_cd
+                    ,makerOrigin.origin_nm_kr as maker_origin_nm
+                    ,ccp.plant_cd
+                    ,plant.code_nm as plant_nm
+                    ,ccp.property
+                    ,property.code_nm as property_nm
+                    ,ccp.fugacity
+                    ,ccp.mix_yn
+                    , (case when ccp.mix_yn = 'Y' then '혼합' else '단일' end) mix_yn_nm
+                    ,ccp.boilpoint
+                    ,ccp.melting_pnt
+                    ,ccp.mole_weight
+                    ,ccp.biz_cat_cd
+                    ,biz.code_nm as biz_cat_nm
+                    ,ccp.prod_cat_cd
+                    ,prod.code_nm as prod_cat_nm
+                    ,ccp.usage_cd
+                    ,usage.code_nm as usage_nm
+                    ,specific_gravity
+                    ,cas_no
+                    ,ccp.usage_etc
+                    ,ccp.hs_num
+                    ,ccp.stck_area
+                    ,ccp.air_pol_yn
+                    ,ccp.wtr_pol_yn
+                    ,ccp.licensing_yn
+                    ,(case when ccp.licensing_yn = 'Y' then '해당' else '해당안됨' end) licensing_yn_nm
+                    ,ccp.dgr_yn
+                    ,ccp.cfm_mtd_cd
+                    ,ingredient.code_nm as cfm_mtd_nm
+                    ,ccp.make_yn
+                    , (case when ccp.make_yn = 'Y' then '제조O' else '제조X' end) make_yn_nm
+                    ,ccp.imp_yn
+                    , (case when ccp.imp_yn = 'Y' then '수입O' else '수입X' end) imp_yn_nm
+                    ,ccp.buy_yn
+                    , (case when ccp.buy_yn = 'Y' then '구매O' else '구매X' end) buy_yn_nm
+                    ,ccp.using_yn
+                    , (case when ccp.using_yn = 'Y' then '사용O' else '사용X' end) using_yn_nm
+                    ,ccp.sales_yn
+                    , (case when ccp.sales_yn = 'Y' then '판매O' else '판매X' end) sales_yn_nm
+                    ,ccp.exp_yn
+                    , (case when ccp.exp_yn = 'Y' then '수출O' else '수출X' end) exp_yn_nm
+                    ,ccp.expl_low_limit
+                    ,ccp.expl_up_limit
+                    ,ccp.remark
+                    ,ccp.leak_thresh
+                    ,ccp.lc50
+                    ,ccp.flashing_pnt
+                    ,ccp.Ignition_pnt
+                    ,ccp.vapor_pressure
+                    ,ccp.extra_reaction_yn
+                    ,ccp.corrosiveness_yn
+                    ,ccp.daily_vol
+                    ,ccp.max_vol
+                    ,ccp.use_yn
+                    ,(case when ccp.use_yn = 'Y' then '사용' else '미사용' end) use_yn_nm
+                    ,ccp.create_user_id
+                    ,createUser.user_nm as create_user_nm
+                    ,ccp.create_dt
+                    ,ccp.update_user_id
+                    ,updateUser.user_nm as update_user_nm
+                    ,ccp.update_dt
+                    ,ccp.chemprod_regul_itm_no
+                    ,cri.dgr_nm as chemprod_regul_itm_nm
+            from com_chemprod ccp
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            on ccp.plant_cd = plant.code
+            inner join com_vendor_mst vendor
+            on ccp.vendor_cd = vendor.vendor_cd
+            inner join chm_origin vendorOrigin
+            on ccp.origin_cd = vendorOrigin.origin_cd
+            left outer join com_vendor_mst maker
+            on ccp.maker_cd = maker.vendor_Cd
+            inner join chm_origin makerOrigin
+            on ccp.makeorigin_cd = makerOrigin.origin_cd
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_PROPERTIES') property
+            on ccp.property = property.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_BIZ_CAT') biz
+            on ccp.biz_cat_cd = biz.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_PROD_CAT') prod
+            on ccp.prod_cat_cd = prod.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_USAGE') usage
+            on ccp.usage_cd = usage.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_INGREDIENT_MTD') ingredient
+            on ccp.cfm_mtd_cd = ingredient.code
+            left outer join com_user createUser
+            on ccp.create_user_id = createUser.user_id
+            left outer join com_user updateUser
+            on ccp.update_user_id = updateUser.user_id
+            inner join A
+            on ccp.chem_prod_no = A.chem_prod_no
+            left outer join chm_dgr_att_amt cri
+            on ccp.chemprod_regul_itm_no = cri.chm_dgr_att_amt_no
+            where 1=1
+            <if test= "plantCd != null and !plantCd.equals('')">
+                <choose>
+                    <when test= "plantCd.equals('0000')">
+                        and isnull(ccp.plant_cd, '') != ''
+                    </when>
+                    <otherwise>
+                        and ccp.plant_cd in (#{plantCd}, '0000')
+                    </otherwise>
+                </choose>
+            </if>
+            <if test= "search != null and !search.equals('')">
+            and (
+                ccp.chem_prod_nm_kr like '%' + #{search} + '%'
+                or ccp.chem_prod_nm_en like '%' + #{search} + '%'
+                or ccp.sap_mat_cd like #{search} + '%'
+                or exists(
+                    select 1
+                    from com_chem c
+                    inner join com_chemprod_chem ccpc
+                    on ccpc.chem_no = c.chem_no
+                    where c.use_yn = 'Y'
+                    and ccpc.chem_prod_no = ccp.chem_prod_no
+                    and (c.cas_no like #{search} + '%')
+                )
+            )
+            <!-- 속도저하 이유로 제거 -> and (c.cas_no like '%' + #{search} + '%') 아래
+                or c.chem_nm_kr like #{search} + '%' -->
+            </if>
+            <if test= "useYn != null and !useYn.equals('')">
+                and ccp.use_yn = #{useYn}
+            </if>
+            <if test= "airPolYn != null and !airPolYn.equals('')">
+                and isnull(ccp.air_pol_yn, 'N') = #{airPolYn}
+            </if>
+            <if test= "wtrPolYn != null and !wtrPolYn.equals('')">
+                and isnull(ccp.wtr_pol_yn, 'N') = #{wtrPolYn}
+            </if>
+            <if test= "licensingYn != null and !licensingYn.equals('')">
+                and isnull(ccp.licensing_yn, 'N') = #{licensingYn}
+            </if>
+            <if test= "dgrYn != null and !dgrYn.equals('')">
+                and ISNULL(ccp.dgr_yn, 'N') = #{dgrYn}
+            </if>
+            <if test= "chemprodRegulItmNo != null and chemprodRegulItmNo > 0">
+                and ccp.chemprod_regul_itm_no = #{chemprodRegulItmNo}
+            </if>
+            <if test= "safFacilityCd != null and !safFacilityCd.equals('')">
+                and ccp.chem_prod_no in (select chem_prod_no
+                                        from saf_facility_psm_chemprod sfpc
+                                        inner join saf_facility_mst sfm
+                                        on sfpc.saf_facility_cd = sfm.saf_facility_cd
+                                        where sfm.plant_cd = #{plantCd}
+                                        and sfm.dept_cd = #{deptCd}
+                                        and sfm.saf_facility_cd = #{safFacilityCd})
+            </if>
+        ),C as (
+            select *
+            from
+            (
+                select cri.regul_itm_no,
+                case when isnull(cricv.chem_prod_no, 0) = 0 then 'N' else 'Y' end as value
+                ,ccp.chem_prod_no
+                from com_chemprod ccp
+                left outer join chm_regul_itm_chemprod_val cricv
+                on ccp.chem_prod_no = cricv.chem_prod_no
+                left outer join chm_regul_itm cri
+                on cri.regul_itm_no = cricv.regul_itm_no
+                <!--  and ccp.use_yn = 'Y' -->
+            ) d
+            pivot
+            (
+                max(value)
+                for regul_itm_no in (${allRegulItmNos})
+            ) piv
+        )
+        select B.chem_prod_no, B.sap_mat_cd , B.chem_prod_nm_kr , B.chem_prod_nm_en
+                , B.vendor_cd, B.vendor_nm, B.origin_cd, B.origin_nm, B.maker_cd, B.maker_nm, B.maker_origin_cd, B.maker_origin_nm, B.plant_cd, B.plant_nm
+                , B.property, B.property_nm,B.fugacity ,B.mix_yn, B.mix_yn_nm, B.boilpoint, B.melting_pnt, B.mole_weight
+                , B.biz_cat_cd, B.biz_cat_nm, B.prod_cat_cd, B.prod_cat_nm, B.usage_cd, B.usage_nm, B.specific_gravity, B.cas_no, B.usage_etc
+                , B.hs_num, B.stck_area, B.air_pol_yn, B.wtr_pol_yn, B.licensing_yn , B.licensing_yn_nm, B.dgr_yn, B.cfm_mtd_cd, B.cfm_mtd_nm
+                , B.make_yn, B.make_yn_nm, B.imp_yn, B.imp_yn_nm, B.buy_yn, B.buy_yn_nm
+                , B.using_yn , B.using_yn_nm , B.sales_yn , B.sales_yn_nm, B.exp_yn, B.exp_yn_nm
+                , B.expl_low_limit, B.expl_up_limit, B.leak_thresh, B.lc50, B.flashing_pnt, B.Ignition_pnt, B.vapor_pressure, B.extra_reaction_yn
+                , B.corrosiveness_yn, B.daily_vol, B.max_vol, B.remark, B.use_yn, B.use_yn_nm
+                , B.create_user_id, B.create_user_nm, B.create_dt, B.update_user_id, B.update_user_nm, B.update_dt, B.chemprod_regul_itm_no, B.chemprod_regul_itm_nm
+                , ${allSelectRegulItmNos}, count(*) over() as total_cnt
+                , case
+                     when dbo.GET_USER_NM(B.update_user_id) = '' then dbo.GET_USER_NM(B.create_user_id)
+                     else dbo.GET_USER_NM(B.update_user_id) end as writer_user_nm
+                , case when B.update_dt is null then convert(varchar(10), B.create_dt, 120) else convert(varchar(10), B.update_dt, 120) end   as writer_dt
+        from B
+        inner join C on B.chem_prod_no = C.chem_prod_no
+        where 1 = 1
+        <if test= "useYn != null and !useYn.equals('')">
+            and B.use_yn = #{useYn}
+        </if>
+        <choose>
+            <when test= "orderByExpression != null and orderByExpression != ''">
+                ORDER BY ${orderByExpression}
+            </when>
+            <otherwise>
+                order by B.plant_nm, B.chem_prod_nm_kr, B.chem_prod_nm_en
+            </otherwise>
+        </choose>
+        <if test= "pageSize != null and pageSize > -1">
+        OFFSET ((#{pageNumber} - 1) * #{pageSize}) ROWS
+        FETCH NEXT #{pageSize} ROWS ONLY
+        </if>
+    </select>
+
+    <!-- 취급자재 조회 (법규제외) -->
+    <select id= "getChemprodNoReguls" resultType= "com.she.chm.model.Chemprod">
+        /* ChemprodMapper.getChemprodNoReguls [Chemprod.xml] */
+        select ccp.chem_prod_no
+        ,ccp.sap_mat_cd
+        ,ccp.chem_prod_nm_kr
+        ,ccp.chem_prod_nm_en
+        ,ccp.vendor_cd as vendor_cd
+        ,vendor.vendor_nm as vendor_nm
+        ,ccp.origin_cd as origin_cd
+        ,vendorOrigin.origin_nm_kr as origin_nm
+        ,ccp.maker_cd as maker_cd
+        ,isnull(maker.vendor_nm,'') as maker_nm
+        ,ccp.makeorigin_cd as maker_origin_cd
+        ,makerOrigin.origin_nm_kr as maker_origin_nm
+        ,ccp.plant_cd
+        ,plant.code_nm as plant_nm
+        ,ccp.property
+        ,property.code_nm as property_nm
+        ,ccp.fugacity
+        ,ccp.mix_yn
+        , (case when ccp.mix_yn = 'Y' then '혼합' else '단일' end) mix_yn_nm
+        ,ccp.boilpoint
+        ,ccp.melting_pnt
+        ,ccp.mole_weight
+        ,ccp.biz_cat_cd
+        ,biz.code_nm as biz_cat_nm
+        ,ccp.prod_cat_cd
+        ,prod.code_nm as prod_cat_nm
+        ,ccp.usage_cd
+        ,usage.code_nm as usage_nm
+        ,specific_gravity as specific_gravity
+        ,cas_no
+        ,ccp.usage_etc
+        ,ccp.hs_num
+        ,ccp.stck_area
+        ,ccp.air_pol_yn
+        ,ccp.wtr_pol_yn
+        ,ccp.licensing_yn
+        ,(case when ccp.licensing_yn = 'Y' then '해당' else '해당안됨' end) licensing_yn_nm
+        ,ccp.dgr_yn
+        ,ccp.cfm_mtd_cd
+        ,ingredient.code_nm as cfm_mtd_nm
+        ,ccp.make_yn
+        , (case when ccp.make_yn = 'Y' then '제조O' else '제조X' end) make_yn_nm
+        ,ccp.imp_yn
+        , (case when ccp.imp_yn = 'Y' then '수입O' else '수입X' end) imp_yn_nm
+        ,ccp.buy_yn
+        , (case when ccp.buy_yn = 'Y' then '구매O' else '구매X' end) buy_yn_nm
+        ,ccp.using_yn
+        , (case when ccp.using_yn = 'Y' then '사용O' else '사용X' end) using_yn_nm
+        ,ccp.sales_yn
+        , (case when ccp.sales_yn = 'Y' then '판매O' else '판매X' end) sales_yn_nm
+        ,ccp.exp_yn
+        , (case when ccp.exp_yn = 'Y' then '수출O' else '수출X' end) exp_yn_nm
+        ,ccp.expl_low_limit
+        ,ccp.expl_up_limit
+        ,ccp.remark
+        ,ccp.leak_thresh
+        ,ccp.lc50
+        ,ccp.flashing_pnt
+        ,ccp.Ignition_pnt
+        ,ccp.vapor_pressure
+        ,ccp.extra_reaction_yn
+        ,ccp.corrosiveness_yn
+        ,ccp.daily_vol
+        ,ccp.max_vol
+        ,ccp.use_yn
+        ,(case when ccp.use_yn = 'Y' then '사용' else '미사용' end) use_yn_nm
+        ,ccp.create_user_id
+        ,createUser.user_nm as create_user_nm
+        ,ccp.create_dt
+        ,ccp.update_user_id
+        ,updateUser.user_nm as update_user_nm
+        ,ccp.update_dt
+        ,ccp.chemprod_regul_itm_no
+        ,cri.dgr_nm as chemprod_regul_itm_nm
+        from com_chemprod ccp
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on ccp.plant_cd = plant.code
+        inner join com_vendor_mst vendor
+        on ccp.vendor_cd = vendor.vendor_cd
+        inner join chm_origin vendorOrigin
+        on ccp.origin_cd = vendorOrigin.origin_cd
+        left outer join com_vendor_mst maker
+        on ccp.maker_cd = maker.vendor_Cd
+        inner join chm_origin makerOrigin
+        on ccp.makeorigin_cd = makerOrigin.origin_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_PROPERTIES') property
+        on ccp.property = property.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_BIZ_CAT') biz
+        on ccp.biz_cat_cd = biz.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_PROD_CAT') prod
+        on ccp.prod_cat_cd = prod.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_USAGE') usage
+        on ccp.usage_cd = usage.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_INGREDIENT_MTD') ingredient
+        on ccp.cfm_mtd_cd = ingredient.code
+        left outer join com_user createUser
+        on ccp.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on ccp.update_user_id = updateUser.user_id
+        left outer join chm_dgr_att_amt cri
+        on ccp.chemprod_regul_itm_no = cri.chm_dgr_att_amt_no
+        where 1=1
+        and (ccp.chem_prod_nm_kr like '%' + #{search} + '%'
+        or ccp.chem_prod_nm_en like '%' + #{search} + '%'
+        or ccp.sap_mat_cd like '%' + #{search} + '%'
+        <if test= "search != null and !search.equals('')">
+            or exists(select 1
+            from com_chem c
+            inner join com_chemprod_chem ccpc
+            on ccpc.chem_no = c.chem_no
+            where c.use_yn = 'Y'
+            and ccpc.chem_prod_no = ccp.chem_prod_no
+            and (c.cas_no like '%' + #{search} + '%'
+            or c.chem_nm_kr like '%' + #{search} + '%'
+            or vendor.vendor_nm like '%' + #{search} + '%'
+            or maker.vendor_nm like '%' + #{search} + '%')
+            )
+        </if>
+        )
+        <if test= "useYn != null and !useYn.equals('')">
+            and ccp.use_yn = #{useYn}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+            and ccp.plant_cd = #{plantCd}
+        </if>
+        <if test= "airPolYn != null and !airPolYn.equals('')">
+            and isnull(ccp.air_pol_yn, 'N') = #{airPolYn}
+        </if>
+        <if test= "wtrPolYn != null and !wtrPolYn.equals('')">
+            and isnull(ccp.wtr_pol_yn, 'N') = #{wtrPolYn}
+        </if>
+        <if test= "licensingYn != null and !licensingYn.equals('')">
+            and isnull(ccp.licensing_yn, 'N') = #{licensingYn}
+        </if>
+        <if test= "dgrYn != null and !dgrYn.equals('')">
+            and ISNULL(ccp.dgr_yn, 'N') = #{dgrYn}
+        </if>
+        <if test= "chemprodRegulItmNo != null and chemprodRegulItmNo > 0">
+            and ccp.chemprod_regul_itm_no = #{chemprodRegulItmNo}
+        </if>
+    </select>
+
+    <select id= "getChemprodNoRegulsPage" resultType= "com.she.chm.model.Chemprod">
+        /* ChemprodMapper.getChemprodNoRegulsPage [Chemprod.xml] */
+        SELECT ccp.chem_prod_no
+              ,ccp.sap_mat_cd
+              ,ccp.chem_prod_nm_kr
+              ,ccp.chem_prod_nm_en
+              ,ccp.vendor_cd
+              ,vendor.vendor_nm
+              ,ccp.origin_cd as origin_cd
+              ,ccp.maker_cd as maker_cd
+              ,isnull(maker.vendor_nm,'') as maker_nm
+              ,ccp.makeorigin_cd as maker_origin_cd
+              ,ccp.plant_cd
+              ,plant.code_nm as plant_nm
+              ,ccp.property
+              ,property.code_nm as property_nm
+              ,ccp.fugacity
+              ,ccp.mix_yn
+              ,(case when ccp.mix_yn = 'Y' then '혼합' else '단일' end) mix_yn_nm
+              ,ccp.boilpoint
+              ,ccp.melting_pnt
+              ,ccp.mole_weight
+              ,ccp.biz_cat_cd
+              ,ccp.prod_cat_cd
+              ,prod.code_nm as prod_cat_nm
+              ,ccp.usage_cd
+              ,usage.code_nm as usage_nm
+              ,specific_gravity
+              ,cas_no
+              ,ccp.usage_etc
+              ,ccp.hs_num
+              ,ccp.stck_area
+              ,ccp.air_pol_yn
+              ,ccp.wtr_pol_yn
+              ,ccp.licensing_yn
+              ,(case when ccp.licensing_yn = 'Y' then '해당' else '해당안됨' end) licensing_yn_nm
+              ,ccp.dgr_yn
+              ,ccp.cfm_mtd_cd
+              ,ccp.make_yn
+              ,ccp.imp_yn
+              ,ccp.buy_yn
+              ,ccp.using_yn
+              ,ccp.sales_yn
+              ,ccp.exp_yn
+              ,ccp.expl_low_limit
+              ,ccp.expl_up_limit
+              ,ccp.remark
+              ,ccp.leak_thresh
+              ,ccp.lc50
+              ,ccp.flashing_pnt
+              ,ccp.Ignition_pnt
+              ,ccp.vapor_pressure
+              ,ccp.extra_reaction_yn
+              ,ccp.corrosiveness_yn
+              ,ccp.daily_vol
+              ,ccp.max_vol
+              ,ccp.use_yn
+              ,(case when ccp.use_yn = 'Y' then '사용' else '미사용' end) use_yn_nm
+              ,ccp.chemprod_regul_itm_no
+              ,cri.dgr_nm as chemprod_regul_itm_nm
+              ,count(*) over() as total_cnt
+          FROM com_chemprod ccp
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on ccp.plant_cd = plant.code
+         INNER JOIN com_vendor_mst vendor on ccp.vendor_cd = vendor.vendor_cd
+          LEFT OUTER JOIN com_vendor_mst maker on ccp.maker_cd = maker.vendor_Cd
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_PROPERTIES') property on ccp.property = property.code
+          LEFT OUTER JOIN chm_dgr_att_amt cri on ccp.chemprod_regul_itm_no = cri.chm_dgr_att_amt_no
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_USAGE') usage ON ccp.usage_cd = usage.code
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_PROD_CAT') prod ON ccp.prod_cat_cd = prod.code
+         WHERE (ccp.chem_prod_nm_kr like '%' + #{search} + '%'
+            OR ccp.chem_prod_nm_en like '%' + #{search} + '%'
+            OR ccp.sap_mat_cd like #{search} + '%'
+            OR EXISTS(SELECT 1
+                        FROM com_chem c
+                       INNER JOIN com_chemprod_chem ccpc ON ccpc.chem_no = c.chem_no
+                       WHERE c.use_yn = 'Y'
+                         AND ccpc.chem_prod_no = ccp.chem_prod_no
+                         AND c.cas_no like #{search} + '%')
+            )
+        <if test= "useYn != null and !useYn.equals('')">
+           AND ccp.use_yn = #{useYn}
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+           AND ccp.plant_cd = #{plantCd}
+        </if>
+        <if test= "airPolYn != null and !airPolYn.equals('')">
+           AND isnull(ccp.air_pol_yn, 'N') = #{airPolYn}
+        </if>
+        <if test= "wtrPolYn != null and !wtrPolYn.equals('')">
+           AND isnull(ccp.wtr_pol_yn, 'N') = #{wtrPolYn}
+        </if>
+        <if test= "licensingYn != null and !licensingYn.equals('')">
+           AND isnull(ccp.licensing_yn, 'N') = #{licensingYn}
+        </if>
+        <if test= "dgrYn != null and !dgrYn.equals('')">
+           AND ISNULL(ccp.dgr_yn, 'N') = #{dgrYn}
+        </if>
+        <if test= "chemprodRegulItmNo != null and chemprodRegulItmNo > 0">
+           AND ccp.chemprod_regul_itm_no = #{chemprodRegulItmNo}
+        </if>
+        <choose>
+            <when test= 'orderByExpression != null and orderByExpression.equals("plant_nm asc")'>
+                ORDER BY plant_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("plant_nm desc")'>
+                ORDER BY plant_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("sap_mat_cd asc")'>
+                ORDER BY sap_mat_cd asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("sap_mat_cd desc")'>
+                ORDER BY sap_mat_cd desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("chem_prod_nm_kr asc")'>
+                ORDER BY chem_prod_nm_kr asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("chem_prod_nm_kr desc")'>
+                ORDER BY chem_prod_nm_kr desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("chem_prod_nm_en asc")'>
+                ORDER BY chem_prod_nm_en asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("chem_prod_nm_en desc")'>
+                ORDER BY chem_prod_nm_en desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("property_nm asc")'>
+                ORDER BY property_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("property_nm desc")'>
+                ORDER BY property_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("mix_yn_nm asc")'>
+                ORDER BY mix_yn_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("mix_yn_nm desc")'>
+                ORDER BY mix_yn_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("prod_cat_nm asc")'>
+                ORDER BY prod_cat_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("prod_cat_nm desc")'>
+                ORDER BY prod_cat_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("usage_nm asc")'>
+                ORDER BY usage_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("usage_nm desc")'>
+                ORDER BY usage_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_nm asc")'>
+                ORDER BY vendor_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("vendor_nm desc")'>
+                ORDER BY vendor_nm desc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("maker_nm asc")'>
+                ORDER BY maker_nm asc
+            </when>
+            <when test= 'orderByExpression != null and orderByExpression.equals("maker_nm desc")'>
+                ORDER BY maker_nm desc
+            </when>
+            <otherwise>
+                ORDER BY plant.code_nm
+            </otherwise>
+        </choose>
+        <if test= "pageSize != null and pageSize > -1">
+        OFFSET ((#{pageNumber} - 1) * #{pageSize}) ROWS
+        FETCH NEXT #{pageSize} ROWS ONLY
+        </if>
+    </select>
+
+    <!-- 취급자재 상세 조회 -->
+    <select id= "getChemprod" resultType= "com.she.chm.model.Chemprod">
+        /* ChemprodMapper.getChemprod [Chemprod.xml] */
+        select ccp.chem_prod_no
+            ,ccp.sap_mat_cd
+            ,ccp.chem_prod_nm_kr
+            ,ccp.chem_prod_nm_en
+            ,ccp.vendor_cd
+            ,vendor.vendor_nm
+            ,ccp.origin_cd
+            ,vendorOrigin.origin_nm_kr as origin_nm
+            ,ccp.maker_cd as maker_cd
+            ,isnull(maker.vendor_nm,'') as maker_nm
+            ,ccp.makeorigin_cd as maker_origin_cd
+            ,makerOrigin.origin_nm_kr as maker_origin_nm
+            ,ccp.plant_cd
+            ,plant.code_nm as plant_nm
+            ,ccp.property
+            ,property.code_nm as property_nm
+            ,ccp.fugacity
+            ,ccp.mix_yn
+            , (case when ccp.mix_yn = 'Y' then '혼합' else '단일' end) mix_yn_nm
+            ,ccp.boilpoint
+            ,ccp.melting_pnt
+            ,ccp.mole_weight
+            ,ccp.biz_cat_cd
+            ,biz.code_nm as biz_cat_nm
+            ,ccp.prod_cat_cd
+            ,prod.code_nm as prod_cat_nm
+            ,ccp.usage_cd
+            ,usage.code_nm as usage_nm
+            ,specific_gravity
+            ,cas_no
+            ,ccp.usage_etc
+            ,ccp.hs_num
+            ,ccp.stck_area
+            ,ccp.air_pol_yn
+            ,ccp.wtr_pol_yn
+            ,ccp.licensing_yn
+            ,(case when ccp.licensing_yn = 'Y' then '해당' else '해당안됨' end) licensing_yn_nm
+            ,ccp.dgr_yn
+            ,ccp.cfm_mtd_cd
+            ,ingredient.code_nm as cfm_mtd_nm
+            ,ccp.make_yn
+            , (case when ccp.make_yn = 'Y' then '제조O' else '제조X' end) make_yn_nm
+            ,ccp.imp_yn
+            , (case when ccp.imp_yn = 'Y' then '수입O' else '수입X' end) imp_yn_nm
+            ,ccp.buy_yn
+            , (case when ccp.buy_yn = 'Y' then '구매O' else '구매X' end) buy_yn_nm
+            ,ccp.using_yn
+            , (case when ccp.using_yn = 'Y' then '사용O' else '사용X' end) using_yn_nm
+            ,ccp.sales_yn
+            , (case when ccp.sales_yn = 'Y' then '판매O' else '판매X' end) sales_yn_nm
+            ,ccp.exp_yn
+            , (case when ccp.exp_yn = 'Y' then '수출O' else '수출X' end) exp_yn_nm
+            ,ccp.expl_low_limit
+            ,ccp.expl_up_limit
+            ,ccp.remark
+            ,ccp.leak_thresh
+            ,ccp.lc50
+            ,ccp.flashing_pnt
+            ,ccp.Ignition_pnt
+            ,ccp.vapor_pressure
+            ,ccp.extra_reaction_yn
+            ,ccp.corrosiveness_yn
+            ,ccp.daily_vol
+            ,ccp.max_vol
+            ,ccp.use_yn
+            ,(case when ccp.use_yn = 'Y' then '사용' else '미사용' end) use_yn_nm
+            ,ccp.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,ccp.create_dt
+            ,ccp.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,ccp.update_dt
+            ,ccp.chemprod_regul_itm_no
+            ,cri.dgr_nm as chemprod_regul_itm_nm
+        from com_chemprod ccp
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            on ccp.plant_cd = plant.code
+        inner join com_vendor_mst vendor
+            on ccp.vendor_cd = vendor.vendor_cd
+        inner join chm_origin vendorOrigin
+            on ccp.origin_cd = vendorOrigin.origin_cd
+        left outer join com_vendor_mst maker
+            on ccp.maker_cd = maker.vendor_Cd
+        inner join chm_origin makerOrigin
+            on ccp.makeorigin_cd = makerOrigin.origin_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_PROPERTIES') property
+            on ccp.property = property.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_BIZ_CAT') biz
+            on ccp.biz_cat_cd = biz.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_PROD_CAT') prod
+            on ccp.prod_cat_cd = prod.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_USAGE') usage
+            on ccp.usage_cd = usage.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_INGREDIENT_MTD') ingredient
+            on ccp.cfm_mtd_cd = ingredient.code
+        left outer join com_user createUser
+            on ccp.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+            on ccp.update_user_id = updateUser.user_id
+        left outer join chm_dgr_att_amt cri
+            on ccp.chemprod_regul_itm_no = cri.chm_dgr_att_amt_no
+        where ccp.chem_prod_no = #{chemprodNo}
+    </select>
+
+    <!-- 취급자재 중복검사 -->
+    <select id= "checkChemprod" resultType= "HashMap">
+        /* ChemprodMapper.checkChemprod [Chemprod.xml] */
+        select 'chem_prod_count' as gubun, count(*) as cnt
+        from com_chemprod cp
+        where cp.sap_mat_cd = #{sapMatCd}
+        and cp.vendor_cd = #{vendorCd}
+        and cp.maker_cd = #{makerCd}
+        <!-- and cp.plant_cd = #{plantCd} -->
+        <if test= "chemProdNo != null and chemProdNo > 0">
+            and chem_prod_no not in (#{chemProdNo})
+        </if>
+    </select>
+
+    <!-- 조건에 해당되는 취급자재번호조회 -->
+    <select id= "getExistsChemprod" resultType= "int">
+        /* ChemprodMapper.getExistsChemprod [Chemprod.xml] */
+        select MAX(chem_prod_no) as chem_prod_no
+        from com_chemprod cp
+        where cp.sap_mat_cd = #{sapMatCd}
+        and cp.vendor_cd = #{vendorCd}
+        and cp.maker_cd = #{makerCd}
+    </select>
+
+    <!-- 취급자재 신규등록 -->
+    <insert id= "createChemprod" parameterType= "com.she.chm.model.Chemprod">
+        <selectKey keyProperty= "chemProdNo" resultType= "int" order= "BEFORE">
+            select next value for seq_com_chemprod as chem_prod_no
+        </selectKey>
+        /* ChemprodMapper.createChemprod [Chemprod.xml] */
+        insert into com_chemprod
+        (chem_prod_no
+        , sap_mat_cd
+        , chem_prod_nm_kr
+        , chem_prod_nm_en
+        , vendor_cd
+        , origin_cd
+        , maker_cd
+        , makeorigin_cd
+        , plant_cd
+        , property
+        , fugacity
+        , mix_yn
+        , boilpoint
+        , melting_pnt
+        , mole_weight
+        , biz_cat_cd
+        , prod_cat_cd
+        , usage_cd
+        , specific_gravity
+        , cas_no
+        , usage_etc
+        , hs_num
+        , stck_area
+        , air_pol_yn
+        , wtr_pol_yn
+        , licensing_yn
+        , dgr_yn
+        , cfm_mtd_cd
+        , make_yn
+        , imp_yn
+        , buy_yn
+        , sales_yn
+        , using_yn
+        , exp_yn
+        , remark
+        , expl_up_limit
+        , expl_low_limit
+        , leak_thresh
+        , lc50
+        , flashing_pnt
+        , Ignition_pnt
+        , vapor_pressure
+        , extra_reaction_yn
+        , corrosiveness_yn
+        , daily_vol
+        , max_vol
+        , use_yn
+        , chemprod_regul_itm_no
+        , create_user_id
+        , create_dt
+        )
+        values
+        (#{chemProdNo}
+        , #{sapMatCd}
+        , #{chemProdNmKr}
+        , #{chemProdNmEn}
+        , #{vendorCd}
+        , #{originCd}
+        , #{makerCd}
+        , #{makerOriginCd}
+        , #{plantCd}
+        , #{property}
+        , #{fugacity}
+        , #{mixYn}
+        , #{boilpoint}
+        , #{meltingPnt}
+        , #{moleWeight}
+        , #{bizCatCd}
+        , #{prodCatCd}
+        , #{usageCd}
+        , #{specificGravity}
+        , #{casNo}
+        , #{usageEtc}
+        , #{hsNum}
+        , #{stckArea}
+        , #{airPolYn}
+        , #{wtrPolYn}
+        , #{licensingYn}
+        , #{dgrYn}
+        , #{cfmMtdCd}
+        , #{makeYn}
+        , #{impYn}
+        , #{buyYn}
+        , #{salesYn}
+        , #{usingYn}
+        , #{expYn}
+        , #{remark}
+        , #{explLowLimit}
+        , #{explUpLimit}
+        , #{leakThresh}
+        , #{lc50}
+        , #{flashingPnt}
+        , #{ignitionPnt}
+        , #{vaporPressure}
+        , #{extraReactionYn}
+        , #{corrosivenessYn}
+        , #{dailyVol}
+        , #{maxVol}
+        , ISNULL(#{useYn}, 'Y')
+        , #{chemprodRegulItmNo}
+        , #{createUserId}
+        , convert(char(10), getDate(), 23)
+        )
+    </insert>
+
+    <!-- 취급자재 수정 -->
+    <update id= "updateChemprod" parameterType= "com.she.chm.model.Chemprod">
+        /* ChemprodMapper.updateChemprod [Chemprod.xml] */
+        update com_chemprod
+        set sap_mat_cd = #{sapMatCd}
+        , chem_prod_nm_kr = #{chemProdNmKr}
+        , chem_prod_nm_en = #{chemProdNmEn}
+        , vendor_cd = #{vendorCd}
+        , origin_cd = #{originCd}
+        , maker_cd = #{makerCd}
+        , makeorigin_cd = #{makerOriginCd}
+        , plant_cd = #{plantCd}
+        , property = #{property}
+        <!-- , fugacity = #{fugacity} -->
+        , mix_yn = #{mixYn}
+        <!-- , boilpoint = #{boilpoint} -->
+        , melting_pnt = #{meltingPnt}
+        , mole_weight = #{moleWeight}
+        , biz_cat_cd = #{bizCatCd}
+        , prod_cat_cd = #{prodCatCd}
+        , usage_cd = #{usageCd}
+        , specific_gravity = #{specificGravity}
+        , cas_no = #{casNo}
+        , usage_etc = #{usageEtc}
+        , hs_num = #{hsNum}
+        , stck_area = #{stckArea}
+        , air_pol_yn = #{airPolYn}
+        , wtr_pol_yn = #{wtrPolYn}
+        , licensing_yn = #{licensingYn}
+        , dgr_yn = #{dgrYn}
+        , cfm_mtd_cd = #{cfmMtdCd}
+        , make_yn = #{makeYn}
+        , imp_yn = #{impYn}
+        , buy_yn = #{buyYn}
+        , using_yn = #{usingYn}
+        , sales_yn = #{salesYn}
+        , exp_yn = #{expYn}
+        , remark = #{remark}
+        , expl_low_limit = #{explLowLimit}
+        , expl_up_limit = #{explUpLimit}
+        , leak_thresh = #{leakThresh}
+        , lc50 = #{lc50}
+        , flashing_pnt = #{flashingPnt}
+        , Ignition_pnt = #{ignitionPnt}
+        , vapor_pressure = #{vaporPressure}
+        , extra_reaction_yn = #{extraReactionYn}
+        , corrosiveness_yn = #{corrosivenessYn}
+        , daily_vol = #{dailyVol}
+        , max_vol = #{maxVol}
+        , use_yn = #{useYn}
+        , chemprod_regul_itm_no = #{chemprodRegulItmNo}
+        , update_user_id = #{updateUserId}
+        , update_dt = convert(char(10), getDate(), 23)
+        where chem_prod_no = #{chemProdNo}
+    </update>
+
+    <!-- 취급자재 규제법규별 항목값 신규등록 -->
+    <insert id= "createChemicalRegulItmChemprodVal" parameterType= "com.she.chm.model.ChemicalRegulItmChemprodVal">
+        <selectKey keyProperty= "regulItmChemprodValNo" resultType= "int" order= "BEFORE">
+            select next value for seq_chm_regul_itm_chemprod_val as regul_itm_chemprod_val_no
+        </selectKey>
+        /* ChemprodMapper.createChemicalRegulItmChemprodVal [Chemprod.xml] */
+        insert into chm_regul_itm_chemprod_val
+        (regul_itm_chemprod_val_no
+        ,regul_itm_no
+        ,chem_prod_no
+        ,start_dt
+        ,end_dt
+        ,his_yn
+        ,create_user_id
+        ,create_dt)
+        values
+        (#{regulItmChemprodValNo}
+        , #{regulItmNo}
+        , #{chemProdNo}
+        , #{startDt}
+        , #{endDt}
+        , #{hisYn}
+        , #{createUserId}
+        , convert(char(10), getDate(), 23))
+    </insert>
+
+    <!--  취급자재별 규제항목 목록조회 -->
+    <select id= "getChemprodReguls" resultType= "com.she.chm.model.ChemicalRegulItem">
+        /* ChemprodMapper.getChemprodReguls [Chemprod.xml] */
+        select cricv.regul_itm_chemprod_val_no
+        ,cricv.regul_itm_no
+        ,cri.regul_itm_nm
+        ,cri.regul_law_cd
+        ,regulLaw.code_nm as regul_law_nm
+        ,cricv.chem_prod_no
+        ,cricv.start_dt
+        ,cricv.end_dt
+        ,case when isnull(cricv.start_dt, '') = '' then '' else cricv.start_dt + ' ~ ' + cricv.end_dt end as period
+        ,cricv.his_yn
+        ,(case when cricv.his_yn = 'Y' then 'O' else 'X' end) his_yn_nm
+        ,cricv.create_user_id
+        ,createUser.user_nm as create_user_nm
+        ,cricv.create_dt
+        ,cricv.update_user_id
+        ,updateUser.user_nm as update_user_nm
+        ,cricv.update_dt
+        from chm_regul_itm_chemprod_val cricv
+        inner join chm_regul_itm cri
+        on cricv.regul_itm_no = cri.regul_itm_no
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_REGUL_LAW') regulLaw
+        on cri.regul_law_cd = regulLaw.code
+        inner join com_user createUser
+        on cricv.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cricv.update_user_id = updateUser.user_id
+        where 1=1
+        <if test= "chemprodNo != null and chemprodNo > 0">
+            and cricv.chem_prod_no = #{chemprodNo}
+        </if>
+    </select>
+
+    <!--  취급자재별 규제항목 상세정보  -->
+    <select id= "getChemicalRegulItmChemprodVal" resultType= "com.she.chm.model.ChemicalRegulItmChemprodVal">
+        /* ChemprodMapper.getChemicalRegulItmChemprodVal [Chemprod.xml] */
+        select cricv.regul_itm_chemprod_val_no
+            ,cricv.regul_itm_no
+            ,cri.regul_itm_nm
+            ,cri.regul_law_cd
+            ,regulLaw.code_nm as regul_law_nm
+            ,cricv.chem_prod_no
+            ,cricv.start_dt
+            ,cricv.end_dt
+            ,case when isnull(cricv.start_dt, '') = '' then '' else cricv.start_dt + ' ~ ' + cricv.end_dt end as period
+            ,cricv.his_yn
+            ,(case when cricv.his_yn = 'Y' then 'O' else 'X' end) his_yn_nm
+            ,cricv.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cricv.create_dt
+            ,cricv.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cricv.update_dt
+        from chm_regul_itm_chemprod_val cricv
+        inner join chm_regul_itm cri
+            on cricv.regul_itm_no = cri.regul_itm_no
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CHM_REGUL_LAW') regulLaw
+            on cri.regul_law_cd = regulLaw.code
+        left outer join com_user createUser
+            on cricv.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+            on cricv.update_user_id = updateUser.user_id
+        where 1=1
+        and cricv.regul_itm_chemprod_val_no = #{regulItmChemprodValNo}
+    </select>
+
+    <!--  취급자재별 규제항목 등록 -->
+    <insert id= "createChemprodRegul" parameterType= "com.she.chm.model.ChemicalRegulItmChemprodVal">
+        <selectKey keyProperty= "regulItmChemprodValNo" resultType= "int" order= "BEFORE">
+            select next value for seq_chm_regul_itm_chemprod_val as regul_itm_chemprod_val_no
+        </selectKey>
+        /* ChemprodMapper.createChemprodRegul [Chemprod.xml] */
+        insert into chm_regul_itm_chemprod_val
+        (regul_itm_chemprod_val_no
+        ,regul_itm_no
+        ,chem_prod_no
+        ,start_dt
+        ,end_dt
+        ,his_yn
+        ,create_user_id
+        ,create_dt)
+        values
+        (#{regulItmChemprodValNo}
+        , #{regulItmNo}
+        , #{chemProdNo}
+        , convert(char(10), getDate(), 23)
+        , '9999-12-31'
+        , 'N'
+        , #{createUserId}
+        , convert(char(10), getDate(), 23))
+    </insert>
+
+    <!--  취급자재별 규제항목 삭제 -->
+    <delete id= "deleteChemprodRegul">
+        /* ChemprodMapper.deleteChemprodRegul [Chemprod.xml] */
+        delete from chm_regul_itm_chemprod_val
+        where chem_prod_no = #{chemprodNo}
+    </delete>
+
+
+    <!-- 취급자재별 구성성분 목록 (화학물질 목록) -->
+    <select id= "getChemprodChems" resultType= "com.she.chm.model.ChemprodChem">
+        /* ChemprodMapper.getChemprodChems [Chemprod.xml] */
+        select ccc.chem_prod_no
+        , ccc.chem_no
+        , cc.cas_no
+        , cc.chem_nm_kr
+        , cc.chem_nm_en
+        , ccc.chem_content
+        ,case when isnull(company_secret, 'N') = 'Y' and #{searchFlag} = 'true' then '영업비밀'
+        else convert(varchar, ccc.limit_low)
+        end as limit_low
+        ,case when isnull(company_secret, 'N') = 'Y' and #{searchFlag} = 'true' then '영업비밀'
+        else convert(varchar, ccc.limit_high)
+        end as limit_high
+        ,case when isnull(company_secret, 'N') = 'Y' and #{searchFlag} = 'true' then '영업비밀'
+        else convert(varchar, ccc.limit_repval)
+        end as limit_repval
+        , ccc.company_secret
+        , cc.use_yn
+        , ccc.create_user_id
+        , ccc.create_dt
+        , ccc.update_user_id
+        , ccc.update_dt
+        from com_chemprod_chem ccc
+        inner join com_chem cc on ccc.chem_no = cc.chem_no
+        where 1=1
+        and cc.use_yn = 'Y'
+        <if test= "chemProdNo != null and chemProdNo > 0">
+            and ccc.chem_prod_no = #{chemProdNo}
+        </if>
+    </select>
+
+    <!-- 취급자재별 구성성분 등록 (화학물질) -->
+    <insert id= "createChemprodChem" parameterType= "com.she.chm.model.ChemprodChem">
+        /* ChemprodMapper.createChemprodChem [Chemprod.xml] */
+        insert into com_chemprod_chem
+            (chem_prod_no
+            , chem_no
+            , chem_content
+            , limit_low
+            , limit_high
+            , limit_repval
+            , company_secret
+            , use_yn
+            , create_user_id
+            , create_dt)
+        values
+            (#{chemProdNo}
+            , #{chemNo}
+            , #{chemContent}
+            , #{limitLow}
+            , #{limitHigh}
+            , #{limitRepval}
+            , #{companySecret}
+            , #{useYn}
+            , #{createUserId}
+            , convert(char(10), getDate(), 23))
+    </insert>
+
+    <!-- 취급자재별 구성성분 삭제 (화학물질) -->
+    <delete id= "deleteChemprodChem">
+        /* ChemprodMapper.deleteChemprodChem [Chemprod.xml] */
+        delete from com_chemprod_chem
+        where chem_prod_no = #{chemprodNo}
+    </delete>
+</mapper>

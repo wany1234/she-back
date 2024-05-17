@@ -1,0 +1,199 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.wkod.mapper.WkodChkItemMapper">
+    <select id= "getWkodChkItems" parameterType= "HashMap" resultType= "com.she.safety.model.WkodChkItem">
+        /* WkodChkItemMapper.getWkodChkItems [WkodChkItem.xml] */
+        select swci.chk_item_no
+            ,swci.plant_cd
+            ,plant.code_nm as plant_nm
+            ,swci.wkod_kind_cd
+              ,case when isnull(swci.wkod_kind_cd, '') = '' then '안전조치 요구사항(공통)'
+                    when swci.wkod_kind_cd = 'WKKDNS' then '안전조치 요구사항(일반)'
+                    when swci.wkod_kind_cd = 'WKKDSS' then '안전조치 요구사항(화기)'
+                    else WKCode.code_nm 
+               end as wkod_kind_nm
+              ,swci.wkod_dpty_cd
+              ,CDTCode.code_nm as wkod_dpty_nm
+              ,swci.chk_item_nm
+              ,swci.chk_type_cd
+              ,check_type.code_nm as chk_type_nm
+              ,swci.use_yn
+              ,case when swci.use_yn = 'Y' then '사용'
+                    else '미사용' 
+               end as use_yn_nm
+              ,swci.sort_order
+              , case
+                   when dbo.GET_USER_NM(swci.update_user_id) = '' then dbo.GET_USER_NM(swci.create_user_id)
+                   else dbo.GET_USER_NM(swci.update_user_id) end    as writer_user_nm
+              , case when swci.update_dt is null then convert(date, swci.create_dt) else convert(date, swci.update_dt) end   as writer_dt
+          FROM saf_wkod_chk_item swci
+          INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            ON plant.code = swci.plant_cd
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') WKCode
+            ON swci.wkod_kind_cd = WKCode.code 
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_DPTY') CDTCode
+            ON swci.wkod_dpty_cd = CDTCode.code 
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'STANDARD_WO_CHECK_TYPE') check_type
+            ON swci.chk_type_cd = check_type.code 
+         WHERE 1=1
+        <if test= 'wkodKindCd != null and !wkodKindCd.equals("")'>
+           <choose>
+               <when test= '"W997".equals(wkodKindCd)'>
+           AND swci.wkod_dpty_cd = 'WDT03'
+               </when>
+               <when test= '"W998".equals(wkodKindCd)'>
+           AND swci.wkod_kind_cd = 'WKKDNS'
+               </when>
+               <when test= '"W999".equals(wkodKindCd)'>
+           AND swci.wkod_kind_cd = 'WKKDSS'
+               </when>
+               <otherwise>
+           AND swci.wkod_kind_cd = #{wkodKindCd}
+               </otherwise>
+           </choose>
+        </if>
+        <if test='plantCd != null and !plantCd.equals("")'>
+           AND swci.plant_cd = #{plantCd}
+        </if>
+        <if test= 'wkodDptyCd != null and !wkodDptyCd.equals("")'>
+           AND swci.wkod_dpty_cd = #{wkodDptyCd}
+        </if>
+        <if test= 'chkItemNm != null and !chkItemNm.equals("")'>
+           AND swci.chk_item_nm like '%' + #{chkItemNm} + '%'
+        </if>
+        <if test= 'useYn != null and !useYn.equals("")'>
+           AND swci.use_yn = #{useYn}
+        </if>
+        <if test= "wkodKindCds != null and wkodKindCds.length > 0">
+           AND swci.wkod_kind_cd in
+            <foreach collection= "wkodKindCds" item= "wkodKindCd" separator= "," open= "(" close= ")" >
+            #{wkodKindCd}
+            </foreach>
+        </if>
+          ORDER BY writer_dt desc, WKCode.sort_order, swci.sort_order
+    </select>
+    
+    <select id= "getWkodChkItem" resultType= "com.she.safety.model.WkodChkItem">
+        /* WkodChkItemMapper.getWkodChkItem [WkodChkItem.xml] */
+        select swci.chk_item_no
+              ,swci.plant_cd
+              ,plant.code_nm as plant_nm
+              ,case when isnull(swci.wkod_kind_cd, '') = '' then 'W997'
+                    when swci.wkod_kind_cd = 'WKKDNS' then 'W998'
+                    when swci.wkod_kind_cd = 'WKKDSS' then 'W998'
+                    else swci.wkod_kind_cd
+               end as wkod_kind_cd
+              ,case when isnull(swci.wkod_kind_cd, '') = '' then '안전조치 요구사항(공통)'
+                    when swci.wkod_kind_cd = 'WKKDNS' then '안전조치 요구사항(일반)'
+                    when swci.wkod_kind_cd = 'WKKDSS' then '안전조치 요구사항(화기)'
+                    else WKCode.code_nm 
+               end as wkod_kind_nm
+              ,swci.wkod_dpty_cd
+              ,CDTCode.code_nm as wkod_dpty_nm
+              ,swci.chk_item_nm
+              ,swci.chk_type_cd
+              ,check_type.code_nm as chk_type_nm
+              ,swci.use_yn
+              ,case when swci.use_yn = 'Y' then '사용'
+                    else '미사용' 
+               end as use_yn_nm
+              ,swci.sort_order
+          FROM saf_wkod_chk_item swci
+         INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            ON plant.code = swci.plant_cd
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') WKCode
+            ON swci.wkod_kind_cd = WKCode.code 
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_DPTY') CDTCode
+            ON swci.wkod_dpty_cd = CDTCode.code 
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'STANDARD_WO_CHECK_TYPE') check_type
+            ON swci.chk_type_cd = check_type.code 
+         where 1=1
+        and swci.chk_item_no = #{chkItemNo}
+    </select>
+    
+    <insert id= "createWkodChkItem" parameterType= "com.she.safety.model.WkodChkItem">
+        /* WkodChkItemMapper.createWkodChkItem [WkodChkItem.xml] */
+           <selectKey keyProperty= "chkItemNo" resultType= "String" order= "BEFORE">
+            select next value for seq_saf_wkod_chk_item
+          </selectKey>
+        insert into saf_wkod_chk_item
+            (chk_item_no
+            ,plant_cd
+            ,wkod_kind_cd
+            ,wkod_dpty_cd
+            ,chk_item_nm
+            ,chk_type_cd
+            ,use_yn
+            ,sort_order
+            , create_user_id
+            , create_dt
+            , create_dept_cd
+            , create_dept_nm
+            , create_position_cd
+            , create_position_nm)
+         values
+            (#{chkItemNo}
+            ,#{plantCd}
+            ,#{wkodKindCd}
+            ,#{wkodDptyCd}
+            ,#{chkItemNm}
+            ,#{chkTypeCd}
+            ,#{useYn}
+            ,#{sortOrder}
+            , #{createUserId}
+            , getDate()
+            , (select dept_cd from com_user where user_id = #{createUserId})
+            , (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
+            , (select position_cd from com_user where user_id = #{createUserId})
+            , (select position_nm from com_user where user_id = #{createUserId}))
+    </insert>
+    
+    <update id= "updateWkodChkItem" parameterType= "com.she.safety.model.WkodChkItem">
+        /* WkodChkItemMapper.updateWkodChkItem [WkodChkItem.xml] */
+        update saf_wkod_chk_item
+        set wkod_kind_cd     = #{wkodKindCd}
+            ,plant_cd         = #{plantCd}
+            ,wkod_dpty_cd     = #{wkodDptyCd}
+            ,chk_item_nm     = #{chkItemNm}
+            ,chk_type_cd     = #{chkTypeCd}
+            ,use_yn         = #{useYn}
+            ,sort_order     = #{sortOrder}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+            , update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
+            , update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
+            , update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
+            , update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
+        where chk_item_no     = #{chkItemNo}
+    </update>
+    
+    <select id="getCheckWkodChkItem" resultType="HashMap">
+        /* WkodChkItemMapper.getCheckWkodChkItem [WkodChkItem.xml] */
+        SELECT count(*) as cnt
+          FROM saf_wkod_chk_item
+         WHERE chk_item_nm = #{chkItemNm}
+        <if test= "chkItemNo != null and chkItemNo > 0">
+           AND chk_item_no != #{chkItemNo}
+        </if>
+        <if test= "plantCd != null and plantCd > 0">
+           AND plant_cd = #{plantCd}
+        </if>
+        <if test= "wkodKindCd != null and !wkodKindCd.equals('')">
+           <choose>
+               <when test= '"W997".equals(wkodKindCd)'>
+           AND wkod_dpty_cd = 'WDT03'
+               </when>
+               <when test= '"W998".equals(wkodKindCd)'>
+           AND wkod_kind_cd = 'WKKDNS'
+               </when>
+               <when test= '"W999".equals(wkodKindCd)'>
+           AND wkod_kind_cd = 'WKKDSS'
+               </when>
+               <otherwise>
+           AND wkod_kind_cd = #{wkodKindCd}
+               </otherwise>
+           </choose>
+        </if>
+    </select>
+</mapper>

@@ -1,0 +1,666 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.patrol.mapper.PatrolMapper">
+
+    <select id= "getPatrols" resultType= "com.she.safety.model.Patrol">
+        /* PatrolMapper.getPatrols [Patrol.xml] */
+         select scr.saf_check_rslt_no
+              ,scr.tgt_cls_cd
+              ,scr.tgt_dept_cd
+              ,tgtDept.dept_nm as tgt_dept_nm
+              ,scr.dept_cd
+              ,dept.dept_nm 
+              ,scr.pgp_dept_cd
+			  ,cd1.dept_nm as pgp_dept_nm
+			  ,scr.check_result_cd
+			  ,checkResult.code_nm as check_result_nm
+              ,scr.check_ymd
+              ,scr.check_sch_ymd
+              ,scr.check_title
+              ,scr.check_result
+              ,scr.check_step_cd
+              ,checkStep.code_nm as check_step_nm
+              ,scr.create_user_id
+              ,mst.title
+              ,cu.user_nm as create_user_nm
+              ,scr.create_dt
+              ,scr.update_user_id
+              ,scr.update_dt
+              ,scr.saf_check_kind_no
+              ,sck.saf_check_kind_nm
+              ,scr.plant_cd
+              ,plant.code_nm as plant_nm
+              ,scr.check_result_cd
+              ,checkResult.code_nm as check_result_nm
+              ,scr.tgt_vendor_cd
+              ,targetVendor.vendor_nm as tgt_vendor_nm
+              ,scr.appr_rqst_no
+              ,car.biz_appr_step_cd              
+              ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+              ,case when isnull(scr.tgt_dept_cd, '') != '' then tgtDept.dept_nm
+                    when isnull(scr.tgt_vendor_cd, '') != '' then targetVendor.vendor_nm
+               end as tgt
+              , case
+                   when dbo.GET_USER_NM(scr.update_user_id) = '' then dbo.GET_USER_NM(scr.create_user_id)
+                   else dbo.GET_USER_NM(scr.update_user_id) end    as writer_user_nm
+              , case when scr.update_dt is null then convert(date, scr.create_dt) else convert(date, scr.update_dt) end   as writer_dt
+          from saf_check_result scr
+         left outer join saf_patrol_mst mst
+          on mst.patrol_mst_no = scr.patrol_mst_no
+         left outer join saf_check_kind sck
+            on scr.saf_check_kind_no = sck.saf_check_kind_no
+           and sck.patrol_yn = 'Y'
+          join com_code_master plant
+            on scr.plant_cd = plant.code
+           and plant.code_group_cd = 'COM_PLANT_CD'
+          left outer join com_dept tgtDept
+            on scr.tgt_dept_cd = tgtDept.dept_cd
+         inner join com_dept dept
+            on scr.dept_cd = dept.dept_cd
+          left join com_dept cd1
+			on cd1.dept_cd = scr.pgp_dept_cd
+          left outer join com_code_master checkStep
+            on scr.check_step_cd = checkStep.code
+           and checkStep.code_group_cd = 'SAF_CHK_STEP'
+         left outer join com_code_master checkResult
+            on scr.check_result_cd = checkResult.code
+           and checkResult.code_group_cd = 'SAF_PATROL_RSLT_CLS'
+          left outer join com_vendor_mst targetVendor
+            on scr.tgt_vendor_cd = targetVendor.vendor_cd
+          left outer join com_appr_rqst car
+            on scr.appr_rqst_no = car.appr_rqst_no
+          left outer join com_code_master bizAppr
+            on car.biz_appr_step_cd = bizAppr.code
+           and bizAppr.code_group_cd = 'COM_BIZ_APPR_STEP'
+          left outer join com_user cu
+            on scr.create_user_id = cu.user_id
+         where 1=1
+         and cu.user_nm like '%' + #{userNm} + '%'
+         <if test= "plantCd != null and !plantCd.equals('')">
+         and scr.plant_cd = #{plantCd}
+         </if>
+         <if test= "checkTitle != null and !checkTitle.equals('')">
+         and scr.check_title like '%' + #{checkTitle} + '%'
+         </if>
+         <if test= "startDate != null and !startDate.equals('') and endDate != null and !endDate.equals('')">
+         and convert(date, scr.check_sch_ymd) between convert(date, #{startDate}) and convert(date, #{endDate})
+         </if>
+         <if test= "startDateRes != null and !startDateRes.equals('') and endDateRes != null and !endDateRes.equals('')">
+         and convert(date, scr.check_ymd) between convert(date, #{startDateRes}) and convert(date, #{endDateRes})
+         </if>
+         <if test= "deptCd != null and !''.equals(deptCd)">
+            <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+            AND EXISTS (SELECT 1 WHERE ISNULL(#{deptCd}, '') = ''
+                        UNION ALL
+                        SELECT 1 WHERE #{deptSubYn} = 'Y' AND scr.dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{deptCd}))
+                        UNION ALL
+                        SELECT 1 WHERE #{deptSubYn} = 'N' AND scr.dept_cd = #{deptCd}
+                        )
+            <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+         </if>
+         <if test= "pgpDeptCd != null and !''.equals(pgpDeptCd)">
+            <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+            AND EXISTS (SELECT 1 WHERE ISNULL(#{pgpDeptCd}, '') = ''
+                        UNION ALL
+                        SELECT 1 WHERE #{pgpDeptSubYn} = 'Y' AND scr.pgp_dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{pgpDeptCd}))
+                        UNION ALL
+                        SELECT 1 WHERE #{pgpDeptSubYn} = 'N' AND scr.pgp_dept_cd = #{pgpDeptCd}
+                        )
+            <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+         </if>
+         <if test= "safCheckKindNo != null and safCheckKindNo > 0">
+         and scr.saf_check_kind_no = #{safCheckKindNo}
+         </if>
+         <if test= "checkResultCd != null and !''.equals(checkResultCd)">
+         and scr.check_result_cd = #{checkResultCd}
+         </if>
+         <if test= "checkStepCd != null and !''.equals(checkStepCd)">
+            <choose>
+                <when test= "'CHS99'.equals(checkStepCd)">
+                  and scr.check_step_cd != 'CHS04'
+                </when>
+                <when test= "'CHS100'.equals(checkStepCd)">
+                  and scr.check_step_cd != 'CHS01'
+                </when>
+                <otherwise>
+                  and scr.check_step_cd = #{checkStepCd}
+                </otherwise>
+            </choose>
+         
+         </if>
+         <if test= "tgtClsCd != null and !''.equals(tgtClsCd)">
+         and scr.tgt_cls_cd = #{tgtClsCd}
+         </if>
+         <if test= "(tgtDeptCd != null and !''.equals(tgtDeptCd)) or (tgtVendorCd != null and !''.equals(tgtVendorCd))">
+         and (
+            <if test= "tgtDeptCd != null and !''.equals(tgtDeptCd)">
+                <choose>
+                    <when test='tgtDeptSubYn == "Y"'>
+                        scr.tgt_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{tgtDeptCd}))
+                    </when>
+                    <when test='tgtDeptSubYn == "N"'>
+                        scr.tgt_dept_cd = #{tgtDeptCd}
+                    </when>
+                </choose>
+            </if>
+            <if test= "(tgtDeptCd != null and !''.equals(tgtDeptCd)) and (tgtVendorCd != null and !''.equals(tgtVendorCd))">
+            or
+            </if>   
+            <if test= "tgtVendorCd != null and !''.equals(tgtVendorCd)">
+            scr.tgt_vendor_cd = #{tgtVendorCd}
+            </if>
+             )
+         </if>
+         <if test= "bizApprStepCd != null and !''.equals(bizApprStepCd)">
+         and car.biz_appr_step_cd = #{bizApprStepCd}
+         </if>
+         order by writer_dt desc, scr.check_ymd desc
+    </select>
+    
+   
+    
+    <select id= "getPatrol" resultType= "com.she.safety.model.Patrol">
+        /* PatrolMapper.getPatrol [Patrol.xml] */
+         select scr.saf_check_rslt_no
+              ,scr.tgt_cls_cd
+              ,scr.tgt_dept_cd
+              ,tgtDept.dept_nm as tgt_dept_nm
+              ,scr.dept_cd
+              ,dept.dept_nm
+              ,scr.pgp_dept_cd 
+              ,scr.check_ymd
+              ,scr.check_sch_ymd
+              ,scr.check_title
+              ,scr.check_result
+              ,scr.check_step_cd
+              ,scr.patrol_mst_no
+              ,checkStep.code_nm as check_step_nm
+              ,scr.create_user_id
+              ,cu.user_nm as create_user_nm
+              ,scr.create_dt
+              ,scr.update_user_id
+              ,scr.update_dt
+              ,scr.saf_check_kind_no
+              ,sck.saf_check_kind_nm
+              ,scr.plant_cd
+              ,plant.code_nm as plant_nm
+              ,scr.check_result_cd
+              ,checkResult.code_nm as check_result_nm
+              ,scr.tgt_vendor_cd
+              ,targetVendor.vendor_nm as tgt_vendor_nm
+              ,scr.appr_rqst_no
+              ,car.biz_appr_step_cd              
+              ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+              ,case when isnull(scr.tgt_dept_cd, '') != '' then tgtDept.dept_nm
+                    when isnull(scr.tgt_vendor_cd, '') != '' then targetVendor.vendor_nm
+               end as tgt
+          from saf_check_result scr
+         left outer join saf_patrol_mst mst
+			on mst.patrol_mst_no = scr.patrol_mst_no
+         left outer join saf_check_kind sck
+            on scr.saf_check_kind_no = sck.saf_check_kind_no
+           and sck.patrol_yn = 'Y'
+         inner join com_code_master plant
+            on scr.plant_cd = plant.code
+           and plant.code_group_cd = 'COM_PLANT_CD'
+         left outer join com_code_master tgtCls
+            on scr.tgt_cls_cd = tgtCls.code
+           and tgtCls.code_group_cd = 'SAF_ACTPART_CLS'
+          left outer join com_dept tgtDept
+            on scr.tgt_dept_cd = tgtDept.dept_cd
+         inner join com_dept dept
+            on scr.dept_cd = dept.dept_cd
+          left outer join com_code_master checkStep
+            on scr.check_step_cd = checkStep.code
+           and checkStep.code_group_cd = 'SAF_CHK_STEP'
+         left outer join com_code_master checkResult
+            on scr.check_result_cd = checkResult.code
+           and checkResult.code_group_cd = 'SAF_PATROL_RSLT_CLS'
+          left outer join com_vendor_mst targetVendor
+            on scr.tgt_vendor_cd = targetVendor.vendor_cd
+          left outer join com_appr_rqst car
+            on scr.appr_rqst_no = car.appr_rqst_no
+          left outer join com_code_master bizAppr
+            on car.biz_appr_step_cd = bizAppr.code
+           and bizAppr.code_group_cd = 'COM_BIZ_APPR_STEP'
+          left outer join com_user cu
+            on scr.create_user_id = cu.user_id
+         where 1=1
+           and scr.saf_check_rslt_no = #{safCheckRsltNo}
+    </select>
+    
+    <insert id= "createPatrol" parameterType= "com.she.safety.model.Patrol">
+        /* PatrolMapper.createPatrol [Patrol.xml] */
+        <selectKey keyProperty= "safCheckRsltNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_check_rslt_no as saf_check_rslt_no
+        </selectKey>
+        insert into saf_check_result
+             (saf_check_rslt_no
+             ,tgt_cls_cd
+             ,tgt_dept_cd
+             ,pgp_dept_cd
+             ,dept_cd
+             ,check_ymd
+             ,check_title
+             ,check_result
+             ,check_step_cd
+             ,check_sch_ymd
+             ,saf_check_kind_no
+             ,patrol_mst_no
+             ,plant_cd
+             ,check_result_cd
+             ,tgt_vendor_cd
+             ,appr_rqst_no
+             ,create_user_id
+             ,create_dt)
+        values
+            (#{safCheckRsltNo}
+            ,#{tgtClsCd}
+            ,#{tgtDeptCd}
+            ,#{pgpDeptCd}
+            ,#{deptCd}
+            ,#{checkYmd}
+            ,#{checkTitle}
+            ,#{checkResult}
+            ,#{checkStepCd}
+            ,#{checkSchYmd}
+            ,#{safCheckKindNo}
+            ,#{patrolMstNo}
+            ,#{plantCd}
+            ,#{checkResultCd}
+            ,#{tgtVendorCd}
+            ,#{apprRqstNo}
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+    
+    <select id= "getCheckInspectors" resultType= "com.she.safety.model.PatrolInspector">
+        /* PatrolMapper.getCheckInspectors [Patrol.xml] */
+        SELECT  
+                sci.saf_check_rslt_no
+               , sci.saf_check_inspect_psn_no
+               , sci.inspector_class_cd
+               , ccm.code_nm as inspector_class_nm
+               , sci.user_id
+               , sci.dept_cd
+               , sci.user_nm
+               , sci.dept_nm
+               , sci.duty_nm
+               , sci.remark
+          FROM saf_check_inspect_psn sci
+         INNER JOIN com_code_master ccm
+            ON sci.inspector_class_cd = ccm.code
+           AND ccm.code_group_cd = 'SAF_INSPECTOR_CLASS'
+         WHERE sci.saf_check_rslt_no = #{safCheckRsltNo}
+         <if test= "inspectorClassCd != null and !''.equals(inspectorClassCd)">
+           AND sci.inspector_class_cd = #{inspectorClassCd}
+         </if>
+    </select>
+    
+    
+     <update id="createPlanPsn" parameterType="com.she.safety.model.PatrolInspector">
+        <selectKey keyProperty= "safCheckInspectPsnNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_check_inspect_psn_no as saf_check_inspect_psn_no
+        </selectKey>
+        insert into saf_check_inspect_psn (
+                      saf_check_inspect_psn_no
+                    , saf_check_rslt_no
+                    , inspector_class_cd
+                    , user_id
+                    , dept_cd
+                    , user_nm
+                    , dept_nm
+                    , duty_nm 
+                    , remark
+                )
+                values (
+                      #{safCheckInspectPsnNo}
+                    , #{safCheckRsltNo}
+                    , #{inspectorClassCd}
+                    , #{userId}
+                    , #{deptCd}
+                    , #{userNm}
+                    , #{deptNm}
+                    , #{dutyNm}
+                    , #{remark}
+                )
+    </update>
+    
+    <delete id= "deletePlanPsn">
+        /* PatrolMapper.deletePlanPsn [Patrol.xml] */
+        delete from saf_check_inspect_psn
+        where saf_check_rslt_no = #{safCheckRsltNo}
+    </delete>
+    
+    <update id= "updatePatrol" parameterType= "com.she.safety.model.Patrol">
+        /* PatrolMapper.updatePatrol [Patrol.xml] */
+        update saf_check_result
+        set tgt_cls_cd = #{tgtClsCd}
+             ,tgt_dept_cd = #{tgtDeptCd}
+             ,dept_cd = #{deptCd}
+             ,pgp_dept_cd = #{pgpDeptCd}
+             ,check_ymd = #{checkYmd}
+             ,check_title = #{checkTitle}
+             ,check_result = #{checkResult}
+             ,check_step_cd = #{checkStepCd}
+             ,saf_check_kind_no = #{safCheckKindNo}
+             ,plant_cd = #{plantCd}
+             ,check_result_cd = #{checkResultCd}
+             ,tgt_vendor_cd = #{tgtVendorCd}
+             ,appr_rqst_no = #{apprRqstNo}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getdate()
+        where saf_check_rslt_no = #{safCheckRsltNo}
+    </update>
+    
+    <update id= "completePatrolResultPlan" parameterType= "int">
+        /* PatrolMapper.completePatrolPlan [Patrol.xml] */
+        update saf_check_result
+        set check_step_cd = 'CHS04'
+        where saf_check_rslt_no = #{safCheckRsltNo}
+    </update>
+    
+    <delete id= "deletePatrol">
+        /* PatrolMapper.deletePatrol [Patrol.xml] */
+        delete from saf_check_result
+        where saf_check_rslt_no = #{safCheckRsltNo}
+    </delete>
+
+    <delete id= "deleteMasterPatrol">
+        /* PatrolMapper.deletePatrol [Patrol.xml] */
+        delete from saf_check_result
+        where patrol_mst_no = #{patrolMstNo}
+    </delete>
+    
+    <select id= "getPatrolResultItems" resultType= "com.she.safety.model.PatrolItemResult">
+        /* PatrolMapper.getPatrolResultItems [Patrol.xml] */
+        select scir.saf_check_rslt_no
+             ,scir.saf_check_item_no
+             ,scir.check_result
+             ,scir.remark
+             ,sci.saf_check_type_nm
+             ,sci.saf_check_kind_no
+             ,sck.saf_check_kind_nm
+         from saf_check_item_rslt scir
+         inner join saf_check_item sci
+         on scir.saf_check_item_no = sci.saf_check_item_no
+         left outer join saf_check_kind sck
+         on sci.saf_check_kind_no = sck.saf_check_kind_no
+         where 1=1
+         and scir.saf_check_rslt_no = #{safCheckRsltNo}
+         order by sci.sort_order
+    </select>
+
+    <select id= "getNewPatrolResultItems" resultType= "com.she.safety.model.PatrolItemResult">
+        /* PatrolMapper.getNewPatrolResultItems [Patrol.xml] */
+        select sci.saf_check_item_no
+             ,sci.saf_check_type_nm
+             ,sci.saf_check_kind_no
+             ,sck.saf_check_kind_nm
+         from saf_check_item sci
+         inner join saf_check_kind sck
+         on sci.saf_check_kind_no = sck.saf_check_kind_no
+         and sck.patrol_yn = 'Y'
+         and sck.use_yn = 'Y'
+         where 1=1
+         and sci.saf_check_kind_no = #{safCheckKindNo}
+         and sci.use_yn = 'Y'
+         order by sci.sort_order
+    </select>
+    
+    
+    <insert id= "createPatrolResultItem" parameterType= "com.she.safety.model.Patrol">
+        /* PatrolMapper.createPatrolResultItem [Patrol.xml] */
+        insert into saf_check_item_rslt
+             (saf_check_rslt_no
+             ,saf_check_item_no
+             ,check_result
+             ,remark)
+        values
+            (#{safCheckRsltNo}
+            ,#{safCheckItemNo}
+            ,#{checkResult}
+            ,#{remark})
+    </insert>
+    
+
+    <delete id="deletePatrolResultItem">
+        /* PatrolMapper.deletePatrolResultItem [Patrol.xml] */
+        delete from saf_check_item_rslt
+        where saf_check_rslt_no = #{safCheckRsltNo}
+    </delete>
+    
+    <select id="getPatrolStatus" resultType="HashMap">
+        with b AS
+        (
+            SELECT 1 mon
+             UNION ALL
+            SELECT mon + 1
+              FROM b
+             WHERE mon + 1 &lt;= 12
+        ), c as (
+            select scr.saf_check_rslt_no
+                ,scr.plant_cd
+                ,scr.check_ymd
+            from saf_check_result scr
+            inner join saf_check_kind sck
+            on scr.saf_check_kind_no = sck.saf_check_kind_no
+            and sck.patrol_yn = 'Y'
+            where scr.check_step_cd = 'CHS04'
+        ), a as (
+            select  *
+            from (
+                    select c.plant_cd
+                        ,b.mon
+                        ,count(c.check_ymd) as cnt
+                    from b
+                    left outer join c
+                    on DATEPART(yy, c.check_ymd) = #{year}
+                    and DATEPART(mm, c.check_ymd) = b.mon
+                    where isnull(c.plant_cd, '') != ''
+                    group by c.plant_cd
+                            ,b.mon
+                ) d
+            pivot
+            (
+                sum(cnt)
+                for mon in ([1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12])
+            ) piv
+        )
+        select plant.code as plant_cd
+            ,plant.code_nm as plant_nm
+            ,isnull([1], 0) as '01', isnull([2], 0) as '02', isnull([3], 0) as '03', isnull([4], 0) as '04', isnull([5], 0) as '05' 
+            ,isnull([6], 0) as '06', isnull([7], 0) as '07', isnull([8], 0) as '08', isnull([9], 0) as '09', isnull([10], 0) as '10' 
+            ,isnull([11], 0) as '11', isnull([12], 0) as '12'
+            ,isnull([1], 0) + isnull([2], 0) + isnull([3], 0) + isnull([4], 0) + isnull([5], 0) + isnull([6], 0) + isnull([7], 0) + isnull([8], 0) + isnull([9], 0) + isnull([10], 0) + isnull([11], 0) + isnull([12], 0) as sum
+        from com_code_master plant
+        left outer join a
+        on a.plant_cd = plant.code
+        where plant.code_group_cd = 'COM_PLANT_CD'
+        and plant.code != '0000'
+        <if test= "plantCd != null and !''.equals(plantCd)">
+        and plant.code = #{plantCd}
+        </if>
+    </select>
+    
+    <select id= "countPatrolList" resultType= "int">
+        /* CheckResultMapper.countPatrolList [Patrol.xml] */
+        select count(*) as cnt
+          from saf_check_result
+          where patrol_mst_no = #{patrolMstNo}
+          
+          <if test= "checkStepCd != null and !checkStepCd.equals('9999')">
+            and check_step_cd = #{checkStepCd}
+         </if>
+            
+    </select>
+    
+    <select id="getPatrolStatusSub" resultType="HashMap">
+        with b AS
+        (
+            SELECT 1 mon
+             UNION ALL
+            SELECT mon + 1
+              FROM b
+             WHERE mon + 1 &lt;= 12
+        ), c as (
+            <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtDeptCd)
+                    or (@org.apache.commons.lang3.StringUtils@isBlank(tgtDeptCd) and @org.apache.commons.lang3.StringUtils@isBlank(tgtVendorCd))">
+            select scr.saf_check_rslt_no
+                ,scr.plant_cd
+                ,scr.dept_cd
+                ,'부서' as gubun
+                ,scr.tgt_dept_cd as code
+                ,tgtDept.dept_nm as name
+                ,scr.check_result_cd
+                ,scr.check_ymd
+            from saf_check_result scr
+            inner join saf_check_kind sck
+            on scr.saf_check_kind_no = sck.saf_check_kind_no
+            and sck.patrol_yn = 'Y'
+            left join com_dept tgtDept
+            on scr.tgt_dept_cd = tgtDept.dept_cd
+            where scr.tgt_cls_cd = 'ACTDP'
+            and scr.check_step_cd = 'CHS04'
+            </if>
+            <if test= "(@org.apache.commons.lang3.StringUtils@isBlank(tgtDeptCd) and @org.apache.commons.lang3.StringUtils@isBlank(tgtVendorCd))
+                        or
+                       (@org.apache.commons.lang3.StringUtils@isNotBlank(tgtDeptCd) and @org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd))">
+            union all
+            </if>
+            <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)
+                    or (@org.apache.commons.lang3.StringUtils@isBlank(tgtDeptCd) and @org.apache.commons.lang3.StringUtils@isBlank(tgtVendorCd))">
+            select scr.saf_check_rslt_no
+                ,scr.plant_cd
+                ,scr.dept_cd
+                ,'협력업체' as gubun
+                ,scr.tgt_vendor_cd as code
+                ,tgtVendor.vendor_nm as name
+                ,scr.check_result_cd
+                ,scr.check_ymd
+            from saf_check_result scr
+            inner join saf_check_kind sck
+            on scr.saf_check_kind_no = sck.saf_check_kind_no
+            and sck.patrol_yn = 'Y'
+            inner join com_vendor_mst tgtVendor
+            on scr.tgt_vendor_cd = tgtVendor.vendor_cd
+            where scr.tgt_cls_cd = 'ACTSC'
+            and scr.check_step_cd = 'CHS04'
+            </if>
+        ), a as (
+            select  *
+            from (
+                    select c.dept_cd
+                        ,c.gubun
+                        ,c.code
+                        ,c.name
+                        ,c.check_result_cd
+                        ,b.mon
+                        ,count(c.check_ymd) as cnt
+                    from b
+                    left outer join c
+                    on DATEPART(yy, c.check_ymd) = #{year}
+                    and DATEPART(mm, c.check_ymd) = b.mon
+                    where isnull(c.plant_cd, '') != ''
+                    <if test = "plantCd != null and !''.equals(plantCd)">
+                    and c.plant_cd = #{plantCd}
+                    </if>
+                    <if test= "deptCd != null and !''.equals(deptCd)">
+                    and c.dept_cd = #{deptCd}
+                    </if>
+                    <!-- <choose>
+                        <when test= "'ACTDP'.equals(tgtClsCd)">
+                            <if test= "tgtDeptCd != null and !''.equals(tgtDeptCd)">
+                            and c.code = #{tgtDeptCd}
+                            </if>
+                        </when>
+                        <when test= "'ACTSC'.equals(tgtClsCd)">
+                            <if test= "tgtVendorCd != null and !''.equals(tgtVendorCd)">
+                            and c.code = #{tgtVendorCd}
+                            </if>
+                        </when>
+                        <otherwise>
+                        </otherwise>
+                    </choose> -->
+                    <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtDeptCd) or @org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)">
+                    and (
+                        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtDeptCd)">
+                        c.code in (select dept_cd from dbo.GET_UNDER_DEPTS(#{tgtDeptCd}))
+                        </if>
+                        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtDeptCd) and @org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)">
+                        or
+                        </if>
+                        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)">
+                        c.code = #{tgtVendorCd}
+                        </if>
+                    )
+                    </if> 
+                    <if test= "checkResultCd != null and !''.equals(checkResultCd)">
+                    and c.check_result_cd = #{checkResultCd}
+                    </if>
+                    group by c.dept_cd
+                            ,c.gubun
+                            ,c.code
+                            ,c.name
+                            ,c.check_result_cd
+                            ,b.mon
+                ) d
+            pivot
+            (
+                sum(cnt)
+                for mon in ([1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12])
+            ) piv
+        )
+        select *
+        from (
+              select  
+                   ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS order_num
+                  ,case grouping(cd.dept_nm) when 1 then '총계' else cd.dept_nm end as dept_nm
+                  ,case grouping(cd.dept_nm) when 1 then '' else max(a.dept_cd) end as dept_cd
+                  ,case grouping(a.gubun) when 1 then '구분합계' else a.gubun end as gubun
+                  ,case grouping(cd.dept_nm) when 1 then '주관부서합계' else cd.dept_nm end + case grouping(a.gubun) when 1 then '구분합계' else a.gubun end as dept_nm_gubun
+                  ,case grouping(a.name) when 1 then '' else max(a.code) end as code
+                  ,case grouping(a.name) when 1 then '순회대상합계' else a.name end as name
+                  ,case grouping(cd.dept_nm) when 1 then '주관부서합계' else cd.dept_nm end + case grouping(a.gubun) when 1 then '구분합계' else a.gubun end + case grouping(a.name) when 1 then '순회대상합계' else a.name end as dept_gubun_name
+                  
+                  ,case grouping(checkResult.code_nm) when 1 then '' else max(a.check_result_cd) end as check_result_cd
+                  ,case grouping(checkResult.code_nm) when 1 then '순회결과합계' else checkResult.code_nm end as check_result_nm
+                  ,sum(isnull([1], 0)) as '01', sum(isnull([2], 0)) as '02', sum(isnull([3], 0)) as '03', sum(isnull([4], 0)) as '04', sum(isnull([5], 0)) as '05' 
+                  ,sum(isnull([6], 0)) as '06', sum(isnull([7], 0)) as '07', sum(isnull([8], 0)) as '08', sum(isnull([9], 0)) as '09', sum(isnull([10], 0)) as '10' 
+                  ,sum(isnull([11], 0)) as '11', sum(isnull([12], 0)) as '12'
+                  ,sum(isnull([1], 0)) + sum(isnull([2], 0)) + sum(isnull([3], 0)) + sum(isnull([4], 0)) + sum(isnull([5], 0)) + sum(isnull([6], 0)) + sum(isnull([7], 0)) + sum(isnull([8], 0)) + sum(isnull([9], 0)) + sum(isnull([10], 0)) + sum(isnull([11], 0)) + sum(isnull([12], 0)) as sum
+              from a
+              left outer join com_dept cd
+              on a.dept_cd = cd.dept_cd
+              left outer join com_code_master checkResult
+              on a.check_result_cd = checkResult.code
+              and checkResult.code_group_cd = 'SAF_PATROL_RSLT_CLS'
+              group by cd.dept_nm
+                  ,a.gubun
+                  ,a.name
+                  ,checkResult.code_nm
+              with rollup
+              union all
+              select 9999999998
+                  ,'총계' as dept_nm
+                  ,'' as dept_cd
+                  ,gubun
+                  ,'주관부서합계' + gubun as dept_nm_gubun
+                  ,'' as code
+                  ,'순회대상합계' as name
+                  ,'주관부서합계순회대상합계구분합계' as dept_gubun_name
+                  ,'' as check_result_cd
+                  ,'순회대상합계' as check_result_nm
+                  ,sum(isnull([1], 0)) as '01', sum(isnull([2], 0)) as '02', sum(isnull([3], 0)) as '03', sum(isnull([4], 0)) as '04', sum(isnull([5], 0)) as '05' 
+                  ,sum(isnull([6], 0)) as '06', sum(isnull([7], 0)) as '07', sum(isnull([8], 0)) as '08', sum(isnull([9], 0)) as '09', sum(isnull([10], 0)) as '10' 
+                  ,sum(isnull([11], 0)) as '11', sum(isnull([12], 0)) as '12'
+                  ,sum(isnull([1], 0)) + sum(isnull([2], 0)) + sum(isnull([3], 0)) + sum(isnull([4], 0)) + sum(isnull([5], 0)) + sum(isnull([6], 0)) + sum(isnull([7], 0)) + sum(isnull([8], 0)) + sum(isnull([9], 0)) + sum(isnull([10], 0)) + sum(isnull([11], 0)) + sum(isnull([12], 0)) as sum
+              from a
+              group by a.gubun
+             ) m
+        order by case when m.dept_nm = '총계' and m.gubun = '구분합계' then 9999999999 else m.order_num end asc   
+    </select>
+    
+    
+</mapper>

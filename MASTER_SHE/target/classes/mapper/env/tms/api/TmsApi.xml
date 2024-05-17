@@ -1,0 +1,134 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.tms.api.mapper.TmsApiMapper">
+
+    <update id= "saveTms5" parameterType= "HashMap">
+        /* TmsApiMapper.saveTms5 [TmsApi.xml] */
+        MERGE INTO EAIR_TMS_5 a
+             USING (SELECT #{item_code} as item_code
+                          ,#{station_code} as station_code
+                          ,convert(datetime, #{data_date}) as data_date) as b
+                ON a.item_code = b.item_code
+               AND a.station_code = b.station_code
+               AND a.data_date = b.data_date
+              WHEN MATCHED THEN
+                    UPDATE
+                       SET data_value = #{data_value}
+                          ,update_dt = getdate()
+              WHEN NOT MATCHED THEN
+                    INSERT (station_code, 
+                            item_code,
+                            station_item_code,
+                            data_year,
+                            data_month,
+                            data_day,
+                            data_time,
+                            data_date,
+                            data_value,
+                            create_dt)
+                    VALUES (#{station_code}
+                           ,#{item_code}
+                           ,CONCAT(REPLICATE('0',8 - LEN(#{station_code})) + #{station_code}, REPLICATE('0',3 - LEN(#{item_code})) + #{item_code})
+                           ,DATEPART(YYYY, b.data_date)
+                           ,DATEPART(MM, b.data_date)
+                           ,DATEPART(DAY, b.data_date)
+                           ,concat(format(DATEPART(HH, b.data_date), '00'), format(DATEPART(MINUTE, b.data_date), '00'))
+                           ,b.data_date
+                           ,#{data_value}
+                           ,getdate());
+    </update>
+    
+    <update id= "saveTms5Recent" parameterType= "HashMap">
+        /* TmsApiMapper.saveTms5Recent [TmsApi.xml] */
+        MERGE INTO EAIR_TMS_5_RECENT a
+             USING (SELECT #{item_code} as item_code
+                          ,#{station_code} as station_code
+                          ,convert(datetime, #{data_date}) as data_date) as b
+                ON a.item_code = b.item_code
+               AND a.station_code = b.station_code
+              WHEN MATCHED THEN
+                    UPDATE
+                       SET data_value = #{data_value}
+                          ,data_date = b.data_date
+                          ,update_dt = getdate()
+              WHEN NOT MATCHED THEN
+                    INSERT (station_code,
+                            item_code,
+                            station_item_code,
+                            data_date,
+                            data_value,
+                            create_dt)
+                    VALUES (#{station_code}
+                           ,#{item_code}
+                           ,CONCAT(REPLICATE('0',8 - LEN(#{station_code})) + #{station_code}, REPLICATE('0',3 - LEN(#{item_code})) + #{item_code})
+                           ,b.data_date
+                           ,#{data_value}
+                           ,getdate());
+    </update>
+    
+    <update id= "saveTms30" parameterType= "HashMap">
+        /* TmsApiMapper.saveTms30 [TmsApi.xml] */
+        MERGE INTO EAIR_TMS_30 a
+             USING (SELECT #{item_code} as item_code
+                          ,#{station_code} as station_code
+                          ,convert(datetime, #{data_date}) as data_date) as b
+                ON a.item_code = b.item_code
+               AND a.station_code = b.station_code
+               AND a.data_date = b.data_date
+              WHEN MATCHED THEN
+                    UPDATE
+                       SET data_value = #{data_value}
+                          ,update_dt = getdate()
+              WHEN NOT MATCHED THEN
+                    INSERT (station_code,
+                            item_code,
+                            station_item_code,
+                            data_year,
+                            data_month,
+                            data_day,
+                            data_time,
+                            data_date,
+                            data_value,
+                            create_dt)
+                    VALUES (#{station_code}
+                           ,#{item_code}
+                           ,CONCAT(REPLICATE('0',8 - LEN(#{station_code})) + #{station_code}, REPLICATE('0',3 - LEN(#{item_code})) + #{item_code})
+                           ,DATEPART(YYYY, b.data_date)
+                           ,DATEPART(MM, b.data_date)
+                           ,DATEPART(DAY, b.data_date)
+                           ,concat(format(DATEPART(HH, b.data_date), '00'), format(DATEPART(MINUTE, b.data_date), '00'))
+                           ,b.data_date
+                           ,#{data_value}
+                           ,getdate());
+    </update>
+    
+    <update id= "saveTms30Recent" parameterType= "HashMap">
+        /* TmsApiMapper.saveTms30Recent [TmsApi.xml] */
+        MERGE INTO EAIR_TMS_30_RECENT a
+             USING (SELECT #{item_code} as item_code
+                          ,#{station_code} as station_code
+                          ,convert(datetime, #{data_date}) as data_date) as b
+                ON a.item_code = b.item_code
+               AND a.station_code = b.station_code
+              WHEN MATCHED THEN
+                    UPDATE
+                       SET data_value = #{data_value}
+                          ,data_date = b.data_date
+                          ,update_dt = getdate()
+              WHEN NOT MATCHED THEN
+                    INSERT (station_code,
+                            item_code,
+                            station_item_code,
+                            data_date,
+                            data_value,
+                            create_dt)
+                    VALUES (#{station_code}
+                           ,#{item_code}
+                           ,CONCAT(REPLICATE('0',8 - LEN(#{station_code})) + #{station_code}, REPLICATE('0',3 - LEN(#{item_code})) + #{item_code})
+                           ,b.data_date
+                           ,#{data_value}
+                           ,getdate());
+    </update>
+
+</mapper>

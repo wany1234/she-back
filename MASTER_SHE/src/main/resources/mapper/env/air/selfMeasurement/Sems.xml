@@ -1,0 +1,342 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.air.sems.mapper.SemsMapper">
+       <select id= "getSems" resultType= "java.util.LinkedHashMap">
+        <if test = "eairSemsRptTypeCd == 'ESRT1'.toString()">
+            select distinct 
+                replace(t.measure_ymd,'-','') as measure_ymd, 
+                isnull( et.eair_outlet_permit_no, '') as eair_outlet_permit_no,
+                isnull( et.eair_outlet_nm, '') as eair_outlet_nm,                
+                isnull( et.main_disch_fac_nm, '') as main_disch_fac_nm,                
+                isnull(floor(t.run_tm),'0') as run_tm,
+                case when convert(varchar, t.run_min ) = 0 then '' else isnull(convert(varchar, t.run_min), '') end as run_min,
+                isnull(t.remark, '') as remark
+            from eair_op_log_result ert inner join eair_disch_fac_chk_result t on ert.measure_ymd=t.measure_ymd and ert.dept_cd=t.dept_cd
+            inner join eair_disch_fac o  on t.eair_disch_fac_no = o.eair_disch_fac_no 
+            inner join eair_disch_fac_outlet_v ev on ev.eair_disch_fac_no= o.eair_disch_fac_no
+            inner join eair_outlet et on ev.eair_outlet_no = et.eair_outlet_no
+            where 1=1
+            and ert.measure_ymd <![CDATA[ >=]]> #{fromYmd} and ert.measure_ymd <![CDATA[<=]]> #{toYmd}
+            <if test="plantCd != null and !plantCd.equals('')">
+            and ert.plant_cd=#{plantCd}
+            </if>
+            <if test="deptCd != null and !deptCd.equals('')">
+            and ert.dept_cd=#{deptCd}
+            </if>
+            order by replace(t.measure_ymd,'-','') desc,
+            isnull( et.eair_outlet_nm, '')
+        </if>    
+        
+        <if test = "eairSemsRptTypeCd == 'ESRT2'.toString()">
+            select replace(ert.measure_ymd,'-','')  as measure_ymd
+                 , isnull(CONVERT(VARCHAR, et.eair_outlet_nm ),'') as eair_outlet_nm
+                 , isnull(et.eair_outlet_permit_no, '') eair_outlet_permit_no
+                 , isnull(et.main_disch_fac_nm,'') main_disch_fac_nm            
+                 , isnull(p.eair_prevent_fac_num, '') eair_prevent_fac_num -- 방지시설 일련번호
+                 , isnull(p.eair_prevent_fac_inh_num, '') eair_prevent_fac_inh_num -- 고유방지시설 번호
+                 , isnull(p.eair_prevent_fac_nm, '') eair_prevent_fac_nm -- 방지시설이름          
+                 , isnull(case t.eair_prevent_fac_elec_meter_no  when null then '미부착' else '부착' end, '') as elec_yn                 
+                 , 1 as eair_prevent_fac_elec_meter_no
+                 , isnull(emt.pwr_meter_magn,0) as pwr_meter_magn --전력계 배율(저장값)
+                 , isnull(t.pwr_meter_cnt,0) as pwr_meter_cnt
+                 , isnull(ec1.eair_chem_nm, '') as eair_chem_nm,  isnull(CONVERT(VARCHAR, t.consum_amt1 ),'') consum_amt1, isnull(t.unit_cd1, '')  unit_cd1
+                 , isnull(ec2.eair_chem_nm, '') as eair_chem_nm2, isnull(CONVERT(VARCHAR, t.consum_amt2 ),'') consum_amt2, isnull(t.unit_cd2, '') unit_cd2
+                 , isnull(ec3.eair_chem_nm, '') as eair_chem_nm3, isnull(CONVERT(VARCHAR, t.consum_amt3 ),'') consum_amt3, isnull(t.unit_cd3, '') unit_cd3
+            from eair_op_log_result ert inner join eair_prevent_fac_pwrc_chk_result t on ert.measure_ymd=t.measure_ymd and ert.dept_cd=t.dept_cd
+            inner join eair_prevent_fac_elec_meter emt on t.eair_prevent_fac_elec_meter_no =emt.eair_prevent_fac_elec_meter_no and t.eair_prevent_fac_no =emt.eair_prevent_fac_no
+            inner join eair_prevent_fac p  on emt.eair_prevent_fac_no = p.eair_prevent_fac_no
+            inner join eair_prevent_fac_outlet_v ev on p.eair_prevent_fac_no = ev.eair_prevent_fac_no
+            inner join eair_outlet et on ev.eair_outlet_no = et.eair_outlet_no
+            left outer join eair_chem ec1 on t.chem_cd1=ec1.eair_chem_cd 
+            left outer join eair_chem ec2 on t.chem_cd2=ec2.eair_chem_cd 
+            left outer join eair_chem ec3 on t.chem_cd3=ec3.eair_chem_cd 
+            where 1=1
+            and ert.measure_ymd <![CDATA[ >=]]> #{fromYmd} and ert.measure_ymd <![CDATA[<=]]> #{toYmd}
+            <if test="plantCd != null and !plantCd.equals('')">
+            and ert.plant_cd=#{plantCd}
+            </if>
+            <if test="deptCd != null and !deptCd.equals('')">
+            and ert.dept_cd=#{deptCd}
+            </if>
+            order by t.measure_ymd desc,
+                et.eair_outlet_nm
+        </if>    
+        
+        <if test = "eairSemsRptTypeCd == 'ESRT3'.toString()">
+            select  
+                replace(convert(varchar(10),t.create_dt, 121),'-','') as reg_dt, --등록일
+                isnull(et.eair_outlet_nm, '') as eair_outlet_nm, -- 배출구 일련번호 
+                isnull(et.eair_outlet_permit_no, '') as eair_outlet_permit_no, -- 배출구 허가증상번호 
+                isnull(et.main_disch_fac_nm, '')as main_disch_fac_nm ,-- 배출구명 
+                isnull(p.eair_prevent_fac_num, '') as eair_prevent_fac_num, -- 방지시설 일련번호
+                isnull(p.eair_prevent_fac_inh_num, '') as eair_prevent_fac_inh_num, -- 고유방지시설 번호
+                isnull(p.eair_prevent_fac_nm, '') as eair_prevent_fac_nm, -- 방지시설이름 
+                isnull(CONVERT(CHAR(8), convert(datetime, t.start_ymd), 112), '') as start_ymd , -- 시작일자
+                isnull(CONVERT(CHAR(8), convert(datetime, t.end_ymd), 112), '')as end_ymd, -- 마감일자
+                isnull(t.worker, '') as worker, -- 보수자
+                isnull(t.remark, '') as remark -- 보수명세
+            from eair_prevent_fac_maint_hist t inner join eair_prevent_fac p  on t.eair_prevent_fac_no = p.eair_prevent_fac_no
+            inner join eair_prevent_fac_outlet_v o  on t.eair_prevent_fac_no = o.eair_prevent_fac_no
+            inner join eair_outlet et on o.eair_outlet_no = et.eair_outlet_no
+            where 1=1
+            and convert(varchar(10),t.create_dt, 121) <![CDATA[ >=]]> #{fromYmd} and convert(varchar(10),t.create_dt, 121)<![CDATA[<=]]> #{toYmd}
+            <if test="plantCd != null and !plantCd.equals('')">
+            and p.plant_cd=#{plantCd}
+            </if>
+            <if test="deptCd != null and !deptCd.equals('')">
+            and p.dept_cd=#{deptCd}
+            </if>
+        </if>    
+        
+        <if test = "eairSemsRptTypeCd == 'ESRT4'.toString()">
+            select
+             isnull(outlet.eair_outlet_nm, '')  eair_outlet_nm-- 배출구 일련번호 
+            ,isnull(outlet.eair_outlet_permit_no, '') eair_outlet_permit_no -- 배출구 허가증상번호 
+            ,isnull(outlet.main_disch_fac_nm, '') main_disch_fac_nm-- 배출구명 
+            ,isnull(right(t.weather_cd,1), '') as weather    -- 날씨 코드
+            ,isnull(t.temp, 0) temp     -- 기온
+            ,isnull(t.hum, 0)  hum          --습도
+            ,isnull(t.air_press, 0) air_press    --기압
+            ,isnull(t.wind_dir, 0)  wind_dir   --풍향
+            ,isnull(t.wind_speed , 0) wind_speed  --풍속
+            ,isnull(replace(t.measure_ymd,'-',''), '') as measure_ymd -- 측정일자
+            ,isnull(t.method_cd, '') method_cd   -- 자가측정방법
+            ,isnull(t.gas_speed, 0) gas_speed -- 가스속도
+            ,isnull(t.gas_temp , 0) gas_temp  -- 가스온도
+            ,isnull(t.wtr_per  , 0) wtr_per -- 수분함량
+            ,isnull(t.real_o2_val, 0) real_o2_val  -- 실측산소농도
+            ,isnull(t.stnd_o2_val , 0) stnd_o2_val -- 표준산소농도
+            ,isnull(t.flow_day, 0) flow_day -- 배출가스유량S
+            ,isnull(em.sems_cd , '')as test_item_cd --오염물질코드
+            ,isnull(ti.num_result,0) as num_result -- 농도    대기 자가측정에서 등록함
+            ,isnull(ott.legal_limit, 0) legal_limit   -- 배출허용기준농도    대기 배출구에서 등록함
+            ,isnull( case ott.legal_limit when null then 'Y' else 'N' end, '') legal_limit_chk -- 배출허용기준체크    허용기준없으면 Y, 있으면 공백
+            ,isnull(t.fuel_nm_result, '') fuel_nm_result-- 연료및 사용량
+            ,isnull(t.ingr_nm_result, '') ingr_nm_result-- 원료및사용량
+            ,'1' as env_engr_nm-- 환경기술인
+            ,isnull(t.env_engr_opn, '') env_engr_opn
+            ,isnull(ic.code_nm, '') as eair_inst_nm -- 검사기기명
+            ,isnull(mc.code_nm, '') as eair_test_mtd_nm -- 검사방법
+        
+            from eair_op_meas t
+            inner join eair_outlet outlet on t.eair_outlet_no = outlet.eair_outlet_no       
+            inner join eair_op_meas_result ti on t.eair_op_meas_no=ti.eair_op_meas_no
+            inner join eair_outlet_test_item ott on ott.eair_outlet_no=t.eair_outlet_no
+            inner join eair_test_item em on ott.eair_test_item_cd=em.eair_test_item_cd and em.sems_cd  is not null
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_INST') ic on ti.eair_inst_cd = ic.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EAIR_TEST_MTD') mc on ti.eair_test_mtd_cd = mc.code
+            where 1=1
+            <if test="plantCd != null and !plantCd.equals('')">
+            and t.plant_cd=#{plantCd}
+            </if>
+            <if test="deptCd != null and !deptCd.equals('')">
+            and t.dept_cd=#{deptCd}
+            </if>        
+            and t.measure_ymd between #{fromYmd} and #{toYmd}
+        order by t.measure_ymd desc, t.eair_outlet_no, outlet.eair_outlet_nm, em.sems_cd    
+        </if>    
+        
+        
+        <if test = "eairSemsRptTypeCd == 'ESRT5'.toString()">
+        
+                select  
+                isnull(ev.eair_outlet_num, '')    as eair_outlet_num, 
+                 isnull(ev.main_disch_fac_num, '') as main_disch_fac_num, 
+                   isnull(case o.prevent_fac_exem_yn 
+                     when 'Y' then '방지시설면제' 
+                     else epf.eair_prevent_fac_num 
+                   end ,'')                              eair_prevent_fac_num, 
+                   -- 방지시설일련번호 
+                   isnull(case o.prevent_fac_exem_yn 
+                     when 'Y' then '방지시설면제' 
+                     else epf.eair_prevent_fac_nm 
+                   end       ,'')                        eair_prevent_fac_nm,-- 방지시설명 
+                   isnull(o.eair_disch_fac_num, '') eair_disch_fac_num,  
+                   isnull(o.eair_disch_fac_nm, '') eair_disch_fac_nm,
+                   b.sems_cd as eair_fuel_cd,  
+                   case 
+                     when b.sems_cd = '55' then b.eair_fuel_nm 
+                     else '' 
+                   end                               as fuel_etc, 
+                   isnull(b.env_unit_cd, '')  as env_unit_cd, 
+                   isnull(cal_val,0)                           as cal_val, 
+                   isnull(b.cal_val_unit_cd, '')  as cal_val_unit_cd, 
+                   isnull(sulfur_content, 0)         as sulfur_content, 
+                    
+                    ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'01' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym01, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'02' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym02, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'03' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym03, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'04' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym04, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'05' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym05, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'06' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym06, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'07' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym07, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'08' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym08, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'09' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym09, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'10' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym10, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'11' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym11, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'12' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0)  as ym12
+
+            from   eair_op_log_result ert 
+                   inner join eair_fuel_chk_result s 
+                           on s.dept_cd = ert.dept_cd
+                           and s.measure_ymd = ert.measure_ymd
+                           --    and (s.num_result is not null and convert(int , s.num_result)  !=  0) 
+                   inner join eair_disch_fac o 
+                           on s.eair_disch_fac_no = o.eair_disch_fac_no 
+                   inner join eair_fuel b 
+                           on b.eair_fuel_cd = s.eair_fuel_cd 
+                   left outer join eair_disch_fac_outlet_num_v ev 
+                                on ev.eair_disch_fac_no = o.eair_disch_fac_no 
+                   left outer join eair_prevent_disch_fac epdf 
+                                on o.eair_disch_fac_no = epdf.eair_disch_fac_no 
+                   left outer join eair_prevent_fac epf 
+                                on epdf.eair_prevent_fac_no = epf.eair_prevent_fac_no 
+            where  1 = 1 
+                        and year(ert.measure_ymd) = year(#{fromYmd})
+                        
+                        <if test="plantCd != null and !plantCd.equals('')">
+                        and ert.plant_cd=#{plantCd}
+                        </if>            
+                        <if test="deptCd != null and !deptCd.equals('')">
+                        and ert.dept_cd=#{deptCd}
+                        </if>                  
+            group  by o.eair_disch_fac_no, 
+                      o.eair_disch_fac_num,
+                      o.prevent_fac_exem_yn, 
+                      isnull(ev.eair_outlet_num, ''), 
+                      isnull(ev.main_disch_fac_num, ''), 
+                      epdf.eair_prevent_fac_no, 
+                      epf.eair_prevent_fac_num, 
+                      epf.eair_prevent_fac_nm, 
+                      b.sems_cd, 
+                      cal_val, 
+                      sulfur_content, 
+                      mgr_num, 
+                      eair_disch_fac_nm, 
+                      b.eair_fuel_cd,
+                      b.eair_fuel_nm ,
+                      b.env_unit_cd , 
+                      b.cal_val_unit_cd
+            order  by eair_disch_fac_nm, 
+                      eair_fuel_nm
+                      
+                   
+        </if>    
+        
+   <if test = "eairSemsRptTypeCd == 'ESRT6'.toString()">
+        
+                select  
+                 
+       b.eair_ingr_nm ,
+       isnull(b.env_unit_cd, '')  as env_unit_cd, 
+     
+       ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'01' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym01, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'02' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym02, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'03' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym03, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'04' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym04, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'05' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym05, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'06' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym06, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'07' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym07, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'08' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym08, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'09' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym09, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'10' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym10, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'11' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0) as ym11, 
+                   ISNULL(Sum(case Replace(Substring(s.measure_ymd, 1, 7), '-', '') 
+                         when convert(nvarchar, year(#{fromYmd}))+'12' then convert(numeric(18, 3), s.num_result) 
+                         else 0 
+                       end) ,0)  as ym12
+
+            from   eair_op_log_result ert 
+                   inner join eair_ingr_chk_result s 
+                           on s.dept_cd = ert.dept_cd
+                           and s.measure_ymd = ert.measure_ymd
+                   inner join eair_ingr b 
+                           on b.eair_ingr_cd = s.eair_ingr_cd 
+            where  1 = 1 
+                        and year(ert.measure_ymd) = year(#{fromYmd})
+                        
+                        <if test="plantCd != null and !plantCd.equals('')">
+                        and ert.plant_cd=#{plantCd}
+                        </if>            
+                        <if test="deptCd != null and !deptCd.equals('')">
+                        and ert.dept_cd=#{deptCd}
+                        </if>                  
+            group  by  b.eair_ingr_nm , b.env_unit_cd
+            order  by b.eair_ingr_nm 
+        </if>            
+                
+                        
+        
+       </select>
+     
+</mapper>

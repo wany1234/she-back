@@ -1,0 +1,131 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.water.facility.mapper.PwrMeterMapper">
+    <select id= "getPwrMeters" resultType= "com.she.env.water.model.PowerMeter">
+        select
+             p.ewtr_pwr_meter_no
+            ,p.ewtr_pwr_meter_nm
+            ,p.plant_cd as plantCd
+            ,plant.code_nm as plantNm
+            ,p.ewtr_clean_fac_no as ewtrCleanFacNo
+            ,clean.ewtr_clean_fac_nm as ewtrCleanFacNm
+            ,p.pwr_meter_code as pwrMeterCode
+            ,p.pwr_meter_magn as  pwrMeterMagn
+            ,p.remark
+            ,p.sort_order
+            ,p.use_yn
+            ,case when p.use_yn = 'Y' 
+                then '사용'else '미사용'
+                end as use_yn_nm
+            ,p.create_user_id
+            ,p.create_dt
+            ,p.update_user_id
+            ,p.update_dt
+            ,cu.user_nm as create_user_nm
+            ,uu.user_nm as update_user_nm
+            , case
+                 when dbo.GET_USER_NM(p.update_user_id) = '' then dbo.GET_USER_NM(p.create_user_id)
+                 else dbo.GET_USER_NM(p.update_user_id) end    as writer_user_nm
+            , case when p.update_dt is null then convert(date, p.create_dt) else convert(date, p.update_dt) end   as writer_dt
+        from ewtr_pwr_meter p
+        left outer join com_user cu on p.create_user_id = cu.user_id
+        left outer join com_user uu on p.update_user_id = uu.user_id
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on p.plant_cd = plant.code
+        left outer join ewtr_clean_fac clean on p.ewtr_clean_fac_no = clean.ewtr_clean_fac_no 
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and clean.plant_cd = #{plantCd}
+        </if>
+        where 1=1
+        <if test='useYn != null and useYn != ""'>
+        and p.use_yn = #{useYn}
+        </if>
+
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and p.plant_cd = #{plantCd}
+        </if>
+        <if test= "ewtrPwrMeterNm != null and !ewtrPwrMeterNm.equals('')">
+            and p.ewtr_pwr_meter_nm like '%' + #{ewtrPwrMeterNm} + '%'
+        </if>
+        order by writer_dt desc, p.plant_cd
+    </select>
+
+    <select id="getCheck" resultType="int">
+        select count(*) as cnt
+        from ewtr_pwr_meter
+        where ewtr_pwr_meter_nm = #{ewtrPwrMeterNm}
+          and plant_cd = #{plantCd}
+        <if test= "ewtrPwrMeterNo != null and ewtrPwrMeterNo > 0">
+          and ewtr_pwr_meter_no != #{ewtrPwrMeterNo}
+        </if>
+    </select>
+    
+    <select id= "getPwrMeter" parameterType= "int" resultType= "com.she.env.water.model.PowerMeter">
+        select
+             p.ewtr_pwr_meter_no
+            ,p.ewtr_pwr_meter_nm
+            ,p.plant_cd
+            ,p.ewtr_clean_fac_no
+            ,p.pwr_meter_code
+            ,p.pwr_meter_magn
+            ,p.remark
+            ,p.sort_order
+            ,p.use_yn
+            ,p.create_user_id
+            ,p.create_dt
+            ,p.update_user_id
+            ,p.update_dt
+        from ewtr_pwr_meter p
+        where p.ewtr_pwr_meter_no = #{ewtrPwrMeterNo}
+    </select>
+
+    <insert id= "createPwrMeter" parameterType= "com.she.env.water.model.PowerMeter">
+        <selectKey keyProperty= "ewtrPwrMeterNo" resultType= "int" order= "BEFORE">
+            select next value for seq_ewtr_pwr_meter
+        </selectKey>
+        insert into ewtr_pwr_meter
+        ( 
+            ewtr_pwr_meter_no
+            ,ewtr_pwr_meter_nm
+            ,remark
+            ,sort_order
+            ,use_yn
+            ,plant_cd
+            ,ewtr_clean_fac_no
+            ,pwr_meter_code
+            ,pwr_meter_magn
+            ,create_user_id
+            ,create_dt
+        )
+        VALUES
+        ( 
+            #{ewtrPwrMeterNo}
+            ,#{ewtrPwrMeterNm}
+            ,#{remark}
+            ,#{sortOrder}
+            ,#{useYn}
+            ,#{plantCd}
+            ,#{ewtrCleanFacNo}
+            ,#{pwrMeterCode}
+            ,#{pwrMeterMagn}    
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>
+
+    <update id= "updatePwrMeter" parameterType= "com.she.env.water.model.PowerMeter">
+        update ewtr_pwr_meter
+        SET ewtr_pwr_meter_nm = #{ewtrPwrMeterNm}
+            ,remark = #{remark}
+            ,sort_order = #{sortOrder}
+            ,use_yn = #{useYn}
+            ,plant_cd = #{plantCd}
+            ,ewtr_clean_fac_no = #{ewtrCleanFacNo}
+            ,pwr_meter_code = #{pwrMeterCode}
+            ,pwr_meter_magn = #{pwrMeterMagn}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where ewtr_pwr_meter_no = #{ewtrPwrMeterNo}
+    </update>
+
+</mapper>

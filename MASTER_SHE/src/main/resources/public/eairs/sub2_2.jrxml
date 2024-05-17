@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.9.0.final using JasperReports Library version 6.9.0-cb8f9004be492ccc537180b49c026951f4220bf3  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="sub2_2" pageWidth="61" pageHeight="15" columnWidth="61" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="dae4f0e9-25dd-459b-bbb9-c14a8e888ff7">
+	<property name="net.sf.jasperreports.awt.ignore.missing.font" value="true"/>
+	<queryString language="XPath">
+		<![CDATA[/preventFacPwrcChkResultList/preventFacPwrcChkResult/chems]]>
+	</queryString>
+	<field name="chemNm" class="java.lang.String">
+		<property name="net.sf.jasperreports.xpath.field.expression" value="chemNm"/>
+		<fieldDescription><![CDATA[chemNm]]></fieldDescription>
+	</field>
+	<field name="consumAmt" class="java.lang.String">
+		<property name="net.sf.jasperreports.xpath.field.expression" value="consumAmt"/>
+		<fieldDescription><![CDATA[consumAmt]]></fieldDescription>
+	</field>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement stretchType="RelativeToBandHeight" x="0" y="0" width="30" height="15" isPrintWhenDetailOverflows="true" uuid="a0b734fb-7e34-431f-9301-61b17791548e">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="0a860b64-4559-4e53-a013-450af3667e32"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="NanumGothic" size="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{chemNm}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement stretchType="RelativeToBandHeight" x="30" y="0" width="31" height="15" isPrintWhenDetailOverflows="true" uuid="8b7520d6-325f-4537-9338-8617ae15b5eb">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="0a860b64-4559-4e53-a013-450af3667e32"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="NanumGothic" size="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{consumAmt}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

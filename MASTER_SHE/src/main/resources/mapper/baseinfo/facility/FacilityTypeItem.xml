@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.baseInfo.facility.mapper.FacilityTypeItemMapper">
+
+    <select id="getFacilityTypeItems"  resultType="com.she.baseInfo.model.FacilityTypeItem">
+        /* FacilityTypeItemMapper.getFacilityTypeItemList [FacilityTypeItem.xml] */
+        select a.saf_facility_type_item_no
+            ,a.saf_facility_type_cd
+            ,a.saf_facility_type_item_nm
+            ,a.saf_facility_type_item_explain
+            ,a.sort_order
+            ,a.use_yn
+            ,b.saf_facility_type_nm
+            ,case when a.use_yn = 'Y' 
+                    then '사용'else '미사용'
+                    end as use_yn_nm
+        from  saf_facility_type_item a
+        inner join saf_facility_type b
+        on a.saf_facility_type_cd = b.saf_facility_type_cd 
+        where 1=1
+        <if test="safFacilityTypeCd != null and !safFacilityTypeCd.equals('')">
+        and a.saf_facility_type_cd = #{safFacilityTypeCd}
+        </if>
+        <if test="useYn != null and !useYn.equals('')">
+        and a.use_yn = #{useYn}
+        </if>
+        and a.saf_facility_type_item_nm like '%' + #{safFacilityTypeItemNm} + '%'
+        order by a.saf_facility_type_cd, a.sort_order
+    </select>
+    
+    <select id="getFacilityTypeItem" resultType="com.she.baseInfo.model.FacilityTypeItem">
+        /* FacilityTypeItemMapper.getFacilityTypeItem [FacilityTypeItem.xml] */
+        select a.saf_facility_type_item_no
+            ,a.saf_facility_type_item_nm
+            ,a.saf_facility_type_cd
+            ,b.saf_facility_type_nm
+            ,a.saf_facility_type_item_explain
+            ,a.sort_order
+            ,a.use_yn
+            ,case when a.use_yn = 'Y' 
+                    then '사용'else '미사용'
+                    end as use_yn_nm
+        from  saf_facility_type_item a
+        inner join saf_facility_type b
+        on a.saf_facility_type_cd = b.saf_facility_type_cd 
+        where 1=1
+        and a.saf_facility_type_item_no = #{safFacilityTypeItemNo}
+    </select>
+    
+    <insert id="createFacilityTypeItem" parameterType="com.she.baseInfo.model.FacilityTypeItem">
+        /* FacilityTypeItemMapper.createFacilityTypeItem [FacilityTypeItem.xml] */
+       <selectKey keyProperty="safFacilityTypeItemNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_facility_type_item 
+        </selectKey>
+       insert into saf_facility_type_item
+           (saf_facility_type_item_no
+           ,saf_facility_type_cd
+           ,saf_facility_type_item_nm
+           ,saf_facility_type_item_explain
+           ,sort_order
+           ,use_yn)
+      values
+           (#{safFacilityTypeItemNo}
+           ,#{safFacilityTypeCd}
+           ,#{safFacilityTypeItemNm}
+           ,#{safFacilityTypeItemExplain}
+           ,#{sortOrder}
+           ,#{useYn})
+    </insert>
+    
+    <update id="updateFacilityTypeItem" parameterType="com.she.baseInfo.model.FacilityTypeItem">
+        /* FacilityTypeItemMapper.updateFacilityTypeItem [FacilityTypeItem.xml] */
+        update saf_facility_type_item
+        set saf_facility_type_cd = #{safFacilityTypeCd}
+              ,saf_facility_type_item_nm = #{safFacilityTypeItemNm}
+              ,saf_facility_type_item_explain = #{safFacilityTypeItemExplain}
+              ,sort_order = #{sortOrder}
+              ,use_yn = #{useYn}
+        where saf_facility_type_item_no = #{safFacilityTypeItemNo}
+        
+    </update>
+    
+    <select id="getCheckFacilityTypeItem" resultType="HashMap">
+        /* FacilityTypeItemMapper.getCheckFacilityTypeItem [FacilityTypeItem.xml] */
+        select count(*) as cnt
+            ,'safFacilityTypeItemNm' as gubun
+        from saf_facility_type_item
+        where 1=1
+        and saf_facility_type_cd = #{safFacilityTypeCd}
+        and saf_facility_type_item_nm = #{safFacilityTypeItemNm}
+        <if test="safFacilityTypeItemNo != null and safFacilityTypeItemNo > 0">
+        and saf_facility_type_item_no != #{safFacilityTypeItemNo}
+        </if>
+    </select>
+    
+</mapper>

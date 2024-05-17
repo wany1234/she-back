@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.manage.mapper.LogListMapper">
+
+    <!-- 로그인로그 목록 조회 -->
+    <select id="getLoginLogList" resultType="com.she.security.model.LoginLog">
+        /* LogListMapper.getLoginLogList [LogList.xml] */
+        Select login_log_no loginLogNo
+        , CCM.code_nm plantNm
+        , CD.dept_nm deptNm
+        , CLL.conn_user_id connUserId
+        , CLL.conn_user_nm connUserNm
+        , CLL.conn_ip connIp
+        --, insert_dt insertDt
+        --, logout_dt logoutDt
+        , CONVERT(CHAR(19),insert_dt,21) insertDt
+        , CONVERT(CHAR(19),logout_dt,21) logoutDt
+        From com_login_log CLL
+        Join com_user CU On CU.user_id = CLL.conn_user_id
+        Join com_dept CD ON CD.dept_cd = CU.dept_cd
+        Join com_code_master CCM ON CCM.code = CD.plant_cd And code_group_cd = 'COM_PLANT_CD'
+        Where Convert(char(10), insert_dt, 112) Between #{fromDt} And #{toDt}
+        <if test="deptCd != null and !deptCd.equals('')">
+            and CD.dept_cd = #{deptCd}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+            and CCM.code = #{plantCd}
+        </if>
+        order by CLL.login_log_no
+    </select>
+
+    <select id="getErrorLogList" resultType="com.she.manage.model.ErrorLog">
+        /* LogListMapper.getErrorLogList [LogList.xml] */
+        Select log_no logNo
+             , log_info logInfo
+             , status_cd statusCd
+             , cause cause
+             , cause_message causeMessage
+             , Convert(Char(19), CL.create_dt, 21) createDt
+             --, CCM.code_nm plantNm
+             --, CD.dept_nm deptNm
+             --, CL.user_id userId
+             --, CU.user_nm userNm
+        From com_log CL
+                 Left Join com_user CU ON CU.user_id = CL.user_id
+                 Left Join com_dept CD ON CD.dept_cd = CU.dept_cd
+                 Left Join com_code_master CCM On CCM.code = CD.plant_cd And CCM.code_group_cd = 'COM_PLANT_CD'
+        Where Convert(char(8), CL.create_dt, 112) Between #{fromDt} And #{toDt} And log_class_cd In('sql error', 'error')
+        Order By logNo Desc
+    </select>
+
+    <select id="getErrorLogDetail" resultType="com.she.manage.model.ErrorLog">
+        /* LogListMapper.getErrorLogDetail [LogList.xml] */
+        Select log_no logNo
+        , log_info logInfo
+        , status_cd statusCd
+        , query_string queryString
+        , cause
+        , cause_message causeMessage
+        , Convert(Char(19), create_dt, 21) createDt
+        From com_log
+        Where 1=1
+        <if test="logNo != null and !logNo.equals('')">
+            And log_no = #{logNo}
+        </if>
+    </select>
+
+    <select id="getMailLogs" resultType="com.she.manage.model.MailLog">
+        /* LogListMapper.getMailLogs [LogList.xml] */
+        SELECT cml.log_no
+        ,cml.sender_id
+        ,sender.user_nm as sender_nm
+        ,cml.sender_email
+        ,cml.receiver_id
+        ,receiver.user_nm as receiver_nm
+        ,cml.receiver_email
+        ,cml.title
+        ,cml.contents
+        ,CONVERT(CHAR(19), cml.send_dt, 20) as send_dt
+        ,cml.send_yn
+        ,case when cml.send_yn = 'Y' then '전송성공'
+        else '전송실패'
+        end as send_yn_nm
+        ,cml.fail_desc
+        ,cml.try_count
+        ,cml.try_dt
+        FROM com_mail_log cml
+        INNER JOIN com_user sender
+        ON cml.sender_id = sender.user_id
+        INNER JOIN com_user receiver
+        ON cml.receiver_id = receiver.user_id
+        WHERE 1=1
+        <if test="fromDt != null and !fromDt.equals('') and toDt != null and !toDt.equals('')">
+            AND CONVERT(DATE, cml.send_dt) BETWEEN CONVERT(DATE, #{fromDt}) AND CONVERT(DATE, #{toDt})
+        </if>
+        AND (sender.user_nm like '%' + #{keyword} +'%'
+        OR receiver.user_nm like '%' + #{keyword} +'%'
+        OR cml.title like '%' + #{keyword} +'%'
+        )
+        ORDER BY cml.send_dt desc
+    </select>
+
+    <update id="resendMailLog" parameterType="com.she.manage.model.MailLog">
+        /* LogListMapper.resendMailLog [LogList.xml] */
+        UPDATE com_mail_log
+        SET try_count = #{tryCount}
+          ,try_dt = getdate()
+          ,send_yn = #{sendYn}
+        WHERE log_no = #{logNo}
+    </update>
+
+    <select id="getSmsLogs" resultType="com.she.manage.model.AlarmLog">
+        /* LogListMapper.getSmsLogs [LogList.xml] */
+        SELECT al.log_no
+        ,al.sender_id
+        ,sender.user_nm as sender_nm
+        ,al.sender_phone_no
+        ,al.receiver_id
+        ,receiver.user_nm as receiver_nm
+        ,al.receiver_phone_no
+        ,al.contents
+        ,CONVERT(CHAR(19), al.send_dt, 20) as send_dt
+        ,al.send_yn
+        ,case when al.send_yn = 'Y' then '전송성공'
+        else '전송실패'
+        end as send_yn_nm
+        ,al.fail_desc
+        ,al.try_count
+        ,al.try_dt
+        FROM alarm_log al
+        INNER JOIN com_user sender
+        ON al.sender_id = sender.user_id
+        INNER JOIN com_user receiver
+        ON al.receiver_id = receiver.user_id
+        WHERE 1=1
+        <if test="fromDt != null and !fromDt.equals('') and toDt != null and !toDt.equals('')">
+            AND CONVERT(DATE, al.send_dt) BETWEEN CONVERT(DATE, #{fromDt}) AND CONVERT(DATE, #{toDt})
+        </if>
+        AND (al.contents LIKE '%' + #{word} + '%'
+        OR al.receiver_phone_no LIKE '%' + #{word} + '%' )
+        ORDER BY al.send_dt DESC
+    </select>
+
+    <update id="resendSmsLog" parameterType="com.she.manage.model.AlarmLog">
+        /* LogListMapper.resendSmsLog [LogList.xml] */
+        UPDATE alarm_log
+        SET try_count = #{tryCount}
+          ,try_dt = getdate()
+          ,send_yn = #{sendYn}
+        WHERE log_no = #{logNo}
+    </update>
+
+    <select id="getBatchLogs" resultType="com.she.manage.model.BatchLog">
+        /* LogListMapper.getBatchLogs [LogList.xml] */
+        SELECT batch_cd
+        ,run_dt
+        ,run_result
+        ,remark
+        FROM com_batch_log
+        WHERE 1=1
+        <if test="fromDt != null and !fromDt.equals('') and toDt != null and !toDt.equals('')">
+            AND CONVERT(DATE, run_dt) BETWEEN CONVERT(DATE, #{fromDt}) AND CONVERT(DATE, #{toDt})
+        </if>
+        ORDER BY run_dt desc;
+    </select>
+
+    <insert id="insertMenuLog">
+        /* LogListMapper.insertMenuLog [LogList.xml] */
+        <selectKey keyProperty= "logNo" resultType= "int" order= "BEFORE">
+            select next value for seq_com_menulog as logNo
+        </selectKey>
+        Insert Into com_menulog (
+        log_no
+        , menu_id
+        , menu_nm
+        , menu_path
+        , url
+        , create_user_id
+        , log_dt) Values(
+        #{logNo}
+        , #{menuId}
+        , #{menuNm}
+        , #{menuPath}
+        , #{url}
+        , #{createUserId}
+        , Getdate()
+        )
+    </insert>
+
+    <select id="getMenuLog" resultType="com.she.manage.model.MenuLog">
+        /* LogListMapper.getMenuLog [LogList.xml] */
+        Select log_no logNo
+        , menu_id menuId
+        , menu_nm menuNm
+        , menu_path menuPath
+        , url
+        , CM.create_user_id createUserId
+        , user_nm createUserNm
+        , Convert(Char(19), log_dt, 21) logDt
+        From com_menulog CM
+        Join com_user CU ON CU.user_id = CM.create_user_id
+        Where Convert(Char(10), log_dt, 21) Between #{fromDt} And #{toDt}
+        <if test="menuNm != null and !menuNm.equals('')">
+            And menu_nm Like '%' + #{menuNm} + '%'
+        </if>
+        Order By log_no desc
+    </select>
+
+    <select id="getImpoConform" resultType="com.she.manage.model.ImpoAction">
+        /* LogListMapper.getImpoConform [LogList.xml] */
+        with a as (
+        Select max(servlet_path) servletPath
+        From com_impo_action
+        Where use_yn = 'Y'
+        <if test="servletPath != null and !servletPath.equals('')">
+            And #{servletPath} Like servlet_path + '%'
+        </if>
+        )
+        select b.servlet_path, b.crud_cd, b.crud_nm, b.crud_desc
+        from com_impo_action b
+        inner join a
+        on b.servlet_path = a.servletPath
+        where 1=1
+        <if test="crudCd != null and !crudCd.equals('')">
+            And b.crud_cd = #{crudCd}
+        </if>
+    </select>
+
+    <insert id="insertCrudLog">
+        /* LogListMapper.insertCrudLog [LogList.xml] */
+        <selectKey keyProperty= "logNo" resultType= "int" order= "BEFORE">
+            select next value for seq_com_crudlog as logNo
+        </selectKey>
+
+        Insert Into com_crud_log(
+        log_no
+        , crud_cd
+        , crud_nm
+        , crud_desc
+        , user_id
+        , log_dt
+        , url
+        , crud_option) Values (
+        #{logNo}
+        , #{crudCd}
+        , #{crudNm}
+        , #{crudDesc}
+        , #{userId}
+        , Getdate()
+        , #{url}
+        , #{option}
+        )
+    </insert>
+
+    <select id="getCrudLog" resultType="com.she.manage.model.CrudLog">
+        /* LogListMapper.getCrudLog [LogList.xml] */
+        Select log_no logNo --로그번호
+        , Case crud_cd When 'POST' Then '등록'
+        When 'PUT' Then '수정'
+        When 'DELETE' Then '삭제'
+        Else '조회' End crudCd --유형
+        , crud_nm crudNm --유형명
+        , crud_desc crudDesc --유형설명
+        , url --url
+        , crud_option crudOption
+        , CP.code_nm plantNm --사업장
+        , CD.dept_nm deptNm --부서명
+        , CL.user_id userId --사용자ID
+        , user_nm userNm --사용자명
+        , CONVERT(CHAR(19), log_dt, 21) logDt
+        From com_crud_log CL
+        Join com_user CU On CU.user_id = CL.user_id
+        Join com_dept CD ON CD.dept_cd = CU.dept_cd
+        Join com_code_master CP On CP.code = CD.plant_cd And code_group_cd = 'COM_PLANT_CD'
+        Where Convert(char(8), log_dt, 112) Between #{fromDt} And #{toDt}
+        <if test="crudNm != null and !crudNm.equals('')">
+            And crud_nm Like '%' + #{crudNm} + '%'
+        </if>
+        Order By log_no Desc
+    </select>
+
+    <select id="getImpoActionList" resultType="com.she.manage.model.ImpoAction">
+        /* LogListMapper.getImpoActionList [LogList.xml] */
+        Select servlet_path servletPath
+             , Case crud_cd When 'POST' Then '등록'
+                            When 'PUT' Then '수정'
+                            When 'DELETE' Then '삭제'
+                            Else '조회' End crudCd
+             , crud_nm crudNm
+             , crud_desc crudDesc
+             , Case use_yn When 'Y' Then '예'
+                           Else '아니오' End useYn
+        From com_impo_action
+        Order By crud_nm
+    </select>
+
+    <insert id="insertImpoAction">
+        /* LogListMapper.insertImpoAction [LogList.xml] */
+        Insert Into com_impo_action(
+                                     servlet_path
+                                   , crud_cd
+                                   , crud_nm
+                                   , crud_desc
+                                   , use_yn) Values(
+                                                       #{servletPath}
+                                                   , #{crudCd}
+                                                   , #{crudNm}
+                                                   , #{crudDesc}
+                                                   , #{useYn}
+                                                   )
+    </insert>
+
+    <update id="updateImpoAction">
+        /* LogListMapper.updateImpoAction [LogList.xml] */
+        UPDATE com_impo_action
+        SET    crud_nm = #{crudNm}
+          , crud_desc = #{crudDesc}
+          , use_yn = #{useYn}
+        WHERE  servlet_path = #{servletPath} AND crud_cd = #{crudCd}
+    </update>
+
+</mapper>

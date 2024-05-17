@@ -1,0 +1,237 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.env.waste.disporate.mapper.DisporateMapper">
+    <select id= "getDisporates" resultType= "com.she.env.waste.model.Disporate">
+        select 
+            w.ewst_waste_rate_no,
+            w.plant_cd, plant.code_nm as plant_nm, 
+            w.year, 
+            tc.ewst_class_cd, tc.ewst_class_nm, 
+            t.ewst_waste_no, t.ewst_waste_nm,
+                   STUFF((
+                    SELECT ',' + 
+                        dept_nm
+                    FROM  
+                    (
+                        select 
+                            d.dept_cd, 
+                            d.dept_nm, 
+                            c.ewst_waste_rate_no 
+                        from ( 
+                            select 
+                                a.ewst_waste_rate_no ,
+                                a.dept_cd
+                            from ewst_waste_rate_dept a
+                            group by a.dept_cd, a.ewst_waste_rate_no
+                        ) c, com_dept d
+                        where c.dept_cd = d.dept_cd
+                    ) a
+                    WHERE a.ewst_waste_rate_no = w.ewst_waste_rate_no
+                    FOR XML PATH('')
+                ),1,1,'') AS dept_nm
+                , case
+                   when dbo.GET_USER_NM(w.update_user_id) = '' then dbo.GET_USER_NM(w.create_user_id)
+                   else dbo.GET_USER_NM(w.update_user_id) end    as writer_user_nm
+                , case when w.update_dt is null then convert(date, w.create_dt) else convert(date, w.update_dt) end   as writer_dt
+        from ewst_waste_rate w  
+        inner join ewst_waste t 
+        on w.ewst_waste_no = t.ewst_waste_no
+        inner join ewst_class tc
+        on t.ewst_class_cd = tc.ewst_class_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+        on plant.code = w.plant_cd
+        where 1=1        
+        <if test= "fromYear != null and !toYear.equals('') and fromYear != null and !toYear.equals('')">
+        and year between year(#{fromYear}) and year(#{toYear}) 
+        </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and w.plant_cd = #{plantCd}            
+        </if>
+        <if test= "ewstClassCd != null and !ewstClassCd.equals('')">
+            and tc.ewst_class_cd = #{ewstClassCd}
+        </if>
+        <if test= "ewstWasteNo != null and !ewstWasteNo.equals('')">
+            and t.ewst_waste_no = #{ewstWasteNo}
+        </if>
+        <if test= "dispoDeptCd != null and !dispoDeptCd.equals('')">
+        and  EXISTS (
+            select 1
+            from ewst_waste_rate_dept scr
+            where scr.ewst_waste_rate_no = w.ewst_waste_rate_no
+            and (
+                dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{dispoDeptCd}))
+            )
+        )
+        </if>     
+        order by writer_dt desc   
+    </select>
+
+    <select id= "getDisporate" resultType= "com.she.env.waste.model.Disporate">
+        select 
+            w.ewst_waste_rate_no,
+            w.plant_cd,
+            w.year, 
+            tc.ewst_class_cd, tc.ewst_class_nm, 
+            t.ewst_waste_no, t.ewst_waste_nm,
+                   STUFF((
+                    SELECT ',' + 
+                        dept_nm
+                    FROM  
+                    (
+                        select 
+                            d.dept_cd, 
+                            d.dept_nm, 
+                            c.ewst_waste_rate_no 
+                        from ( 
+                            select 
+                                a.ewst_waste_rate_no ,
+                                a.dept_cd
+                            from ewst_waste_rate_dept a
+                            group by a.dept_cd, a.ewst_waste_rate_no
+                        ) c, com_dept d
+                        where c.dept_cd = d.dept_cd
+                    ) a
+                    
+
+                    FOR XML PATH('')
+                ),1,1,'') AS dept_nm
+        from ewst_waste_rate w
+        inner join ewst_waste t 
+        on w.ewst_waste_no = t.ewst_waste_no
+        inner join ewst_class tc
+        on t.ewst_class_cd = tc.ewst_class_cd
+        where w.ewst_waste_rate_no = #{ewstWasteRateNo}
+    </select>    
+    
+    <select id= "getDisporateDept" resultType= "com.she.env.waste.model.DisporateDeptItem">
+        <if test="ewstWasteRateNo != null and !ewstWasteRateNo.equals('')">        
+        select 
+            dept.dept_nm, b.dept_cd, a.ewst_waste_rate_no,
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 1 then b.rate else 0 end ))  as 'm01',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 2 then b.rate else 0 end ))  as 'm02',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 3 then b.rate else 0 end ))  as 'm03',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 4 then b.rate else 0 end ))  as 'm04',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 5 then b.rate else 0 end ))  as 'm05',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 6 then b.rate else 0 end ))  as 'm06',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 7 then b.rate else 0 end ))  as 'm07',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 8 then b.rate else 0 end ))  as 'm08',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 9 then b.rate else 0 end ))  as 'm09',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 10 then b.rate else 0 end )) as 'm10',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 11 then b.rate else 0 end )) as 'm11',  
+            sum((case when b.ewst_waste_rate_no = a.ewst_waste_rate_no and dept.dept_cd = b.dept_cd and b.month = 12 then b.rate else 0 end )) as 'm12'
+            from ewst_waste_rate a
+            left outer join ewst_waste_rate_dept b
+            on a.ewst_waste_rate_no = b.ewst_waste_rate_no
+            inner join com_dept dept  
+            on b.dept_cd = dept.dept_cd
+            and dept.use_yn ='Y' and dept.plant_cd = #{plantCd} and dept.dept_lvl = '50' 
+            where a.ewst_waste_rate_no = #{ewstWasteRateNo}
+            group by dept.dept_nm, b.dept_cd, a.ewst_waste_rate_no
+
+            UNION ALL 
+        </if>           
+            
+            select 
+             dept_nm, dept_cd, 0 as 'ewst_waste_rate_no', 0 as 'm01', 0 as 'm02', 0 as 'm03', 0 as 'm04', 0 as 'm05', 0 as 'm06',0 as 'm07'
+            , 0 as 'm08', 0 as 'm09', 0 as 'm10', 0 as 'm11', 0 as 'm12'    
+            from com_dept b 
+            where not exists 
+            (
+                select 1 
+                from 
+                ewst_waste_rate_dept 
+                where dept_cd = b.dept_cd 
+                <if test="ewstWasteRateNo != null and !ewstWasteRateNo.equals('')">
+                and ewst_waste_rate_no = #{ewstWasteRateNo}
+                </if>
+                and dept_cd is not null
+            )
+            and use_yn ='Y' 
+            and plant_cd = #{plantCd}
+            and dept_lvl = '50' 
+                        
+        
+    </select>
+    <select id = "getDisporateCheckedDepts" resultType="String">
+        select dept_cd
+        from ewst_waste_rate a
+        left outer join ewst_waste_rate_dept b
+        on a.ewst_waste_rate_no = b.ewst_waste_rate_no
+        where a.ewst_waste_rate_no = #{ewstWasteRateNo}
+        group by dept_cd
+    </select>
+    
+    <select id = "getDisporateCheck" resultType="java.lang.Integer">
+       select 
+            count(*) 
+       from ewst_waste_rate 
+       where year = #{year}
+       and ewst_waste_no = #{ewstWasteNo}
+       and plant_cd = #{plantCd}
+       <if test="ewstWasteRateNo != null and !ewstWasteRateNo.equals('')">
+       and ewst_waste_rate_no = #{ewstWasteRateNo}
+       </if>
+       
+    </select>    
+    
+    <insert id = "createDisporate" parameterType = "com.she.env.waste.model.Disporate">
+           <selectKey keyProperty="ewstWasteRateNo" resultType="String" order="BEFORE">
+            select next value for seq_ewst_waste_rate_no  as ewstWasteRateNo
+          </selectKey>
+          
+        insert into ewst_waste_rate (
+            ewst_waste_rate_no,
+            year,
+            plant_cd,
+            ewst_waste_no,
+            create_user_id,
+            create_dt
+        ) values (
+            #{ewstWasteRateNo},
+            #{year},
+            #{plantCd},
+            #{ewstWasteNo},
+            #{createUserId},
+            getDate()
+        )
+        
+    </insert>    
+    
+    <update id = "updateDisporate" parameterType = "com.she.env.waste.model.Disporate">
+
+        update ewst_waste_rate
+        set 
+             year = #{year}
+            ,plant_cd = #{plantCd}
+            ,ewst_waste_no = #{ewstWasteNo}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+        where ewst_waste_rate_no = #{ewstWasteRateNo}
+        
+    </update>    
+        
+    
+    <insert id = "createDisporateDept">
+            insert into ewst_waste_rate_dept (
+            month, 
+            dept_cd, 
+            rate, 
+            ewst_waste_rate_no
+            ) values (
+            #{month},
+            #{deptCd},
+            #{rate}, 
+            #{ewstWasteRateNo}
+            );    
+    </insert>
+    
+    <delete id = "deleteDisporateDept">
+        delete from ewst_waste_rate_dept where ewst_waste_rate_no = #{ewstWasteRateNo}
+    </delete>
+       
+    
+    
+    
+    
+</mapper>

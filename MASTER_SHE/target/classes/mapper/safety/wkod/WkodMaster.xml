@@ -1,0 +1,1503 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.safety.wkod.mapper.WkodMasterMapper">
+    <select id="getWkodMasters" parameterType="HashMap" resultType="com.she.safety.model.WkodMaster">
+        /* WkodMasterMapper.getWkodMasters [WkodMaster.xml] */
+      select swm.wkod_no                                                --작업허가서ID
+            ,swm.wkod_num                                               --작업허가NO
+            ,swm.const_no                                               --공사번호
+            ,sc.const_title                                             --공사명
+            ,swm.assess_plan_no
+            ,rrap.assess_nm
+
+            ,swm.wkod_cls_cd                                            --작업허가구분코드
+            ,wkodCls.code_nm as wkod_cls_nm                             --작업허가구분명
+            ,stuff((
+                select ', ' + wkodKind.code_nm
+                from saf_wkod_kind x
+                inner join com_code_master wkodKind
+                on x.wkod_kind_cd = wkodKind.code
+                and wkodKind.code_group_cd = 'SAF_WKOD_KIND'
+                where swm.wkod_no = x.wkod_no
+                for xml path('')
+            ), 1, 1, '') as wkod_kind_nm                                --작업종류리스트
+            ,swm.appr_rqst_no
+            ,car.biz_appr_step_cd            
+            ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+
+            ,swm.work_ymd                                               --작업일자
+            ,swm.work_start_time                                        --작업시작시간
+            ,swm.work_end_time                                          --작업종료시간
+            ,swm.work_over_time                                         --작업연장시간
+            ,swm.work_complete_time                                     --작업완료일시
+            ,case when over_yn = 'Y' then '(연장)' + swm.work_title
+                else swm.work_title end as work_title                       --작업명
+            ,swm.work_content                                           --작업내용
+            ,swm.wkod_step_cd                                           --진행단계
+            ,PSCode.code_nm as wkod_step_nm                             --진행단계명
+            ,swm.plant_cd                                               --사업장코드
+            ,plant.code_nm as plant_nm                                  --사업장명
+            ,swm.process_cd                                             --작업지역_공정코드
+            ,CPCode.process_nm                                          --작업지역_공정명
+            ,swm.work_area                                              --작업지역_상세장소
+            ,swm.req_user_id                                            --신청부서담당자ID
+            ,swm.req_user_nm                                            --신청부서담당자성명
+            ,swm.req_dept_cd                                            --신청부서코드
+            ,swm.req_dept_nm                                            --신청부서명
+            ,swm.req_ymd                                                --신청일
+            ,swm.pub_dept_cd                                            --발행부서코드
+            ,swm.pub_dept_nm                                            --발행부서명
+            ,swm.pub_mgr_nm                                             --감독자명
+            ,swm.pub_mgr_id                                             --감독자ID
+            ,swm.pub_mgr_tel                                            --감독자 전화번호
+
+            ,swm.coop_dept_cd                                           --협조부서코드
+            ,swm.coop_dept_nm                                           --협조부서명
+            ,swm.vendor_cd                                              --업체코드
+
+            ,swm.subconn_nm                                             --작업업체명
+            ,swm.subconn_user_nm                                        --작업업체담당자명
+            ,swm.subconn_user_tel                                       --작업업체담당자 전화번호
+            ,swm.worker_numb                                            --작업인원수
+            ,swm.special_instructions                                   --특별지시사항
+            ,swm.handle_chem_content                                    --취급물질(내용)
+            ,swm.over_user_id                                           --연장확인자ID
+            ,swm.over_user_nm                                           --연장확인자명
+            ,swm.over_dept_cd                                           --연장확인자 부서 코드
+            ,swm.over_dept_nm                                           --연장확인자 부서 명
+            ,swm.over_confirm_dt                                        --연장확인일시
+            ,swm.locate_pnt_x                                           --X축_좌표위치
+            ,swm.locate_pnt_y                                           --Y축_좌표위치
+            ,swm.del_yn                                                 --삭제여부
+            ,swm.spm_etc                                                --안전보호구 기타
+            ,swm.over_yn                                                --연장여부
+            ,swm.ref_remark                                             --연장완료취소관련비고
+            ,swm.subconn2nd_yn                                          --도급여부
+            ,swm.subconn_reg_yn                                         --공사업체작성여부
+            ,swm.chng_acc_psn                                           --교대시인수자
+            ,swm.chng_take_psn                                          --교대시인계자
+            ,swm.saf_measure                                            --안전대책
+            ,swm.woker_terms                                            --작업자준수사항
+            ,swm.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,swm.create_dt
+            ,swm.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,swm.update_dt
+            ,swm.psm_yn
+            ,case when swm.psm_yn = 'Y' then 'O'
+                else 'X'
+             end psm_yn_nm
+            ,swm.prt_yn
+            getWkodMasters
+            ,case
+               when dbo.GET_USER_NM(swm.update_user_id) = '' then dbo.GET_USER_NM(swm.create_user_id)
+               else dbo.GET_USER_NM(swm.update_user_id) end as writer_user_nm
+            ,case when swm.update_dt is null then convert(date, swm.create_dt) else convert(date, swm.update_dt) end   as writer_dt
+        from saf_wkod_master swm
+        left outer join com_appr_rqst car
+         on swm.appr_rqst_no = car.appr_rqst_no
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') bizAppr
+         on car.biz_appr_step_cd = bizAppr.code
+
+        left outer join saf_const sc
+         on swm.const_no = sc.const_no
+        left outer join rsa_risk_assess_plan rrap
+         on swm.assess_plan_no = rrap.assess_plan_no
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+         on swm.plant_cd = plant.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_WKKD') wkodCls
+         on swm.wkod_cls_cd = wkodCls.code
+
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_STEP') PSCode
+         on swm.wkod_step_cd = PSCode.code
+
+        left outer join com_process CPCode
+        on swm.process_cd = CPCode.process_cd
+        left outer join com_user createUser
+        on swm.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on swm.update_user_id = updateUser.user_id
+        where 1=1
+        and ('' = isnull(swm.del_yn, '') or swm.del_yn = 'N')
+        <if test="psmYn != null and !psmYn.equals('')">
+        and isnull(swm.psm_yn,'N') = #{psmYn}
+        </if>
+        <if test="vendorCd != null and !vendorCd.equals('')">
+        and swm.vendor_cd = #{vendorCd}
+        </if>
+        <if test="subconnNm != null and !subconnNm.equals('')">
+        and swm.subconn_nm like #{subconnNm}
+        </if>
+        <if test="plantCd != null and !plantCd.equals('')">
+        and swm.plant_cd = #{plantCd}
+        </if>
+        <if test="keyword != null and !keyword.equals('')">
+           AND (swm.work_title like '%' + #{keyword} + '%' or
+                swm.subconn_nm like '%' + #{keyword} + '%' or
+                sc.const_title like '%' + #{keyword} + '%')
+        </if>
+        <if test="wkodClsCd != null and !wkodClsCd.equals('')">
+        and swm.wkod_cls_cd = #{wkodClsCd}
+        </if>
+        <if test="startYmd != null and endYmd != null and !startYmd.equals('') and !endYmd.equals('')">
+        and swm.work_ymd between convert(datetime, #{startYmd}) and convert(datetime, #{endYmd})
+        </if>
+        <if test="reqDeptCd != null and !reqDeptCd.equals('')">
+        <!-- and swm.req_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{reqDeptCd})) -->
+        <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+        AND EXISTS (SELECT 1 WHERE ISNULL(#{reqDeptCd}, '') = ''
+                    UNION ALL
+                    SELECT 1 WHERE #{reqDeptSubYn} = 'Y' AND swm.req_dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{reqDeptCd}))
+                    UNION ALL
+                    SELECT 1 WHERE #{reqDeptSubYn} = 'N' AND swm.req_dept_cd = #{reqDeptCd}
+                    )
+        <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if>
+        <if test="wkodKindCds != null and wkodKindCds.length > 0">
+            AND EXISTS ( SELECT 1
+                         FROM saf_wkod_kind x
+                        WHERE 1=1
+                          AND swm.wkod_no = x.wkod_no
+                          AND x.wkod_kind_cd
+                        <foreach collection="wkodKindCds" item="wkodKindCd" separator="," open="IN (" close=")" >
+                        #{wkodKindCd}
+                        </foreach>)
+        </if>
+        <if test="pubDeptCd != null and !pubDeptCd.equals('')">
+        <!-- and swm.pub_dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{pubDeptCd})) -->
+        <!-- 하위부서 포함여부 관련 쿼리 시작 -->
+        AND EXISTS (SELECT 1 WHERE ISNULL(#{pubDeptCd}, '') = ''
+                    UNION ALL
+                    SELECT 1 WHERE #{pubDeptSubYn} = 'Y' AND swm.pub_dept_cd IN (SELECT dept_cd FROM dbo.GET_UNDER_DEPTS(#{pubDeptCd}))
+                    UNION ALL
+                    SELECT 1 WHERE #{pubDeptSubYn} = 'N' AND swm.pub_dept_cd = #{pubDeptCd}
+                    )
+        <!-- 하위부서 포함여부 관련 쿼리 끝 -->
+        </if>
+        <if test="wkodStepCd != null and !wkodStepCd.equals('')">
+            <choose>
+                <when test='wkodStepCd == "WKS99"'>
+                    and swm.wkod_step_cd in ('WKS04', 'WKS05', 'WKS06', 'WKS07')
+                </when>
+                <otherwise>
+                    and swm.wkod_step_cd = #{wkodStepCd}
+                </otherwise>
+            </choose>
+        </if>
+        <if test="wkodNum != null and !wkodNum.equals('')">
+        and swm.wkod_num like '%' + #{wkodNum} + '%'
+        </if>
+        <if test="searchFlag != null and !searchFlag.equals('')">
+            <choose>
+               <when test='searchFlag == "99"'>
+           AND NOT EXISTS (SELECT 1
+                             FROM saf_wkod_kind x
+                            WHERE 1=1
+                              AND swm.wkod_no = x.wkod_no)
+               </when>
+               <otherwise>
+                    AND swm.wkod_step_cd = #{searchFlag}
+               </otherwise>
+           </choose>
+        </if>
+        <if test="constNo != null and !constNo.equals('')">
+            and swm.const_no = #{constNo}
+        </if>
+        order by writer_dt desc, swm.work_ymd desc
+    </select>
+
+    <select id="getWkodMaster" parameterType="HashMap" resultType="com.she.safety.model.WkodMaster">
+        /* WkodMasterMapper.getWkodMaster [WkodMaster.xml] */
+        select swm.wkod_no                                                          --작업허가서ID
+            ,swm.plant_cd                                                           --작업지역_공장코드
+            ,plant.code_nm as plant_nm                                              --작업지역 사업장명
+            ,swm.const_no
+            ,sc.const_title
+            ,sc.const_content
+            ,sc.const_num
+            ,sc.const_start_ymd
+            ,sc.const_end_ymd
+            ,swm.assess_plan_no
+            ,rrap.assess_nm
+            ,swm.appr_rqst_no
+            ,car.biz_appr_step_cd            
+            ,isnull(bizAppr.code_nm, '결재요청전' ) as biz_appr_step_nm
+            ,stuff((
+                select ', ' + wkodKind.code_nm
+                from saf_wkod_kind x
+                inner join com_code_master wkodKind
+                on x.wkod_kind_cd = wkodKind.code
+                and wkodKind.code_group_cd = 'SAF_WKOD_KIND'
+                where swm.wkod_no = x.wkod_no
+                for xml path('')
+            ), 1, 1, '') as wkod_kind_nm                                --작업종류리스트
+            ,swm.wkod_num                                                           --작업허가NO
+            ,swm.wkod_cls_cd                                                        --허가서구분코드
+            ,wkodCls.code_nm as wkod_cls_nm                                         --허가서구분명
+            ,swm.work_ymd                                                           --작업일자
+            ,swm.work_start_time                                                    --작업시작시간
+            ,swm.work_end_time                                                      --작업종료시간
+            ,swm.work_ymd + ' ' + swm.work_start_time as work_ymd_start_time        --작업시작시간
+            ,swm.work_ymd + ' ' + swm.work_end_time as work_ymd_end_time            --작업시작시간
+            ,swm.work_over_time                                                     --작업연장시간
+            ,convert(char(19), swm.work_complete_time, 20) as work_complete_time    --작업완료일시
+            ,swm.work_title                                                         --작업명
+            ,swm.work_content                                                       --작업내용
+            ,swm.wkod_step_cd                                                       --진행단계
+            ,PSCode.code_nm as wkod_step_nm                                         --진행단계명
+            ,swm.process_cd                                                         --작업지역_공정코드
+            ,CPCode.process_nm                                                      --작업지역_공정명
+            ,swm.work_area                                                          --작업지역_상세장소
+            ,swm.req_user_id                                                        --신청부서담당자ID
+            ,swm.req_user_nm                                                        --신청부서담당자성
+            ,reqUser.signature as req_user_sign                                     --신청부서담당자사인
+            ,swm.req_dept_cd                                                        --신청부서코드
+            ,swm.req_dept_nm                                                        --신청부서명
+            ,swm.req_ymd                                                            --신청일
+            ,swm.pub_dept_cd                                                        --발행부서코드
+            ,swm.pub_dept_nm                                                        --발행부서명
+            ,swm.pub_mgr_nm                                                         --감독자명
+            ,swm.pub_mgr_id                                                         --감독자ID
+            ,swm.pub_mgr_tel                                                        --감독자 전화번호
+            ,swm.coop_dept_cd                                                       --협조부서코드
+            ,swm.coop_dept_nm                                                       --협조부서명
+            ,swm.vendor_cd                                                          --업체코드
+            ,swm.subconn_nm                                                         --작업업체명
+            ,swm.subconn_user_nm                                                    --작업업체담당자명
+            ,swm.subconn_user_tel                                                   --작업업체담당자 전화번호
+            ,swm.worker_numb                                                        --작업인원수
+            ,swm.special_instructions                                               --특별지시사항
+            ,swm.handle_chem_content                                                --취급물질(내용)
+            ,swm.over_yn                                                            --연장여부
+            ,swm.over_user_id                                                       --연장확인자ID
+            ,swm.over_user_nm                                                       --연장확인자명
+            ,swm.over_dept_cd                                                       --연장확인자 부서 코드
+            ,swm.over_dept_nm                                                       --연장확인자 부서 명
+            ,convert(char(19), swm.over_confirm_dt, 20) as over_confirm_dt          --연장확인일시
+            ,swm.ref_remark                                                         --연장완료취소관련비고
+            ,swm.map_no                                                             --공장전도번호
+            ,swm.locate_pnt_x                                                       --X축_좌표위치
+            ,swm.locate_pnt_y                                                       --Y축_좌표위치
+            ,swm.spm_etc                                                            --안전보호구 기타
+            ,swm.del_yn                                                             --삭제여부
+            ,swm.create_user_id                                                     --등록자ID
+            ,convert(char(19), swm.create_dt, 20) as create_dt                      --등록시간
+            ,swm.update_user_id                                                     --수정자ID
+            ,convert(char(19), swm.update_dt, 20) as update_dt                      --수정시간
+            ,swm.subconn2nd_yn                                                      --도급여부
+            ,swm.subconn_reg_yn                                                     --공사업체작성여부
+            ,swm.chng_acc_psn                                           --교대시인수자
+            ,swm.chng_take_psn                                          --교대시인계자
+            ,swm.saf_measure                                            --안전대책
+            ,swm.woker_terms                                            --작업자준수사항
+            ,swm.psm_yn
+            ,swm.prt_yn
+            ,swm.appr_rqst_no
+            ,swm.vendor_write_yn
+         from saf_wkod_master   swm
+        inner join com_user reqUser
+           on reqUser.user_id = swm.req_user_id
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+         on swm.plant_cd = plant.code
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_WKKD') wkodCls
+         on swm.wkod_cls_cd = wkodCls.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_STEP') PSCode
+         on swm.wkod_step_cd = PSCode.code
+        inner join com_process CPCode
+           on swm.process_cd = CPCode.process_cd
+         left outer join com_appr_rqst car
+           on swm.appr_rqst_no = car.appr_rqst_no
+         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') bizAppr
+         on car.biz_appr_step_cd = bizAppr.code
+         left outer join saf_const sc
+           on swm.const_no = sc.const_no
+         left outer join rsa_risk_assess_plan rrap
+           on swm.assess_plan_no = rrap.assess_plan_no
+        where 1=1
+          and swm.wkod_no = #{wkodNo}
+    </select>
+
+    <select id="getWkodClsKinds" resultType="String">
+        /* WkodMasterMapper.getWkodClsKinds [WkodMaster.xml] */
+        select dbo.WKOD_KIND()
+        union all
+        select dbo.WKOD_KIND_SEARCH()
+    </select>
+
+    <select id="getWkodMasterStatus" parameterType="HashMap" resultType="HashMap">
+        /* WkodMasterMapper.getWkodMasterStatus [WkodMaster.xml] */
+        <!-- 보안취약점 점검에서 예외처리가 안 될 경우 SP로 사용 -->
+        <!--EXEC SP_GET_WKOD_MASTER_STATUS #{plantCd}, #{reqDeptCd}, #{subconnNm}, #{startYmd}, #{endYmd}, #{wkodKinds}, #{wkodKindSearchs}, #{defaultParam.lang}-->
+        with cls as (
+             select swm.wkod_cls_cd
+                   ,swm.plant_cd
+               from saf_wkod_master swm
+               left outer join saf_wkod_kind swk
+                 on swm.wkod_no = swk.wkod_no
+              where swm.wkod_step_cd = 'WKS05'
+                and not exists (SELECT 1
+                                  FROM saf_wkod_kind swk
+                                 WHERE swm.wkod_no = swk.wkod_no)
+                and isnull(swm.req_dept_nm, '') != ''
+                and isnull(swm.pub_dept_nm, '') != ''
+                and isnull(swm.subconn_nm, '') != ''
+        <if test="startYmd != null and endYmd != null and !startYmd.equals('') and !endYmd.equals('')">
+           AND swm.work_ymd between convert(datetime, #{startYmd}) and convert(datetime, #{endYmd})
+        </if>
+        ), kinds as (
+            SELECT max(cls.wkod_cls_cd) as cls_kind
+                  ,count(*) as cnt
+                  ,cls.plant_cd
+              FROM cls
+             WHERE cls.wkod_cls_cd = 'WKKDNS'
+             GROUP BY cls.plant_cd
+             union all
+            SELECT max(cls.wkod_cls_cd) as cls_kind
+                  ,count(*) as cnt
+                  ,cls.plant_cd
+              FROM cls
+             WHERE cls.wkod_cls_cd = 'WKKDSS'
+             GROUP BY cls.plant_cd
+             union all
+            select wkod_cls.code + '_' + wkod_kind.code as cls_kind
+                  --,case when count(selectwkod_kind.wkod_kind_cd) &gt; 0 then count(selectwkod_kind.wkod_kind_cd) * 2
+                  --      else 0
+                  -- end as cnt
+                  ,count(selectwkod_kind.wkod_kind_cd) as cnt
+                  ,selectwkod_kind.plant_cd
+              from com_code_master wkod_cls
+              full outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') wkod_kind
+                on (wkod_cls.code = wkod_kind.attr1 or wkod_cls.code = wkod_kind.attr2)
+              left outer join (select swk.wkod_kind_cd, swm.wkod_cls_cd
+                                     ,swm.plant_cd
+                                 from saf_wkod_master swm
+                                inner join saf_wkod_kind swk
+                                   on swm.wkod_no = swk.wkod_no
+                                where swm.wkod_step_cd = 'WKS05' -- 출력단계 이상만 현황 조회
+                              <if test="startYmd != null and endYmd != null and !startYmd.equals('') and !endYmd.equals('')">
+                                 AND swm.work_ymd between convert(datetime, #{startYmd}) and convert(datetime, #{endYmd})
+                              </if>
+                            ) selectwkod_kind
+                on selectwkod_kind.wkod_kind_cd = wkod_kind.code
+               and selectwkod_kind.wkod_cls_cd = wkod_cls.code
+             where wkod_cls.code_group_cd = 'SAF_WKOD_WKKD'
+               and wkod_cls.attr3 = 'STANDARD'
+             group by wkod_cls.code, wkod_kind.code, selectwkod_kind.plant_cd
+        ), cls_kinds as (
+            select plant_cd         --사업장코드
+                  ,${wkodKindSearchs}
+            from kinds
+            pivot(sum(cnt) for cls_kind in (${wkodKinds})) as pvt
+        ), sum_count as (
+            select plant_cd
+                ,sum(cnt) as sum
+            from kinds
+            group by plant_cd
+        ), sum_general_count as (
+            select plant_cd
+                ,sum(cnt) as sum
+            from kinds
+            where cls_kind like 'WKKDNS%'
+            group by plant_cd
+
+        ), sum_special_count as (
+            select plant_cd
+                ,sum(cnt) as sum
+            from kinds
+            where cls_kind like 'WKKDSS%'
+            group by plant_cd
+
+        )
+        select plant.code as plant_cd
+              ,plant.code_nm as plant_nm
+              ,${wkodKindSearchs}
+              ,isnull(sum_count.sum, 0) as sum
+              ,isnull(sum_general_count.sum, 0) as sumGeneral
+              ,isnull(sum_special_count.sum, 0) as sumSpecial
+          from com_code_master plant
+          left outer join cls_kinds
+            on cls_kinds.plant_cd = plant.code
+          left outer join sum_count
+            on cls_kinds.plant_cd = sum_count.plant_cd
+          left outer join sum_general_count
+            on cls_kinds.plant_cd = sum_general_count.plant_cd
+          left outer join sum_special_count
+            on cls_kinds.plant_cd = sum_special_count.plant_cd
+         where plant.code_group_cd = 'COM_PLANT_CD'
+           and plant.code != '0000'
+        <if test="plantCd != null and !plantCd.equals('')">
+           and plant.code = #{plantCd}
+        </if>
+    </select>
+
+    <select id="getWkodMasterStatusSub" parameterType="HashMap" resultType="HashMap">
+        /* WkodMasterMapper.getWkodMasterStatusSub [WkodMaster.xml] */
+        <!-- 보안취약점 점검에서 예외처리가 안 될 경우 SP로 사용 -->
+        <!--EXEC SP_GET_WKOD_MASTER_STATUS_SUB #{plantCd}, #{reqDeptCd}, #{pubDeptCd}, #{subconnNm}, #{startYmd}, #{endYmd}, #{wkodKinds}, #{wkodKindSearchs}, #{defaultParam.lang}-->
+        with cls as (
+             select swm.wkod_cls_cd
+                   ,swm.plant_cd
+                   ,swm.req_dept_nm
+                   ,swm.pub_dept_nm
+                   ,swm.subconn_nm
+               from saf_wkod_master swm
+               left outer join saf_wkod_kind swk
+                 on swm.wkod_no = swk.wkod_no
+              where swm.wkod_step_cd = 'WKS05'
+                and not exists (SELECT 1
+                                  FROM saf_wkod_kind swk
+                                 WHERE swm.wkod_no = swk.wkod_no)
+                and isnull(swm.req_dept_nm, '') != ''
+                and isnull(swm.pub_dept_nm, '') != ''
+                and isnull(swm.subconn_nm, '') != ''
+                <if test="reqDeptCd != null and !reqDeptCd.equals('')">
+                and swm.req_dept_cd = #{reqDeptCd}
+                </if>
+                <if test="pubDeptCd != null and !pubDeptCd.equals('')">
+                and swm.pub_dept_cd = #{pubDeptCd}
+                </if>
+                <if test="subconnNm != null and !subconnNm.equals('')">
+                and swm.subconn_nm like '%' + #{subconnNm} + '%'
+                </if>
+                <if test="startYmd != null and endYmd != null and !startYmd.equals('') and !endYmd.equals('')">
+                   AND swm.work_ymd between convert(datetime, #{startYmd}) and convert(datetime, #{endYmd})
+                </if>
+        ), kinds as (
+            SELECT max(cls.wkod_cls_cd) as cls_kind
+                  ,count(*) as cnt
+                  ,cls.plant_cd
+                  ,cls.req_dept_nm
+                  ,cls.pub_dept_nm
+                  ,cls.subconn_nm
+              FROM cls
+             WHERE cls.wkod_cls_cd = 'WKKDNS'
+             GROUP BY cls.plant_cd
+                     ,cls.req_dept_nm
+                     ,cls.pub_dept_nm
+                     ,cls.subconn_nm
+             union all
+            SELECT max(cls.wkod_cls_cd) as cls_kind
+                  ,count(*) as cnt
+                  ,cls.plant_cd
+                  ,cls.req_dept_nm
+                  ,cls.pub_dept_nm
+                  ,cls.subconn_nm
+              FROM cls
+             WHERE cls.wkod_cls_cd = 'WKKDSS'
+             GROUP BY cls.plant_cd
+                     ,cls.req_dept_nm
+                     ,cls.pub_dept_nm
+                     ,cls.subconn_nm
+             union all
+            select wkod_cls.code + '_' + wkod_kind.code as cls_kind
+                  ,case when count(selectwkod_kind.wkod_kind_cd) &gt; 0 then count(selectwkod_kind.wkod_kind_cd) * 2
+                        else 0
+                   end as cnt
+                  ,selectwkod_kind.plant_cd
+                  ,selectwkod_kind.req_dept_nm
+                  ,selectwkod_kind.pub_dept_nm
+                  ,selectwkod_kind.subconn_nm
+              from com_code_master wkod_cls
+              full outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') wkod_kind
+                on (wkod_cls.code = wkod_kind.attr1 or wkod_cls.code = wkod_kind.attr2)
+              left outer join (select swk.wkod_kind_cd, swm.wkod_cls_cd
+                                     ,swm.plant_cd
+                                     ,swm.req_dept_nm
+                                     ,swm.pub_dept_nm
+                                     ,swm.subconn_nm
+                                 from saf_wkod_master swm
+                                inner join saf_wkod_kind swk
+                                   on swm.wkod_no = swk.wkod_no
+                                where swm.wkod_step_cd = 'WKS05' -- 출력단계 이상만 현황 조회
+                                  <if test="reqDeptCd != null and !reqDeptCd.equals('')">
+                                  and swm.req_dept_cd = #{reqDeptCd}
+                                  </if>
+                                  <if test="pubDeptCd != null and !pubDeptCd.equals('')">
+                                  and swm.pub_dept_cd = #{pubDeptCd}
+                                  </if>
+                                  <if test="subconnNm != null and !subconnNm.equals('')">
+                                  and swm.subconn_nm like '%' + #{subconnNm} + '%'
+                                  </if>
+                                  <if test="startYmd != null and endYmd != null and !startYmd.equals('') and !endYmd.equals('')">
+                                     AND swm.work_ymd between convert(datetime, #{startYmd}) and convert(datetime, #{endYmd})
+                                  </if>
+                            ) selectwkod_kind
+                on selectwkod_kind.wkod_kind_cd = wkod_kind.code
+               and selectwkod_kind.wkod_cls_cd = wkod_cls.code
+             where wkod_cls.code_group_cd = 'SAF_WKOD_WKKD'
+               and wkod_cls.attr3 = 'STANDARD'
+             group by wkod_cls.code
+                    , wkod_kind.code
+                    , selectwkod_kind.plant_cd
+                    , selectwkod_kind.req_dept_nm
+                    , selectwkod_kind.pub_dept_nm
+                    , selectwkod_kind.subconn_nm
+        ), cls_kinds as (
+            select plant_cd         --사업장코드
+                  ,req_dept_nm
+                  ,pub_dept_nm
+                  ,subconn_nm
+                  ,${wkodKindSearchs}
+            from kinds
+            pivot(sum(cnt) for cls_kind in (${wkodKinds})) as pvt
+        ), sum_count as (
+           select plant_cd
+                 ,req_dept_nm
+                 ,pub_dept_nm
+                 ,subconn_nm
+                 ,sum(cnt) as sum
+            from kinds
+            group by plant_cd
+                    ,req_dept_nm
+                    ,pub_dept_nm
+                    ,subconn_nm
+        ), sum_general_count as (
+            select plant_cd
+                 ,req_dept_nm
+                 ,pub_dept_nm
+                 ,subconn_nm
+                 ,sum(cnt) as sum
+            from kinds
+            where cls_kind like 'WKKDNS%'
+            group by plant_cd
+                    ,req_dept_nm
+                    ,pub_dept_nm
+                    ,subconn_nm
+
+        ), sum_special_count as (
+            select plant_cd
+                  ,req_dept_nm
+                  ,pub_dept_nm
+                  ,subconn_nm
+                  ,sum(cnt) as sum
+            from kinds
+            where cls_kind like 'WKKDSS%'
+            group by plant_cd
+                    ,req_dept_nm
+                    ,pub_dept_nm
+                    ,subconn_nm
+        )
+        select cls_kinds.req_dept_nm
+              ,cls_kinds.pub_dept_nm
+              ,cls_kinds.subconn_nm
+              ,${wkodKindSearchs}
+              ,isnull(sum_count.sum, 0) as sum
+              ,isnull(sum_general_count.sum, 0) as sumGeneral
+              ,isnull(sum_special_count.sum, 0) as sumSpecial
+          from cls_kinds
+          left outer join sum_count
+            on cls_kinds.plant_cd = sum_count.plant_cd
+           and cls_kinds.req_dept_nm = sum_count.req_dept_nm
+           and cls_kinds.pub_dept_nm = sum_count.pub_dept_nm
+           and cls_kinds.subconn_nm = sum_count.subconn_nm
+          left outer join sum_general_count
+            on cls_kinds.plant_cd = sum_general_count.plant_cd
+           and cls_kinds.req_dept_nm = sum_count.req_dept_nm
+           and cls_kinds.pub_dept_nm = sum_count.pub_dept_nm
+           and cls_kinds.subconn_nm = sum_general_count.subconn_nm
+          left outer join sum_special_count
+            on cls_kinds.plant_cd = sum_special_count.plant_cd
+           and cls_kinds.req_dept_nm = sum_count.req_dept_nm
+           and cls_kinds.pub_dept_nm = sum_count.pub_dept_nm
+           and cls_kinds.subconn_nm = sum_special_count.subconn_nm
+        where 1=1
+        <if test="plantCd != null and !plantCd.equals('')">
+        and cls_kinds.plant_cd = #{plantCd}
+        </if>
+    </select>
+
+    <select id="getSafWkodUseSpe" parameterType="HashMap" resultType="String">
+        /* WkodMasterMapper.getSafWkodUseSpe [WkodMaster.xml] */
+        select swus.wkod_spe_cd                 --안전작업사용보호구 코드
+        from saf_wkod_use_spe swus
+        where 1=1
+        <if test="wkodNo != null and wkodNo > 0">
+            and swus.wkod_no = #{wkodNo}
+        </if>
+    </select>
+
+    <select id="getWkodHazardSelectList" resultType="com.she.rsa.model.RiskHazard">
+        /* WkodMasterMapper.getWkodHazardSelectList [WkodMaster.xml] */
+        select rrh.risk_hazard_no
+            , rrh.p_risk_hazard_no
+            , rrh.risk_hazard_nm
+        from rsa_risk_hazard rrh
+        inner join saf_wkod_hazard swh
+        on rrh.risk_hazard_no = swh.hazard_cd
+        and swh.wkod_no = #{wkodNo}
+        order by rrh.risk_hazard_no
+    </select>
+
+    <select id="getWkodChkItemPrint" resultType="com.she.safety.model.WkodChkItem">
+        /* WkodMasterMapper.getWkodChkItemPrint [WkorMaster.xml] */
+        SELECT swci.chk_item_no
+              ,swci.chk_item_nm
+          FROM saf_wkod_chk_item swci
+         INNER JOIN saf_wkod_chk_result swcr
+            ON swci.chk_item_no = swcr.chk_item_no
+           AND swcr.wkod_no = #{wkodNo}
+           AND swcr.chk_value2 = 'Y'
+         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') WKCode
+            ON swci.wkod_kind_cd = WKCode.code
+         WHERE (EXISTS(SELECT 1
+                        FROM saf_wkod_kind swk
+                       WHERE swk.wkod_no = #{wkodNo}
+                         AND swk.wkod_kind_cd = swci.wkod_kind_cd)
+             OR EXISTS(SELECT 1
+                        FROM saf_wkod_master swm
+                       WHERE swm.wkod_no = #{wkodNo}
+                         AND swm.wkod_cls_cd = swci.wkod_kind_cd)
+             OR swci.wkod_dpty_cd = 'WDT03')
+            AND swci.chk_type_cd like '%datatable%'
+    </select>
+
+    <select id="getSafWkodChkResult" resultType="com.she.safety.model.WkodChkResult">
+        /* WkodMasterMapper.getSafWkodChkResult [WkodMaster.xml] */
+        SELECT swcr.wkod_no
+              ,swcr.chk_item_no
+              ,swcr.chk_value1
+              ,swcr.chk_value2
+              ,swcr.chk_user_id
+              ,cu.user_nm as chk_user_nm
+          FROM saf_wkod_chk_result swcr
+          LEFT OUTER JOIN com_user cu
+            ON swcr.chk_user_id = cu.user_id
+         WHERE swcr.wkod_no = #{wkodNo}
+    </select>
+
+    <select id="getSafWkodChkResultBase" resultType="com.she.safety.model.WkodChkResult">
+        /* WkodMasterMapper.getSafWkodChkResultBase [WkodMaster.xml] */
+        with A as (
+            SELECT swcr.wkod_no
+                  ,swcr.chk_item_no
+                  ,swcr.chk_value1
+                  ,swcr.chk_value2
+                  ,swcr.chk_user_id
+                  ,cu.user_nm as chk_user_nm
+              FROM saf_wkod_chk_result swcr
+              LEFT OUTER JOIN com_user cu
+                ON swcr.chk_user_id = cu.user_id
+             WHERE swcr.wkod_no = #{wkodNo}
+        )
+        SELECT swci.chk_item_no
+              ,swci.wkod_kind_cd
+              ,case when isnull(swci.wkod_kind_cd, '') = '' then '안전조치 요구사항(공통)'
+                    when swci.wkod_kind_cd = 'WKKDNS' then '안전조치 요구사항(일반)'
+                    when swci.wkod_kind_cd = 'WKKDSS' then '안전조치 요구사항(화기)'
+                    else WKCode.code_nm
+               end as wkod_kind_nm
+              ,swci.wkod_dpty_cd
+              ,CDTCode.code_nm as wkod_dpty_nm
+              ,swci.chk_item_nm
+              ,swci.chk_type_cd
+              ,check_type.code_nm as chk_type_nm
+              ,swci.use_yn
+              ,case when swci.use_yn = 'Y' then '사용'
+                    else '미사용'
+               end as use_yn_nm
+              ,swci.sort_order
+              ,A.chk_value1
+              ,A.chk_value2
+              ,A.chk_user_id
+              ,A.chk_user_nm
+          FROM saf_wkod_chk_item swci
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') WKCode
+            ON swci.wkod_kind_cd = WKCode.code
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_DPTY') CDTCode
+            ON swci.wkod_dpty_cd = CDTCode.code
+          left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'STANDARD_WO_CHECK_TYPE') check_type
+            ON swci.chk_type_cd = check_type.code
+          LEFT OUTER JOIN A
+            ON swci.chk_item_no = A.chk_item_no
+         WHERE 1=1
+           AND swci.use_yn = 'Y'
+         <if test='plantCd != null and !plantCd.equals("")'>
+           AND swci.plant_cd = #{plantCd}
+         </if>
+          ORDER BY WKCode.sort_order, swci.sort_order
+    </select>
+
+
+    <insert id="createWkodMaster" parameterType="com.she.safety.model.WkodMaster">
+        /* WkodMasterMapper.createWkodMaster [WkodMaster.xml] */
+        <selectKey keyProperty="wkodNo" resultType="com.she.safety.model.WkodMaster" order="BEFORE">
+            select next value for seq_saf_wkod_master as wkodNo
+        </selectKey>
+        insert into saf_wkod_master
+        (wkod_no
+        ,plant_cd
+        ,const_no
+        ,wkod_num
+        ,wkod_cls_cd
+        ,work_ymd
+        ,work_start_time
+        ,work_end_time
+        ,work_over_time
+        ,work_title
+        ,work_content
+        ,wkod_step_cd
+        ,process_cd
+        ,work_area
+        ,req_user_id
+        ,req_user_nm
+        ,req_dept_cd
+        ,req_dept_nm
+        ,req_ymd
+        ,pub_dept_cd
+        ,pub_dept_nm
+        ,pub_mgr_nm
+        ,pub_mgr_id
+        ,pub_mgr_tel
+        ,coop_dept_cd
+        ,coop_dept_nm
+        ,vendor_cd
+        ,subconn_nm
+        ,subconn_user_nm
+        ,subconn_user_tel
+        ,worker_numb
+        ,special_instructions
+        ,handle_chem_content
+        ,over_yn
+        ,map_no
+        ,ref_remark
+        ,locate_pnt_x
+        ,locate_pnt_y
+        ,spm_etc
+        ,del_yn
+        ,subconn2nd_yn
+        ,subconn_reg_yn
+        ,chng_acc_psn
+        ,chng_take_psn
+        ,saf_measure
+        ,woker_terms
+        ,psm_yn
+        ,prt_yn
+        ,assess_plan_no
+        ,swm.vendor_write_yn
+        ,create_user_id
+        ,create_dt)
+        values
+        (#{wkodNo}
+        ,#{plantCd}
+        ,#{constNo}
+        ,(select convert(varchar(4),datepart(YYYY,getdate())) + '-' + (select replicate('0',5 - len(convert(varchar(5), #{wkodNo}))) + convert(varchar(5), #{wkodNo})))
+        ,#{wkodClsCd}
+        ,#{workYmd}
+        ,#{workStartTime}
+        ,#{workEndTime}
+        ,#{workOverTime}
+        ,#{workTitle}
+        ,#{workContent}
+        ,#{wkodStepCd}
+        ,#{processCd}
+        ,#{workArea}
+        ,#{reqUserId}
+        ,#{reqUserNm}
+        ,#{reqDeptCd}
+        ,#{reqDeptNm}
+        ,#{reqYmd}
+        ,#{pubDeptCd, jdbcType=VARCHAR}
+        ,(select max(dept_nm) from com_dept where dept_cd = #{pubDeptCd, jdbcType=VARCHAR})
+        ,#{pubMgrNm}
+        ,#{pubMgrId}
+        ,#{pubMgrTel}
+        ,#{coopDeptCd, jdbcType=VARCHAR}
+        ,(select dept_nm from com_dept where dept_cd = #{coopDeptCd, jdbcType=VARCHAR})
+        ,#{vendorCd}
+        ,#{subconnNm}
+        ,#{subconnUserNm}
+        ,#{subconnUserTel}
+        ,#{workerNumb}
+        ,#{specialInstructions}
+        ,#{handleChemContent}
+        ,'N'
+        ,#{mapNo}
+        ,#{refRemark}
+        ,#{locatePntX}
+        ,#{locatePntY}
+        ,#{spmEtc}
+        ,'N'
+        ,#{subconn2ndYn}
+        ,#{subconnRegYn}
+        ,#{chngAccPsn}
+        ,#{chngTakePsn}
+        ,#{safMeasure}
+        ,#{wokerTerms}
+        ,#{psmYn}
+        ,#{prtYn}
+        ,#{assessPlanNo}
+        ,#{vendorWriteYn}
+        ,#{createUserId}
+        ,getdate())
+    </insert>
+
+    <insert id="createWkodHazard">
+        insert into saf_wkod_hazard
+            (wkod_no
+            ,hazard_cd)
+         values
+            (#{wkodNo}
+            ,#{riskHazardNo})
+    </insert>
+
+    <insert id="createWkodUseSpe">
+        insert into saf_wkod_use_spe
+            (wkod_no
+            ,wkod_spe_cd)
+         values
+            (#{wkodNo}
+            ,#{wkodSpeCd})
+    </insert>
+
+    <insert id="createWkodChkResult" parameterType="com.she.safety.model.WkodChkResult">
+        /* WkodMasterMapper.createWkodChkResult [WkodMaster.xml] */
+        INSERT INTO saf_wkod_chk_result
+            (wkod_no
+            ,chk_item_no
+            ,chk_step_cd
+            ,chk_value1
+            ,chk_value2
+            ,chk_user_id)
+        VALUES
+            (#{wkodNo}
+            ,#{chkItemNo}
+            ,''
+            ,#{chkValue1}
+            ,#{chkValue2}
+            ,#{chkUserId})
+    </insert>
+
+    <update id="updateWkodMaster" parameterType="com.she.safety.model.WkodMaster">
+        /* WkodMasterMapper.updateWkodMaster [WkodMaster.xml] */
+        <selectKey keyProperty="overConfirmDt,workCompleteTime,pubConfirmDt,appConfirmDt" resultType="com.she.safety.model.WkodMaster" order="BEFORE">
+            select case when #{wkodStepCd} = 'WKS04' and #{overYn} = 'Y' then getdate()
+                 else #{overConfirmDt} end as overConfirmDt
+                ,case when #{wkodStepCd} = 'WKS05' or #{wkodStepCd} = 'WKS06' then getdate()
+                 else #{workCompleteTime} end as workCompleteTime
+                ,case when #{wkodStepCd} = 'WKS03' then getdate()
+                 else #{pubConfirmDt} end as pubConfirmDt
+                ,case when #{wkodStepCd} = 'WKS04' and #{overYn} = 'N' then getdate()
+                 else #{appConfirmDt} end as appConfirmDt
+        </selectKey>
+        update saf_wkod_master
+            set wkod_num = #{wkodNum}
+                ,plant_cd = #{plantCd}
+                ,const_no = #{constNo}
+                ,wkod_cls_cd = #{wkodClsCd}
+                ,work_ymd = #{workYmd}
+                ,work_start_time = #{workStartTime}
+                ,work_end_time = #{workEndTime}
+                ,work_over_time = #{workOverTime}
+                ,work_complete_time = case when #{wkodStepCd} = 'WKS05' or #{wkodStepCd} = 'WKS06' then getdate() else #{workCompleteTime} end
+                ,work_title = #{workTitle}
+                ,work_content = #{workContent}
+                ,wkod_step_cd = #{wkodStepCd}
+                ,process_cd = #{processCd}
+                ,work_area = #{workArea}
+                ,req_user_id = #{reqUserId}
+                ,req_user_nm = #{reqUserNm}
+                ,req_dept_cd = #{reqDeptCd}
+                ,req_dept_nm = #{reqDeptNm}
+                ,req_ymd = #{reqYmd}
+                ,pub_dept_cd = #{pubDeptCd, jdbcType=VARCHAR}
+                ,pub_dept_nm = (select max(dept_nm) from com_dept where dept_cd = #{pubDeptCd, jdbcType=VARCHAR})
+                ,pub_mgr_nm = #{pubMgrNm}
+                ,pub_mgr_id = #{pubMgrId}
+                ,pub_mgr_tel = #{pubMgrTel}
+                ,coop_dept_cd = #{coopDeptCd, jdbcType=VARCHAR}
+                ,coop_dept_nm = (select max(dept_nm) from com_dept where dept_cd = #{coopDeptCd, jdbcType=VARCHAR})
+                ,vendor_cd = #{vendorCd}
+                ,subconn_nm = #{subconnNm}
+                ,subconn_user_nm = #{subconnUserNm}
+                ,subconn_user_tel = #{subconnUserTel}
+                ,worker_numb = #{workerNumb}
+                ,special_instructions = #{specialInstructions}
+                ,handle_chem_content = #{handleChemContent}
+                ,over_yn = #{overYn}
+                ,ref_remark = #{refRemark}
+                ,map_no = #{mapNo}
+                ,locate_pnt_x = #{locatePntX}
+                ,locate_pnt_y = #{locatePntY}
+                ,spm_etc = #{spmEtc}
+                ,over_user_id = #{overUserId}
+                ,over_user_nm = #{overUserNm}
+                ,over_dept_cd = #{overDeptCd}
+                ,over_dept_nm = #{overDeptNm}
+                ,over_confirm_dt = #{overConfirmDt}
+                ,subconn2nd_yn = #{subconn2ndYn}
+                ,chng_acc_psn = #{chngAccPsn}
+                ,chng_take_psn = #{chngTakePsn}
+                ,saf_measure = #{safMeasure}
+                ,woker_terms = #{wokerTerms}
+                ,psm_yn = #{psmYn}
+                ,prt_yn = #{prtYn}
+                ,assess_plan_no = #{assessPlanNo}
+                ,vendor_write_yn = #{vendorWriteYn}
+                ,update_user_id = #{updateUserId}
+                ,update_dt = getdate()
+        where wkod_no = #{wkodNo}
+    </update>
+
+    <delete id="deleteWkodMaster" parameterType="com.she.safety.model.WkodMaster">
+        /* WkodMasterMapper.deleteWkodMaster [WkodMaster.xml] */
+         delete saf_wkod_master
+         where wkod_no = #{wkodNo}
+
+         <!-- update saf_wkod_master
+            set del_yn = 'Y'
+                ,update_user_id = #{updateUserId}
+                ,update_dt = getdate()
+          where wkod_no = #{wkodNo} -->
+    </delete>
+
+    <delete id="deleteWkodHazard">
+        /* WkodMasterMapper.deleteWkodHazard [WkodMaster.xml] */
+        delete saf_wkod_hazard
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <delete id="deleteWkodUseSpe">
+        /* WkodMasterMapper.deleteWkodUseSpe [WkodMaster.xml] */
+        delete saf_wkod_use_spe
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <delete id="deleteWkodChkResult">
+        /* WkodMasterMapper.deleteWkodChkResult [WkodMaster.xml] */
+        delete saf_wkod_chk_result
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <select id="getWkodMasterFacility" resultType="com.she.safety.model.FacilityUsed">
+        /* WkodMasterMapper.getWkodMasterFacility [WkodMaster.xml] */
+        select swuf.saf_facility_cd
+            ,swuf.saf_facility_cd
+            ,swuf.wkod_no
+            ,sfm.facility_nm
+            ,sfm.facility_psm_cd
+            ,facilityPsm.code_nm as facility_psm_nm
+            ,sft.saf_facility_type_nm
+        from saf_wkod_use_facility swuf
+        inner join saf_facility_mst sfm
+        on swuf.saf_facility_cd = sfm.saf_facility_cd
+        inner join saf_facility_type sft
+        on sfm.saf_facility_type_cd = sft.saf_facility_type_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_FACILITY_PSM') facilityPsm
+        on facilityPsm.code = sfm.facility_psm_cd
+        where 1=1
+        and swuf.wkod_no = #{wkodNo}
+    </select>
+
+    <insert id="createWkodUseFacility" parameterType="com.she.safety.model.FacilityUsed">
+        /* WkodMasterMapper.createWkodUseFacility [WkodMaster.xml] */
+        insert into saf_wkod_use_facility
+            (wkod_no
+            ,saf_facility_cd)
+        values
+            (#{wkodNo}
+            ,#{safFacilityCd})
+    </insert>
+
+    <delete id="deleteWkodMasterFacility">
+        /* WkodMasterMapper.deleteWkodMasterFacility [WkodMaster.xml] */
+        delete from saf_wkod_use_facility
+        where wkod_no = #{wkodNo}
+        <if test="safFacilityCd != null and !safFacilityCd.equals('')">
+        and saf_facility_cd = #{safFacilityCd}
+        </if>
+    </delete>
+
+    <select id="getWkodLegalLcnGrps" resultType="com.she.safety.model.ConstLegalLcnMaster">
+        /* WkodMasterMapper.getWkodLegalLcnGrps [WkorMaster.xml] */
+        select a.code_group_nm as grp_nm
+            ,a.code_group_cd as grp_cd
+        from com_code_group a
+        where a.code_group_cd = 'SAF_LSN_SAF_CERT_WK'
+        union all
+        select a.code_group_nm as grp_nm
+            ,a.code_group_cd as grp_cd
+        from com_code_group a
+        where a.code_group_cd = 'SAF_LSN_SELF_SAF_WK'
+        union all
+        select a.code_group_nm as grp_nm
+            ,a.code_group_cd as grp_cd
+        from com_code_group a
+        where a.code_group_cd = 'SAF_LSN_HAZ_PLAN_WK'
+        union all
+        select a.code_group_nm as grp_nm
+            ,a.code_group_cd as grp_cd
+        from com_code_group a
+        where a.code_group_cd = 'SAF_LSN_PSM_WK'
+        union all
+        select a.code_group_nm as grp_nm
+            ,a.code_group_cd as grp_cd
+        from com_code_group a
+        where a.code_group_cd = 'SAF_LSN_HP_GAS_WK'
+        union all
+        select a.code_group_nm as grp_nm
+            ,a.code_group_cd as grp_cd
+        from com_code_group a
+        where a.code_group_cd = 'SAF_LSN_FIRE_FACIL_WK'
+        union all
+        select a.code_group_nm as grp_nm
+            ,a.code_group_cd as grp_cd
+        from com_code_group a
+        where a.code_group_cd = 'SAF_LSN_DGR_MAT_WK'
+        union all
+        select a.code_group_nm as grp_nm
+            ,a.code_group_cd as grp_cd
+        from com_code_group a
+        where a.code_group_cd = 'SAF_LSN_HAZ_MAT_WK'
+    </select>
+
+    <select id="getWkodLegalLcns" resultType="com.she.safety.model.ConstLegalLcn">
+        /* WkodMasterMapper.getWkodLegalLcns [WkorMaster.xml] */
+        select const_no
+              ,grp_cd
+              ,itm_cd
+        from saf_const_legal_lcn
+        where grp_cd = #{grpCd}
+        and const_no = #{constNo}
+    </select>
+
+    <select id="getWkodNoLegalLcns" resultType="com.she.safety.model.ConstLegalLcn">
+        /* WkodMasterMapper.getWkodNoLegalLcns [WkorMaster.xml] */
+        select wkod_no
+              ,grp_cd
+              ,itm_cd
+        from saf_wkod_legal_lcn
+        where grp_cd = #{grpCd}
+        and wkod_no = #{wkodNo}
+    </select>
+
+    <insert id="createWkodLegalLcn" parameterType="com.she.safety.model.ConstLegalLcn">
+        /* WkodMasterMapper.createWkodLegalLcn [WkorMaster.xml] */
+        insert into saf_const_legal_lcn
+            (const_no
+            ,grp_cd
+            ,itm_cd)
+        values
+            (#{constNo}
+            ,#{grpCd}
+            ,#{itmCd})
+    </insert>
+
+    <delete id="deleteWkodLegalLcn">
+        /* WkodMasterMapper.deleteWkodLegalLcn [WkorMaster.xml] */
+        delete from saf_const_legal_lcn
+        where const_no = #{constNo}
+    </delete>
+
+    <insert id="createWkodNoLegalLcn" parameterType="com.she.safety.model.ConstLegalLcn">
+        /* WkodMasterMapper.createWkodNoLegalLcn [WkorMaster.xml] */
+        insert into saf_wkod_legal_lcn
+            (wkod_no
+            ,grp_cd
+            ,itm_cd)
+        values
+            (#{wkodNo}
+            ,#{grpCd}
+            ,#{itmCd})
+    </insert>
+
+    <delete id="deleteWkodNoLegalLcn">
+        /* WkodMasterMapper.deleteWkodNoLegalLcn [WkorMaster.xml] */
+        delete from saf_wkod_legal_lcn
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <select id="getWkodKind" resultType="com.she.safety.model.WkodKind">
+        /* WkodMasterMapper.getWkodKind [WkorMaster.xml] */
+        select swsk.wkod_no
+              ,swsk.wkod_kind_cd
+              ,kind.code_nm as wkod_kind_nm
+        from saf_wkod_kind swsk
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') kind
+        on swsk.wkod_kind_cd = kind.code
+        where wkod_no = #{wkodNo}
+    </select>
+
+    <select id="getWkodGasMeas" resultType="com.she.safety.model.WkodGasMeas">
+        /* WkodMasterMapper.getWkodGasMeas [WkorMaster.xml] */
+        select swgm.gas_meas_no
+              ,swgm.wkod_no
+              ,swgm.meas_time
+              ,swgm.meas_hour
+              ,swgm.meas_min
+              ,swgm.meas_pnt
+              ,swgm.gas_kind_nm
+              ,swgm.meas_rslt
+              ,swgm.meas_man
+        from saf_wkod_gas_meas swgm
+        where swgm.wkod_no = #{wkodNo}
+    </select>
+
+    <select id="getSafWkodMap" resultType="com.she.safety.model.Map">
+        /* WkodMasterMapper.getSafWkodMap [WkorMaster.xml] */
+        SELECT top 1
+               map_id
+              ,map_name
+              ,plant_cd
+              ,img_base64
+              ,description
+              ,use_yn
+          FROM com_map
+         WHERE 1=1
+        <if test="plantCd != null and !plantCd.equals('')">
+          AND plant_cd = #{plantCd}
+        </if>
+        <choose>
+            <when test="mapNo != null and mapNo > 0">
+           AND map_id = #{mapNo}
+            </when>
+            <otherwise>
+            -- 지도 번호가 없는 경우는 저장된 정보가 아님으로 사용가능한 map정보만 들고 간다.
+           AND use_yn = 'Y'
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="getWkodSubconnWorkers" resultType="com.she.safety.model.WkodSubconnWorker">
+        /* WkodMasterMapper.getWkodSubconnWorkers [WkorMaster.xml] */
+        select swsw.subconn_worker_no
+            ,swsw.wkod_no
+            ,swsw.self_yn
+            ,swsw.user_id
+            ,swsw.worker_nm
+            ,swsw.birth_ymd
+            ,swsw.gender_cd
+            ,case when swsw.gender_cd = 'M' or swsw.gender_cd = '1' then '남성'
+                  when swsw.gender_cd = 'W' or swsw.gender_cd = '2' then '여성'
+             else '' end as gender_nm
+            ,swsw.worker_job
+            ,swsw.car_num
+            ,swsw.in_equip
+            ,swsw.spe_commts
+            ,swsw.dept_cd
+            ,swsw.dept_nm
+        from saf_wkod_subconn_worker swsw
+        where swsw.wkod_no = #{wkodNo}
+    </select>
+
+    <delete id="deleteWkodSpeKind">
+        /* WkodMasterMapper.deleteWkodSpeKind [WkorMaster.xml] */
+        delete from saf_wkod_spe_kind
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <insert id="createWkodSpeKind" parameterType="com.she.safety.model.WkodSpeKind">
+        /* WkodMasterMapper.createWkodSpeKind [WkorMaster.xml] */
+        insert into saf_wkod_spe_kind
+            (wkod_no
+            ,wkod_spe_kind_cd)
+        values
+            (#{wkodNo}
+            ,#{wkodSpeKindCd})
+    </insert>
+
+    <delete id="deleteWkodKind">
+        /* WkodMasterMapper.deleteWkodKind [WkorMaster.xml] */
+        delete from saf_wkod_kind
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <insert id="createWkodKind" parameterType="com.she.safety.model.WkodKind">
+        /* WkodMasterMapper.createWkodKind [WkorMaster.xml] */
+        insert into saf_wkod_kind
+            (wkod_no
+            ,wkod_kind_cd)
+        values
+            (#{wkodNo}
+            ,#{wkodKindCd})
+    </insert>
+
+    <delete id="deleteWkodGasMeas">
+        /* WkodMasterMapper.deleteWkodGasMeas [WkorMaster.xml] */
+        delete from saf_wkod_gas_meas
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <insert id="createWkodGasMeas" parameterType="com.she.safety.model.WkodGasMeas">
+        /* WkodMasterMapper.createWkodGasMeas [WkorMaster.xml] */
+        <selectKey keyProperty="gasMeasNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_wkod_gas_meas as gasMeasNo
+        </selectKey>
+        insert into saf_wkod_gas_meas
+            (wkod_no
+            ,gas_meas_no
+            ,meas_time
+            ,meas_hour
+            ,meas_min
+            ,meas_pnt
+            ,gas_kind_nm
+            ,meas_rslt
+            ,meas_man)
+        values
+            (#{wkodNo}
+            ,#{gasMeasNo}
+            ,#{measTime}
+            ,#{measHour}
+            ,#{measMin}
+            ,#{measPnt}
+            ,#{gasKindNm}
+            ,#{measRslt}
+            ,#{measMan}
+            )
+    </insert>
+
+    <delete id="deleteWkodSubconnWorker">
+        /* WkodMasterMapper.deleteWkodSubconnWorker [WkorMaster.xml] */
+        delete from saf_wkod_subconn_worker
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <insert id="createWkodSubconnWorker" parameterType="com.she.safety.model.WkodSubconnWorker">
+        /* WkodMasterMapper.createWkodSubconnWorker [WkorMaster.xml] */
+        <selectKey keyProperty="subconnWorkerNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_wkod_subconn_worker as subconnWorkerNo
+        </selectKey>
+        insert into saf_wkod_subconn_worker
+            (wkod_no
+            ,subconn_worker_no
+            ,self_yn
+            ,user_id
+            ,worker_nm
+            ,dept_cd
+            ,dept_nm
+            ,birth_ymd
+            ,gender_cd
+            ,worker_job
+            ,car_num
+            ,in_equip
+            ,spe_commts)
+        values
+            (#{wkodNo}
+            ,#{subconnWorkerNo}
+            ,#{selfYn}
+            ,#{userId}
+            ,#{workerNm}
+            ,#{deptCd}
+            ,#{deptNm}
+            ,#{birthYmd}
+            ,#{genderCd}
+            ,#{workerJob}
+            ,#{carNum}
+            ,#{inEquip}
+            ,#{speCommts}
+            )
+    </insert>
+
+    <update id="constCompleteWkodMaster" parameterType="com.she.safety.model.WkodMaster">
+        UPDATE saf_wkod_master
+           SET wkod_step_cd = #{wkodStepCd}
+              ,work_complete_time = getdate()
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE wkod_no = #{wkodNo}
+    </update>
+
+    <update id="completeWkodMaster" parameterType="com.she.safety.model.WkodMaster">
+        /* WkodMasterMapper.completeWkodMaster [WkodMaster.xml] */
+        update saf_wkod_master
+        set appr_rqst_no = #{apprRqstNo}
+        <if test="wkodStpeCd != null and !wkodStpeCd.equals('')">
+        ,wkod_step_cd = #{wkodStpeCd}
+        </if>
+        where wkod_no = #{wkodNo}
+    </update>
+
+    <update id="overWkodMaster" parameterType="com.she.safety.model.WkodMaster">
+        /* WkodMasterMapper.overWkodMaster [WkodMaster.xml] */
+        UPDATE saf_wkod_master
+           SET wkod_step_cd = #{wkodStepCd}
+              ,over_yn = 'Y'
+              ,ref_remark = #{refRemark}
+              ,work_over_time = #{workOverTime}
+              ,over_user_id = #{overUserId}
+              ,over_user_nm = #{overUserNm}
+              ,over_dept_cd = #{overDeptCd}
+              ,over_dept_nm = #{overDeptNm}
+              ,over_confirm_dt = getdate()
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE wkod_no = #{wkodNo}
+    </update>
+
+    <update id="cancelWkodMaster" parameterType="com.she.safety.model.WkodMaster">
+        /* WkodMasterMapper.cancelWkodMaster [WkodMaster.xml] */
+        UPDATE saf_wkod_master
+           SET wkod_step_cd = #{wkodStepCd}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE wkod_no = #{wkodNo}
+    </update>
+
+<!--     <select id="getWkodSpeKindPrint" resultType="com.she.safety.model.WkodSpeKind">
+        /* WkodMasterMapper.getWkodSpeKind [WkorMaster.xml] */
+        select distinct
+            swsk.wkod_spe_kind_cd
+            ,kind.code_nm as wkod_spe_kind_nm
+            ,case when (select 1
+                        from saf_wkod_spe_kind swk
+                        where kind.code = swk.wkod_spe_kind_cd
+                        and swk.wkod_no = #{wkodNo}) = 1 then 'true'
+            else 'false'
+            end as wkod_spe_kind_ck
+        from saf_wkod_spe_kind swsk
+                left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') kind
+                on swsk.wkod_spe_kind_cd = kind.code
+        where use_yn = 'Y'
+        and code_group_cd = 'SAF_WKOD_SPWK'
+    </select> -->
+
+    <select id="getWkodKindPrint" resultType="com.she.safety.model.WkodKind">
+        /* WkodMasterMapper.getWkodKind [WkorMaster.xml] */
+        SELECT kind.code wkod_kind_cd
+               ,kind.code_nm as wkod_kind_nm
+               ,'true' as wkod_kind_ck
+               ,kind.attr1
+               ,kind.sort_order
+           FROM saf_wkod_kind swk
+           inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') kind
+             ON swk.wkod_kind_cd = kind.code
+            AND use_yn = 'N'
+            AND kind.attr3 = 'STANDARD' -- 기존의 데이터를 조회 안하기 위한 조건
+            AND kind.code NOT IN ('WKKS01', 'WKKS02') -- 기존의 데이터를 조회 안하기 위한 조건
+          WHERE 1=1
+          UNION ALL
+         SELECT kind.code wkod_kind_cd
+               ,kind.code_nm as wkod_kind_nm
+               ,case when EXISTS(SELECT 1
+                                   FROM saf_wkod_kind swk
+                                  WHERE kind.code = swk.wkod_kind_cd
+                                    AND swk.wkod_no = #{wkodNo}) then 'true'
+                     else 'false'
+                 end as wkod_kind_ck
+               ,kind.attr1
+               ,kind.sort_order
+           FROM dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_KIND') kind
+          WHERE 1=1
+            AND use_yn = 'Y'
+            AND kind.attr3 = 'STANDARD' -- 기존의 데이터를 조회 안하기 위한 조건
+            AND kind.code NOT IN ('WKKS01', 'WKKS02') -- 기존의 데이터를 조회 안하기 위한 조건
+          ORDER BY attr1, sort_order
+    </select>
+
+    <select id="getSafWkodUseSpeAllInfo" resultType="HashMap">
+        /* WkodMasterMapper.getSafWkodUseSpeAllInfo [WkodMaster.xml] */
+        select distinct swus.wkod_spe_cd    as wkodSpeCd            --안전작업사용보호구 코드
+            ,spe.code_nm as wkodSpeNm
+            ,case when (select 1
+                from saf_wkod_use_spe swuss
+                where spe.code = swuss.wkod_spe_cd
+                and swuss.wkod_no = #{wkodNo}) = 1 then 'true'
+    else 'false'
+    end wkodSpeCk
+        from saf_wkod_use_spe swus
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_SPE') spe
+        on swus.wkod_spe_cd = spe.code
+        where spe.use_yn = 'Y'
+    </select>
+
+    <update id="updateWkodPrt">
+        /* WkodMasterMapper.updateWkodPrt [WkodMaster.xml] */
+        update saf_wkod_master
+            set prt_yn = 'Y'
+        where wkod_no = #{wkodNo}
+    </update>
+
+    <select id="getWkodLotos" resultType= "com.she.safety.model.LOTO">
+        /* WkodMasterMapper.getWkodLotos [WkodMaster.xml] */
+        select swl.wkod_no
+              ,swl.saf_facility_cd
+              ,sfm.facility_nm
+              ,swl.lock_locate
+              ,sft.saf_facility_type_cd
+              ,sft.saf_facility_type_nm
+        from saf_wkod_loto swl
+        inner join saf_facility_mst sfm
+        on swl.saf_facility_cd = sfm.saf_facility_cd
+        inner join saf_facility_type sft
+        on sfm.saf_facility_type_cd = sft.saf_facility_type_cd
+        where swl.wkod_no = #{wkodNo}
+    </select>
+
+    <insert id="createWkodLoto" parameterType="com.she.safety.model.LOTO">
+        /* WkodMasterMapper.createWkodLoto [WkodMaster.xml] */
+        insert into saf_wkod_loto
+            (wkod_no
+            ,saf_facility_cd
+            ,lock_locate)
+        values
+            (#{wkodNo}
+            ,#{safFacilityCd}
+            ,#{lockLocate})
+    </insert>
+
+    <delete id="deleteWkodLoto">
+        /* WkodMasterMapper.deleteWkodLoto [WkodMaster.xml] */
+        delete from saf_wkod_loto
+        where wkod_no = #{wkodNo}
+    </delete>
+
+    <insert id="createConfirmSign" parameterType="com.she.safety.model.Signature">
+        /* WkodMasterMapper.createConfirmSign [WkodMaster.xml] */
+        <selectKey keyProperty="signNo" resultType="int" order="BEFORE">
+            select next value for seq_com_signature as signNo
+        </selectKey>
+        insert into com_signature
+            (sign_no
+            ,wkod_no
+            ,sign_type
+            ,confirm_yn
+            ,create_user_id
+            ,create_dt
+            ,update_user_id
+            ,update_dt)
+        values
+            (#{signNo}
+            ,#{wkodNo}
+            ,#{signType}
+            ,#{confirmYn}
+            ,#{createUserId}
+            ,#{createDt}
+            ,#{updateUserId}
+            ,#{updateDt})
+    </insert>
+
+    <update id="updateConfirmSign" parameterType="com.she.safety.model.Signature">
+        /* WkodMasterMapper.updateConfirmSign [WkodMaster.xml] */
+        update com_signature
+            set  confirm_yn = #{confirmYn}
+                ,update_user_id = #{updateUserId}
+                ,update_dt = #{updateDt}
+        where 1=1
+        and sign_no = #{signNo}
+        and wkod_no = #{wkodNo}
+        and sign_type = #{signType}
+    </update>
+
+    <delete id="deleteConfirmSign" parameterType="com.she.safety.model.Signature">
+        /* WkodMasterMapper.deleteConfirmSign [WkodMaster.xml] */
+        delete from com_signature
+        where 1=1
+        and sign_no = #{signNo}
+    </delete>
+
+    <select id="getConfirmSigns" parameterType="HashMap" resultType="com.she.safety.model.Signature">
+        /* WkodMasterMapper.getConfirmSigns [WkodMaster.xml] */
+        select
+            sign_no
+            ,wkod_no
+            ,sign_type
+            ,confirm_yn
+            ,create_user_id
+            ,create_dt
+            ,update_user_id
+            ,update_dt
+        from com_signature
+        where wkod_no = #{wkodNo}
+    </select>
+</mapper>

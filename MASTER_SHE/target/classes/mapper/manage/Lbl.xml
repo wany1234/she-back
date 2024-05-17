@@ -1,0 +1,146 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.manage.mapper.LblMapper">
+
+    <select id="checkLblMst" resultType="int">
+        /* LblMapper.checkLblMst [Lbl.xml] */
+        SELECT count(*)
+          FROM com_lbl_mst
+         WHERE UPPER(mst_cd) = UPPER(#{mstCd})
+    </select>
+
+    <insert id="createLblMst" parameterType="com.she.manage.model.LblMst">
+        /* LblMapper.createLblMst [Lbl.xml] */
+        INSERT INTO com_lbl_mst
+            (mst_cd
+            ,mst_nm
+            ,del_yn
+            ,create_user_id
+            ,create_dt)
+        VALUES
+            (#{mstCd}
+            ,#{mstNm}
+            ,'N'
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+
+    <select id="getLblMsts" resultType="com.she.manage.model.LblMst">
+        /* LblMapper.getLblMsts [Lbl.xml] */
+        SELECT mst_cd
+              ,mst_nm
+          FROM com_lbl_mst
+         WHERE 1=1
+           AND del_yn = 'N'
+         ORDER BY mst_cd
+    </select>
+
+    <select id="getLblMst" resultType="com.she.manage.model.LblMst">
+        /* LblMapper.getLblMst [Lbl.xml] */
+        SELECT mst_cd
+              ,mst_nm
+          FROM com_lbl_mst
+         WHERE mst_cd = #{mstCd}
+    </select>
+
+    <update id="updateLblMst" parameterType="com.she.manage.model.LblMst">
+        /* LblMapper.updateLblMst [Lbl.xml] */
+        UPDATE com_lbl_mst
+           SET mst_nm = #{mstNm}
+              ,del_yn = #{delYn}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE mst_cd = #{mstCd}
+    </update>
+
+    <update id="updateLblDtlDelYn" parameterType="com.she.manage.model.LblDtl">
+        /* LblMapper.updateLblDtlDelYn [Lbl.xml] */
+        UPDATE com_lbl_dtl
+        SET del_yn = 'Y'
+          ,update_user_id = #{updateUserId}
+          ,update_dt = getdate()
+        WHERE mst_cd = #{mstCd}
+    </update>
+
+    <select id="checkLblDtl" resultType="int">
+        /* LblMapper.checkLblDtl [Lbl.xml] */
+        SELECT count(*)
+        FROM com_lbl_dtl
+        WHERE mst_cd = #{mstCd}
+          AND lbl_val = #{lblVal}
+    </select>
+
+    <!-- 메시지 코드 자동 생성 -->
+    <select id="getNewLblCd" resultType="hashMap">
+        /* LblMapper.getNewLblCd [Lbl.xml] */
+        SELECT 'L' + REPLICATE('0', 10-LEN(CONVERT(VARCHAR(100), NEXT VALUE FOR seq_lbl_cd))) + CONVERT(VARCHAR(100), NEXT VALUE FOR seq_lbl_cd) AS lbl_cd
+    </select>
+
+    <insert id="createLblDtl" parameterType="com.she.manage.model.LblDtl">
+        /* LblMapper.createLblDtl [Lbl.xml] */
+        INSERT INTO com_lbl_dtl
+            (mst_cd
+            ,lbl_cd
+            ,lbl_val
+            ,lbl_val_en
+            ,lbl_val_ja
+            ,lbl_val_zh_cn
+            ,lbl_val_zh_tw
+            ,del_yn
+            ,create_user_id
+            ,create_dt)
+        VALUES
+            (#{mstCd}
+            ,#{lblCd}
+            ,#{lblVal}
+            ,#{lblValEn}
+            ,#{lblValJa}
+            ,#{lblValZhCn}
+            ,#{lblValZhTw}
+            ,'N'
+            ,#{createUserId}
+            ,getdate())
+    </insert>
+
+    <select id="getLblDtls" resultType="com.she.manage.model.LblDtl">
+        /* LblMapper.getLblDtls [Lbl.xml] */
+        SELECT mst_cd
+              ,lbl_cd
+              ,lbl_val
+          FROM com_lbl_dtl
+         WHERE  del_yn = 'N'
+           <if test="mstCd!='all'">
+           AND mst_cd =#{mstCd}
+           </if>
+         ORDER BY lbl_cd
+    </select>
+
+    <select id="getLblDtl" resultType="com.she.manage.model.LblDtl">
+        /* LblMapper.getLblDtl [Lbl.xml] */
+        SELECT mst_cd
+              ,lbl_cd
+              ,lbl_val
+              ,lbl_val_en
+              ,lbl_val_ja
+              ,lbl_val_zh_cn
+              ,lbl_val_zh_tw
+        FROM com_lbl_dtl
+        WHERE lbl_cd = #{lblCd}
+    </select>
+
+    <update id="updateLblDtl" parameterType="com.she.manage.model.LblDtl">
+        /* LblMapper.updateLblDtl [Lbl.xml] */
+        UPDATE com_lbl_dtl
+           SET lbl_val = #{lblVal}
+              ,lbl_val_en = #{lblValEn}
+              ,lbl_val_ja = #{lblValJa}
+              ,lbl_val_zh_cn = #{lblValZhCn}
+              ,lbl_val_zh_tw = #{lblValZhTw}
+              ,del_yn = #{delYn}
+              ,update_user_id = #{updateUserId}
+              ,update_dt = getdate()
+         WHERE lbl_cd = #{lblCd}
+    </update>
+
+</mapper>

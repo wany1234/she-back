@@ -1,0 +1,127 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.baseInfo.mapper.ChemicalUnitMapper">
+
+    <select id= "getChemicalUnits" resultType= "com.she.chm.model.ChemicalUnit">
+        /* ChemicalUnitMapper.getChemicalUnits [ChemicalUnit.xml] */
+        select cu.unit_no
+            ,cu.unit_nm
+            ,cu.unit_cd
+            ,cu.unit_business
+            ,format(cu.factor, N'#####0.##############################') as factor
+            --,cu.factor
+            --, 0.000000001 as factor
+            --,convert(decimal(20,10), cu.factor) as factor
+            ,cu.use_yn
+            ,case
+                when cu.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,cu.sort_order
+            ,cu.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cu.create_dt
+            ,cu.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cu.update_dt
+            , case
+                 when dbo.GET_USER_NM(cu.update_user_id) = '' then dbo.GET_USER_NM(cu.create_user_id)
+                 else dbo.GET_USER_NM(cu.update_user_id) end as writer_user_nm
+            , case when cu.update_dt is null then convert(date, cu.create_dt) else convert(date, cu.update_dt) end   as writer_dt
+        from chm_unit cu
+        inner join com_user createUser
+        on cu.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cu.update_user_id = updateUser.user_id
+        where 1=1
+        and cu.unit_nm like '%' + #{unitNm} + '%'
+        <if test= "useYn != null and !useYn.equals('')">
+        and cu.use_yn = #{useYn}
+        </if>
+        order by writer_dt desc, cu.sort_order
+    </select>
+
+    <select id= "getChemicalUnit" resultType= "com.she.chm.model.ChemicalUnit">
+        /* ChemicalUnitMapper.getChemicalUnit [ChemicalUnit.xml] */
+        select cu.unit_no
+            ,cu.unit_nm
+            ,cu.unit_cd
+            ,cu.unit_business
+            -- ,cu.factor
+            ,format(cu.factor, N'#####0.##############################') as factor
+            ,cu.use_yn
+            ,case
+                when cu.use_yn = 'Y' then '사용'
+                else '미사용'
+            end as use_yn_nm
+            ,cu.sort_order
+            ,cu.create_user_id
+            ,createUser.user_nm as create_user_nm
+            ,cu.create_dt
+            ,cu.update_user_id
+            ,updateUser.user_nm as update_user_nm
+            ,cu.update_dt
+        from chm_unit cu
+        inner join com_user createUser
+        on cu.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+        on cu.update_user_id = updateUser.user_id
+        where 1=1
+        and cu.unit_no = #{unitNo}
+    </select>
+
+    <insert id= "createChemicalUnit" parameterType= "com.she.chm.model.ChemicalUnit">
+        <selectKey keyProperty= "unitNo" resultType= "int" order= "BEFORE">
+            select next value for seq_chm_unit as unit_no
+          </selectKey>
+          /* ChemicalUnitMapper.createChemicalUnit [ChemicalUnit.xml] */
+        insert into chm_unit
+            (unit_no
+            ,unit_nm
+            ,unit_cd
+            ,unit_business
+            ,factor
+            ,use_yn
+            ,sort_order
+            ,create_user_id
+            ,create_dt)
+        values
+            (#{unitNo}
+            ,#{unitNm}
+            ,#{unitCd}
+            ,#{unitBusiness}
+            ,#{factor}
+            ,#{useYn}
+            ,#{sortOrder}
+            ,#{createUserId}
+            ,convert(char(10), getDate(), 23))
+    </insert>
+
+    <update id= "updateChemicalUnit" parameterType= "com.she.chm.model.ChemicalUnit">
+        /* ChemicalUnitMapper.updateChemicalUnit [ChemicalUnit.xml] */
+        update chm_unit
+        set unit_nm = #{unitNm}
+            ,unit_cd = #{unitCd}
+            ,unit_business = #{unitBusiness}
+            ,factor = #{factor}
+            ,use_yn = #{useYn}
+            ,sort_order = #{sortOrder}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where unit_no = #{unitNo}
+    </update>
+
+    <select id= "getCheckChemicalUnit" resultType= "HashMap">
+        /* ChemicalUnitMapper.getCheckChemicalUnit [ChemicalUnit.xml] */
+        select count(*) as cnt
+            ,'unitNm' as gubun
+        from chm_unit
+        where 1=1
+        and unit_nm = #{unitNm}
+        <if test= "unitNo != null and unitNo > 0">
+        and unit_no not in (#{unitNo})
+        </if>
+    </select>
+
+</mapper>

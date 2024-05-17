@@ -1,0 +1,210 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.chm.chem.mapper.DeptChemprodMapper">
+
+    <!-- 부서공정별 취급물질 조회 -->
+    <select id= "getDeptChemprods" resultType= "com.she.chm.model.DeptChemprod">
+        /* DeptChemprodMapper.getDeptChemprods [DeptChemprod.xml] */
+        select plant.code as plant_cd
+            , plant.code_nm as plant_nm
+            , dpc.dept_cd
+            , cd.dept_nm
+            , dpc.process_cd
+            , cp.process_nm
+            , dpc.chem_prod_no
+            , cc.chem_prod_nm_kr
+            , cc.chem_prod_nm_en
+            , cc.chem_prod_nm_kr + ' / ' + cc.chem_prod_nm_en as chem_prod_nm
+            , cc.sap_mat_cd
+            , dpc.day_usage
+            , dpc.usage_unit
+            , cm.code_nm as usage_unit_nm
+            , dpc.substance_using
+            , dpc.handling_type
+            , handlingType.code_nm as handling_type_nm
+            , dpc.suspect_yn
+            , case when dpc.suspect_yn = 'Y' then '유' else '무' end as suspect_yn_nm
+            , dpc.use_yn
+            , case when dpc.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+            , dpc.create_user_id
+            , createUser.user_nm as create_user_nm
+            , dpc.create_dt
+            , dpc.update_user_id
+            , updateUser.user_nm as update_user_nm
+            , dpc.update_dt
+            , cc.maker_cd
+            , maker.vendor_nm as maker_nm
+            , cc.vendor_cd
+            , vendor.vendor_nm
+            , case
+                 when dbo.GET_USER_NM(dpc.update_user_id) = '' then dbo.GET_USER_NM(dpc.create_user_id)
+                 else dbo.GET_USER_NM(dpc.update_user_id) end    as writer_user_nm
+            , case when dpc.update_dt is null then convert(date, dpc.create_dt) else convert(date, dpc.update_dt) end   as writer_dt
+        from rsa_dept_process_chemprod dpc
+        inner join com_dept cd on dpc.dept_cd = cd.dept_cd
+        inner join com_process cp on dpc.process_cd = cp.process_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            on cd.plant_cd = plant.code
+        inner join com_chemprod cc on dpc.chem_prod_no = cc.chem_prod_no
+        inner join com_vendor_mst vendor
+            on cc.vendor_cd = vendor.vendor_cd
+        inner join com_vendor_mst maker
+            on cc.maker_cd = maker.vendor_Cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_CHEM_UNIT') cm
+            on dpc.usage_unit = cm.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_HANDLING_TYPE') handlingType
+            on dpc.handling_type = handlingType.code
+        left outer join com_user createUser
+            on dpc.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+            on dpc.update_user_id = updateUser.user_id
+        where 1=1
+        <if test= "plantCd != null and !plantCd.equals('')">
+            <choose>
+              <when test= "plantCd.equals('0000')">
+                  and isnull(cd.plant_cd, '') != ''
+              </when>
+              <otherwise>
+                  and cd.plant_cd in (#{plantCd}, '0000')
+              </otherwise>
+            </choose>
+        </if>
+        <if test= "useYn != null and !useYn.equals('')">
+        and dpc.use_yn = #{useYn}
+        </if>
+        <if test= "deptCd != null and !deptCd.equals('')">
+        and dpc.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+        </if>
+        <if test= "processCd != null and !processCd.equals('')">
+        and dpc.process_cd = #{processCd}
+        </if>
+        and (cc.chem_prod_nm_kr like '%' + #{search} + '%'
+                or cc.chem_prod_nm_en like '%' + #{search} + '%'
+                or maker.vendor_nm like '%' + #{search} + '%'
+                or vendor.vendor_nm like '%' + #{search} + '%')
+        order by writer_dt desc
+    </select>
+
+    <!-- 부서공정별 취급물질 상세 조회 -->
+    <select id= "getDeptChemprod" resultType= "com.she.chm.model.DeptChemprod">
+        /* DeptChemprodMapper.getDeptChemprod [DeptChemprod.xml] */
+        select plant.code as plant_cd
+            , plant.code_nm as plant_nm
+            , dpc.dept_cd
+            , cd.dept_nm
+            , dpc.process_cd
+            , cp.process_nm
+            , dpc.chem_prod_no
+            , cc.chem_prod_nm_kr
+            , cc.chem_prod_nm_en
+            , cc.chem_prod_nm_kr + ' / ' + cc.chem_prod_nm_en as chem_prod_nm
+            , cc.sap_mat_cd
+            , dpc.day_usage
+            , dpc.usage_unit
+            , cm.code_nm as usage_unit_nm
+            , dpc.substance_using
+            , dpc.handling_type
+            , handlingType.code_nm as handling_type_nm
+            , dpc.suspect_yn
+            , case when dpc.suspect_yn = 'Y' then '유' else '무' end as suspect_yn_nm
+            , dpc.use_yn
+            , case when dpc.use_yn = 'Y' then '사용' else '미사용' end as use_yn_nm
+            , dpc.create_user_id
+            , createUser.user_nm as create_user_nm
+            , dpc.create_dt
+            , dpc.update_user_id
+            , updateUser.user_nm as update_user_nm
+            , dpc.update_dt
+        from rsa_dept_process_chemprod dpc
+        inner join com_dept cd on dpc.dept_cd = cd.dept_cd
+        inner join com_process cp on dpc.process_cd = cp.process_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+            on cd.plant_cd = plant.code
+        inner join com_chemprod cc on dpc.chem_prod_no = cc.chem_prod_no
+        inner join com_vendor_mst vendor
+            on cc.vendor_cd = vendor.vendor_cd
+        inner join com_vendor_mst maker
+            on cc.maker_cd = maker.vendor_Cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_CHEM_UNIT') cm
+            on dpc.usage_unit = cm.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_HANDLING_TYPE') handlingType
+            on dpc.handling_type = handlingType.code
+        left outer join com_user createUser
+            on dpc.create_user_id = createUser.user_id
+        left outer join com_user updateUser
+            on dpc.update_user_id = updateUser.user_id
+        where dpc.process_cd = #{processCd}
+    </select>
+
+    <!-- 물질별 구성성분 목록 -->
+    <select id= "getChemNos" resultType= "HashMap">
+        /* DeptChemprodMapper.getChemNos [DeptChemprod.xml] */
+        select chem_no
+        from com_chemprod_chem
+        where chem_prod_no = #{chemProdNo}
+    </select>
+
+    <!-- 부서공정별 취급물질 신규등록 -->
+    <insert id= "createDeptChemprod" parameterType= "com.she.chm.model.DeptChemprod">
+        /* DeptChemprodMapper.createDeptChemprod [DeptChemprod.xml] */
+        insert into rsa_dept_process_chemprod
+            (dept_cd
+            , process_cd
+            , chem_prod_no
+            , handling_type
+            , substance_using
+            , suspect_yn
+            , day_usage
+            , usage_unit
+            , use_yn
+            , create_user_id
+            , create_dt)
+        values
+            (#{deptCd}
+            , #{processCd}
+            , #{chemProdNo}
+            , #{handlingType}
+            , #{substanceUsing}
+            , #{suspectYn}
+            , #{dayUsage}
+            , #{usageUnit}
+            , #{useYn}
+            , #{createUserId}
+            , getDate())
+    </insert>
+
+    <!-- 부서공정별 취급물질 수정 -->
+    <update id= "updateDeptChemprod" parameterType= "com.she.chm.model.DeptChemprod">
+        /* DeptChemprodMapper.updateDeptChemprod [DeptChemprod.xml] */
+        update rsa_dept_process_chemprod
+        set handling_type = #{handlingType}
+            , substance_using = #{substanceUsing}
+            , suspect_yn = #{suspectYn}
+            , day_usage = #{dayUsage}
+            , usage_unit = #{usageUnit}
+            , use_yn = #{useYn}
+            , update_user_id = #{updateUserId}
+            , update_dt = getDate()
+        where dept_cd = #{deptCd}
+        and process_cd = #{processCd}
+        and chem_prod_no = #{chemProdNo}
+    </update>
+
+    <!-- 부서공정별 취급자재삭제 -->
+    <delete id= "deleteDeptChemprod">
+        /* DeptChemprodMapper.deleteDeptChemprod [DeptChemprod.xml] */
+        delete from rsa_dept_process_chemprod
+        where process_cd = #{processCd}
+    </delete>
+
+    <!-- 부서공정별 취급자재체크 -->
+    <select id= "getCheckDeptChemProd" resultType="HashMap">
+        /* DeptChemprodMapper.getCheckDeptChemProd [DeptChemprod.xml] */
+        select count(*) cnt
+        from rsa_dept_process_chemprod
+        where process_cd = #{processCd}
+        and dept_cd = #{deptCd};
+    </select>
+
+</mapper>

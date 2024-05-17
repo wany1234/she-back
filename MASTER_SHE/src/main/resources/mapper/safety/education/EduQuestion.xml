@@ -1,0 +1,453 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.education.mapper.EduQuestionMapper">
+    <select id= "getEduQuestions" resultType= "com.she.safety.model.EduQuestion">
+         select 
+                 m.edu_question_no
+                ,m.plant_cd
+                ,m.saf_edu_course_no
+                ,co.edu_att_cd
+                ,co.edu_course_nm
+                ,c1.code_nm  as edu_att_nm
+                ,c2.edu_type_cd
+                ,cc2.code_nm as edu_type_nm
+                ,m.question_yn
+                ,m.use_yn
+                ,m.sort_order
+                ,m.create_user_id
+                ,convert(char(10), m.create_dt, 23)  as createDt
+                ,m.update_user_id
+                ,convert(char(10), m.update_dt, 23)  as updateDt
+                ,plant.code_nm as plant_nm
+                ,cu.user_nm as create_user_nm
+                 ,case when m.use_yn = 'Y' then '사용'else '미사용' end as use_yn_nm
+                ,uu.user_nm as update_user_nm
+                ,(select count(*) from saf_edu_question_lst where edu_question_no = m.edu_question_no) as QuestionCount
+                , case
+                    when dbo.GET_USER_NM(m.update_user_id) = '' then dbo.GET_USER_NM(m.create_user_id)
+                    else dbo.GET_USER_NM(m.update_user_id) end    as writer_user_nm
+               , case when m.update_dt is null then convert(date, m.create_dt) else convert(date, m.update_dt) end   as writer_dt
+            from saf_edu_question m
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code
+            left outer join saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
+            left outer join saf_edu_course c2 on c2.saf_edu_course_no = m.saf_edu_course_no
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc2 on c2.edu_type_cd = cc2.code
+            left outer join com_user cu on m.create_user_id = cu.user_id
+            left outer join com_user uu on m.update_user_id = uu.user_id
+       where 1=1
+        <if test='safEduCourseNo != null and safEduCourseNo != 0'>
+        and m.saf_edu_course_no = #{safEduCourseNo}
+        </if>
+        <if test='eduAttCd != null and eduAttCd != ""'>
+        and co.edu_att_cd = #{eduAttCd}
+        </if>
+        <if test='plantCd != null and plantCd != ""'>
+        and m.plant_cd = #{plantCd}
+        </if>
+        <if test='eduTypeCd != null and eduTypeCd != ""'>
+        and c2.edu_type_cd = #{eduTypeCd}
+        </if>
+        order by writer_dt desc
+    </select>
+
+    <select id= "getEduQuestion" resultType= "com.she.safety.model.EduQuestion">
+         select 
+                 m.edu_question_no
+                ,m.plant_cd
+                ,m.saf_edu_course_no
+                ,co.edu_att_cd
+                ,co.edu_course_nm            
+                ,c1.code_nm  as edu_att_nm            
+                ,c2.edu_type_cd
+                ,cc2.code_nm as edu_type_nm
+                ,m.question_yn
+                ,m.use_yn
+                ,m.sort_order
+                ,m.create_user_id
+                ,convert(char(10), m.create_dt, 23)  as createDt
+                ,m.update_user_id
+                ,convert(char(10), m.update_dt, 23)  as updateDt
+                ,plant.code_nm as plant_nm
+                ,cu.user_nm as create_user_nm
+                 ,case when m.use_yn = 'Y' then '사용'else '미사용' end as use_yn_nm                
+                ,uu.user_nm as update_user_nm            
+                ,(select count(*) from saf_edu_question_lst where edu_question_no = m.edu_question_no) as QuestionCount
+            from saf_edu_question m
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code        
+            left outer join saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
+            left outer join saf_edu_course c2 on c2.saf_edu_course_no = m.saf_edu_course_no
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc2 on c2.edu_type_cd = cc2.code       
+            left outer join com_user cu on m.create_user_id = cu.user_id
+            left outer join com_user uu on m.update_user_id = uu.user_id
+       where edu_question_no = #{eduQuestionNo}
+    </select>    
+    
+    <update id = "updateEduQuestion" parameterType ="com.she.safety.model.EduQuestion">
+        update saf_edu_question
+        SET saf_edu_course_no = #{safEduCourseNo}
+            ,question_yn = #{questionYn}
+            ,use_yn = #{useYn}
+            ,update_user_id = #{updateUserId}
+            ,sort_order = #{sortOrder}
+            ,update_dt = getDate()       
+        where edu_question_no = #{eduQuestionNo}
+    </update>
+    
+    
+    <insert id = "createEduQuestion" parameterType ="com.she.safety.model.EduQuestion">
+        <selectKey keyProperty= "eduQuestionNo" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_edu_question as eduQuestionNo
+        </selectKey>            
+        insert into saf_edu_question (
+             edu_question_no, plant_cd ,saf_edu_course_no ,question_yn
+            ,use_yn ,sort_order ,create_user_id
+            ,create_dt
+        ) values (
+             #{eduQuestionNo}, #{plantCd} ,#{safEduCourseNo} ,#{questionYn}
+            ,#{useYn} ,#{sortOrder} ,#{createUserId}
+            ,getDate()
+        )    
+    </insert>    
+
+    <delete id = "deleteEduQuestion" parameterType = "int">
+        DELETE FROM saf_edu_question 
+        WHERE edu_question_no = #{eduQuestionNo}   
+    </delete>        
+
+     <delete id = "deleteEduQuestionAnswer" parameterType="int">
+        delete from 
+            saf_edu_question_ans 
+        where edu_question_lst_no in  
+        (select 
+            edu_question_lst_no 
+        from 
+        saf_edu_question_lst 
+        where edu_question_no = #{eduQuestionNo})     
+     </delete>   
+     
+     <delete id = "deleteEduAnswer" parameterType="int">
+        delete from 
+            saf_edu_question_ans 
+        where edu_question_ans_no = #{eduQuestionAnsNo}  
+        
+     </delete>        
+        
+     <!-- 문제 저장 및 삭제  그리고 조회-->
+    <select id = "getEduQuestionList" resultType ="com.she.safety.model.EduQuestionList">
+        select 
+             edu_question_no
+            ,edu_question_lst_no
+            ,question_contents
+            ,use_yn
+            ,sort_order
+        from saf_edu_question_lst
+        where edu_question_no = #{eduQuestionNo}
+        order by sort_order 
+    </select>
+         
+    <insert id = "createEduQuestionList" parameterType ="com.she.safety.model.EduQuestionList">
+        <selectKey keyProperty= "eduQuestionLstSeq" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_edu_question_lst as eduQuestionLstSeq
+        </selectKey>    
+          merge into saf_edu_question_lst as t
+            using (select #{eduQuestionLstNo} as edu_question_lst_no,
+                          #{eduQuestionNo} as edu_question_no,
+                          #{questionContents} as question_contents,
+                          #{useYn} as use_yn,
+                          #{sortOrder} as sort_order
+                  ) as s
+            on ( t.edu_question_lst_no = s.edu_question_lst_no 
+                )
+            when not matched then
+                    insert  (
+                         edu_question_lst_no
+                        ,edu_question_no
+                        ,question_contents 
+                        ,use_yn 
+                        ,sort_order 
+                    )
+                    values (
+                         #{eduQuestionLstSeq}
+                        ,s.edu_question_no
+                        ,s.question_contents 
+                        ,s.use_yn 
+                        ,s.sort_order 
+                    )
+             when matched then
+             update set   
+                    edu_question_no = s.edu_question_no,
+                    question_contents = s.question_contents, 
+                    use_yn = s.use_yn,
+                    sort_order = s.sort_order;
+    </insert>
+    
+    <delete id = "deleteEduQuestionList" >
+        delete from saf_edu_question_lst 
+        where edu_question_no = #{eduQuestionNo}
+    </delete>    
+    
+    <!-- 답변 저장 및 삭제 그리고 조회 -->
+    <select id = "getEduQuestionAnswers" resultType ="com.she.safety.model.EduQuestionAnswer">
+        select
+             edu_question_ans_no
+            ,edu_question_lst_no
+            ,answer_contents
+            ,correct_yn
+            ,sort_order
+            FROM  saf_edu_question_ans
+        where edu_question_lst_no = #{eduQuestionLstNo}
+          and use_yn = 'Y'
+        order by sort_order
+    </select>
+        
+
+    <insert id = "createEduQuestionAnswers" parameterType ="com.she.safety.model.EduQuestionAnswer">
+        <selectKey keyProperty= "eduQuestionAnsSeq" resultType= "int" order= "BEFORE">
+            select next value for seq_saf_edu_question_ans as eduQuestionAnsSeq
+        </selectKey>
+      merge into saf_edu_question_ans as t
+        using (select #{eduQuestionAnsNo} as edu_question_ans_no,
+                      #{eduQuestionLstNo} as edu_question_lst_no,
+                      #{answerContents} as answer_contents,
+                      #{correctYn} as correct_yn,
+                      #{sortOrder} as sort_order
+              ) as s
+        on ( t.edu_question_ans_no = s.edu_question_ans_no 
+            )
+        when not matched then
+                insert  (
+                     edu_question_ans_no
+                    ,edu_question_lst_no
+                    ,answer_contents
+                    ,correct_yn
+                    ,sort_order
+                    ,use_yn
+                )
+                values (
+                     #{eduQuestionAnsSeq}
+                    ,s.edu_question_lst_no
+                    ,s.answer_contents 
+                    ,s.correct_yn 
+                    ,s.sort_order
+                    ,#{useYn}
+                )
+         when matched then
+         update set   
+                edu_question_lst_no = s.edu_question_lst_no,
+                answer_contents = s.answer_contents, 
+                correct_yn = s.correct_yn,
+                sort_order = s.sort_order,
+                use_yn = #{useYn};
+    </insert>    
+    
+    <delete id = "deleteEduQuestionAnswers" >
+        delete from saf_edu_question_lst 
+        where edu_question_lst_no = #{eduQuestionLstNo}
+        delete from saf_edu_question_ans where edu_question_lst_no = #{eduQuestionLstNo}
+        
+    </delete>    
+        
+    <select id= "getEduPlanQuestions" resultType= "com.she.safety.model.EduQuestionList">
+            select
+                 lst.edu_question_no
+                ,lst.question_contents
+                ,lst.use_yn
+                ,lst.sort_order
+                ,lst.edu_question_lst_no
+                ,(select
+                    count(*)
+                 from saf_edu_question_ans a
+                 where a.edu_question_lst_no = lst.edu_question_lst_no
+                 ) as answerCount
+                ,m.create_user_id
+                ,convert(char(10), m.create_dt, 23)  as createDt
+                ,m.update_user_id
+                ,convert(char(10), m.update_dt, 23)  as updateDt
+                ,cu.user_nm as create_user_nm
+                ,uu.user_nm as update_user_nm      
+            from saf_edu_question m
+            left outer join saf_edu_question_lst lst on m.edu_question_no = lst.edu_question_no
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code        
+            left outer join saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
+            left outer join com_user cu on m.create_user_id = cu.user_id
+            left outer join com_user uu on m.update_user_id = uu.user_id
+            where 1=1
+        <if test='safEduCourseNo != null and safEduCourseNo != 0'>    
+        and m.saf_edu_course_no = #{safEduCourseNo} 
+        </if>
+        <if test='eduAttCd != null and eduAttCd != ""'>        
+        and co.edu_att_cd = #{eduAttCd}
+        </if>
+        <if test='plantCd != null and plantCd != ""'>        
+        and m.plant_cd = #{plantCd}
+        </if>                    
+        <if test= "useYn != null and !useYn.equals('')">
+        and lst.use_yn = #{useYn}
+        </if>               
+       and lst.edu_question_no is not null 
+    </select>
+    
+    
+    
+    <select id= "getEduPlanQuestionsCheckData" resultType= "String">
+            select
+                ans.edu_question_ans_no
+            from saf_edu_question m
+            left outer join saf_edu_question_lst lst on m.edu_question_no = lst.edu_question_no
+            left outer join saf_edu_question_ans ans on lst.edu_question_lst_no = ans.edu_question_lst_no
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code        
+            left outer join saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
+            left outer join com_user cu on m.create_user_id = cu.user_id
+            left outer join com_user uu on m.update_user_id = uu.user_id
+       where lst.edu_question_lst_no = #{eduQuestionLstNo} 
+       and correct_yn = 'Y'
+       and ans.edu_question_ans_no is not null
+    </select>
+            
+    <select id= "getMobileEduPlanQuestions" resultType= "com.she.safety.model.EduQuestionList">
+        select 
+                a.saf_edu_mst_no
+                ,c.edu_question_no
+                ,c.question_contents
+                ,c.use_yn
+                ,c.sort_order
+                ,c.edu_question_lst_no
+                ,a.create_user_id
+                ,a.create_dt
+                ,a.update_user_id
+                ,a.update_dt
+                ,cu.user_nm as create_user_nm
+                ,uu.user_nm as update_user_nm
+                ,(select
+                    count(*)
+                 from saf_edu_question_ans a
+                 where a.edu_question_lst_no = c.edu_question_lst_no
+                 ) as answerCount                
+                ,(select 
+                    a.edu_question_ans_no 
+                from saf_edu_dtl_psn_ans a 
+                where a.edu_question_lst_no = b.edu_question_lst_no
+                and a.saf_edu_mst_no = b.saf_edu_mst_no
+                and a.user_id = #{userId}) as selectData                 
+        from saf_edu_mst a
+        left outer join saf_edu_mst_question b  on a.saf_edu_mst_no  = b.saf_edu_mst_no
+        left outer join saf_edu_question_lst c on b.edu_question_lst_no = c.edu_question_lst_no
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on a.plant_cd = plant.code        
+        left outer join saf_edu_course co on a.saf_edu_course_no = co.saf_edu_course_no
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
+        left outer join com_user cu on a.create_user_id = cu.user_id
+        left outer join com_user uu on a.update_user_id = uu.user_id
+        where a.saf_edu_mst_no = #{safEduMstNo}
+        and c.edu_question_no is not null
+        and c.use_yn = 'Y'
+        
+    </select>
+
+    <select id="getMobileEduPlanQuestionsNew" resultType="com.she.safety.model.EduQuestionList">
+        select  qst.edu_question_no
+                ,lst.question_contents
+                ,lst.use_yn
+                ,lst.sort_order
+                ,lst.edu_question_lst_no
+                ,qst.create_user_id
+                ,qst.create_dt
+                ,(select user_nm from com_user where user_id = qst.create_user_id) as create_user_nm
+                ,(select
+                    count(*)
+                    from saf_edu_question_ans a
+                    where a.edu_question_lst_no = lst.edu_question_lst_no
+                    and a.use_yn = 'Y'
+                ) as answerCount
+        from saf_edu_question qst
+        left outer join saf_edu_question_lst lst on lst.edu_question_no = qst.edu_question_no
+        inner join saf_edu_course c on c.saf_edu_course_no = qst.saf_edu_course_no
+        where 1=1
+        and qst.use_yn = 'Y'
+        and lst.use_yn = 'Y'
+        and c.saf_edu_course_no = #{safEduCourseNo}
+    </select>
+    
+    <insert id= "createEduUserAnswer" parameterType= "com.she.safety.model.UserEduAnswer">
+        insert into saf_edu_dtl_psn_ans(
+            saf_edu_mst_no
+            ,user_id
+            ,edu_question_lst_no
+            ,edu_question_ans_no
+            ,edu_question_pnt
+        ) values (
+             #{safEduMstNo}
+            ,#{userId}
+            ,#{eduQuestionLstNo}
+            ,#{eduQuestionAnsNo}
+            ,#{eduQuestionPnt}
+        )
+        update saf_edu_mst
+        set update_user_id = #{updateUserId},
+            update_dt = getdate()
+        where saf_edu_mst_no = #{safEduMstNo};
+    </insert>
+    
+    <delete id= "deleteEduUserAnswer">
+        delete from saf_edu_dtl_psn_ans 
+        where saf_edu_mst_no = #{safEduMstNo} and user_id = #{userId}
+    </delete>
+        
+    <select id= "selectAnswerChk" resultType="String">
+        select 
+        case when isnull(edu_eval_pnt, 0) >= 100.0 then 'Y'
+                else sec_question_yn end as sec_question_yn
+        from saf_edu_dtl_psn 
+        where saf_edu_mst_no = #{safEduMstNo}
+        and user_id = #{userId}
+    </select>
+    
+    <select id ="selectScore" resultType="String">
+        select 
+        isnull(isnull( round(edu_eval_pnt_sec,0), round(edu_eval_pnt,0)),0)
+        from saf_edu_dtl_psn 
+        where saf_edu_mst_no = #{safEduMstNo}
+        and user_id = #{userId}
+    </select>    
+        
+    <delete id= "updateAnswerChk">
+        update saf_edu_dtl_psn
+        set sec_question_yn = #{secQuestionYn}
+        ,re_edu_not_yn = 'Y'
+        ,complet_yn = 'Y'
+        <if test= "eduEvalPnt != null">
+        ,edu_eval_pnt = ROUND(#{eduEvalPnt},3)
+        </if>
+        <if test= "eduEvalPntSec != null">
+        ,edu_eval_pnt_sec = ROUND(#{eduEvalPntSec},3) 
+        </if>
+        ,edu_eval_time = getDate()
+        where saf_edu_mst_no = #{safEduMstNo}
+        and user_id = #{userId}
+    </delete>                        
+                        
+    <select id = "selectQuestionYmdChk" resultType = "hashmap">
+    select 
+            edu_s_ymd+ '~' +edu_e_ymd  as ymd ,
+            case when 
+            (select 
+                count(*) 
+            from saf_edu_mst 
+            where convert(char(10), getDate(), 23) between edu_s_ymd and edu_e_ymd
+            and saf_edu_mst_no = #{safEduMstNo}) != 0
+        then 1 else 0 end as checkCnt
+        from saf_edu_mst
+        where saf_edu_mst_no = #{safEduMstNo}
+    </select>                   
+
+            
+        
+        
+        
+        
+
+</mapper>

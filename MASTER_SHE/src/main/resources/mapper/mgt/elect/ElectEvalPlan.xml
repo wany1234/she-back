@@ -1,0 +1,471 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.elect.mapper.ElectEvalPlanMapper">
+    <!-- 평가대상 법정선임자 목록 조회 -->
+    <select id="getSafElectTitlEvalTarget" resultType="HashMap">
+        /* ElectEvalPlanMapper.getSafElectTitlEvalTarget [ElectEvalPlan.xml] */
+        select	saf_elect_his_no as safElectHisNo -- 선임번호
+                ,saf_elect_his_grp_no as safElectHisGrpNo -- 선임그룹번호
+                ,elect_att_cd as electAttCd -- 분야코드
+                ,elect_att_nm as electAttNm -- 분야
+                ,saf_elect_titl_no as safElectTitlNo -- 법정선임자번호
+                ,elect_titl_nm as electTitlNm -- 법정선임자명
+                ,plant_cd as plantCd -- 사업장코드
+                ,plant_nm as plantNm -- 사업장명
+                ,dept_cd as deptCd -- 부서코드
+                ,dept_nm as deptNm -- 부서
+                ,user_id as meUserId -- 선임자 사번
+                ,user_nm as meUserNm -- 선임자
+                ,position_cd as positionCd -- 선임자직위코드
+                ,position_nm as positionNm -- 선임자직위
+                ,elect_dt as electDt -- 선임일
+                ,dbo.GET_TEAM_LEADER_INFO(dept_cd, user_id, 'id') as upUserId -- 팀장 사번
+                ,dbo.GET_TEAM_LEADER_INFO(dept_cd, user_id, 'name') as upUserNm -- 팀장
+        from (
+            select	eh.saf_elect_his_no -- 선임번호
+                    ,eh.saf_elect_his_grp_no -- 선임그룹번호
+                    ,et.elect_att_cd -- 분야코드
+                    ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'TASK_GRP', et.elect_att_cd) as elect_att_nm -- 분야
+                    ,eh.saf_elect_titl_no -- 법정선임자번호
+                    ,et.elect_titl_nm -- 법정선임자명
+                    ,eh.plant_cd -- 사업장코드
+                    ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', eh.plant_cd) as plant_nm -- 사업장명
+                    ,u.dept_cd -- 부서코드
+                    ,dbo.GET_DEPT_NM(u.dept_cd) as dept_nm -- 부서
+                    ,eh.user_id -- 선임자 사번
+                    ,u.user_nm -- 선임자
+                    ,u.position_cd -- 선임자 직위코드
+                    ,pos.position_nm -- 선임자 직위명
+                    ,eh.elect_dt -- 선임일
+                    ,ROW_NUMBER() OVER(PARTITION BY eh.saf_elect_his_grp_no ORDER BY eh.saf_elect_his_no desc) as row_num
+            from saf_elect_his eh
+            inner join saf_elect_titl et
+            on et.saf_elect_titl_no = eh.saf_elect_titl_no
+            inner join com_user u
+            on u.user_id = eh.user_id
+            left outer join com_hr_position pos
+            on pos.position_cd = u.position_cd
+            where 1=1
+            and eh.use_yn = 'Y'
+            and isnull(eh.elect_end_dt, '') = ''
+            <if test="safElectTitlNo != null and safElectTitlNo > 0">
+            and eh.saf_elect_titl_no = #{safElectTitlNo}
+            </if>
+            <if test="plantCd != null and !plantCd.equals('')">
+            and eh.plant_cd = #{plantCd}
+            </if>
+        ) as his
+    </select>
+
+    <!-- 법정선임자 평가계획 목록 조회 -->
+    <select id="getElectEvalPlans" resultType="com.she.mgt.model.ElectEvalPlan">
+        /* ElectEvalPlanMapper.getElectEvalPlans [ElectEvalPlan.xml] */
+        select	ep.eval_plan_no -- 법정선임자 평가계획번호
+                ,year -- 대상년도
+                ,ep.plant_cd
+                ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', ep.plant_cd) as plant_nm
+                ,half_type_cd -- 구분코드(상반기/하반기)
+                ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'MGT_HALF_TYPE', half_type_cd) as half_type_nm -- 구분코드(상반기/하반기)
+                ,ep.saf_elect_titl_no -- 법정선임자번호
+                ,e.elect_titl_nm -- 법정선임자
+                ,ep.eval_nm -- 평가명
+                ,ep.dept_cd -- 주관부서코드
+                ,dbo.GET_DEPT_NM(ep.dept_cd) as dept_nm -- 주관부서
+                ,ep.proc_step_cd -- 단계코드
+                ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'SAF_ELECT_TITL_STEP', ep.proc_step_cd) as proc_step_nm -- 단계
+                ,ep.state_cd -- 상태코드
+                ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_STATE', ep.state_cd) as state_nm -- 상태
+                ,ep.step_cd -- 결재상태코드
+                ,ep.appr_rqst_no -- 결재요청번호
+                <if test="procStepCd != null and !procStepCd.equals('')">
+                ,concat(dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'SAF_ELECT_TITL_STEP', ep.proc_step_cd), '('
+                        ,case ep.proc_step_cd when 'SETS2' then (
+                                                                    select dbo.GET_CODE_NM_LANG(#{defaultParam.lang},
+                                                                                                'COM_PROCESS_STEP2',
+                                                                                                iif(count(case when eu.me_proc_step = 'PSREG' then 1 end) > 0, 'PSREG', iif(count(eu.eval_user_no) = count(case when eu.me_proc_step = 'PSEND' then 1 end), 'PSEND', 'PSURE'))
+                                                                                                )
+                                                                    from saf_elect_titl_eval_user eu
+                                                                    where eu.eval_plan_no = ep.eval_plan_no group by eval_plan_no
+                                                                )
+                                            when 'SETS3' then (
+                                                                select dbo.GET_CODE_NM_LANG(#{defaultParam.lang},
+                                                                                            'COM_PROCESS_STEP2',
+                                                                                            iif(count(case when eu.up_proc_step = 'PSREG' then 1 end) > 0, 'PSREG', iif(count(eu.eval_user_no) = count(case when eu.up_proc_step = 'PSEND' then 1 end), 'PSEND', 'PSURE'))
+                                                                                            )
+                                                                from saf_elect_titl_eval_user eu
+                                                                where eu.eval_plan_no = ep.eval_plan_no
+                                                                group by eval_plan_no
+                                                              )                                                    
+                                                    else case when ep.step_cd = 'BAPSD' then i.code_nm else dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_STATE', ep.state_cd) end end
+                        , ')') as step_nm -- 단계(상태)
+                </if>
+                <if test="procStepCd == null or procStepCd.equals('')">
+                ,concat(dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'SAF_ELECT_TITL_STEP', 'SETS1'), '(',
+                    case when ep.step_cd = 'BAPSD' then i.code_nm else dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_STATE', ep.state_cd) end
+                   , ')') as step_nm -- 단계(상태)
+                </if>
+                ,dbo.GET_USER_NM(iif(isnull(ep.update_user_id, '') = '', ep.create_user_id, ep.update_user_id)) as writerNm -- 작성자
+                ,convert(char(10), iif(isnull(ep.update_dt, '') = '', ep.create_dt, ep.update_dt), 23) as writeDt -- 작성일
+                ,(
+                    select count(*)
+                    from saf_elect_titl_eval_plan ep2
+                    inner join saf_elect_titl_eval_user eu
+                    on eu.eval_plan_no = ep2.eval_plan_no
+                    where eu.eval_plan_no = ep.eval_plan_no
+                ) as totalCnt -- 전체대상
+                ,(
+                    select count(*)
+                    from saf_elect_titl_eval_plan ep2
+                    inner join saf_elect_titl_eval_user eu
+                    on eu.eval_plan_no = ep2.eval_plan_no and ep2.step_cd = 'BAPSG'
+                    where eu.eval_plan_no = ep.eval_plan_no
+                    and eu.me_proc_step = 'PSEND' -- 본인평가 확정
+                ) as meCnt -- 본인평가
+                ,(
+                    select count(*)
+                    from saf_elect_titl_eval_plan ep2
+                    inner join saf_elect_titl_eval_user eu
+                    on eu.eval_plan_no = ep2.eval_plan_no and ep2.step_cd = 'BAPSG'
+                    where eu.eval_plan_no = ep.eval_plan_no
+                    and eu.up_proc_step = 'PSEND' -- 상위평가 확정
+                ) as upCnt -- 상위평가
+                ,(
+                    select count(*)
+                    from saf_elect_titl_eval_plan ep2
+                    inner join saf_elect_titl_eval_user eu
+                    on eu.eval_plan_no = ep2.eval_plan_no and ep2.step_cd = 'BAPSG'
+                    left outer join saf_elect_tit_eval_me_rslt emr on emr.eval_user_no = eu.eval_user_no
+                    where eu.eval_plan_no = ep.eval_plan_no
+                    and eu.me_proc_step = 'PSURE' -- 본인평가 미작성
+                    and eu.up_proc_step = 'PSURE' -- 상위평가 미작성
+                ) as noCnt -- 평가 미진행
+        from saf_elect_titl_eval_plan ep
+        inner join saf_elect_titl e
+        on e.saf_elect_titl_no = ep.saf_elect_titl_no
+        left join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') i on ep.step_cd = i.code
+        where 1=1
+        <if test="startYear != null and !startYear.equals('') and endYear != null and !endYear.equals('')">
+        and ep.year between #{startYear} and #{endYear}
+        </if>
+        <if test="halfTypeCd != null and !halfTypeCd.equals('')">
+        and ep.half_type_cd = #{halfTypeCd}
+        </if>
+        <if test="deptCd != null and !deptCd.equals('')">
+            <choose>
+                <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                and ep.dept_cd in ( select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}) )
+                </when>
+                <otherwise>
+                and ep.dept_cd = #{deptCd}
+                </otherwise>
+            </choose>
+        </if>
+        <if test="safElectTitlNo != null and safElectTitlNo > 0">
+        and ep.saf_elect_titl_no = #{safElectTitlNo}
+        </if>
+        <if test="evalNm != null and !evalNm.equals('')">
+        and ep.eval_nm like '%' + #{evalNm} +  '%'
+        </if>
+        <if test="procStepCd != null and !procStepCd.equals('')">
+        and ep.proc_step_cd = #{procStepCd}
+        </if>
+        <if test="stateCd != null and !stateCd.equals('')">
+        and ep.state_cd = #{stateCd}
+        </if>
+        <if test='evalIncompleteYn != null and evalIncompleteYn.equals("Y")'>
+            <choose>
+                <when test='evalStepCd != null and evalStepCd.equals("me")'>
+                    <!-- 전체대상의 수와 본인평가의 수가 다른 경우 -->
+                    and (select count(*) from saf_elect_titl_eval_user eu where eu.eval_plan_no = ep.eval_plan_no) != (select count(*) from saf_elect_titl_eval_user eu where eu.eval_plan_no = ep.eval_plan_no and eu.me_proc_step = 'PSEND')
+                    and ep.step_cd = 'BAPSG'
+                </when>
+                <when test='evalStepCd != null and evalStepCd.equals("up")'>
+                    <!-- 전체대상의 수와 상위평가의 수가 다른 경우 -->
+                    and (select count(*) from saf_elect_titl_eval_user eu where eu.eval_plan_no = ep.eval_plan_no) != (select count(*) from saf_elect_titl_eval_user eu where eu.eval_plan_no = ep.eval_plan_no and eu.up_proc_step = 'PSEND')
+                    and ep.step_cd = 'BAPSG'
+                </when>
+                <when test='evalStepCd != null and evalStepCd.equals("no")'>
+                    <!-- 전체대상의 수와 평가 미진행의 수가 다른 경우 -->
+                    and (select count(*) from saf_elect_titl_eval_user eu where eu.eval_plan_no = ep.eval_plan_no and eu.me_proc_step = 'PSURE') > 0
+                    and ep.step_cd = 'BAPSG'
+                </when>
+            </choose>
+        </if>
+    </select>
+
+    <!-- 법정선임자 평가계획 상세 조회 -->
+    <select id="getElectEvalPlan" resultType="com.she.mgt.model.ElectEvalPlan">
+        /* ElectEvalPlanMapper.getElectEvalPlan [ElectEvalPlan.xml] */
+        select  eval_plan_no
+                ,year
+                ,plant_cd
+                ,half_type_cd
+                ,dept_cd
+                ,saf_elect_titl_no
+                ,eval_nm
+                ,eval_desc
+                ,proc_step_cd
+                ,state_cd
+                ,step_cd
+                ,appr_rqst_no
+                ,create_user_id
+                ,create_dt
+                ,create_dept_nm
+                ,create_dept_cd
+                ,create_position_nm
+                ,create_position_cd
+                ,update_user_id
+                ,update_dt
+                ,update_dept_nm
+                ,update_dept_cd
+                ,update_position_nm
+                ,update_position_cd
+        from saf_elect_titl_eval_plan
+        where eval_plan_no = #{evalPlanNo}
+    </select>
+
+    <!-- 법정선임자 평가계획 신규등록 -->
+    <insert id="createElectEvalPlan" parameterType="com.she.mgt.model.ElectEvalPlan">
+        /* ElectEvalPlanMapper.createElectEvalPlan [ElectEvalPlan.xml] */
+        <selectKey keyProperty="evalPlanNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_elect_titl_eval_plan as evalPlanNo
+        </selectKey>
+        insert into saf_elect_titl_eval_plan (
+            eval_plan_no
+            ,plant_cd
+            ,year
+            ,half_type_cd
+            ,dept_cd
+            ,saf_elect_titl_no
+            ,eval_nm
+            ,eval_desc
+            ,proc_step_cd
+            ,state_cd
+            ,step_cd
+            ,create_user_id
+            ,create_dt
+            ,create_dept_nm
+            ,create_dept_cd
+            ,create_position_nm
+            ,create_position_cd
+        )
+        values (
+            #{evalPlanNo}
+            ,#{plantCd}
+            ,#{year}
+            ,#{halfTypeCd}
+            ,#{deptCd}
+            ,#{safElectTitlNo}
+            ,#{evalNm}
+            ,#{evalDesc}
+            ,#{procStepCd}
+            ,#{stateCd}
+            ,#{stepCd}
+            ,#{createUserId}
+            ,getDate()
+            ,#{createDeptNm}
+            ,#{createDeptCd}
+            ,#{createPositionNm}
+            ,#{createPositionCd}
+        );
+    </insert>
+
+    <!-- 법정선임자 평가계획 수정 -->
+    <update id="updateElectEvalPlan" parameterType="com.she.mgt.model.ElectEvalPlan">
+        /* ElectEvalPlanMapper.updateElectEvalPlan [ElectEvalPlan.xml] */
+        update saf_elect_titl_eval_plan
+        set year = #{year}
+            ,plant_cd = #{plantCd}
+            ,half_type_cd = #{halfTypeCd}
+            ,dept_cd = #{deptCd}
+            ,saf_elect_titl_no = #{safElectTitlNo}
+            ,eval_nm = #{evalNm}
+            ,eval_desc = #{evalDesc}
+            ,proc_step_cd = #{procStepCd}
+            ,state_cd = #{stateCd}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+            ,update_dept_nm = #{updateDeptNm}
+            ,update_dept_cd = #{updateDeptCd}
+            ,update_position_nm = #{updatePositionNm}
+            ,update_position_cd = #{updatePositionCd}
+        where eval_plan_no = #{evalPlanNo}
+    </update>
+
+    <!-- 법정선임자 평가계획 삭제 -->
+    <delete id="deleteElectEvalPlan">
+        /* ElectEvalPlanMapper.deleteElectEvalPlan [ElectEvalPlan.xml] */
+        delete from saf_elect_titl_eval_plan
+        where eval_plan_no = #{evalPlanNo}
+    </delete>
+
+    <select id="getElectEvalUsers" resultType="com.she.mgt.model.ElectEvalUser">
+        /* ElectEvalPlanMapper.getElectEvalUsers [ElectEvalPlan.xml] */
+        select	eu.eval_plan_no
+                ,eu.eval_user_no
+                ,eu.plant_nm -- 사업장
+                ,eu.dept_nm -- 부서
+                ,eu.position_nm --직위
+                ,mu.user_nm as me_user_nm -- 본인평가자
+                ,eu.me_user_id -- 본인평가자 사번
+                ,dbo.GET_USER_NM(eu.up_user_id) as up_user_nm -- 상위평가자
+                ,eu.up_user_id -- 상위평가자 사번
+                ,me_proc_step -- 본인평가 진행상태
+                ,up_proc_step -- 상위평가 진행상태
+                ,remark -- 비고
+        from saf_elect_titl_eval_user eu
+        inner join com_user mu
+        on mu.user_id = eu.me_user_id
+        where eval_plan_no = #{evalPlanNo}
+    </select>
+
+    <!-- 법정선임자 평가계획 평가대상자 저장 -->
+    <insert id="saveElectEvalUser" parameterType="com.she.mgt.model.ElectEvalUser">
+        /* ElectEvalPlanMapper.saveElectEvalUser [ElectEvalPlan.xml] */
+        <selectKey keyProperty="evalUserNo" resultType="int" order="BEFORE">
+            <choose>
+                <when test="evalUserNo != null and evalUserNo > 0">
+                    select #{evalUserNo} as evalUserNo
+                </when>
+                <otherwise>
+                    select next value for seq_saf_elect_titl_eval_user as evalUserNo
+                </otherwise>
+            </choose>
+        </selectKey>
+        merge into saf_elect_titl_eval_user T
+        using (
+            select  #{evalUserNo} as eval_user_no -- 법정선임자 평가대상자 번호
+                    ,#{evalPlanNo} as eval_plan_no -- 법정선임자 평가계획 번호
+                    ,#{plantNm} as plant_nm -- 사업장
+                    ,#{deptNm} as dept_nm -- 부서
+                    ,#{positionNm} as position_nm -- 직위
+                    ,#{meUserId} as me_user_id -- 본인평가자 사번
+                    ,#{upUserId} as up_user_id -- 상위평가자 사번
+                    ,#{meProcStep} as me_proc_step -- 본인평가 진행상태
+                    ,#{upProcStep} as up_proc_step -- 상위평가 진행상태
+                    ,#{remark} as remark -- 비고
+        ) U
+        on U.eval_user_no = T.eval_user_no and U.eval_plan_no = T.eval_plan_no
+        when not matched then
+        insert (
+            eval_user_no
+            ,eval_plan_no
+            ,plant_nm
+            ,dept_nm
+            ,position_nm
+            ,me_user_id
+            ,up_user_id
+            ,me_proc_step
+            ,up_proc_step
+            ,remark
+        )
+        values (
+            U.eval_user_no
+            ,U.eval_plan_no
+            ,U.plant_nm
+            ,U.dept_nm
+            ,U.position_nm
+            ,U.me_user_id
+            ,U.up_user_id
+            ,U.me_proc_step
+            ,U.up_proc_step
+            ,U.remark
+        )
+        when matched then
+        update
+            set eval_user_no = U.eval_user_no
+                ,eval_plan_no = U.eval_plan_no
+                ,plant_nm = U.plant_nm
+                ,dept_nm = U.dept_nm
+                ,position_nm = U.position_nm
+                ,me_user_id = U.me_user_id
+                ,up_user_id = U.up_user_id
+                ,me_proc_step = U.me_proc_step
+                ,up_proc_step = U.up_proc_step
+                ,remark = U.remark
+        ;
+    </insert>
+
+    <!-- 법정선임자 평가계획 평가대상자 삭제 -->
+    <delete id="deleteElectEvalUser">
+        /* ElectEvalPlanMapper.deleteElectEvalUser [ElectEvalPlan.xml] */
+        delete from saf_elect_titl_eval_user
+        where eval_plan_no = #{evalPlanNo}
+        <if test="evalUserNo != null and evalUserNo > 0">
+        and eval_user_no = #{evalUserNo}
+        </if>
+    </delete>
+
+    <!-- 평가항목 목록 조회 (신규등록) -->
+    <select id="getElectEvalItemsInit" resultType="com.she.mgt.model.ElectEvalItem">
+        /* ElectEvalPlanMapper.getElectEvalItemsInit [ElectEvalPlan.xml] */
+        select	et.saf_elect_titl_no
+                ,eti.saf_elect_titl_item_no
+                ,eti.item_type
+                ,eti.item_work
+                ,eti.remark
+        from saf_elect_titl et
+        inner join saf_elect_titl_item eti
+        on eti.saf_elect_titl_no = et.saf_elect_titl_no
+        where et.use_yn = 'Y'
+        and eti.use_yn = 'Y'
+        <if test="safElectTitlNo != null and safElectTitlNo > 0">
+        and et.saf_elect_titl_no = #{safElectTitlNo}
+        </if>
+    </select>
+
+    <!-- 평가항목 목록 조회 (수정)-->
+    <select id="getElectEvalItems" resultType="com.she.mgt.model.ElectEvalItem">
+        /* ElectEvalPlanMapper.getElectEvalItems [ElectEvalPlan.xml] */
+        select  eval_item_no
+                ,eval_plan_no
+                ,item_type
+                ,item_work
+                ,remark
+        from saf_elect_titl_eval_item
+        where eval_plan_no = #{evalPlanNo}
+    </select>
+
+    <!-- 평가항목 저장-->
+    <insert id="createElectEvalItem" parameterType="com.she.mgt.model.ElectEvalItem">
+        /* ElectEvalPlanMapper.createElectEvalItem [ElectEvalPlan.xml] */
+        <selectKey keyProperty="evalItemNo" resultType="int" order="BEFORE">
+            select next value for seq_saf_elect_titl_eval_item as evalItemNo
+        </selectKey>
+        insert into saf_elect_titl_eval_item (
+            eval_item_no
+            ,eval_plan_no
+            ,item_type
+            ,item_work
+            ,remark
+        )
+        values (
+            #{evalItemNo}
+            ,#{evalPlanNo}
+            ,#{itemType}
+            ,#{itemWork}
+            ,#{remark}
+        )
+    </insert>
+
+    <!-- 평가항목 삭제-->
+    <delete id="deleteElectEvalItem">
+        /* ElectEvalPlanMapper.deleteElectEvalItem [ElectEvalPlan.xml] */
+        delete from saf_elect_titl_eval_item
+        where eval_plan_no = #{evalPlanNo}
+    </delete>
+
+    <!-- 법정선임자 평가계획 결재정보 업데이트 -->
+    <update id="updateAppr" parameterType="com.she.mgt.model.ElectEvalPlan">
+        /* ElectEvalPlanMapper.updateAppr [ElectEvalPlan.xml] */
+        update saf_elect_titl_eval_plan
+        set state_cd = #{stateCd}
+            ,appr_rqst_no = #{apprRqstNo}
+            ,step_cd = #{stepCd}
+            <if test='stepCd != null and stepCd.equals("BAPSG")'>
+            ,proc_step_cd = #{procStepCd}
+            </if>
+        where eval_plan_no = #{evalPlanNo}
+    </update>
+</mapper>

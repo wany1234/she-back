@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.she.manage.mapper.AlarmMapper">
+
+    <!-- 결재문서마스터 목록 조회 -->
+    <select id="getAlarms" resultType="com.she.manage.model.Alarm">
+        /* AlarmMapper.getAlarms [Alarm.xml] */
+        SELECT a.alarm_no
+        ,a.alarm_nm
+        ,a.sms_yn
+        ,a.email_yn
+        ,case when a.sms_yn = 'Y' then 'SMS'
+        else ''
+        end +
+        case when a.email_yn = 'Y' then (case when a.sms_yn = 'Y' then ', Mail' else 'Mail' end)
+        else ''
+        end as sms_email_yn_nm
+        ,a.alarm_desk
+        ,a.use_yn
+        ,case when a.use_yn = 'Y' then '사용'
+        else '미사용'
+        end as use_yn_nm
+        ,a.create_user_id
+        ,createUser.user_nm as create_user_nm
+        ,convert(char(23), a.create_dt, 21) as create_dt
+        ,a.update_user_id
+        ,a.update_dt
+        FROM alarm a
+        LEFT OUTER JOIN com_user createUser
+        ON a.create_user_id = createUser.user_id
+        WHERE 1=1
+        <if test="alarmType != null and !alarmType.equals('')">
+            <choose>
+                <when test= 'alarmType.equals("M")'>
+                    AND a.email_yn = 'Y'
+                </when>
+                <when test= 'alarmType.equals("S")'>
+                    AND a.sms_yn = 'Y'
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="alarmNm != null and !alarmNm.equals('')">
+            AND a.alarm_nm Like '%' + #{alarmNm} + '%'
+        </if>
+        <if test="useYn != null and !useYn.equals('')">
+            AND a.use_yn = #{useYn}
+        </if>
+    </select>
+
+    <select id="getAlarm" resultType="com.she.manage.model.Alarm">
+        /* AlarmMapper.getAlarm [Alarm.xml] */
+        SELECT a.alarm_no
+             ,a.alarm_nm
+             ,a.sms_yn
+             ,a.email_yn
+             ,a.alarm_desk
+             ,a.use_yn
+             ,a.create_user_id
+             ,a.create_dt
+             ,a.update_user_id
+             ,a.update_dt
+        FROM alarm a
+        WHERE a.alarm_no = #{alarmNo}
+    </select>
+
+    <select id="getAlarmCheck" resultType="int">
+        /* AlarmMapper.getAlarmCheck [Alarm.xml] */
+        SELECT count(*) as cnt
+        FROM alarm
+        WHERE alarm_nm = #{alarmNm}
+        <if test="alarmNo != null and alarmNo > 0">
+            AND alarm_no != #{alarmNo}
+        </if>
+    </select>
+
+    <insert id="insertAlarm" parameterType="com.she.manage.model.Alarm">
+        /* AlarmMapper.insertAlarm [Alarm.xml] */
+        <selectKey keyProperty="alarmNo" resultType="int" order="BEFORE">
+            select next value for seq_alarm
+        </selectKey>
+        INSERT INTO alarm
+        (alarm_no
+        ,alarm_nm
+        ,sms_yn
+        ,email_yn
+        ,alarm_desk
+        ,use_yn
+        ,create_user_id
+        ,create_dt)
+        VALUES
+        (#{alarmNo}
+        ,#{alarmNm}
+        ,#{smsYn}
+        ,#{emailYn}
+        ,#{alarmDesk}
+        ,#{useYn}
+        ,#{createUserId}
+        ,getdate())
+    </insert>
+
+    <insert id="updateAlarm" parameterType="com.she.manage.model.Alarm">
+        /* AlarmMapper.updateAlarm [Alarm.xml] */
+        UPDATE alarm
+        SET alarm_nm = #{alarmNm}
+          ,sms_yn = #{smsYn}
+          ,email_yn = #{emailYn}
+          ,alarm_desk = #{alarmDesk}
+          ,use_yn = #{useYn}
+          ,update_user_id = #{updateUserId}
+          ,update_dt = getdate()
+        WHERE alarm_no = #{alarmNo}
+    </insert>
+
+
+    <insert id="createAlarmLog" parameterType="com.she.manage.model.AlarmLog">
+        /* AlarmMapper.createAlarmLog [Alarm.xml] */
+        <selectKey keyProperty="logNo" resultType="int" order="BEFORE">
+            select next value for seq_alarm_log
+        </selectKey>
+        INSERT INTO alarm_log
+        (log_no
+        ,sender_id
+        ,sender_phone_no
+        ,receiver_id
+        ,receiver_phone_no
+        ,contents
+        ,send_dt
+        ,send_yn
+        ,fail_desc
+        ,try_count)
+        VALUES (#{logNo}
+        ,#{senderId}
+        ,#{senderPhoneNo}
+        ,#{receiverId}
+        ,#{receiverPhoneNo}
+        ,#{contents}
+        ,getdate()
+        ,#{sendYn}
+        ,#{failDesc}
+        ,0)
+    </insert>
+
+    <insert id="createMailLog" parameterType="com.she.manage.model.MailLog">
+        /* AlarmMapper.createMailLog [Alarm.xml] */
+        <selectKey keyProperty="logNo" resultType="int" order="BEFORE">
+            select next value for seq_com_mail_log
+        </selectKey>
+        INSERT INTO com_mail_log
+        (log_no
+        ,sender_id
+        ,sender_email
+        ,receiver_id
+        ,receiver_email
+        ,title
+        ,contents
+        ,send_dt
+        ,send_yn
+        ,fail_desc
+        ,try_count)
+        VALUES (#{logNo}
+        ,#{senderId}
+        ,#{senderEmail}
+        ,#{receiverId}
+        ,#{receiverEmail}
+        ,#{title}
+        ,#{contents}
+        ,getdate()
+        ,#{sendYn}
+        ,#{failDesc}
+        ,0)
+    </insert>
+
+    <select id="getFailAlarms" resultType="com.she.manage.model.AlarmLog">
+        /* AlarmMapper.getFailAlarms [Alarm.xml] */
+        SELECT al.log_no
+             ,al.sender_id
+             ,al.sender_phone_no
+             ,al.receiver_id
+             ,al.receiver_phone_no
+             ,al.contents
+             ,al.send_dt
+             ,al.send_yn
+             ,al.fail_desc
+             ,al.try_count
+             ,al.try_dt
+        FROM alarm_log al
+        WHERE al.send_yn = 'N'
+          AND al.try_count = 0
+    </select>
+
+    <select id="getFailMails" resultType="com.she.manage.model.MailLog">
+        /* AlarmMapper.getFailMails [Alarm.xml] */
+        SELECT cml.log_no
+             ,cml.sender_id
+             ,cml.sender_email
+             ,cml.receiver_id
+             ,cml.receiver_email
+             ,cml.title
+             ,cml.contents
+             ,cml.send_dt
+             ,cml.send_yn
+             ,cml.fail_desc
+             ,cml.try_count
+             ,cml.try_dt
+        FROM com_mail_log cml
+        WHERE cml.send_yn = 'N'
+          AND cml.try_count = 0
+    </select>
+
+    <update id="updateAlarmLog" parameterType="com.she.manage.model.AlarmLog">
+        /* AlarmMapper.updateAlarmLog [Alarm.xml] */
+        UPDATE alarm_log
+        SET send_dt = getdate()
+          ,send_yn = #{sendYn}
+          ,fail_desc = #{failDesc}
+          ,try_count = 1
+          ,try_dt = getdate()
+        WHERE log_no = #{logNo}
+    </update>
+
+    <update id="updateMailLog" parameterType="com.she.manage.model.MailLog">
+        /* AlarmMapper.updateMailLog [Alarm.xml] */
+        UPDATE com_mail_log
+        SET send_dt = getdate()
+          ,send_yn = #{sendYn}
+          ,fail_desc = #{failDesc}
+          ,try_count = 1
+          ,try_dt = getdate()
+        WHERE log_no = #{logNo}
+    </update>
+
+</mapper>
