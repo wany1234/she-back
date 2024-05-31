@@ -276,6 +276,32 @@
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports</artifactId>
             <version>6.4.0</version>
+
+            <exclusions>
+               <exclusion>
+                  <groupId>com.lowagie</groupId>
+                  <artifactId>itext</artifactId>
+               </exclusion>
+               <exclusion>
+                  <groupId>org.olap4j</groupId>
+                  <artifactId>olap4j</artifactId>
+               </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+           <groupId>com.lowagie</groupId>
+           <artifactId>itext</artifactId>
+           <version>[1.02b,2.1.7]</version>
+           <scope>compile</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.olap4j/olap4j -->
+        <dependency>
+            <groupId>org.olap4j</groupId>
+            <artifactId>olap4j</artifactId>
+            <version>1.2.0</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-json -->
@@ -308,6 +334,12 @@
          <artifactId>spring-boot-configuration-processor</artifactId>
          <optional>true</optional>
         </dependency>
+        
+        <dependency>
+			<groupId>com.ibm.icu</groupId>
+			<artifactId>icu4j</artifactId>
+			<version>57.1</version>
+		</dependency>
     </dependencies>
     <repositories>
         <repository>
