@@ -272,11 +272,26 @@
         </dependency>
         
          <!-- Jasper Report -->
-        <dependency>
-            <groupId>net.sf.jasperreports</groupId>
-            <artifactId>jasperreports</artifactId>
-            <version>6.4.0</version>
-        </dependency>
+		<dependency>
+		   <groupId>net.sf.jasperreports</groupId>
+		   <artifactId>jasperreports</artifactId>
+		   <version>6.16.0</version>
+		
+		   <exclusions>
+		      <exclusion>
+		         <groupId>com.lowagie</groupId>
+		         <artifactId>itext</artifactId>
+		      </exclusion>
+		   </exclusions>
+		</dependency>
+		
+		
+		<dependency>
+		   <groupId>com.lowagie</groupId>
+		   <artifactId>itext</artifactId>
+		   <version>[1.02b,2.1.7]</version>
+		   <scope>compile</scope>
+		</dependency>
 
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-json -->
         <dependency>
