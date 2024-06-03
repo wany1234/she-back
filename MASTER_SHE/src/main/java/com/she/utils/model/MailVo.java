@@ -1,5 +1,8 @@
 package com.she.utils.model;
 
+import java.util.List;
+
+import com.she.manage.model.MailLog;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -8,8 +11,11 @@ import lombok.Data;
 @Data
 public class MailVo {
 
-    @ApiModelProperty(value = "메일 제목")
+	@ApiModelProperty(value = "메일 제목")
     private String title;
+
+    @ApiModelProperty(value = "메일 본문 제목")
+    private String mailTitle;
 
     @ApiModelProperty(value = "메일 내용")
     private String contents;
@@ -25,4 +31,10 @@ public class MailVo {
 
     @ApiModelProperty(value = "보내는 사람 이메일")
     private String senderEmail;
+
+    @ApiModelProperty(value = "메일로그")
+    private List<MailLog> mailLogs;
+
+    @ApiModelProperty(value = "SHE 링크")
+    private String link;
 }

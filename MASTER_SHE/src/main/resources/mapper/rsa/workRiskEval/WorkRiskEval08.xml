@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.rsa.workRiskEval.mapper.WorkRiskEval08Mapper">
+    <select id= "getworkRiskEval08List" resultType= "com.she.rsa.model.WorkRiskEval08">
+    /* WorkRiskEval08Mapper.getworkRiskEval08Lists [WorkRiskEval08.xml] */
+       select a.plant_cd
+             , k.code_nm as plant_nm
+             , a.eval_year
+             , a.eval_type_cd
+             , b.eval_type_nm
+             , a.eval_nm 
+             , b.dept_cd 
+             , dbo.GET_DEPT_NM(b.dept_cd) as dept_nm
+             , c.process_cd 
+             , c.unit_work_cd 
+             , g.process_nm as line_prcs_nm     -- 라인
+             , f.process_nm as grand_prcs_nm    -- 대공정
+             , e.process_nm                     -- 주요설비
+             , h.unit_work_nm                   -- 작업명
+             , d.dtl_wk_nm                      -- 세부작업명
+             , d.dgr_act_situ_rslt              -- 위험발생상황 및 결과
+             , d.dgr_lvl_cd                     -- 위험등급
+             , d.man_dgr_reg_num                -- 중요위험등록번호
+             , d.impr_act_no                    -- 개선번호
+             , l.saf_impr_act_no
+             , l.act_dept_cd                    -- 위험관리방안-조치부서 
+             , l.aft_deg_risk                   -- 위험관리방안-개선후위험등급
+             , l.impr_rqst_contents             -- 개선요청내용
+             , l.act_result_contents            -- 조치결과
+             , dbo.GET_USER_NM(l.act_user_id) as act_user_nm    -- 조치자
+             , l.act_confirm_ymd                -- 조치완료일
+             , '[상세보기]' as link_txt
+        from rsa_wk_eval_plan a
+        inner join rsa_wk_eval_dept b 
+            on a.plant_cd       = b.plant_cd 
+            and a.eval_year     = b.eval_year 
+            and a.eval_no       = b.eval_no 
+        inner join rsa_wk_eval_dept_prcs c 
+            on b.plant_cd       = c.plant_cd 
+            and b.eval_year     = c.eval_year 
+            and b.eval_no       = c.eval_no 
+            and b.dept_cd       = c.dept_cd   
+        inner join rsa_wk_eval_rslt d 
+            on c.plant_cd       = d.plant_cd 
+            and c.eval_year     = d.eval_year 
+            and c.eval_no       = d.eval_no 
+            and c.dept_cd       = d.dept_cd 
+            and c.process_cd    = d.process_cd 
+            and c.unit_work_cd  = d.unit_work_cd 
+        inner join rsa_process e 
+            on  e.process_cd    = c.process_cd 
+            and e.plant_cd      = c.plant_cd 
+            and e.prcs_lvl_cd   = 3
+        inner join rsa_process f 
+            on  f.process_cd    = e.p_process_cd 
+            and f.plant_cd      = e.plant_cd 
+            and f.prcs_lvl_cd   = 2
+        inner join rsa_process g 
+            on  g.process_cd    = f.p_process_cd 
+            and g.plant_cd      = f.plant_cd 
+            and g.prcs_lvl_cd   = 1
+        inner join rsa_dept_prcs_unit_work h 
+            on  h.plant_cd      = c.plant_cd 
+            and h.dept_cd       = c.dept_cd 
+            and h.process_cd    = c.process_cd 
+            and h.unit_work_cd  = c.unit_work_cd
+        inner join saf_impr_act l 
+            on d.plant_cd       = l.plant_cd 
+            and d.impr_act_no   = l.ref_table_id
+            and l.impr_class_cd = 'ICL05'
+            and l.act_class_cd  = 'ACL02'
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') k on a.plant_cd = k.code
+        where b.rslt_step_cd ='RCKFN'
+        <if test= "plantCd != null and !plantCd.equals('')">
+          and a.plant_cd = #{plantCd}
+        </if>
+        <if test= "evalTypeCd != null and !evalTypeCd.equals('')">
+          and a.eval_type_cd = #{evalTypeCd}
+        </if>
+        <if test= "deptCd != null and !deptCd.equals('')">
+          and b.dept_cd = #{deptCd}
+        </if>  
+        <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+           and convert(int, a.eval_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+        </if>  
+        <if test= "processNm != null and !processNm.equals('')">
+           and e.process_nm like '%' + #{processNm} + '%'
+        </if>
+        <if test= "unitWorkNm != null and !unitWorkNm.equals('')">
+           and h.unit_work_nm like '%' + #{unitWorkNm} + '%'
+        </if>
+        order by a.plant_cd desc, a.eval_year desc, a.eval_no desc  
+    </select>
+</mapper>

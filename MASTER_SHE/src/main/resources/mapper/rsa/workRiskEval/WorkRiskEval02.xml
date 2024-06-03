@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.rsa.workRiskEval.mapper.WorkRiskEval02Mapper">
+    <!-- 작업위험성평가 대상 공정설정 목록 조회 -->
+    <select id= "getworkRiskEval02Lists" resultType= "com.she.rsa.model.WorkRiskEval02Prcs">
+    /* WorkRiskEval02Mapper.getworkRiskEval02Lists [WorkRiskEval02.xml] */
+       select 
+             rwep.plant_cd
+           , cpc.code_nm as plant_nm
+           , rwep.eval_year
+           , rwep.eval_no
+           , rwep.step_cd
+           , srps.code_nm as step_nm
+           , rwed.rslt_step_cd 
+           , srrs.code_nm as rslt_step_nm
+           , rwed.dept_eval_user_id
+           , dbo.GET_USER_NM(rwed.dept_eval_user_id) as dept_eval_user_nm
+           , rwed.dept_cd 
+           , dbo.GET_DEPT_NM(rwed.dept_cd) as dept_nm
+           , rwep.eval_type_cd
+           , regdem.code_nm as eval_type_nm
+           , rwep.eval_nm
+           , rwep.plan_symd
+           , rwep.plan_eymd
+           , convert(char(10), rwep.plan_symd, 23) + ' ~ ' + convert(char(10), rwep.plan_eymd, 23) as plan_period
+           , rwep.dept_cd as main_dept_cd
+           , dbo.GET_DEPT_NM(rwep.dept_cd) as main_dept_nm
+           , rwep.mgr_id
+           , dbo.GET_USER_NM(rwep.mgr_id) as mgr_nm
+           , rwep.chng_no           
+           , rwep.gw_appr_biz_cd
+           , rwed.p_appr_rqst_no
+       from rsa_wk_eval_plan rwep  
+       inner join rsa_wk_eval_dept rwed
+            on rwep.plant_cd    = rwed.plant_cd 
+            and rwep.eval_year  = rwed.eval_year 
+            and rwep.eval_no    = rwed.eval_no
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') cpc
+            on rwep.plant_cd = cpc.code  
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_REG_REGDEM') regdem
+            on rwep.eval_type_cd = regdem.code
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_RSA_PLAN_STEP') srps
+            on rwep.step_cd = srps.code
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_RSA_RSLT_STEP') srrs
+            on rwed.rslt_step_cd = srrs.code
+       where 1=1
+         and rwep.step_cd = 'PNSET'
+           <if test= "plantCd != null and !plantCd.equals('')">
+             and rwep.plant_cd = #{plantCd}
+           </if>    
+           <if test= "evalTypeCd != null and !evalTypeCd.equals('')">
+             and rwep.eval_type_cd = #{evalTypeCd}
+           </if>
+           <if test= "deptCd != null and !deptCd.equals('')">
+             and rwed.dept_cd = #{deptCd}
+           </if>
+           <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+               and convert(int, rwep.eval_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+           </if>
+        order by rwep.eval_year desc, rwep.eval_no desc
+    </select>
+    
+    <!-- 작업위험성평가 대상 공정설정 평가대상공정 목록 조회 -->
+    <select id= "getWorkRiskEval02detpPrcsLists" resultType= "com.she.rsa.model.WorkRiskEval02DeptPrcs">
+    /* WorkRiskEval02Mapper.getWorkRiskEval02detpPrcsLists [WorkRiskEval02.xml] */
+       select  a.plant_cd
+             , a.eval_year
+             , a.eval_no
+             , a.dept_cd
+             , a.process_cd
+             , b.process_nm as process_nm
+             , a.unit_work_cd
+             , e.unit_work_nm as unit_work_nm             
+             , a.p_process_cd as parents_process_cd
+             , a.saf_acdnt_cnt
+             , c.process_cd as grand_prcs_cd
+             , c.process_nm as grand_prcs_nm
+             , d.process_nm as line_prcs_nm
+             , a.rslt_cfm_yn -- 확정여부
+             , (select count(1)
+                from rsa_wk_eval_rslt
+                where plant_cd      = a.plant_cd 
+                  and eval_year     = a.eval_year 
+                  and eval_no       = a.eval_no 
+                  and dept_cd       = a.dept_cd 
+                  and process_cd    = a.process_cd 
+                  and unit_work_cd  = a.unit_work_cd 
+               ) as dtl_wk_no -- 세부작업건수
+             , (select count(1)
+                from rsa_wk_eval_rslt x
+                inner join saf_impr_act y on y.impr_class_cd = 'ICL05' and y.ref_table_id = x.impr_act_no
+                where x.plant_cd        = a.plant_cd 
+                  and x.eval_year       = a.eval_year 
+                  and x.eval_no         = a.eval_no 
+                  and x.dept_cd         = a.dept_cd 
+                  and x.process_cd      = a.process_cd 
+                  and x.unit_work_cd    = a.unit_work_cd
+               ) as impr_cnt -- 개선요청건수
+             , (select string_agg(user_nm,', ')
+                from rsa_wk_eval_dept_prcs_psn
+                where plant_cd      = a.plant_cd 
+                  and eval_year     = a.eval_year 
+                  and eval_no       = a.eval_no 
+                  and dept_cd       = a.dept_cd 
+                  and process_cd    = a.process_cd 
+                  and unit_work_cd  = a.unit_work_cd 
+               ) as psn_nm_list -- 평가참여자
+             , a.chk_rslt_cd 
+             , f.code_nm as chk_rslt_nm
+             , (select string_agg(unit_work_cd+'|'+cast(dtl_wk_seq AS varchar)+'|'+dtl_wk_nm,',')
+                from rsa_wk_eval_rslt
+                where plant_cd      = a.plant_cd 
+                  and eval_year     = a.eval_year 
+                  and eval_no       = a.eval_no 
+                  and dept_cd       = a.dept_cd 
+                  and process_cd    = a.process_cd 
+                  and unit_work_cd  = a.unit_work_cd 
+               ) as unit_work_agg
+       from rsa_wk_eval_dept_prcs a
+       inner join rsa_process b on b.process_cd = a.process_cd and b.prcs_lvl_cd = 3
+       inner join rsa_process c on c.process_cd = a.p_process_cd and c.prcs_lvl_cd = 2
+       inner join rsa_process d on d.process_cd = c.p_process_cd and d.prcs_lvl_cd = 1
+       inner join rsa_dept_prcs_unit_work e 
+            on  e.plant_cd      = a.plant_cd 
+            and e.dept_cd       = a.dept_cd 
+            and e.process_cd    = a.process_cd 
+            and e.unit_work_cd  = a.unit_work_cd
+       left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_F_CHK_RSLT_CLS') f
+            on a.chk_rslt_cd = f.code
+       where 1=1      
+       <if test= "plantCd != null and !plantCd.equals('')">
+         and a.plant_cd = #{plantCd}
+       </if>
+       <if test= "evalYear != null and !evalYear.equals('')">
+         and a.eval_year = #{evalYear}
+       </if> 
+       <if test= "evalNo != null and !evalNo.equals('')">
+         and a.eval_no = #{evalNo}
+       </if> 
+       <if test= "deptCd != null and !deptCd.equals('')">
+         and a.dept_cd = #{deptCd}
+       </if>  
+    </select>
+    
+    <!-- 작업위험성평가 대상 공정설정 평가대상공정 목록 조회 -->
+    <select id= "getdeptPrcsBaseInfoLists" resultType= "com.she.rsa.model.WorkRiskEval02DeptPrcs">
+    /* WorkRiskEval02Mapper.getdeptPrcsBaseInfoLists [WorkRiskEval02.xml] */
+        select x.*
+        from (
+              select a.plant_cd
+                    , cpc.code_nm as plant_nm
+                    , d.dept_cd 
+                    , f.dept_nm
+                    , c.process_cd as line_prcs_cd         -- 라인공정코드 
+                    , c.process_nm as line_prcs_nm         -- 라인공정명
+                    , c.prcs_lvl_cd as line_prcs_lvl_cd    -- 라인공정레벨
+                    , b.process_cd as grand_prcs_cd        -- 대공정코드
+                    , b.process_nm as grand_prcs_nm        -- 대공정명
+                    , b.prcs_lvl_cd as grand_prcs_lvl_cd   -- 대공정레벨
+                    , a.process_cd                         -- 주요설비공정코드
+                    , a.process_nm                         -- 주요설비명
+                    , a.prcs_lvl_cd                        -- 주요설비레벨
+                    , e.unit_work_cd
+                    , e.unit_work_nm
+                    , a.p_process_cd as parents_process_cd
+                    , e.saf_acdnt_cnt
+                    , '' as unit_work_agg
+              from rsa_process a 
+              inner join rsa_process b on a.p_process_cd = b.process_cd 
+              inner join rsa_process c on b.p_process_cd = c.process_cd 
+              inner join rsa_process_dept d on d.process_cd = a.process_cd
+              inner join rsa_dept_prcs_unit_work e 
+                   on  e.plant_cd      = a.plant_cd  
+                   and d.dept_cd       = e.dept_cd 
+                   and a.process_cd    = e.process_cd
+              inner join com_dept f on d.dept_cd = f.dept_cd
+              inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') cpc
+                          on a.plant_cd = cpc.code 
+              where 1=1
+                and a.prcs_lvl_cd='3' 
+                and b.prcs_lvl_cd='2'
+                and a.use_yn = 'Y'      
+              <if test= "plantCd != null and !plantCd.equals('')">
+                and a.plant_cd = #{plantCd}
+              </if> 
+              <if test= "deptCd != null and !deptCd.equals('')">
+                and d.dept_cd = #{deptCd}
+              </if>               
+              <if test= "unitWorkNm != null and !unitWorkNm.equals('')">
+                and e.unit_work_nm like '%' + #{unitWorkNm} + '%'
+              </if>
+              ) x
+       where 1=1   
+       <if test= "processNm != null and !processNm.equals('')">
+         and (x.line_prcs_nm like '%' + #{processNm} + '%'
+         or x.grand_prcs_nm like '%' + #{processNm} + '%'
+         or x.process_nm like '%' + #{processNm} + '%')
+       </if> 
+       order by x.plant_cd, x.line_prcs_nm, x.grand_prcs_nm, x.process_nm
+    </select>
+    
+    <!-- 작업위험성평가 대상 공정설정 평가대상공정 목록 조회 -->
+    <select id= "getdeptPrcsBaseExistInfoLists" resultType= "com.she.rsa.model.WorkRiskEval02DeptPrcs">
+    /* WorkRiskEval02Mapper.getdeptPrcsBaseExistInfoLists [WorkRiskEval02.xml] */
+       select x.*
+       from (
+             select  a.plant_cd
+                   , e.code_nm as plant_nm
+                   , a.eval_year
+                   , a.eval_no
+                   , a.dept_cd
+                   , f.dept_nm
+                   , a.process_cd
+                   , b.process_nm
+                   , b.prcs_lvl_cd
+                   , a.unit_work_cd
+                   , g.unit_work_nm as unit_work_nm             
+                   , a.p_process_cd as parents_process_cd
+                   , g.saf_acdnt_cnt
+                   , c.process_cd as grand_prcs_cd
+                   , c.process_nm as grand_prcs_nm
+                   , c.prcs_lvl_cd as grand_prcs_lvl_cd
+                   , d.process_cd as line_prcs_cd
+                   , d.process_nm as line_prcs_nm
+                   , d.prcs_lvl_cd as line_prcs_lvl_cd
+                   , h.eval_type_cd
+                   , h.eval_type_nm
+                   , (select string_agg(unit_work_cd+'|'+cast(dtl_wk_seq AS varchar)+'|'+dtl_wk_nm,',')
+                      from rsa_wk_eval_rslt
+                      where plant_cd      = a.plant_cd 
+                        and eval_year     = a.eval_year 
+                        and eval_no       = a.eval_no 
+                        and dept_cd       = a.dept_cd 
+                        and process_cd    = a.process_cd 
+                        and unit_work_cd  = a.unit_work_cd 
+                     ) as unit_work_agg
+             from rsa_wk_eval_dept_prcs a
+             inner join rsa_process b on b.process_cd = a.process_cd and b.prcs_lvl_cd = 3
+             inner join rsa_process c on c.process_cd = a.p_process_cd and c.prcs_lvl_cd = 2
+             inner join rsa_process d on d.process_cd = c.p_process_cd and d.prcs_lvl_cd = 1
+             inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') e
+                  on  a.plant_cd = e.code
+             inner join com_dept f on a.dept_cd = f.dept_cd
+             inner join rsa_dept_prcs_unit_work g 
+                  on  g.plant_cd      = a.plant_cd 
+                  and g.unit_work_cd  = a.unit_work_cd
+             inner join rsa_wk_eval_dept h 
+                  on  a.plant_cd      = h.plant_cd 
+                  and a.eval_year     = h.eval_year 
+                  and a.eval_no       = h.eval_no 
+                  and a.dept_cd       = h.dept_cd
+             where 1=1  
+               and a.plant_cd = #{plantCd}
+               and a.dept_cd = #{deptCd}
+               and a.eval_no != #{evalNo}
+             <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+               and convert(int, a.eval_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+             </if> 
+             <if test= "evalTypeCd != null and !evalTypeCd.equals('')">
+               and h.eval_type_cd = #{evalTypeCd}
+             </if>
+             <if test= "unitWorkNm != null and !unitWorkNm.equals('')">
+               and g.unit_work_nm like '%' + #{unitWorkNm} + '%'
+             </if>  
+       ) x
+       where 1=1   
+       <if test= "processNm != null and !processNm.equals('')">
+         and (x.line_prcs_nm like '%' + #{processNm} + '%'
+         or x.grand_prcs_nm like '%' + #{processNm} + '%'
+         or x.process_nm like '%' + #{processNm} + '%')
+       </if> 
+       order by x.plant_cd, x.line_prcs_nm, x.grand_prcs_nm, x.process_nm
+    </select>
+    
+    <select id= "getWorkRiskEval02Info" resultType= "com.she.rsa.model.WorkRiskEval02Prcs">
+        /* WorkRiskEval02Mapper.getWorkRiskEval02Info [WorkRiskEval02.xml] */
+        select 
+             rwep.plant_cd
+           , cpc.code_nm as plant_nm
+           , rwep.eval_year
+           , rwep.eval_no
+           , rwep.step_cd
+           , srps.code_nm as step_nm
+           , rwed.rslt_step_cd 
+           , srrs.code_nm as rslt_step_nm
+           , rwed.dept_eval_user_id
+           , dbo.GET_USER_NM(rwed.dept_eval_user_id) as dept_eval_user_nm
+           , rwed.dept_cd 
+           , dbo.GET_DEPT_NM(rwed.dept_cd) as dept_nm
+           , rwep.eval_type_cd
+           , regdem.code_nm as eval_type_nm
+           , rwep.eval_nm
+           , rwep.plan_symd
+           , rwep.plan_eymd
+           , convert(char(10), rwep.plan_symd, 23) + ' ~ ' + convert(char(10), rwep.plan_eymd, 23) as plan_period
+           , rwep.dept_cd as main_dept_cd
+           , dbo.GET_DEPT_NM(rwep.dept_cd) as main_dept_nm
+           , rwep.mgr_id
+           , dbo.GET_USER_NM(rwep.mgr_id) as mgr_nm
+           , rwep.chng_no           
+           , rwep.gw_appr_biz_cd
+           , ISNULL(rwed.p_appr_rqst_no,0) as plan_appr_rqst_no -- 결재번호(계획)
+           , ISNULL(planBizAppr.code_nm, '결재요청전' ) as plan_appr_rqst_nm
+           , ISNULL(rwed.r_appr_rqst_no,0) as rslt_appr_rqst_no -- 결재번호(결과)
+           , ISNULL(rsltBizAppr.code_nm, '결재요청전' ) as rslt_appr_rqst_nm
+           , rwed.remark
+           , ISNULL(rwed.chk_user_id, rwep.mgr_id) as chk_user_id
+           , dbo.GET_USER_NM(ISNULL(rwed.chk_user_id, rwep.mgr_id)) as chk_user_nm
+           , rwed.chk_ymd
+           , rwed.chk_rslt_cd
+           , rwed.chk_rslt_desc
+           , cu.dept_cd as chk_dept_cd
+           , rwed.r_gw_appr_biz_cd as rslt_gw_appr_biz_cd
+       from rsa_wk_eval_plan rwep  
+       inner join rsa_wk_eval_dept rwed
+            on  rwep.plant_cd   = rwed.plant_cd 
+            and rwep.eval_year  = rwed.eval_year 
+            and rwep.eval_no    = rwed.eval_no
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') cpc
+            on rwep.plant_cd = cpc.code  
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'RSA_REG_REGDEM') regdem
+            on rwep.eval_type_cd = regdem.code
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_RSA_PLAN_STEP') srps
+            on rwep.step_cd = srps.code
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_RSA_RSLT_STEP') srrs
+            on rwed.rslt_step_cd = srrs.code
+       left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') planBizAppr
+            on CAST(rwed.p_gw_appr_biz_cd AS CHAR(18)) = planBizAppr.code
+       left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') rsltBizAppr
+            on CAST(rwed.r_gw_appr_biz_cd AS CHAR(18)) = rsltBizAppr.code
+       left outer join com_user cu on cu.user_id = rwed.chk_user_id
+       where 1=1
+         and rwed.plant_cd  = #{plantCd}
+         and rwed.eval_year = #{evalYear}
+         and rwed.eval_no   = #{evalNo}
+         and rwed.dept_cd   = #{deptCd}
+    </select>
+    
+    <update id ="updateDeptEvalUserId" parameterType= "com.she.rsa.model.WorkRiskEval02Prcs">
+        /* WorkRiskEval02Mapper.updateDeptEvalUserId [WorkRiskEval02.xml] */
+        update rsa_wk_eval_dept
+           set dept_eval_user_id = #{deptEvalUserId}
+             , chk_user_id       = #{chkUserId}
+             , remark            = #{remark}
+             , rslt_step_cd      = #{rsltStepCd}
+             , update_user_id    = #{updateUserId}
+             , update_dt         = getdate()
+         where plant_cd          = #{plantCd}
+           and eval_year         = #{evalYear}
+           and eval_no           = #{evalNo}
+           and dept_cd           = #{deptCd}
+    </update>
+    
+    <insert id ="createWorkRiskEval02DeptPrcs" parameterType= "com.she.rsa.model.WorkRiskEval02DeptPrcs">
+    /* WorkRiskEval02Mapper.createWorkRiskEval02DeptPrcs [WorkRiskEval02.xml] */
+        insert into rsa_wk_eval_dept_prcs
+        (
+             plant_cd
+           , eval_year
+           , eval_no
+           , dept_cd
+           , process_cd
+           , unit_work_cd
+           , p_process_cd
+           , eval_ymd
+           , saf_acdnt_cnt
+           , chk_rslt_cd
+           , chk_rslt_desc
+           , remark
+           , create_user_id
+           , create_dt
+           , update_user_id
+           , update_dt
+        )
+        values
+        (
+             #{plantCd}
+           , #{evalYear}
+           , #{evalNo}
+           , #{deptCd}
+           , #{processCd}
+           , #{unitWorkCd}            
+           , #{parentsProcessCd}            
+           , #{evalYmd}
+           , #{safAcdntCnt}
+           , #{chkRsltCd}
+           , #{chkRsltDesc}
+           , #{remark}
+           , #{createUserId}
+           , getdate()
+           , #{updateUserId}
+           , getdate()
+        )
+    </insert>
+    
+    <update id ="updateUnitWorkCnt" parameterType= "com.she.rsa.model.WorkRiskEval02DeptPrcs">
+        /* WorkRiskEval02Mapper.updateUnitWorkCnt [WorkRiskEval02.xml] */
+        update rsa_dept_prcs_unit_work
+           set saf_acdnt_cnt    = #{safAcdntCnt}
+             , update_user_id   = #{updateUserId}
+             , update_dt        = getdate()
+         where plant_cd         = #{plantCd}
+           and dept_cd          = #{deptCd}
+           and process_cd       = #{processCd}
+           and unit_work_cd     = #{unitWorkCd}
+    </update>
+    
+    <delete id= "deleteWorkRiskEval02DeptPrcs">
+        /* WorkRiskEval02Mapper.deleteWorkRiskEval02DeptPrcs [WorkRiskEval02.xml] */
+        delete from rsa_wk_eval_dept_prcs
+        where plant_cd      = #{plantCd}
+          and eval_year     = #{evalYear}
+          and eval_no       = #{evalNo}
+          and dept_cd       = #{deptCd}
+    </delete>
+    
+    <delete id= "deleteWorkRiskEval02EvalRslt">
+        /* WorkRiskEval02Mapper.deleteWorkRiskEval02EvalRslt [WorkRiskEval02.xml] */
+        delete from rsa_wk_eval_rslt
+        where plant_cd      = #{plantCd}
+          and eval_year     = #{evalYear}
+          and eval_no       = #{evalNo}
+          and dept_cd       = #{deptCd}
+    </delete>
+</mapper>

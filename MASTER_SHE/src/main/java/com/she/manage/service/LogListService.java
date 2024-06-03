@@ -243,4 +243,19 @@ public class LogListService {
     public void updateImpoAction(String servletPath, String crudCd, String crudNm, String crudDesc, String useYn) throws Exception {
         logListMapper.updateImpoAction(servletPath, crudCd, crudNm, crudDesc, useYn);
     }
+    
+    public int createMailLog(MailLog mailLog) throws Exception {
+        return logListMapper.createMailLog(mailLog);
+    }
+    
+    /**
+     * 메일발송여부 조회
+     *
+     * @param MailLog
+     * @return int
+     * @throws Exception
+     */
+    public int getMailLogConut(MailLog mailLog) throws Exception {
+        return logListMapper.getMailLogConut(mailLog);
+    }
 }

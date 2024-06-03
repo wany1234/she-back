@@ -1210,4 +1210,24 @@ public class ConstVal {
      * 경영-법정선임자 평가관리 본인평가/상위평가 진행단계-완료
      */
     public static String SAF_PROCESS_STEP2_END = "PSEND";
+    
+    /**
+     * 위험성평가 작업위험성평가 계획 대상선정 요청 알람ID
+     */
+    public static String ALARM_S10016 = "S10016";
+
+    /**
+     * 위험성평가 작업위험성평가 계획 검토 요청 알람ID
+     */
+    public static String ALARM_S10017 = "S10017";
+    
+    /**
+     * 위험성평가 작업위험성평가 결과 검토 개선사항 접수 요청 알람ID
+     */
+    public static String ALARM_S10018 = "S10018";
+    
+    /**
+     * 위험성평가 작업위험성평가 결과 검토 결재반려 및 부적합 알람ID
+     */
+    public static String ALARM_S10044 = "S10044";
 }

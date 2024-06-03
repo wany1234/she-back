@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -328,5 +329,17 @@ public class UserService {
      */
     public AttachFile fileSearch(HashMap<String, Object> param) throws Exception {
         return userMapper.fileSearch(param);
+    }
+    
+    /**
+     * 팀장 조회 해당부서 팀장없을 경우 상위부서 팀장 조회 하지 않음
+     * 
+     * @param deptCd
+     *            부서
+     * @return
+     * @throws Exception
+     */
+    public List<User> getTeamLeader(@Param("deptCd") String deptCd) throws Exception {
+        return userMapper.getTeamLeader(deptCd);
     }
 }

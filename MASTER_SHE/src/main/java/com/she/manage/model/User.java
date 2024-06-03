@@ -47,6 +47,10 @@ public class User {
     public String positionCd;
 
     public String positionNm;
+    
+    public String jobCd;
+
+    public String jobNm;
 
     public String comSexTypeCd;
 
@@ -86,6 +90,53 @@ public class User {
     public Set<UserAuthGrp> userAuthGroups = new HashSet<UserAuthGrp>(0);
 
     public List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+    
+    public String loginId;
+
+    @ApiModelProperty(value = "인사부서코드")
+    private String deptCdHr;
+
+    @ApiModelProperty(value = "인사부서")
+    private String deptNmHr;
+
+    @ApiModelProperty(value = "관리감독자여부")
+    private String mgrSvYn;
+
+    @ApiModelProperty(value = "임시직여부")
+    private String tempUserYn;
+
+    @ApiModelProperty(value = "외부직원여부")
+    private String exUserYn;
+
+    @ApiModelProperty(value = "승인권한여부")
+    private String apprAuthYn;
+
+    @ApiModelProperty(value = "비고")
+    private String remark;
+
+    @ApiModelProperty(value = "휴직시작일")
+    private String leaveSdt;
+
+    @ApiModelProperty(value = "휴직종료일")
+    private String leaveEdt;
+
+    @ApiModelProperty(value = "부서배치일")
+    private String instYmd;
+
+    @ApiModelProperty(value = "퇴사일")
+    private String retireYmd;
+
+    @ApiModelProperty(value = "(C)CLASS코드")
+    private String userClsCd;
+
+    @ApiModelProperty(value = "CLASS")
+    private String userClsNm;
+
+    @ApiModelProperty(value = "비밀번호 초기화여부")
+    private String userPwdInitYn;
+
+    @ApiModelProperty(value = "사용자 이름(영문)")
+    private String userNmEn;
 
     public User() {
 
@@ -127,6 +178,22 @@ public class User {
 
     public void setPositionNm(String positionNm) {
         this.positionNm = positionNm;
+    }
+
+    public String getJobCd() {
+        return jobCd;
+    }
+
+    public void setJobCd(String jobCd) {
+        this.jobCd = jobCd;
+    }
+
+    public String getJobNm() {
+        return jobNm;
+    }
+
+    public void setJobNm(String jobNm) {
+        this.jobNm = jobNm;
     }
 
     public String getPlantCd() {
@@ -356,6 +423,134 @@ public class User {
 
     public void setUserPwdRepeat(String userPwdRepeat) {
         this.userPwdRepeat = userPwdRepeat;
+    }
+
+    public String getDeptCdHr() {
+        return deptCdHr;
+    }
+
+    public void setDeptCdHr(String deptCdHr) {
+        this.deptCdHr = deptCdHr;
+    }
+
+    public String getMgrSvYn() {
+        return mgrSvYn;
+    }
+
+    public void setMgrSvYn(String mgrSvYn) {
+        this.mgrSvYn = mgrSvYn;
+    }
+
+    public String getTempUserYn() {
+        return tempUserYn;
+    }
+
+    public void setTempUserYn(String tempUserYn) {
+        this.tempUserYn = tempUserYn;
+    }
+
+    public String getExUserYn() {
+        return exUserYn;
+    }
+
+    public void setExUserYn(String exUserYn) {
+        this.exUserYn = exUserYn;
+    }
+
+    public String getApprAuthYn() {
+        return apprAuthYn;
+    }
+
+    public void setApprAuthYn(String apprAuthYn) {
+        this.apprAuthYn = apprAuthYn;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
+    public String getLeaveSdt() {
+        return leaveSdt;
+    }
+
+    public void setLeaveSdt(String leaveSdt) {
+        this.leaveSdt = leaveSdt;
+    }
+
+    public String getLeaveEdt() {
+        return leaveEdt;
+    }
+
+    public void setLeaveEdt(String leaveEdt) {
+        this.leaveEdt = leaveEdt;
+    }
+
+    public String getInstYmd() {
+        return instYmd;
+    }
+
+    public void setInstYmd(String instYmd) {
+        this.instYmd = instYmd;
+    }
+
+    public String getRetireYmd() {
+        return retireYmd;
+    }
+
+    public void setRetireYmd(String retireYmd) {
+        this.retireYmd = retireYmd;
+    }
+
+    public String getUserClsCd() {
+        return userClsCd;
+    }
+
+    public void setUserClsCd(String userClsCd) {
+        this.userClsCd = userClsCd;
+    }
+
+    public String getUserClsNm() {
+        return userClsNm;
+    }
+
+    public void setUserClsNm(String userClsNm) {
+        this.userClsNm = userClsNm;
+    }
+
+    public String getUserPwdInitYn() {
+        return userPwdInitYn;
+    }
+
+    public void setUserPwdInitYn(String userPwdInitYn) {
+        this.userPwdInitYn = userPwdInitYn;
+    }
+
+    public String getUserNmEn() {
+        return userNmEn;
+    }
+
+    public void setUserNmEn(String userNmEn) {
+        this.userNmEn = userNmEn;
+    }
+
+    public String getLoginId() {
+        return loginId;
+    }
+
+    public void setLoginId(String loginId) {
+        this.loginId = loginId;
+    }
+
+    public String getDeptNmHr() {
+        return deptNmHr;
+    }
+
+    public void setDeptNmHr(String deptNmHr) {
+        this.deptNmHr = deptNmHr;
     }
 
 }

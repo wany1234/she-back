@@ -231,5 +231,28 @@
           ,try_dt = getdate()
         WHERE log_no = #{logNo}
     </update>
+    
+    <!-- 알람코드로 알람정보 조회 (list 조회되어도 상관없음) -->
+    <select id="getAlarmByAlarmCd" resultType="com.she.manage.model.Alarm">
+        /* AlarmMapper.getAlarmByAlarmCd [Alarm.xml] */
+        SELECT  a.alarm_no
+                ,a.alarm_nm
+                ,a.alarm_type
+                ,a.sms_yn
+                ,a.mail_yn
+                ,a.alarm_desk
+                ,a.alarm_text
+                ,a.use_yn
+                ,a.create_user_id
+                ,a.create_dt
+                ,a.update_user_id
+                ,a.update_dt
+                ,a.alarm_cd
+                ,a.mail_url
+                ,a.template_url
+        FROM com_alarm a
+        WHERE a.alarm_cd = #{alarmCd}
+          AND a.use_yn = 'Y'
+    </select>
 
 </mapper>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.rsa.workRiskEval.mapper.WorkRiskEval04Mapper">
+    <!-- 작업위험성평가 결재 목록 조회 -->
+    <select id= "getworkRiskEval04List" resultType= "com.she.rsa.model.WorkRiskEval04Appr">
+    /* WorkRiskEval04Mapper.getworkRiskEval04Lists [WorkRiskEval04.xml] */
+       select a.plant_cd -- 사업장코드
+            , c.code_nm as plant_nm -- 사업장명
+            , a.eval_year  -- 평가년도
+            , a.eval_no  -- 평가번호
+            , a.eval_type_cd  -- 평가구분코드
+            , b.eval_type_nm -- 평가구분명
+            , b.rslt_step_cd -- 평가결과진행상태코드
+            , d.code_nm as rslt_step_nm-- 평가결과진행상태명
+            , b.p_appr_rqst_no as rslt_appr_rqst_no  -- 결재번호(결과)    
+            , isnull(e.code_nm, '결재요청전' ) as rslt_appr_rqst_nm --결재진행상태(결과) 
+            , b.dept_cd -- 평가대상부서코드
+            , dbo.GET_DEPT_NM(b.dept_cd) as dept_nm       -- 평가대상부서명
+            , b.dept_eval_user_id -- 부서대표평가자ID
+            , dbo.GET_USER_NM(b.dept_eval_user_id) as dept_eval_user_nm -- 부서대표평가자명
+            , a.eval_nm -- 평가명
+            , convert(char(10), a.plan_symd, 23) + ' ~ ' + convert(char(10), a.plan_eymd, 23) as plan_period-- 평가계획기간
+       from rsa_wk_eval_plan a
+       inner join rsa_wk_eval_dept b 
+            on  a.plant_cd  = b.plant_cd 
+            and a.eval_year = b.eval_year 
+            and a.eval_no   = b.eval_no 
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c on a.plant_cd = c.code
+       inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_RSA_RSLT_STEP') d on b.rslt_step_cd = d.code
+       left outer join com_appr_rqst car
+            on b.p_appr_rqst_no = car.appr_rqst_no
+       left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') e
+            on CAST(car.biz_appr_step_cd AS CHAR(18)) = e.code
+       where 1 =1 
+         and a.step_cd = 'PNSET' -- 계획확정
+         and b.rslt_step_cd != 'RREGI' -- 공정등록
+       <if test= "plantCd != null and !plantCd.equals('')">
+         and a.plant_cd = #{plantCd}
+       </if>    
+       <if test= "evalTypeCd != null and !evalTypeCd.equals('')">
+         and a.eval_type_cd = #{evalTypeCd}
+       </if>
+       <if test= "deptCd != null and !deptCd.equals('')">
+         and b.dept_cd = #{deptCd}
+       </if>
+       <if test= "startYear != null and endYear != null and !startYear.equals('') and !endYear.equals('')">
+           and convert(int, a.eval_year) between convert(int, #{startYear}) and convert(int, #{endYear})
+       </if>
+       order by a.eval_year desc, a.eval_no desc
+    </select>
+    
+    <update id="updateAppr">
+        /* WorkRiskEval04Mapper.updateAppr [WorkRiskEval04.xml] */
+        UPDATE rsa_wk_eval_dept
+        SET p_appr_rqst_no = #{apprRqstNo}           
+        <if test="bizApprStepCd != null and !bizApprStepCd.equals('')">
+          , p_gw_appr_biz_cd = #{bizApprStepCd}
+        </if>
+        <if test='bizApprStepCd.equals("BAPSG")'>
+          , rslt_step_cd = 'RESET' -- 평가확정
+        </if>
+        <if test= "bizApprStepCd.equals('BAPSD')">
+          , rslt_step_cd = 'RPSET'
+        </if>
+        where plant_cd  = #{plantCd}
+          and eval_year = #{evalYear}
+          and eval_no   = #{evalNo}
+          and dept_cd   = #{deptCd}
+    </update>
+    
+    <update id ="updateWorkRiskEval04DeptPrcsInit" parameterType= "com.she.rsa.model.WorkRiskEval05Exam">
+        /* WorkRiskEval04Mapper.updateWorkRiskEval04DeptPrcsInit [WorkRiskEval04.xml] */
+        update rsa_wk_eval_dept_prcs
+           set rslt_cfm_yn      = 'N'
+             , update_user_id   = #{updateUserId}
+             , update_dt        = getdate()
+         where plant_cd         = #{plantCd}
+           and eval_year        = #{evalYear}
+           and eval_no          = #{evalNo}
+           and dept_cd          = #{deptCd}
+    </update>
+</mapper>

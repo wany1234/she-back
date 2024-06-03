@@ -187,4 +187,14 @@ public interface UserMapper {
      * @throws Exception
      */
     public AttachFile fileSearch(HashMap<String, Object> param) throws Exception;
+    
+    /**
+     * 팀장 조회 해당부서 팀장없을 경우 상위부서 팀장 조회 하지 않음
+     * 
+     * @param deptCd
+     *            부서
+     * @return
+     * @throws Exception
+     */
+    public List<User> getTeamLeader(@Param("deptCd") String deptCd) throws Exception;
 }

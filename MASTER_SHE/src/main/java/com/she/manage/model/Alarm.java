@@ -51,5 +51,20 @@ public class Alarm {
 
     @ApiModelProperty(value = "수정일")
     private String updateDt;
+    
+    @ApiModelProperty(value = "알람타입코드")
+    private String alarmType;
+
+    @ApiModelProperty(value = "알람타입")
+    private String alarmTypeNm;
+
+    @ApiModelProperty(value = "알람코드")
+    private String alarmCd;
+
+    @ApiModelProperty(value = "메일링크URL")
+    private String mailUrl;
+
+    @ApiModelProperty(value = "메일양식URL")
+    private String templateUrl;
 
 }

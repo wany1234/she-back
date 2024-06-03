@@ -19,6 +19,8 @@ public class MailLog {
     private String receiverEmail;
 
     private String title;
+    
+    private String content;
 
     private String contents;
 
@@ -35,4 +37,10 @@ public class MailLog {
     private int tryCount;
 
     private String tryDt;
+    
+    private String htmlYn;
+
+    private String reqDt;
+
+    private int alarmNo;
 }

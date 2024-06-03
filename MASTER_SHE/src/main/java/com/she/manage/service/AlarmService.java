@@ -81,5 +81,16 @@ public class AlarmService {
 	public int updateAlarm(Alarm alarm) throws Exception {
 		return alarmMapper.updateAlarm(alarm);
 	}
+	
+	/**
+	 * 알람코드로 알람정보 조회
+	 * @param alarmCd
+	 *          알람코드
+	 * @return  알람목록
+	 * @throws Exception
+	 */
+	public List<Alarm> getAlarmByAlarmCd(String alarmCd) throws Exception {
+		return alarmMapper.getAlarmByAlarmCd(alarmCd);
+	}
 
 }

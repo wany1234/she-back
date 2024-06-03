@@ -410,5 +410,30 @@
         FROM com_attach_file
         WHERE task_key = #{taskKey}
     </select>
+    
+    <select id="getTeamLeader" resultType="com.she.manage.model.User">
+        /* UserMapper.getTeamLeader [User.xml] */
+        select  u.user_id
+                , u.user_nm
+                , d.dept_cd
+                , d.dept_nm
+                , u.office_tel
+                , u.phone_no
+                , u.email
+                , u.use_yn
+                , u.login_id
+                , d.plant_cd
+                , u.duty_cd
+                , u.position_cd
+                , u.dept_cd_hr, dhr.dept_nm as dept_nm_hr
+        from com_user u
+        inner join com_dept d
+        on u.dept_cd = d.dept_cd
+        inner join com_dept dhr
+        on u.dept_cd_hr = dhr.dept_cd
+        where u.dept_cd = #{deptCd}
+        and u.duty_cd = '50025082'
+        and u.use_yn = 'Y'
+    </select>
 
 </mapper>

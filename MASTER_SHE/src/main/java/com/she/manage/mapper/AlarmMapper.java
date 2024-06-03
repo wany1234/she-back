@@ -82,5 +82,14 @@ public interface AlarmMapper {
     public int updateAlarmLog(AlarmLog alarm) throws Exception;
 
     public int updateMailLog(MailLog mail) throws Exception;
+    
+    /**
+     * 알람코드로 알람정보 조회
+     * @param alarmCd
+     *          알람코드
+     * @return  알람목록
+     * @throws Exception
+     */
+    public List<Alarm> getAlarmByAlarmCd(@Param("alarmCd") String alarmCd) throws Exception;
 
 }
