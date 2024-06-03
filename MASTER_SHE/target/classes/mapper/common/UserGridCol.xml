@@ -7,7 +7,7 @@
         /* UserGridMapper.getUserGridCols [User.xml] 사용자별 메뉴 그리드 컬럼설정 목록 */
         select uf.user_id, uf.menu_id, uf.col_nm, uf.disp_ord, uf.width, uf.visible, uf.style
         from user_grid_col uf
-        where (uf.user_id = #{userId} or (uf.user_id = 0 and not exists (select 1 from user_grid_col b where b.user_id = #{userId} and uf.menu_id = b.menu_id and uf.grid_id = b.grid_id)))
+        where (uf.user_id = #{userId} or (uf.user_id = '0' and not exists (select '1' from user_grid_col b where b.user_id = #{userId} and uf.menu_id = b.menu_id and uf.grid_id = b.grid_id)))
         and uf.menu_id = #{menuId}
         and uf.grid_id = #{gridId}
         order by uf.disp_ord
