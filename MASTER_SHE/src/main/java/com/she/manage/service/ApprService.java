@@ -49,6 +49,9 @@ import com.she.mgt.mgtLaw.service.SheLawMakingCheckService;
 import com.she.mgt.mgtTarget.service.MgtTargetService;
 import com.she.rsa.assess.service.AssessPlanService;
 import com.she.rsa.planmgmt.service.PlanmgmtService;
+import com.she.rsa.workRiskEval.service.WorkRiskEval01Service;
+import com.she.rsa.workRiskEval.service.WorkRiskEval04Service;
+import com.she.rsa.workRiskEval.service.WorkRiskEval05Service;
 import com.she.safety.accident.service.AccidentService;
 import com.she.safety.accident.service.NearmissService;
 import com.she.safety.change.service.ChangeService;
@@ -172,7 +175,16 @@ public class ApprService {
 
     @Autowired
     private GovImplChkService govImplChkService;
-
+    
+    @Autowired
+    private WorkRiskEval01Service workRiskEval01Service;
+    
+    @Autowired
+    private WorkRiskEval04Service workRiskEval04Service;
+    
+    @Autowired
+    private WorkRiskEval05Service workRiskEval05Service;
+    
     /**
      * 결재문서 마스터 목록 조회
      *
@@ -1067,6 +1079,15 @@ public class ApprService {
         } else if (StringUtils.equals(appr.getApprBizCd(), "IS-PL-02")) {
             // 점검결과 관리
             inspectionSHService.resultUpdateAppr(Integer.parseInt(requestParams.get("implChkDeptNo")), bizApprStepCd, apprRqstNo);
+        } else if (StringUtils.equals(appr.getApprBizCd(), "WK-EV-01")) {
+            // 작업위험성평가 계획
+            workRiskEval01Service.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), bizApprStepCd, apprRqstNo);
+        } else if (StringUtils.equals(appr.getApprBizCd(), "WK-EV-02")) {
+            // 작업 위험성평가 결과 결재요청
+            workRiskEval04Service.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), requestParams.get("deptCd"), bizApprStepCd, apprRqstNo);
+        } else if (StringUtils.equals(appr.getApprBizCd(), "WK-EV-03")) {
+            // 작업 위험성평가 결과 검토
+            workRiskEval05Service.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), requestParams.get("deptCd"), bizApprStepCd, apprRqstNo);
         }
     }
 
