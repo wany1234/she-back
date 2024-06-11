@@ -47,6 +47,7 @@ import com.she.mgt.elect.service.ElectEvalPlanService;
 import com.she.mgt.industrialSafetyHealthCommittee.service.IndustrialSafetyHealthCommitteeService;
 import com.she.mgt.mgtLaw.service.SheLawMakingCheckService;
 import com.she.mgt.mgtTarget.service.MgtTargetService;
+import com.she.psm.PsmDocu.service.PsmDocuService;
 import com.she.rsa.assess.service.AssessPlanService;
 import com.she.rsa.planmgmt.service.PlanmgmtService;
 import com.she.rsa.workRiskEval.service.WorkRiskEval01Service;
@@ -182,9 +183,13 @@ public class ApprService {
     @Autowired
     private WorkRiskEval04Service workRiskEval04Service;
     
+
     @Autowired
     private WorkRiskEval05Service workRiskEval05Service;
-    
+
+    @Autowired
+    private PsmDocuService psmDocuService;
+
     /**
      * 결재문서 마스터 목록 조회
      *
@@ -1088,7 +1093,11 @@ public class ApprService {
         } else if (StringUtils.equals(appr.getApprBizCd(), "WK-EV-03")) {
             // 작업 위험성평가 결과 검토
             workRiskEval05Service.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), requestParams.get("deptCd"), bizApprStepCd, apprRqstNo);
+        } else if (StringUtils.equals(appr.getApprBizCd(), "PS-PD-01")) {
+            // 문서 관리
+            psmDocuService.apprDeptPlanResult(Integer.parseInt(requestParams.get("psmDocuNo")), bizApprStepCd, apprRqstNo);
         }
+
     }
 
     /**
