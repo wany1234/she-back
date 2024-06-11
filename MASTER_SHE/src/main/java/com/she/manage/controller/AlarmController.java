@@ -16,6 +16,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.she.common.model.DefaultParam;
 import com.she.manage.model.Alarm;
 import com.she.manage.service.AlarmService;
 import com.she.utils.RequestMapper;
@@ -39,7 +41,7 @@ public class AlarmController {
     private AlarmService alarmService;
 
     @GetMapping("/alarms")
-    public ResponseEntity<List<Alarm>> getAlarms(@RequestParam HashMap<String, Object> parameter) throws Exception {
+    public ResponseEntity<List<Alarm>> getAlarms(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
         HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
         // 알람방식
         String alarmType = map.containsKey("alarmType") ? map.get("alarmType").toString() : "";
@@ -48,7 +50,7 @@ public class AlarmController {
         // 사용여부
         String useYn = map.containsKey("useYn") ? map.get("useYn").toString() : "";
 
-        return ResponseEntity.ok().body(alarmService.getAlarms(alarmType, alarmNm, useYn));
+        return ResponseEntity.ok().body(alarmService.getAlarms(alarmType, alarmNm, useYn, defaultParam));
     }
 
     @GetMapping("/alarm/{alarmNo}")

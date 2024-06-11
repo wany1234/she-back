@@ -20,13 +20,16 @@ public class Alarm {
     private String smsYn;
 
     @ApiModelProperty(value = "EMAIL 전송여부")
-    private String emailYn;
+    private String mailYn;
 
-    @ApiModelProperty(value = "SMS, EMAIL 전송여부명")
-    private String smsEmailYnNm;
+    @ApiModelProperty(value = "EMAIL 전송여부명")
+    private String mailYnNm;
 
     @ApiModelProperty(value = "알람설명")
     private String alarmDesk;
+
+    @ApiModelProperty(value = "알람내용")
+    private String alarmText;
 
     @ApiModelProperty(value = "사용유무")
     private String useYn;
@@ -51,7 +54,7 @@ public class Alarm {
 
     @ApiModelProperty(value = "수정일")
     private String updateDt;
-    
+
     @ApiModelProperty(value = "알람타입코드")
     private String alarmType;
 

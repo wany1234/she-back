@@ -15,37 +15,38 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.she.common.model.DefaultParam;
 import com.she.manage.mapper.AlarmMapper;
 import com.she.manage.model.Alarm;
 
 @Service
 public class AlarmService {
 
-	@Autowired
-	private AlarmMapper alarmMapper;
+    @Autowired
+    private AlarmMapper alarmMapper;
 
-	/**
-	 * 알람리스트 조회
-	 *
-	 * @param alarmType
-	 * @param alarmNm
-	 * @return
-	 * @throws Exception
-	 */
-	public List<Alarm> getAlarms(String alarmType, String alarmNm, String useYn) throws Exception {
-		return alarmMapper.getAlarms(alarmType, alarmNm, useYn);
-	}
+    /**
+     * 알람리스트 조회
+     *
+     * @param alarmType
+     * @param alarmNm
+     * @return
+     * @throws Exception
+     */
+    public List<Alarm> getAlarms(String alarmType, String alarmNm, String useYn, DefaultParam defaultParam) throws Exception {
+        return alarmMapper.getAlarms(alarmType, alarmNm, useYn, defaultParam);
+    }
 
-	/**
-	 * 알람상세 조회
-	 *
-	 * @param alarmCd
-	 * @return
-	 * @throws Exception
-	 */
-	public Alarm getAlarm(int alarmNo) throws Exception {
-		return alarmMapper.getAlarm(alarmNo);
-	}
+    /**
+     * 알람상세 조회
+     *
+     * @param alarmNo
+     * @return
+     * @throws Exception
+     */
+    public Alarm getAlarm(int alarmNo) throws Exception {
+        return alarmMapper.getAlarm(alarmNo);
+    }
 
 	/**
 	 * 알람명 중복체크

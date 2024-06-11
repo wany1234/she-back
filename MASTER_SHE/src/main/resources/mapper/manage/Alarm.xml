@@ -3,44 +3,35 @@
 
 <mapper namespace="com.she.manage.mapper.AlarmMapper">
 
-    <!-- 결재문서마스터 목록 조회 -->
+    <!-- 알람 목록 조회 -->
     <select id="getAlarms" resultType="com.she.manage.model.Alarm">
         /* AlarmMapper.getAlarms [Alarm.xml] */
-        SELECT a.alarm_no
-        ,a.alarm_nm
-        ,a.sms_yn
-        ,a.email_yn
-        ,case when a.sms_yn = 'Y' then 'SMS'
-        else ''
-        end +
-        case when a.email_yn = 'Y' then (case when a.sms_yn = 'Y' then ', Mail' else 'Mail' end)
-        else ''
-        end as sms_email_yn_nm
-        ,a.alarm_desk
-        ,a.use_yn
-        ,case when a.use_yn = 'Y' then '사용'
-        else '미사용'
-        end as use_yn_nm
-        ,a.create_user_id
-        ,createUser.user_nm as create_user_nm
-        ,convert(char(23), a.create_dt, 21) as create_dt
-        ,a.update_user_id
-        ,a.update_dt
-        FROM alarm a
+        SELECT  a.alarm_no
+                ,a.alarm_nm
+                ,a.alarm_type
+                ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'ALARM_TYPE', a.alarm_type) as alarm_type_nm
+                ,a.sms_yn
+                ,a.mail_yn
+                ,case when a.mail_yn = 'Y' then '발송' else '미발송' end as mail_yn_nm
+                ,a.alarm_desk
+                ,a.use_yn
+                ,case when a.use_yn = 'Y' then '사용'
+                else '미사용'
+                end as use_yn_nm
+                ,a.create_user_id
+                ,createUser.user_nm as create_user_nm
+                ,convert(char(23), a.create_dt, 21) as create_dt
+                ,a.update_user_id
+                ,a.update_dt
+                ,a.alarm_cd
+                ,a.mail_url
+                ,a.template_url
+        FROM com_alarm a
         LEFT OUTER JOIN com_user createUser
         ON a.create_user_id = createUser.user_id
         WHERE 1=1
         <if test="alarmType != null and !alarmType.equals('')">
-            <choose>
-                <when test= 'alarmType.equals("M")'>
-                    AND a.email_yn = 'Y'
-                </when>
-                <when test= 'alarmType.equals("S")'>
-                    AND a.sms_yn = 'Y'
-                </when>
-                <otherwise>
-                </otherwise>
-            </choose>
+            and a.alarm_type = #{alarmType}
         </if>
         <if test="alarmNm != null and !alarmNm.equals('')">
             AND a.alarm_nm Like '%' + #{alarmNm} + '%'
@@ -48,28 +39,34 @@
         <if test="useYn != null and !useYn.equals('')">
             AND a.use_yn = #{useYn}
         </if>
+         order by alarm_nm
     </select>
 
     <select id="getAlarm" resultType="com.she.manage.model.Alarm">
         /* AlarmMapper.getAlarm [Alarm.xml] */
         SELECT a.alarm_no
              ,a.alarm_nm
+             ,a.alarm_type
              ,a.sms_yn
-             ,a.email_yn
+             ,a.mail_yn
              ,a.alarm_desk
+             ,a.alarm_text
              ,a.use_yn
              ,a.create_user_id
              ,a.create_dt
              ,a.update_user_id
              ,a.update_dt
-        FROM alarm a
+            ,a.alarm_cd
+            ,a.mail_url
+            ,a.template_url
+        FROM com_alarm a
         WHERE a.alarm_no = #{alarmNo}
     </select>
 
     <select id="getAlarmCheck" resultType="int">
         /* AlarmMapper.getAlarmCheck [Alarm.xml] */
         SELECT count(*) as cnt
-        FROM alarm
+        FROM com_alarm
         WHERE alarm_nm = #{alarmNm}
         <if test="alarmNo != null and alarmNo > 0">
             AND alarm_no != #{alarmNo}
@@ -79,38 +76,52 @@
     <insert id="insertAlarm" parameterType="com.she.manage.model.Alarm">
         /* AlarmMapper.insertAlarm [Alarm.xml] */
         <selectKey keyProperty="alarmNo" resultType="int" order="BEFORE">
-            select next value for seq_alarm
+            select next value for seq_com_alarm_no
         </selectKey>
-        INSERT INTO alarm
-        (alarm_no
-        ,alarm_nm
-        ,sms_yn
-        ,email_yn
-        ,alarm_desk
-        ,use_yn
-        ,create_user_id
-        ,create_dt)
-        VALUES
-        (#{alarmNo}
-        ,#{alarmNm}
-        ,#{smsYn}
-        ,#{emailYn}
-        ,#{alarmDesk}
-        ,#{useYn}
-        ,#{createUserId}
-        ,getdate())
+        INSERT INTO com_alarm (
+            alarm_no
+            ,alarm_nm
+            ,mail_yn
+            ,alarm_desk
+            ,use_yn
+            ,alarm_type
+            ,alarm_text
+            ,alarm_cd
+            ,mail_url
+            ,template_url
+            ,create_user_id
+            ,create_dt
+        )
+        VALUES (
+            #{alarmNo}
+            ,#{alarmNm}
+            ,#{mailYn}
+            ,#{alarmDesk}
+            ,#{useYn}
+            ,#{alarmType}
+            ,#{alarmText}
+            ,#{alarmCd}
+            ,#{mailUrl}
+            ,#{templateUrl}
+            ,#{createUserId}
+            ,getdate()
+        )
     </insert>
 
     <insert id="updateAlarm" parameterType="com.she.manage.model.Alarm">
         /* AlarmMapper.updateAlarm [Alarm.xml] */
-        UPDATE alarm
+        UPDATE com_alarm
         SET alarm_nm = #{alarmNm}
-          ,sms_yn = #{smsYn}
-          ,email_yn = #{emailYn}
-          ,alarm_desk = #{alarmDesk}
-          ,use_yn = #{useYn}
-          ,update_user_id = #{updateUserId}
-          ,update_dt = getdate()
+            ,mail_yn = #{mailYn}
+            ,alarm_desk = #{alarmDesk}
+            ,use_yn = #{useYn}
+            ,alarm_type = #{alarmType}
+            ,alarm_text = #{alarmText}
+            ,alarm_cd = #{alarmCd}
+            ,mail_url = #{mailUrl}
+            ,template_url = #{templateUrl}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getdate()
         WHERE alarm_no = #{alarmNo}
     </insert>
 
@@ -120,57 +131,59 @@
         <selectKey keyProperty="logNo" resultType="int" order="BEFORE">
             select next value for seq_alarm_log
         </selectKey>
-        INSERT INTO alarm_log
-        (log_no
-        ,sender_id
-        ,sender_phone_no
-        ,receiver_id
-        ,receiver_phone_no
-        ,contents
-        ,send_dt
-        ,send_yn
-        ,fail_desc
-        ,try_count)
-        VALUES (#{logNo}
-        ,#{senderId}
-        ,#{senderPhoneNo}
-        ,#{receiverId}
-        ,#{receiverPhoneNo}
-        ,#{contents}
-        ,getdate()
-        ,#{sendYn}
-        ,#{failDesc}
-        ,0)
+        INSERT INTO alarm_log (
+            log_no
+            ,sender_id
+            ,sender_phone_no
+            ,receiver_id
+            ,receiver_phone_no
+            ,contents
+            ,send_dt
+            ,send_yn
+            ,fail_desc
+            ,try_count)
+            VALUES (#{logNo}
+            ,#{senderId}
+            ,#{senderPhoneNo}
+            ,#{receiverId}
+            ,#{receiverPhoneNo}
+            ,#{contents}
+            ,getdate()
+            ,#{sendYn}
+            ,#{failDesc}
+            ,0
+        )
     </insert>
 
     <insert id="createMailLog" parameterType="com.she.manage.model.MailLog">
         /* AlarmMapper.createMailLog [Alarm.xml] */
         <selectKey keyProperty="logNo" resultType="int" order="BEFORE">
-            select next value for seq_com_mail_log
+        select next value for seq_com_mail_log
         </selectKey>
-        INSERT INTO com_mail_log
-        (log_no
-        ,sender_id
-        ,sender_email
-        ,receiver_id
-        ,receiver_email
-        ,title
-        ,contents
-        ,send_dt
-        ,send_yn
-        ,fail_desc
-        ,try_count)
-        VALUES (#{logNo}
-        ,#{senderId}
-        ,#{senderEmail}
-        ,#{receiverId}
-        ,#{receiverEmail}
-        ,#{title}
-        ,#{contents}
-        ,getdate()
-        ,#{sendYn}
-        ,#{failDesc}
-        ,0)
+        INSERT INTO com_mail_log (
+            log_no
+            ,sender_id
+            ,sender_email
+            ,receiver_id
+            ,receiver_email
+            ,title
+            ,contents
+            ,send_dt
+            ,send_yn
+            ,fail_desc
+            ,try_count)
+            VALUES (#{logNo}
+            ,#{senderId}
+            ,#{senderEmail}
+            ,#{receiverId}
+            ,#{receiverEmail}
+            ,#{title}
+            ,#{contents}
+            ,getdate()
+            ,#{sendYn}
+            ,#{failDesc}
+            ,0
+        )
     </insert>
 
     <select id="getFailAlarms" resultType="com.she.manage.model.AlarmLog">
@@ -231,7 +244,7 @@
           ,try_dt = getdate()
         WHERE log_no = #{logNo}
     </update>
-    
+
     <!-- 알람코드로 알람정보 조회 (list 조회되어도 상관없음) -->
     <select id="getAlarmByAlarmCd" resultType="com.she.manage.model.Alarm">
         /* AlarmMapper.getAlarmByAlarmCd [Alarm.xml] */

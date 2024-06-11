@@ -16,6 +16,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
+import com.she.common.model.DefaultParam;
 import com.she.manage.model.Alarm;
 import com.she.manage.model.AlarmLog;
 import com.she.manage.model.MailLog;
@@ -32,12 +33,12 @@ public interface AlarmMapper {
      * @return
      * @throws Exception
      */
-    public List<Alarm> getAlarms(@Param("alarmType") String alarmType, @Param("alarmNm") String alarmNm, @Param("useYn") String useYn) throws Exception;
+    public List<Alarm> getAlarms(@Param("alarmType") String alarmType, @Param("alarmNm") String alarmNm, @Param("useYn") String useYn, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 알람 리스트 상세조회
      *
-     * @param alarmCd
+     * @param alarmNo
      * @return
      * @throws Exception
      */
