@@ -76,7 +76,7 @@
     <insert id="insertAlarm" parameterType="com.she.manage.model.Alarm">
         /* AlarmMapper.insertAlarm [Alarm.xml] */
         <selectKey keyProperty="alarmNo" resultType="int" order="BEFORE">
-            select next value for seq_com_alarm_no
+            select next value for seq_alarm;
         </selectKey>
         INSERT INTO com_alarm (
             alarm_no
