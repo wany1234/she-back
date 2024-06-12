@@ -128,13 +128,8 @@ public class LogListService {
         return logListMapper.getErrorLogDetail(logNo);
     }
 
-    public List<MailLog> getMailLogs(String fromDt, String toDt, String keyword) throws Exception {
-        List<MailLog> result = logListMapper.getMailLogs(fromDt, toDt, keyword);
-        if (CollectionUtils.isNotEmpty(result)) {
-            for (MailLog mailLog : result) {
-                mailLog.setContentHtml(SendMailUtil.makeMailContent(mailLog.getContents()));
-            }
-        }
+    public List<MailLog> getMailLogs(String fromDt, String toDt, String keyword, String sendYn, int alarmNo) throws Exception {
+        List<MailLog> result = logListMapper.getMailLogs(fromDt, toDt, keyword, sendYn, alarmNo);
         return result;
     }
 
@@ -243,11 +238,11 @@ public class LogListService {
     public void updateImpoAction(String servletPath, String crudCd, String crudNm, String crudDesc, String useYn) throws Exception {
         logListMapper.updateImpoAction(servletPath, crudCd, crudNm, crudDesc, useYn);
     }
-    
+
     public int createMailLog(MailLog mailLog) throws Exception {
         return logListMapper.createMailLog(mailLog);
     }
-    
+
     /**
      * 메일발송여부 조회
      *

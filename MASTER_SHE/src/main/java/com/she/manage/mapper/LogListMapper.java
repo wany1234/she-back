@@ -52,7 +52,7 @@ public interface LogListMapper {
 
     public ErrorLog getErrorLogDetail(@Param("logNo") int logNo) throws Exception;
 
-    public List<MailLog> getMailLogs(@Param("fromDt") String fromDt, @Param("toDt") String toDt, @Param("keyword") String keyword) throws Exception;
+    public List<MailLog> getMailLogs(@Param("fromDt") String fromDt, @Param("toDt") String toDt, @Param("keyword") String keyword, @Param("sendYn") String sendYn, @Param("alarmNo") int alarmNo) throws Exception;
 
     public int resendMailLog(MailLog mailLog) throws Exception;
 
@@ -77,9 +77,9 @@ public interface LogListMapper {
     public void insertImpoAction(@Param("servletPath") String servletPath, @Param("crudCd") String crudCd, @Param("crudNm") String crudNm, @Param("crudDesc") String crudDesc, @Param("useYn") String useYn) throws Exception;
 
     public void updateImpoAction(@Param("servletPath") String servletPath, @Param("crudCd") String crudCd, @Param("crudNm") String crudNm, @Param("crudDesc") String crudDesc, @Param("useYn") String useYn) throws Exception;
-    
+
     public int createMailLog(MailLog mailLog) throws Exception;
-    
+
     /**
      * 메일발송여부 조회
      *

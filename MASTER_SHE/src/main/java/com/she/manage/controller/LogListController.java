@@ -13,19 +13,20 @@ package com.she.manage.controller;
 import java.util.HashMap;
 import java.util.List;
 
-import com.she.common.model.DefaultParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.google.common.base.Strings;
+import com.she.common.model.DefaultParam;
 import com.she.manage.model.AlarmLog;
 import com.she.manage.model.BatchLog;
 import com.she.manage.model.CrudLog;
@@ -86,8 +87,10 @@ public class LogListController {
         String fromDt = map.containsKey("fromDt") ? map.get("fromDt").toString() : "";
         String toDt = map.containsKey("toDt") ? map.get("toDt").toString() : "";
         String keyword = map.containsKey("keyword") ? map.get("keyword").toString() : "";
+        int alarmNo = map.containsKey("alarmNo") ? Integer.parseInt(Strings.isNullOrEmpty(map.get("alarmNo").toString()) ? "0" : map.get("alarmNo").toString()) : 0;
+        String sendYn = map.containsKey("sendYn") ? map.get("sendYn").toString() : "";
 
-        return ResponseEntity.ok().body(logService.getMailLogs(fromDt, toDt, keyword));
+        return ResponseEntity.ok().body(logService.getMailLogs(fromDt, toDt, keyword, sendYn, alarmNo));
     }
 
     @PutMapping("/try/maillog")
