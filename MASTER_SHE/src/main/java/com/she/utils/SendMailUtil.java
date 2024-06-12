@@ -4,7 +4,10 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -173,5 +176,29 @@ public class SendMailUtil {
             result.setResultMsg("메일이 발송중 오류가 발생했습니다. message: " + e.getMessage()); // 결과메세지
         }
         return result;
+    }
+
+    public static List<MailResult> sendMails(List<MailVo> mailVoList) {
+        MailResult mailResult = new MailResult();
+        List<MailResult> results = new ArrayList<>();
+
+        if (mailVoList != null) {
+            for (MailVo mailVo : mailVoList) {
+                mailResult = sendMail(mailVo);
+
+                String resultCd = mailResult.getResultCd();
+                String resultMsg = mailResult.getResultMsg();
+                mailResult.setMailLogs(mailVo.getMailLogs().stream().map(log -> {
+                    log.setSendYn(resultCd.equals("FAILURE") ? "N" : "Y");
+                    if (resultCd.equals("FAILURE")) {
+                        log.setFailDesc(resultMsg);
+                    }
+                    return log;
+                }).collect(Collectors.toList()));
+                results.add(mailResult);
+            }
+        }
+
+        return results;
     }
 }
