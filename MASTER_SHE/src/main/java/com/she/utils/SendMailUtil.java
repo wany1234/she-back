@@ -62,24 +62,37 @@ public class SendMailUtil {
     /**
      * 메일HTML 내용만들기
      *
-     * @param subTitle
-     * @param mailDesc
      * @param mailContent
-     * @param linkVisible
      * @return
      * @throws Exception
      */
-    public static String makeMailContent(String mailContent) throws Exception {
+    public static String makeMailContent(String mailTitle, String mailContent, String link) throws Exception {
+        // properties 파일을 직접 읽어서 가져오도록 처리...
+        Properties properties = new Properties();
+        String resource = "application.properties";
+        Reader reader = Resources.getResourceAsReader(resource);
+        properties.load(reader);
+        String active = properties.getProperty("spring.profiles.active");
+
+        resource = String.format("application-%s.properties", active);
+        reader = Resources.getResourceAsReader(resource);
+        properties.load(reader);
+        String frontendUrl = properties.getProperty("frontend.url");
+
         String content = getFileContent("common.html");
+        String imgLink = frontendUrl + "/src/assets/images/she.png";
+        String mailLink = frontendUrl + link;
         logger.error("## html content : " + content);
 
-        if (content != null && !"".equals(content)) {
+        if (content != null && !content.isEmpty()) {
+            content = content.replace("[$SUB_TITLE$]", mailTitle);
             content = content.replace("[$MAIL_CONTENT$]", mailContent);
+            content = content.replace("[$IMG_LINK$]", imgLink);
+            content = content.replace("[$MAIL_LINK$]", mailLink);
             return content;
         } else {
             return mailContent;
         }
-
     }
 
     /**
@@ -133,8 +146,7 @@ public class SendMailUtil {
                     }
                     msg.setRecipients(Message.RecipientType.TO, addressTo);
                     msg.setSubject(systemName + " " + mailVo.getTitle(), "utf-8");
-                    msg.setSubject(mailVo.getTitle(), "utf-8");
-                    msg.setContent(makeMailContent(mailVo.getContents()), "text/html;charset=euc-kr");
+                    msg.setContent(makeMailContent(mailVo.getMailTitle(), mailVo.getContents(), mailVo.getLink()), "text/html;charset=utf-8");
                     msg.setHeader("Content-Transfer-Encoding", "base64");
 
                     Transport transport = session.getTransport();
