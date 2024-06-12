@@ -42,5 +42,11 @@ public class Batch {
     private String updateUserId;
     @ApiModelProperty(value = "수정일자")
     private String updateDt;
+    @ApiModelProperty(value = "알람번호")
+    private String alarmNo;
+    @ApiModelProperty(value = "알람명")
+    private String alarmNm;
+    @ApiModelProperty(value = "배치기준일수")
+    private String batchDay;
 
 }

@@ -8,17 +8,19 @@
          SELECT cbs.batch_cd
                ,cbs.batch_nm
                ,cbs.batch_desc
+               ,cbs.alarm_no
+               ,ca.alarm_nm
                ,cbs.cycle_start_ymd
                ,cbs.cycle_day_cd
                ,CONCAT(cycleDay.code_nm
                       ,CASE WHEN cbs.cycle_day_cd = 'R' THEN '(매일)'
-                            ELSE '(매월 '+ FORMAT((CONVERT(int, cbs.cycle_day)), '00')  + '일)' 
+                            ELSE '(매월 '+ FORMAT((CONVERT(int, cbs.cycle_day)), '00')  + '일)'
                        END) as cycle_day_nm
                ,cbs.cycle_day
                ,cbs.cycle_hm_cd
                ,CONCAT(cycleHm.code_nm
                       ,CASE WHEN cbs.cycle_hm_cd = 'R' THEN '(' + cbs.cycle_hm  + '분마다)'
-                            ELSE '(' + SUBSTRING(cbs.cycle_hm, 1,2) + ':' + SUBSTRING(cbs.cycle_hm, 3, 4) + ')' 
+                            ELSE '(' + SUBSTRING(cbs.cycle_hm, 1,2) + ':' + SUBSTRING(cbs.cycle_hm, 3, 4) + ')'
                        END) as cycle_hm_nm
                ,cbs.cycle_hm
                ,cbs.use_yn
@@ -30,46 +32,51 @@
                ,cbs.update_user_id
                ,cbs.update_dt
            FROM com_batch_service cbs
+          left join com_alarm ca on cbs.alarm_no = ca.alarm_no and ca.alarm_type = 'B'
           INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CYCLE_DAY_CD') cycleDay
              ON cbs.cycle_day_cd = cycleDay.code
           INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'CYCLE_HM_CD') cycleHm
              ON cbs.cycle_hm_cd = cycleHm.code
           WHERE 1=1
           <if test="batchCd != null and !batchCd.equals('')">
-            AND cbs.batch_cd LIKE '%' + #{batchCd} + '%' 
+            AND cbs.batch_cd LIKE '%' + #{batchCd} + '%'
           </if>
           <if test="batchNm != null and !batchNm.equals('')">
-            AND cbs.batch_nm LIKE '%' + #{batchNm} + '%' 
+            AND cbs.batch_nm LIKE '%' + #{batchNm} + '%'
           </if>
           <if test="useYn != null and !useYn.equals('')">
             AND cbs.use_yn = #{useYn}
           </if>
     </select>
-    
-    
+
+
     <select id="getBatch" resultType="com.she.manage.model.Batch">
         /* BatchMapper.getBatch [Batch.xml] */
-        SELECT batch_cd
-              ,batch_nm
-              ,batch_desc
-              ,cycle_start_ymd
-              ,cycle_day_cd
-              ,cycle_day
-              ,cycle_hm_cd
-              ,cycle_hm
-              ,case when cycle_hm_cd = 'R' 
-                    Then ''
-                    else SUBSTRING(cycle_hm, 1,2) + ':' + SUBSTRING(cycle_hm, 3, 4)
+        SELECT cbs.batch_cd
+              ,cbs.batch_nm
+              ,cbs.batch_desc
+              ,cbs.cycle_start_ymd
+              ,cbs.alarm_no
+              ,ca.alarm_nm
+              ,cbs.cycle_day_cd
+              ,cbs.cycle_day
+              ,cbs.cycle_hm_cd
+              ,cbs.cycle_hm
+              ,case when cbs.cycle_hm_cd = 'R'
+                    Then '1'
+                    else SUBSTRING(cbs.cycle_hm, 1,2) + ':' + SUBSTRING(cbs.cycle_hm, 3, 4)
                end as cycle_hm_nm
-              ,use_yn
-              ,create_user_id
-              ,create_dt
-              ,update_user_id
-              ,update_dt
-          FROM com_batch_service
-         WHERE batch_cd = #{batchCd}
+              ,cbs.use_yn
+              ,cbs.batch_day
+              ,cbs.create_user_id
+              ,cbs.create_dt
+              ,cbs.update_user_id
+              ,cbs.update_dt
+          FROM com_batch_service cbs
+          left join com_alarm ca on cbs.alarm_no = ca.alarm_no and ca.alarm_type = 'B'
+         WHERE cbs.batch_cd = #{batchCd}
     </select>
-    
+
     <select id="getBatchCheck" resultType="int">
         /* BatchMapper.getBatchCheck [Batch.xml] */
         SELECT count(*) as cnt
@@ -79,45 +86,51 @@
            AND batch_cd != #{batchCdSave}
           </if>
     </select>
-    
+
     <insert id="insertBatch" parameterType="com.she.manage.model.Batch">
         /* BatchMapper.insertBatch [Batch.xml] */
         INSERT INTO com_batch_service
                   ( batch_cd
                   , batch_nm
                   , batch_desc
+                  , alarm_no
                   , cycle_start_ymd
                   , cycle_day_cd
                   , cycle_day
                   , cycle_hm_cd
                   , cycle_hm
                   , use_yn
+                  , batch_day
                   , create_user_id
                   , create_dt)
             VALUES ( #{batchCd}
                   ,  #{batchNm}
                   ,  #{batchDesc}
+                  ,  #{alarmNo}
                   ,  #{cycleStartYmd}
                   ,  #{cycleDayCd}
-                  ,  #{cycleDay}
+                  ,  '1'
                   ,  #{cycleHmCd}
                   ,  #{cycleHm}
                   ,  #{useYn}
+                  ,  #{batchDay}
                   ,  #{createUserId}
                   ,  GETDATE())
     </insert>
-    
+
     <update id="updateBatch" parameterType="com.she.manage.model.Batch">
         /* BatchMapper.updateBatch [Batch.xml] */
         UPDATE com_batch_service
            SET batch_nm = #{batchNm}
               ,batch_desc = #{batchDesc}
+              ,alarm_no = #{alarmNo}
               ,cycle_start_ymd = #{cycleStartYmd}
               ,cycle_day_cd = #{cycleDayCd}
-              ,cycle_day = #{cycleDay}
+              ,cycle_day = '1'
               ,cycle_hm_cd = #{cycleHmCd}
               ,cycle_hm = #{cycleHm}
               ,use_yn = #{useYn}
+              ,batch_day = #{batchDay}
               ,update_user_id = #{updateUserId}
               ,update_dt = GETDATE()
          WHERE batch_cd = #{batchCd}
