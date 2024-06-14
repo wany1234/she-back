@@ -429,7 +429,7 @@ public class ImprController {
         HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
 
         String imprClassCd = map.containsKey("imprClassCd") ? map.get("imprClassCd").toString() : "";
-        int refTableId = map.containsKey("refTableId") ? Integer.parseInt(map.get("refTableId").toString()) : 0;
+        int refTableId = map.containsKey("refTableId") ? Integer.parseInt(map.getOrDefault(map, 0).toString()) : 0;
 
         return ResponseEntity.ok().body(imprService.getNewImprActs(imprClassCd, refTableId, defaultParam));
     }
