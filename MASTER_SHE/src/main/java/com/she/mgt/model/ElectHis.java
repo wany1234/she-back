@@ -94,4 +94,7 @@ public class ElectHis {
 
     private String testEndDt;
 
+    private String employmentYn;
+
+    private String employmentStatus;
 }

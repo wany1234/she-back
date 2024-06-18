@@ -71,8 +71,10 @@ public class ElectHisController {
         String testEndDt = map.containsKey("testEndDt") ? map.get("testEndDt").toString() : "";
         // 선해임명번호
         int safElectTitlNo = map.containsKey("safElectTitlNo") ? Integer.parseInt("".equals(map.get("safElectTitlNo").toString()) ? "0" : map.get("safElectTitlNo").toString()) : 0;
+        // 재직 구분
+        String employmentYn = map.containsKey("employmentYn") ? map.get("employmentYn").toString() : "";
 
-        return ResponseEntity.ok().body(electHisService.getElectHises(lcnGetStartDt, lcnGetEndDt, plantCd, userNm, safElectTitlNo, testEndDt, defaultParam));
+        return ResponseEntity.ok().body(electHisService.getElectHises(lcnGetStartDt, lcnGetEndDt, plantCd, userNm, safElectTitlNo, testEndDt, employmentYn, defaultParam));
     }
 
     // 법정선임자 현황 통계 조회

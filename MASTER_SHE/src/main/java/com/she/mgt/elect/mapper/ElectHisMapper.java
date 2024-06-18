@@ -41,7 +41,8 @@ public interface ElectHisMapper {
      * @return 선해임 목록
      * @throws Exception
      */
-    public List<ElectHis> getElectHises(@Param("lcnGetStartDt") String lcnGetStartDt, @Param("lcnGetEndDt") String lcnGetEndDt, @Param("plantCd") String plantCd, @Param("userNm") String userNm, @Param("safElectTitlNo") int safElectTitlNo, @Param("testEndDt") String testEndDt, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    public List<ElectHis> getElectHises(@Param("lcnGetStartDt") String lcnGetStartDt, @Param("lcnGetEndDt") String lcnGetEndDt, @Param("plantCd") String plantCd, @Param("userNm") String userNm, @Param("safElectTitlNo") int safElectTitlNo, @Param("testEndDt") String testEndDt, @Param("employmentYn") String employmentYn,
+            @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 법정선임자 현황 통계 조회

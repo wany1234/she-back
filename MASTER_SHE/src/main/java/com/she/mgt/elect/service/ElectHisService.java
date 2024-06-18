@@ -43,8 +43,8 @@ public class ElectHisService {
      * @return 선해임 목록
      * @throws Exception
      */
-    public List<ElectHis> getElectHises(String lcnGetStartDt, String lcnGetEndDt, String plantCd, String userNm, int safElectTitlNo, String testEndDt, DefaultParam defaultParam) throws Exception {
-        return electHisMapper.getElectHises(lcnGetStartDt, lcnGetEndDt, plantCd, userNm, safElectTitlNo, testEndDt, defaultParam);
+    public List<ElectHis> getElectHises(String lcnGetStartDt, String lcnGetEndDt, String plantCd, String userNm, int safElectTitlNo, String testEndDt, String employmentYn, DefaultParam defaultParam) throws Exception {
+        return electHisMapper.getElectHises(lcnGetStartDt, lcnGetEndDt, plantCd, userNm, safElectTitlNo, testEndDt, employmentYn, defaultParam);
     }
 
     // 법정선임자 현황 통계 조회

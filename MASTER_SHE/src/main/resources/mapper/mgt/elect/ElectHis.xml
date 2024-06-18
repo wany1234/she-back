@@ -44,7 +44,17 @@
                 ,convert(char(10), seh.create_dt, 23) as create_dt 
                 ,seh.update_user_id
                 ,updateUser.user_nm as update_user_nm
-                ,convert(char(10), seh.update_dt, 23) as update_dt 
+                ,convert(char(10), seh.update_dt, 23) as update_dt
+                ,case
+                    when cu.retire_ymd is null then 'Y'
+                    else 'N' end                        as employment_yn
+                ,(select code_nm 
+                   from dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_WORK_CD') 
+                   where code = (case
+                                    when cu.retire_ymd is null then 'Y'
+                                    else 'N' 
+                                 end)
+                 ) as employment_status
             from saf_elect_his seh
             inner join saf_elect_titl t
             on seh.saf_elect_titl_no = t.saf_elect_titl_no
@@ -80,6 +90,14 @@
             <if test= "lcnGetStartDt != null and !lcnGetStartDt.equals('') and lcnGetEndDt != null and !lcnGetEndDt.equals('')">
             and convert(datetime, seh.elect_dt) between convert(datetime, #{lcnGetStartDt}) and convert(datetime, #{lcnGetEndDt})
              </if>
+             <choose>
+                 <when test='employmentYn == "Y"'>
+                     and cu.retire_ymd is null
+                 </when>
+                 <when test='employmentYn == "N"'>
+                     and cu.retire_ymd is not null
+                 </when>
+             </choose>
          ) n where 1=1 
          and saf_no = 1
 
@@ -184,7 +202,10 @@
             ,convert(char(10), seh.create_dt, 23) as create_dt 
             ,seh.update_user_id
             ,updateUser.user_nm as update_user_nm
-            ,convert(char(10), seh.update_dt, 23) as update_dt 
+            ,convert(char(10), seh.update_dt, 23) as update_dt
+            ,case
+                    when cu.retire_ymd is null then 'Y'
+                    else 'N' end                        as employment_yn  
         from saf_elect_his seh
         inner join saf_elect_titl t
         on seh.saf_elect_titl_no = t.saf_elect_titl_no
