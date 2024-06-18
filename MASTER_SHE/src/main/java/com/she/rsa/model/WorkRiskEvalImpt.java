@@ -3,7 +3,7 @@ package com.she.rsa.model;
 import lombok.Data;
 
 @Data
-public class WorkRiskEval08 {
+public class WorkRiskEvalImpt {
 
     private String plantCd;
     private String plantNm;
@@ -20,17 +20,16 @@ public class WorkRiskEval08 {
     private String processNm;
     private String unitWorkNm;
     private String dtlWkNm;
+    private String wkClsNm;
     private String dgrActSituRslt;
+    private String disaTypeNm;
     private String dgrLvlCd;
     private String manDgrRegNum;
     private String imprActNo;
     private String safImprActNo;
     private String actDeptCd;
+    private String actDeptNm;
     private String aftDegRisk;
-    private String imprRqstContents;
-    private String actResultContents;
-    private String actUserNm;
-    private String actConfirmYmd;
     private String linkTxt;
 
 }
