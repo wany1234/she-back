@@ -15,12 +15,12 @@
               ,'http://www.law.go.kr/' + el.ldtl_link AS ldtl_link
               ,concat(format(convert(numeric, el.lkey), '000000'), el.prom_date, el.prom_num, el.enf_date) as legi_key
           FROM law_elaw AS el
-          LEFT JOIN com_code_master lm ON lm.code = el.lkey AND lm.code_group_cd = 'LAWMST'
+          INNER JOIN dbo.LANG_CODE_MASTER('kr', 'LAW_TYPE') lm on lm.use_yn = 'Y' and lm.code = el.lkey -- 기존의 법령, 시행령, 시행규칙 LAW_TYPE 코드그룹으로 통합
           LEFT JOIN com_code_master le ON le.code = el.lkey AND le.code_group_cd = 'LAWENF'
           LEFT JOIN com_code_master lr ON lr.code = el.lkey AND lr.code_group_cd = 'LAWRGL'
           INNER JOIN com_legi_law_basics cllb on cllb.legi_key = concat(format(convert(numeric, lkey), '000000'), el.prom_date, el.prom_num, el.enf_date)
          WHERE 1=1
-         AND (lm.code_nm IS NOT NULL OR le.code_nm IS NOT NULL OR lr.code_nm IS NOT NULL)
+         AND isnull(lm.code_nm, '') != ''
         <if test="stYd != null and !stYd.equals('') and edYd != null and !edYd.equals('')">
            AND el.prom_date BETWEEN #{stYd} AND #{edYd}
         </if>
