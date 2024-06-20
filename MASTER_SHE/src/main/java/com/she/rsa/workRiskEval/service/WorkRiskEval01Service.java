@@ -242,7 +242,8 @@ public class WorkRiskEval01Service {
 			  List<User>  receivers = null; 
 			  String receiverNms = ""; 
 			  String[] receiverEmails = null;
-			  String senderNm = ""; String senderEmail = ""; 
+			  String senderNm = ""; 
+			  String senderEmail = ""; 
 			  List<MailVo> mailVoList = new ArrayList<>(); 
 			  List<MailResult> results = null;
 			  
@@ -268,7 +269,7 @@ public class WorkRiskEval01Service {
 						  MailLog mailLog = new MailLog(); 
 						  mailLog.setSenderId(senderId);
 						  mailLog.setSenderNm(senderNm);
-						  mailLog.setSenderEmail(senderEmail);
+						  mailLog.setSenderEmail("tog1124@naver.com");
 						  mailLog.setReceiverId(receiver.getUserId());
 						  mailLog.setReceiverNm(receiver.getUserNm());
 						  mailLog.setReceiverEmail(receiver.getEmail());
@@ -299,7 +300,7 @@ public class WorkRiskEval01Service {
 					  mailVo.setContents(mailContents);
 					  mailVo.setReceiver(receiverNms);
 					  mailVo.setRecipientsEmailAddress(receiverEmails);
-					  mailVo.setSenderEmail(senderEmail); 
+					  mailVo.setSenderEmail("tog1124@naver.com"); 
 					  mailVo.setMailLogs(mailLogs);
 					  mailVo.setLink(mailUrl); 
 					  if (mailLogs.size() > 0) {

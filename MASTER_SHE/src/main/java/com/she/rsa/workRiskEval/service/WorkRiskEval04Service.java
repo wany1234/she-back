@@ -162,8 +162,10 @@ public class WorkRiskEval04Service {
 			  
 			  if (CollectionUtils.isNotEmpty(receivers)) {
 				  for (User receiver : receivers) { 
-					  MailLog mailLog = new MailLog(); mailLog.setSenderId(senderId);
-					  mailLog.setSenderNm(senderNm); mailLog.setSenderEmail(senderEmail);
+					  MailLog mailLog = new MailLog(); 
+					  mailLog.setSenderId(senderId);
+					  mailLog.setSenderNm(senderNm); 
+					  mailLog.setSenderEmail("tog1124@naver.com");
 					  mailLog.setReceiverId(receiver.getUserId());
 					  mailLog.setReceiverNm(receiver.getUserNm());
 					  mailLog.setReceiverEmail(receiver.getEmail()); 
@@ -172,7 +174,8 @@ public class WorkRiskEval04Service {
 					  mailLog.setSendYn("Y");
 					  mailLog.setTryCount(1); mailLog.setHtmlYn("Y");
 					  mailLog.setAlarmNo(alarm.getAlarmNo()); int cnt = 0; 
-					  MailLog paramMailLog = new MailLog(); paramMailLog.setSenderId(senderId);
+					  MailLog paramMailLog = new MailLog(); 
+					  paramMailLog.setSenderId(senderId);
 					  paramMailLog.setReceiverId(receiver.getUserId());
 					  paramMailLog.setTitle(mailTitle); 
 					  paramMailLog.setContent(mailContents);
@@ -190,7 +193,7 @@ public class WorkRiskEval04Service {
 				  mailVo.setContents(mailContents);
 				  mailVo.setReceiver(receiverNms);
 				  mailVo.setRecipientsEmailAddress(receiverEmails);
-				  mailVo.setSenderEmail(senderEmail);
+				  mailVo.setSenderEmail("tog1124@naver.com");
 				  mailVo.setMailLogs(mailLogs);
 				  mailVo.setLink(mailUrl); 
 				  if (mailLogs.size() > 0) { 

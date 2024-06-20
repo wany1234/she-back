@@ -152,7 +152,7 @@ public class WorkRiskEval05Service {
 					  MailLog mailLog = new MailLog(); 
 					  mailLog.setSenderId(senderId);
 					  mailLog.setSenderNm(senderNm); 
-					  mailLog.setSenderEmail(senderEmail);
+					  mailLog.setSenderEmail("tog1124@naver.com");
 					  mailLog.setReceiverId(receiver.getUserId());
 					  mailLog.setReceiverNm(receiver.getUserNm());
 					  mailLog.setReceiverEmail(receiver.getEmail()); 
@@ -182,7 +182,7 @@ public class WorkRiskEval05Service {
 				  mailVo.setContents(mailContents);
 				  mailVo.setReceiver(receiverNms);
 				  mailVo.setRecipientsEmailAddress(receiverEmails);
-				  mailVo.setSenderEmail(senderEmail); 
+				  mailVo.setSenderEmail("tog1124@naver.com"); 
 				  mailVo.setMailLogs(mailLogs);
 				  mailVo.setLink(mailUrl); 
 				  if (mailLogs.size() > 0) { 
