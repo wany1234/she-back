@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.base.Strings;
 import com.she.common.model.DefaultParam;
-//import com.she.common.service.TemplateService;
+import com.she.common.service.TemplateService;
 import com.she.manage.model.Alarm;
 import com.she.manage.model.MailLog;
 import com.she.manage.model.User;
@@ -50,8 +50,8 @@ public class WorkRiskEval01Service {
     @Autowired
     private WorkRiskEval01Mapper workRiskEval01Mapper;
 
-//    @Autowired
-//    private TemplateService templateService;
+    @Autowired
+    private TemplateService templateService;
 
     @Autowired
     private LogListService logListService;
@@ -217,79 +217,114 @@ public class WorkRiskEval01Service {
             List<WorkRiskEval01PlanDeptList> workRiskEval01PlanDeptList = workRiskEval01Mapper.getWorkRiskEval01detpLists(plantCd, evalYear, evalNo, defaultParam);
             workRiskEval01Plan.setWorkRiskEval01PlanDeptList(workRiskEval01PlanDeptList);
 
-//            this.workRiskSendEmail(workRiskEval01Plan, ConstVal.ALARM_S10016, workRiskEval01Plan.getMgrId());
+            this.workRiskSendEmail(workRiskEval01Plan, ConstVal.ALARM_S10016, workRiskEval01Plan.getMgrId());
         }
 
         return upAppr;
     }
 
-	/*
-	 * public int workRiskSendEmail(WorkRiskEval01Plan workRiskEval01Plan, String
-	 * alarmCd, String senderId) throws Exception { int resultNo = 0;
-	 * 
-	 * if (Strings.isNullOrEmpty(alarmCd) || Strings.isNullOrEmpty(senderId)) {
-	 * return 0; }
-	 * 
-	 * List<Alarm> alarms = alarmService.getAlarmByAlarmCd(alarmCd);
-	 * 
-	 * for (Alarm alarm : alarms) { String mailUrl = alarm.getMailUrl(); String
-	 * templateUrl = alarm.getTemplateUrl();
-	 * 
-	 * String mailTitle = alarm.getAlarmNm(); String mailContents = ""; List<User>
-	 * receivers = null; String receiverNms = ""; String[] receiverEmails = null;
-	 * String senderNm = ""; String senderEmail = ""; List<MailVo> mailVoList = new
-	 * ArrayList<>(); List<MailResult> results = null;
-	 * 
-	 * for (WorkRiskEval01PlanDeptList workRiskEval01PlanDeptList :
-	 * workRiskEval01Plan.getWorkRiskEval01PlanDeptList()) { HashMap<String, Object>
-	 * param = new HashMap<>(); param.put("workRiskEval01Plan", workRiskEval01Plan);
-	 * mailContents = templateService.createMailContents(param, templateUrl);
-	 * 
-	 * receivers =
-	 * userService.getTeamLeader(workRiskEval01PlanDeptList.getDeptCd());
-	 * receiverNms = String.join(",",
-	 * receivers.stream().map(User::getUserNm).toArray(String[]::new));
-	 * receiverEmails =
-	 * receivers.stream().map(User::getEmail).toArray(String[]::new);
-	 * 
-	 * User sender = userService.getUser(senderId); if (sender != null) { senderNm =
-	 * sender.getUserNm(); senderEmail = sender.getEmail(); }
-	 * 
-	 * List<MailLog> mailLogs = new ArrayList<>();
-	 * 
-	 * if (CollectionUtils.isNotEmpty(receivers)) { for (User receiver : receivers)
-	 * { MailLog mailLog = new MailLog(); mailLog.setSenderId(senderId);
-	 * mailLog.setSenderNm(senderNm); mailLog.setSenderEmail(senderEmail);
-	 * mailLog.setReceiverId(receiver.getUserId());
-	 * mailLog.setReceiverNm(receiver.getUserNm());
-	 * mailLog.setReceiverEmail(receiver.getEmail()); mailLog.setTitle(mailTitle);
-	 * mailLog.setContent(mailContents); mailLog.setSendYn("Y");
-	 * mailLog.setTryCount(1); mailLog.setHtmlYn("Y");
-	 * mailLog.setAlarmNo(alarm.getAlarmNo()); int cnt = 0; MailLog paramMailLog =
-	 * new MailLog(); paramMailLog.setSenderId(senderId);
-	 * paramMailLog.setReceiverId(receiver.getUserId());
-	 * paramMailLog.setTitle(mailTitle); paramMailLog.setContent(mailContents);
-	 * paramMailLog.setAlarmNo(alarm.getAlarmNo()); cnt =
-	 * logListService.getMailLogConut(paramMailLog); // 동일한 발신자id,수신자id,제목,내용,알람번호 의
-	 * 메일발송여부가 없으면 메일발송 if (cnt < 1) { mailLogs.add(mailLog); } }
-	 * 
-	 * MailVo mailVo = new MailVo(); mailVo.setTitle(mailTitle);
-	 * mailVo.setMailTitle(mailTitle); mailVo.setContents(mailContents);
-	 * mailVo.setReceiver(receiverNms);
-	 * mailVo.setRecipientsEmailAddress(receiverEmails);
-	 * mailVo.setSenderEmail(senderEmail); mailVo.setMailLogs(mailLogs);
-	 * mailVo.setLink(mailUrl); if (mailLogs.size() > 0) { mailVoList.add(mailVo); }
-	 * } }
-	 * 
-	 * if (mailVoList.size() > 0) { results = SendMailUtil.sendMails(mailVoList); }
-	 * if (results != null && !results.isEmpty()) { List<MailLog> logs = new
-	 * ArrayList<>(); for (MailResult mailResult : results) { if
-	 * (!mailResult.getMailLogs().isEmpty()) {
-	 * logs.addAll(mailResult.getMailLogs()); } }
-	 * 
-	 * for (MailLog maillog : logs) { resultNo +=
-	 * logListService.createMailLog(maillog); } } }
-	 * 
-	 * return resultNo; }
-	 */
+	
+	  public int workRiskSendEmail(WorkRiskEval01Plan workRiskEval01Plan, String  alarmCd, String senderId) throws Exception { 
+		  int resultNo = 0;
+		  
+		  if (Strings.isNullOrEmpty(alarmCd) || Strings.isNullOrEmpty(senderId)) {  
+			  return 0; 
+		  }
+		  
+		  List<Alarm> alarms = alarmService.getAlarmByAlarmCd(alarmCd);
+		  
+		  for (Alarm alarm : alarms) { 
+			  String mailUrl = alarm.getMailUrl(); 
+			  String templateUrl = alarm.getTemplateUrl();
+		  
+			  String mailTitle = alarm.getAlarmNm(); 
+			  String mailContents = ""; 
+			  List<User>  receivers = null; 
+			  String receiverNms = ""; 
+			  String[] receiverEmails = null;
+			  String senderNm = ""; String senderEmail = ""; 
+			  List<MailVo> mailVoList = new ArrayList<>(); 
+			  List<MailResult> results = null;
+			  
+			  for (WorkRiskEval01PlanDeptList workRiskEval01PlanDeptList :  workRiskEval01Plan.getWorkRiskEval01PlanDeptList()) {
+				  HashMap<String, Object>  param = new HashMap<>(); 
+				  param.put("workRiskEval01Plan", workRiskEval01Plan);
+				  mailContents = templateService.createMailContents(param, templateUrl);
+				  
+				  receivers =  userService.getTeamLeader(workRiskEval01PlanDeptList.getDeptCd());
+				  receiverNms = String.join(",",  receivers.stream().map(User::getUserNm).toArray(String[]::new));
+				  receiverEmails = receivers.stream().map(User::getEmail).toArray(String[]::new);
+					  
+				  User sender = userService.getUser(senderId); 
+				  if (sender != null) {
+					  senderNm = sender.getUserNm(); 
+					  senderEmail = sender.getEmail(); 
+				  }
+			  
+				  List<MailLog> mailLogs = new ArrayList<>();
+			  
+				  if (CollectionUtils.isNotEmpty(receivers)) {
+					  for (User receiver : receivers)  {
+						  MailLog mailLog = new MailLog(); 
+						  mailLog.setSenderId(senderId);
+						  mailLog.setSenderNm(senderNm);
+						  mailLog.setSenderEmail(senderEmail);
+						  mailLog.setReceiverId(receiver.getUserId());
+						  mailLog.setReceiverNm(receiver.getUserNm());
+						  mailLog.setReceiverEmail(receiver.getEmail());
+						  mailLog.setTitle(mailTitle);
+						  mailLog.setContent(mailContents); 
+						  mailLog.setSendYn("Y");
+						  mailLog.setTryCount(1); 
+						  mailLog.setHtmlYn("Y");
+						  mailLog.setAlarmNo(alarm.getAlarmNo()); 
+						  int cnt = 0; 
+						  MailLog paramMailLog =  new MailLog(); 
+						  paramMailLog.setSenderId(senderId);
+					  
+						  paramMailLog.setReceiverId(receiver.getUserId());
+						  paramMailLog.setTitle(mailTitle); 
+						  paramMailLog.setContent(mailContents);
+						  paramMailLog.setAlarmNo(alarm.getAlarmNo()); 
+						  cnt = logListService.getMailLogConut(paramMailLog); // 동일한 발신자id,수신자id,제목,내용,알람번호 의
+						  //메일발송여부가 없으면 메일발송 
+						  System.out.println("-=-=--===-cnat=-=-=-" + cnt);
+						  if (cnt < 1) {
+							  mailLogs.add(mailLog); 
+						  } 
+					  }
+						  
+					  MailVo mailVo = new MailVo(); 
+					  mailVo.setTitle(mailTitle);
+					  mailVo.setMailTitle(mailTitle); 
+					  mailVo.setContents(mailContents);
+					  mailVo.setReceiver(receiverNms);
+					  mailVo.setRecipientsEmailAddress(receiverEmails);
+					  mailVo.setSenderEmail(senderEmail); 
+					  mailVo.setMailLogs(mailLogs);
+					  mailVo.setLink(mailUrl); 
+					  if (mailLogs.size() > 0) {
+						  mailVoList.add(mailVo); 
+					  }
+				  } 
+			  }
+			  System.out.println("----------asdasf-----------"+mailVoList.size());
+			  if (mailVoList.size() > 0) {
+				  results = SendMailUtil.sendMails(mailVoList); 
+			  }
+			  if (results != null && !results.isEmpty()) {
+				  List<MailLog> logs = new  ArrayList<>(); 
+				  for (MailResult mailResult : results) {
+					  if (!mailResult.getMailLogs().isEmpty()) {
+						  logs.addAll(mailResult.getMailLogs()); 
+					  } 
+				  }
+				  for (MailLog maillog : logs) {
+					  resultNo +=  logListService.createMailLog(maillog); 
+				  } 
+			  } 
+		  }
+		  return resultNo; 
+	  }
+	 
 }

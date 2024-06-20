@@ -425,14 +425,15 @@
                 , d.plant_cd
                 , u.duty_cd
                 , u.position_cd
-                , u.dept_cd_hr, dhr.dept_nm as dept_nm_hr
+                , u.dept_cd_hr
+                , dhr.dept_nm as dept_nm_hr
         from com_user u
         inner join com_dept d
         on u.dept_cd = d.dept_cd
         inner join com_dept dhr
         on u.dept_cd_hr = dhr.dept_cd
         where u.dept_cd = #{deptCd}
-        and u.duty_cd = '50025082'
+        and u.duty_cd = '21'
         and u.use_yn = 'Y'
     </select>
 
