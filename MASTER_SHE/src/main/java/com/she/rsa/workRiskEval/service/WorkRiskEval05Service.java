@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.base.Strings;
 import com.she.common.model.DefaultParam;
-//import com.she.common.service.TemplateService;
+import com.she.common.service.TemplateService;
 import com.she.impr.service.ImprService;
 import com.she.manage.model.Alarm;
 import com.she.manage.model.MailLog;
@@ -21,6 +21,8 @@ import com.she.manage.model.User;
 import com.she.manage.service.AlarmService;
 import com.she.manage.service.LogListService;
 import com.she.manage.service.UserService;
+import com.she.rsa.model.WorkRiskEval01Plan;
+import com.she.rsa.model.WorkRiskEval01PlanDeptList;
 import com.she.rsa.model.WorkRiskEval02Prcs;
 import com.she.rsa.model.WorkRiskEval04Appr;
 import com.she.rsa.model.WorkRiskEval05Exam;
@@ -46,8 +48,8 @@ public class WorkRiskEval05Service {
     @Autowired
     private WorkRiskEval02Mapper workRiskEval02Mapper;
 
-//    @Autowired
-//    private TemplateService templateService;
+    @Autowired
+    private TemplateService templateService;
 
     @Autowired
     private ImprService imprService;
@@ -92,7 +94,7 @@ public class WorkRiskEval05Service {
             String senderId = workRiskEval02Prcs.getChkUserId(); // 검토자
             String receiverId = workRiskEval02Prcs.getDeptEvalUserId(); // 대표평가자
 
-//            this.workRiskSendEmail(workRiskEval02Prcs, ConstVal.ALARM_S10044, senderId, receiverId);
+            this.workRiskSendEmail(workRiskEval02Prcs, ConstVal.ALARM_S10044, senderId, receiverId);
 
             // 대상공정 초기화 처리
             workRiskEval05Mapper.updateWorkRiskEval05DeptPrcsInit(workRiskEval05Exam);
@@ -102,77 +104,110 @@ public class WorkRiskEval05Service {
 
         return workRiskEval05Exam.getDeptCd();
     }
-
-	/*
-	 * public int workRiskSendEmail(WorkRiskEval02Prcs workRiskEval02Prcs, String
-	 * alarmCd, String senderId, String receiverId) throws Exception { int resultNo
-	 * = 0;
-	 * 
-	 * if (Strings.isNullOrEmpty(alarmCd) || Strings.isNullOrEmpty(senderId)) {
-	 * return 0; }
-	 * 
-	 * List<Alarm> alarms = alarmService.getAlarmByAlarmCd(alarmCd);
-	 * 
-	 * for (Alarm alarm : alarms) { String mailUrl = alarm.getMailUrl(); String
-	 * templateUrl = alarm.getTemplateUrl();
-	 * 
-	 * String alarmTitle = "작업 위험성평가결과(" + workRiskEval02Prcs.getDeptNm() +
-	 * ") 검토 반려 알림";
-	 * 
-	 * String mailTitle = alarmTitle; String mailContents = ""; List<User> receivers
-	 * = null; String receiverNms = ""; String[] receiverEmails = null; String
-	 * senderNm = ""; String senderEmail = ""; List<MailVo> mailVoList = new
-	 * ArrayList<>(); List<MailResult> results = null;
-	 * 
-	 * HashMap<String, Object> param = new HashMap<>();
-	 * param.put("workRiskEval02Prcs", workRiskEval02Prcs); mailContents =
-	 * templateService.createMailContents(param, templateUrl); User actUser =
-	 * userService.getUser(receiverId); receivers = new ArrayList<>();
-	 * receivers.add(actUser); receiverNms = String.join(",",
-	 * receivers.stream().map(User::getUserNm).toArray(String[]::new));
-	 * receiverEmails =
-	 * receivers.stream().map(User::getEmail).toArray(String[]::new);
-	 * 
-	 * User sender = userService.getUser(senderId); if (sender != null) { senderNm =
-	 * sender.getUserNm(); senderEmail = sender.getEmail(); }
-	 * 
-	 * List<MailLog> mailLogs = new ArrayList<>();
-	 * 
-	 * if (CollectionUtils.isNotEmpty(receivers)) { for (User receiver : receivers)
-	 * { MailLog mailLog = new MailLog(); mailLog.setSenderId(senderId);
-	 * mailLog.setSenderNm(senderNm); mailLog.setSenderEmail(senderEmail);
-	 * mailLog.setReceiverId(receiver.getUserId());
-	 * mailLog.setReceiverNm(receiver.getUserNm());
-	 * mailLog.setReceiverEmail(receiver.getEmail()); mailLog.setTitle(mailTitle);
-	 * mailLog.setContent(mailContents); mailLog.setSendYn("Y");
-	 * mailLog.setTryCount(1); mailLog.setHtmlYn("Y");
-	 * mailLog.setAlarmNo(alarm.getAlarmNo()); int cnt = 0; MailLog paramMailLog =
-	 * new MailLog(); paramMailLog.setSenderId(senderId);
-	 * paramMailLog.setReceiverId(receiver.getUserId());
-	 * paramMailLog.setTitle(mailTitle); paramMailLog.setContent(mailContents);
-	 * paramMailLog.setAlarmNo(alarm.getAlarmNo()); cnt =
-	 * logListService.getMailLogConut(paramMailLog); // 동일한 발신자id,수신자id,제목,내용,알람번호 의
-	 * 메일발송여부가 없으면 메일발송 if (cnt < 1) { mailLogs.add(mailLog); } }
-	 * 
-	 * MailVo mailVo = new MailVo(); mailVo.setTitle(mailTitle);
-	 * mailVo.setMailTitle(mailTitle); mailVo.setContents(mailContents);
-	 * mailVo.setReceiver(receiverNms);
-	 * mailVo.setRecipientsEmailAddress(receiverEmails);
-	 * mailVo.setSenderEmail(senderEmail); mailVo.setMailLogs(mailLogs);
-	 * mailVo.setLink(mailUrl); if (mailLogs.size() > 0) { mailVoList.add(mailVo); }
-	 * }
-	 * 
-	 * if (mailVoList.size() > 0) { results = SendMailUtil.sendMails(mailVoList); }
-	 * if (results != null && !results.isEmpty()) { List<MailLog> logs = new
-	 * ArrayList<>(); for (MailResult mailResult : results) { if
-	 * (!mailResult.getMailLogs().isEmpty()) {
-	 * logs.addAll(mailResult.getMailLogs()); } }
-	 * 
-	 * for (MailLog maillog : logs) { resultNo +=
-	 * logListService.createMailLog(maillog); } } }
-	 * 
-	 * return resultNo; }
-	 */
+    
+	
+	  public int workRiskSendEmail(WorkRiskEval02Prcs workRiskEval02Prcs, String alarmCd, String senderId, String receiverId) throws Exception { 
+		  int resultNo = 0;
+	  
+		  if (Strings.isNullOrEmpty(alarmCd) || Strings.isNullOrEmpty(senderId)) {
+			  return 0; 
+		  }
+	  
+	  
+		  List<Alarm> alarms = alarmService.getAlarmByAlarmCd(alarmCd);
+		  
+		  for (Alarm alarm : alarms) {
+			  String mailUrl = alarm.getMailUrl(); 
+			  String templateUrl = alarm.getTemplateUrl();
+		  
+			  String alarmTitle = "작업 위험성평가결과(" + workRiskEval02Prcs.getDeptNm() + ") 검토 반려 알림";
+		  
+			  String mailTitle = alarmTitle; 
+			  String mailContents = ""; 
+			  List<User> receivers = null; 
+			  String receiverNms = ""; 
+			  String[] receiverEmails = null; 
+			  String senderNm = ""; 
+			  String senderEmail = ""; 
+			  List<MailVo> mailVoList = new ArrayList<>(); 
+			  List<MailResult> results = null;
+			  
+			  HashMap<String, Object> param = new HashMap<>();
+			  param.put("workRiskEval02Prcs", workRiskEval02Prcs); mailContents = templateService.createMailContents(param, templateUrl); User actUser =
+			  userService.getUser(receiverId); 
+			  receivers = new ArrayList<>();
+			  receivers.add(actUser); 
+			  receiverNms = String.join(",", receivers.stream().map(User::getUserNm).toArray(String[]::new));
+			  receiverEmails = receivers.stream().map(User::getEmail).toArray(String[]::new);
+			  
+			  User sender = userService.getUser(senderId); 
+			  if (sender != null) { 
+				  senderNm = sender.getUserNm(); senderEmail = sender.getEmail();
+			  }
+			  
+			  List<MailLog> mailLogs = new ArrayList<>();
+			  
+			  if (CollectionUtils.isNotEmpty(receivers)) { 
+				  for (User receiver : receivers) {
+					  MailLog mailLog = new MailLog(); 
+					  mailLog.setSenderId(senderId);
+					  mailLog.setSenderNm(senderNm); 
+					  mailLog.setSenderEmail(senderEmail);
+					  mailLog.setReceiverId(receiver.getUserId());
+					  mailLog.setReceiverNm(receiver.getUserNm());
+					  mailLog.setReceiverEmail(receiver.getEmail()); 
+					  mailLog.setTitle(mailTitle);
+					  mailLog.setContent(mailContents); 
+					  mailLog.setSendYn("Y");
+					  mailLog.setTryCount(1); 
+					  mailLog.setHtmlYn("Y");
+					  mailLog.setAlarmNo(alarm.getAlarmNo()); 
+					  int cnt = 0; 
+					  MailLog paramMailLog = new MailLog(); 
+					  paramMailLog.setSenderId(senderId);
+					  paramMailLog.setReceiverId(receiver.getUserId());
+					  paramMailLog.setTitle(mailTitle); 
+					  paramMailLog.setContent(mailContents);
+					  paramMailLog.setAlarmNo(alarm.getAlarmNo()); 
+					  cnt =  logListService.getMailLogConut(paramMailLog); // 동일한 발신자id,수신자id,제목,내용,알람번호 의
+					  //	  메일발송여부가 없으면 메일발송 
+					  if (cnt < 1) { 
+						  mailLogs.add(mailLog); 
+					  } 
+				  }
+			  
+				  MailVo mailVo = new MailVo(); 
+				  mailVo.setTitle(mailTitle);
+				  mailVo.setMailTitle(mailTitle); 
+				  mailVo.setContents(mailContents);
+				  mailVo.setReceiver(receiverNms);
+				  mailVo.setRecipientsEmailAddress(receiverEmails);
+				  mailVo.setSenderEmail(senderEmail); 
+				  mailVo.setMailLogs(mailLogs);
+				  mailVo.setLink(mailUrl); 
+				  if (mailLogs.size() > 0) { 
+					  mailVoList.add(mailVo); 
+				  }
+			  }
+			  
+			  if (mailVoList.size() > 0) { 
+				  results = SendMailUtil.sendMails(mailVoList); 
+			  }
+			  if (results != null && !results.isEmpty()) { 
+				  List<MailLog> logs = new  ArrayList<>(); 
+				  for (MailResult mailResult : results) { 
+					  if  (!mailResult.getMailLogs().isEmpty()) {
+						    logs.addAll(mailResult.getMailLogs()); 
+					  } 
+				  }
+				  for (MailLog maillog : logs) { 
+					  resultNo += logListService.createMailLog(maillog); 
+				  }
+			  } 
+		  }
+		  return resultNo; 
+	  }
+	 
 
     /**
      * 작업위험성평가 공정설정 평가대상공정 확정

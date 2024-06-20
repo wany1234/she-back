@@ -288,7 +288,6 @@ public class WorkRiskEval01Service {
 						  paramMailLog.setAlarmNo(alarm.getAlarmNo()); 
 						  cnt = logListService.getMailLogConut(paramMailLog); // 동일한 발신자id,수신자id,제목,내용,알람번호 의
 						  //메일발송여부가 없으면 메일발송 
-						  System.out.println("-=-=--===-cnat=-=-=-" + cnt);
 						  if (cnt < 1) {
 							  mailLogs.add(mailLog); 
 						  } 
@@ -308,7 +307,6 @@ public class WorkRiskEval01Service {
 					  }
 				  } 
 			  }
-			  System.out.println("----------asdasf-----------"+mailVoList.size());
 			  if (mailVoList.size() > 0) {
 				  results = SendMailUtil.sendMails(mailVoList); 
 			  }
