@@ -29,24 +29,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.she.common.model.DefaultParam;
-import com.she.rsa.model.WorkRiskEval01Plan;
-import com.she.rsa.model.WorkRiskEval01PlanDeptList;
-import com.she.rsa.workRiskEval.service.WorkRiskEval01Service;
+import com.she.rsa.model.WorkRiskEvalPlan;
+import com.she.rsa.model.WorkRiskEvalPlanDeptList;
+import com.she.rsa.workRiskEval.service.WorkRiskEvalPlanService;
 import com.she.utils.RequestMapper;
 
 /**
  * 작업위험성평가
  */
 @RestController
-@RequestMapping("api/rsa/workRiskEval01")
-public class WorkRiskEval01Controller {
+@RequestMapping("api/rsa/workRiskEvalPlan")
+public class WorkRiskEvalPlanController {
 
     // queryString 변환을 위한 mapper 선언
     @Autowired
     private RequestMapper requestMapper;
 
     @Autowired
-    private WorkRiskEval01Service workRiskEval01Service;
+    private WorkRiskEvalPlanService workRiskEvalPlanService;
 
     /**
      * 작업위험성평가 계획 조회
@@ -54,8 +54,8 @@ public class WorkRiskEval01Controller {
      * @return 작업위험성평가 계획 목록
      * @throws Exception
      */
-    @GetMapping("/workRiskEval01Lists")
-    public ResponseEntity<List<WorkRiskEval01Plan>> getworkRiskEval01Lists(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
+    @GetMapping("/workRiskEvalPlanLists")
+    public ResponseEntity<List<WorkRiskEvalPlan>> getworkRiskEvalPlanLists(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
         HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
 
         // 사업장
@@ -78,33 +78,33 @@ public class WorkRiskEval01Controller {
             endYear = evalYear[1];
         }
 
-        return ResponseEntity.ok().body(workRiskEval01Service.getworkRiskEval01Lists(plantCd, evalNm, evalTypeCd, startYear, endYear, defaultParam));
+        return ResponseEntity.ok().body(workRiskEvalPlanService.getworkRiskEvalPlanLists(plantCd, evalNm, evalTypeCd, startYear, endYear, defaultParam));
     }
 
     /**
      * 작업위험성평가 관리 등록
      * 
-     * @param WorkRiskEval01Plan
+     * @param WorkRiskEvalPlan
      *            작업위험성평가 관리 List
      * @return 작업위험성평가 관리 Key값
      * @throws Exception
      */
-    @PostMapping("/workRiskEval01")
-    public ResponseEntity<String> createWorkRiskEval01(@RequestBody WorkRiskEval01Plan workRiskEval01Plan) throws Exception {
-        return ResponseEntity.ok().body(workRiskEval01Service.createWorkRiskEval01(workRiskEval01Plan));
+    @PostMapping("/workRiskEvalPlan")
+    public ResponseEntity<String> createWorkRiskEvalPlan(@RequestBody WorkRiskEvalPlan workRiskEvalPlan) throws Exception {
+        return ResponseEntity.ok().body(workRiskEvalPlanService.createWorkRiskEvalPlan(workRiskEvalPlan));
     }
 
     /**
      * 작업위험성평가 관리 수정
      * 
-     * @param WorkRiskEval01Plan
+     * @param WorkRiskEvalPlan
      *            작업위험성평가 관리 List
      * @return 작업위험성평가 관리 Key값
      * @throws Exception
      */
-    @PutMapping("/workRiskEval01")
-    public ResponseEntity<String> updateWorkRiskEval01(@RequestBody WorkRiskEval01Plan workRiskEval01Plan) throws Exception {
-        return ResponseEntity.ok().body(workRiskEval01Service.updateWorkRiskEval01(workRiskEval01Plan));
+    @PutMapping("/workRiskEvalPlan")
+    public ResponseEntity<String> updateWorkRiskEvalPlan(@RequestBody WorkRiskEvalPlan workRiskEvalPlan) throws Exception {
+        return ResponseEntity.ok().body(workRiskEvalPlanService.updateWorkRiskEvalPlan(workRiskEvalPlan));
     }
 
     /**
@@ -115,9 +115,9 @@ public class WorkRiskEval01Controller {
      * @return 작업위험성평가 관리 상세조회
      * @throws Exception
      */
-    @GetMapping("/workRiskEval01Info/{plantCd}/{evalYear}/{evalNo}")
-    public ResponseEntity<WorkRiskEval01Plan> getWorkRiskEval01info(@PathVariable("plantCd") String plantCd, @PathVariable("evalYear") String evalYear, @PathVariable("evalNo") String evalNo, @ModelAttribute DefaultParam defaultParam) throws Exception {
-        return ResponseEntity.ok().body(workRiskEval01Service.getWorkRiskEval01Info(plantCd, evalYear, evalNo, defaultParam));
+    @GetMapping("/workRiskEvalPlanInfo/{plantCd}/{evalYear}/{evalNo}")
+    public ResponseEntity<WorkRiskEvalPlan> getWorkRiskEvalPlaninfo(@PathVariable("plantCd") String plantCd, @PathVariable("evalYear") String evalYear, @PathVariable("evalNo") String evalNo, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        return ResponseEntity.ok().body(workRiskEvalPlanService.getWorkRiskEvalPlanInfo(plantCd, evalYear, evalNo, defaultParam));
     }
 
     /**
@@ -128,14 +128,14 @@ public class WorkRiskEval01Controller {
      * @return 작업위험성평가 관리 평가대상부서목록
      * @throws Exception
      */
-    @GetMapping("/workRiskEval01detpLists")
-    public ResponseEntity<List<WorkRiskEval01PlanDeptList>> getWorkRiskEval01detpLists(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
+    @GetMapping("/workRiskEvalPlandetpLists")
+    public ResponseEntity<List<WorkRiskEvalPlanDeptList>> getWorkRiskEvalPlandetpLists(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
         HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
         String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
         String evalYear = map.containsKey("evalYear") ? map.get("evalYear").toString() : "";
         String evalNo = map.containsKey("evalNo") ? map.get("evalNo").toString() : "";
 
-        return ResponseEntity.ok().body(workRiskEval01Service.getWorkRiskEval01detpLists(plantCd, evalYear, evalNo, defaultParam));
+        return ResponseEntity.ok().body(workRiskEvalPlanService.getWorkRiskEvalPlandetpLists(plantCd, evalYear, evalNo, defaultParam));
     }
 
     /**
@@ -146,9 +146,9 @@ public class WorkRiskEval01Controller {
      * @return 작업위험성평가계획/결과 관리 삭제
      * @throws Exception
      */
-    @DeleteMapping("/workRiskEval01/{plantCd}/{evalYear}/{evalNo}")
-    public ResponseEntity<Integer> deleteWorkRiskEval01(@PathVariable("plantCd") String plantCd, @PathVariable("evalYear") String evalYear, @PathVariable("evalNo") String evalNo) throws Exception {
-        return ResponseEntity.ok().body(workRiskEval01Service.deleteWorkRiskEval01(plantCd, evalYear, evalNo));
+    @DeleteMapping("/workRiskEvalPlan/{plantCd}/{evalYear}/{evalNo}")
+    public ResponseEntity<Integer> deleteWorkRiskEvalPlan(@PathVariable("plantCd") String plantCd, @PathVariable("evalYear") String evalYear, @PathVariable("evalNo") String evalNo) throws Exception {
+        return ResponseEntity.ok().body(workRiskEvalPlanService.deleteWorkRiskEvalPlan(plantCd, evalYear, evalNo));
     }
 
     /**
@@ -180,7 +180,7 @@ public class WorkRiskEval01Controller {
         // 결재양식 line url
         String linkUrl = map.containsKey("linkUrl") ? map.get("linkUrl").toString() : "";
 
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON_UTF8).body(workRiskEval01Service.createApprContents(plantCd, evalYear, evalNo, apprRqstNm, apprBizCd, linkUrl, defaultParam));
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON_UTF8).body(workRiskEvalPlanService.createApprContents(plantCd, evalYear, evalNo, apprRqstNm, apprBizCd, linkUrl, defaultParam));
     }
 
 }

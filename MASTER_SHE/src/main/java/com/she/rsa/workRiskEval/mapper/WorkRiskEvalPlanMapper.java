@@ -17,12 +17,12 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import com.she.common.model.DefaultParam;
-import com.she.rsa.model.WorkRiskEval01PlanDeptList;
-import com.she.rsa.model.WorkRiskEval01Plan;
+import com.she.rsa.model.WorkRiskEvalPlanDeptList;
+import com.she.rsa.model.WorkRiskEvalPlan;
 
 @Mapper
-@Repository("com.she.rsa.workRiskEval.mapper.WorkRiskEval01Mapper")
-public interface WorkRiskEval01Mapper {
+@Repository("com.she.rsa.workRiskEval.mapper.WorkRiskEvalPlanMapper")
+public interface WorkRiskEvalPlanMapper {
 
     /**
      * 작업위험성평가계획 관리 목록
@@ -30,7 +30,7 @@ public interface WorkRiskEval01Mapper {
      * @return 작업위험성평가 관리 목록
      * @throws Exception
      */
-    public List<WorkRiskEval01Plan> getworkRiskEval01Lists(@Param("plantCd") String plantCd, @Param("evalNm") String evalNm, @Param("evalTypeCd") String evalTypeCd, @Param("startYear") String startYear, @Param("endYear") String endYear, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    public List<WorkRiskEvalPlan> getworkRiskEvalPlanLists(@Param("plantCd") String plantCd, @Param("evalNm") String evalNm, @Param("evalTypeCd") String evalTypeCd, @Param("startYear") String startYear, @Param("endYear") String endYear, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 작업위험성평가계획 관리 평가번호 채번
@@ -43,22 +43,22 @@ public interface WorkRiskEval01Mapper {
     /**
      * 작업위험성평가계획 관리 등록
      * 
-     * @param WorkRiskEval01Plan
+     * @param WorkRiskEvalPlan
      * 
-     * @return WorkRiskEval01Plan
+     * @return WorkRiskEvalPlan
      * @throws Exception
      */
-    public int createWorkRiskEval01(WorkRiskEval01Plan workRiskEval01Plan) throws Exception;
+    public int createWorkRiskEvalPlan(WorkRiskEvalPlan workRiskEvalPlan) throws Exception;
 
     /**
      * 작업위험성평가계획 관리 수정
      * 
-     * @param WorkRiskEval01Plan
+     * @param WorkRiskEvalPlan
      * 
-     * @return WorkRiskEval01Plan
+     * @return WorkRiskEvalPlan
      * @throws Exception
      */
-    public int updateWorkRiskEval01(WorkRiskEval01Plan workRiskEval01Plan) throws Exception;
+    public int updateWorkRiskEvalPlan(WorkRiskEvalPlan workRiskEvalPlan) throws Exception;
 
     /**
      * 작업위험성평가계획 관리 평가대상부서등록
@@ -68,7 +68,7 @@ public interface WorkRiskEval01Mapper {
      * @return PlanmgmtDeptList
      * @throws Exception
      */
-    public int createWorkRiskEval01PlanDept(WorkRiskEval01PlanDeptList workRiskEval01PlanDeptList) throws Exception;
+    public int createWorkRiskEvalPlanDept(WorkRiskEvalPlanDeptList workRiskEvalPlanDeptList) throws Exception;
 
     /**
      * 작업위험성평가계획 관리 조회
@@ -78,7 +78,7 @@ public interface WorkRiskEval01Mapper {
      * @return 작업위험성평가계획 관리 조회
      * @throws Exception
      */
-    public WorkRiskEval01Plan getWorkRiskEval01Info(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    public WorkRiskEvalPlan getWorkRiskEvalPlanInfo(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 작업위험성평가계획 관리 대상부서조회
@@ -88,7 +88,7 @@ public interface WorkRiskEval01Mapper {
      * @return 작업위험성평가계획 관리 평가대상부서조회
      * @throws Exception
      */
-    public List<WorkRiskEval01PlanDeptList> getWorkRiskEval01detpLists(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    public List<WorkRiskEvalPlanDeptList> getWorkRiskEvalPlandetpLists(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 작업위험성평가계획 관리 대상부서 삭제
@@ -99,7 +99,7 @@ public interface WorkRiskEval01Mapper {
      * @return
      * @throws Exception
      */
-    public int deleteWorkRiskEval01detpLists(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo) throws Exception;
+    public int deleteWorkRiskEvalPlandetpLists(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo) throws Exception;
 
     /**
      * 작업위험성평가계획 관리 삭제
@@ -109,7 +109,7 @@ public interface WorkRiskEval01Mapper {
      * @return 작업위험성평가계획 관리 삭제
      * @throws Exception
      */
-    public int deleteWorkRiskEval01(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo) throws Exception;
+    public int deleteWorkRiskEvalPlan(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo) throws Exception;
 
     public int updateAppr(@Param("plantCd") String plantCd, @Param("evalYear") String evalYear, @Param("evalNo") String evalNo, @Param("apprRqstNo") int apprRqstNo, @Param("bizApprStepCd") String bizApprStepCd);
 

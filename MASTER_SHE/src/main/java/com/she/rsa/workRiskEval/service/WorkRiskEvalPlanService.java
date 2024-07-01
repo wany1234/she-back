@@ -30,9 +30,9 @@ import com.she.manage.model.User;
 import com.she.manage.service.AlarmService;
 import com.she.manage.service.LogListService;
 import com.she.manage.service.UserService;
-import com.she.rsa.model.WorkRiskEval01Plan;
-import com.she.rsa.model.WorkRiskEval01PlanDeptList;
-import com.she.rsa.workRiskEval.mapper.WorkRiskEval01Mapper;
+import com.she.rsa.model.WorkRiskEvalPlan;
+import com.she.rsa.model.WorkRiskEvalPlanDeptList;
+import com.she.rsa.workRiskEval.mapper.WorkRiskEvalPlanMapper;
 import com.she.utils.ConstVal;
 import com.she.utils.SendMailUtil;
 import com.she.utils.model.MailResult;
@@ -45,10 +45,10 @@ import sun.misc.BASE64Encoder;
  *
  */
 @Service
-public class WorkRiskEval01Service {
+public class WorkRiskEvalPlanService {
 
     @Autowired
-    private WorkRiskEval01Mapper workRiskEval01Mapper;
+    private WorkRiskEvalPlanMapper workRiskEvalPlanMapper;
 
     @Autowired
     private TemplateService templateService;
@@ -70,74 +70,74 @@ public class WorkRiskEval01Service {
      * @return 작업위험성평가 관리 목록
      * @throws Exception
      */
-    public List<WorkRiskEval01Plan> getworkRiskEval01Lists(String plantCd, String evalNm, String evalTypeCd, String startYear, String endYear, DefaultParam defaultParam) throws Exception {
-        return workRiskEval01Mapper.getworkRiskEval01Lists(plantCd, evalNm, evalTypeCd, startYear, endYear, defaultParam);
+    public List<WorkRiskEvalPlan> getworkRiskEvalPlanLists(String plantCd, String evalNm, String evalTypeCd, String startYear, String endYear, DefaultParam defaultParam) throws Exception {
+        return workRiskEvalPlanMapper.getworkRiskEvalPlanLists(plantCd, evalNm, evalTypeCd, startYear, endYear, defaultParam);
     }
 
     /**
      * 작업위험성평가 관리 등록
      * 
-     * @param WorkRiskEval01Plan
+     * @param WorkRiskEvalPlan
      *            작업위험성평가 관리 List
      * @return 작업위험성평가 관리 Key값
      * @throws Exception
      */
     @Transactional
-    public String createWorkRiskEval01(WorkRiskEval01Plan workRiskEval01Plan) throws Exception {
-        workRiskEval01Plan.setStepCd("PNREG"); // 계획등록
+    public String createWorkRiskEvalPlan(WorkRiskEvalPlan workRiskEvalPlan) throws Exception {
+        workRiskEvalPlan.setStepCd("PNREG"); // 계획등록
 
-        String newEvalNo = workRiskEval01Mapper.getCreateEvalNo(workRiskEval01Plan.getPlantCd(), workRiskEval01Plan.getEvalYear());
-        workRiskEval01Plan.setEvalNo(newEvalNo);
+        String newEvalNo = workRiskEvalPlanMapper.getCreateEvalNo(workRiskEvalPlan.getPlantCd(), workRiskEvalPlan.getEvalYear());
+        workRiskEvalPlan.setEvalNo(newEvalNo);
 
-        workRiskEval01Mapper.createWorkRiskEval01(workRiskEval01Plan);
+        workRiskEvalPlanMapper.createWorkRiskEvalPlan(workRiskEvalPlan);
 
-        if (workRiskEval01Plan.getWorkRiskEval01PlanDeptList() != null && workRiskEval01Plan.getWorkRiskEval01PlanDeptList().size() > 0) {
-            for (int i = 0; i < workRiskEval01Plan.getWorkRiskEval01PlanDeptList().size(); i++) {
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setPlantCd(workRiskEval01Plan.getPlantCd());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setEvalYear(workRiskEval01Plan.getEvalYear());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setEvalNo(workRiskEval01Plan.getEvalNo());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setEvalTypeCd(workRiskEval01Plan.getEvalTypeCd());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setRApprRqstNo(workRiskEval01Plan.getApprRqstNo());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setCreateUserId(workRiskEval01Plan.getCreateUserId());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setUpdateUserId(workRiskEval01Plan.getUpdateUserId());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setRsltStepCd("RREGI"); // 평가결과진행상태코드(등록)
+        if (workRiskEvalPlan.getWorkRiskEvalPlanDeptList() != null && workRiskEvalPlan.getWorkRiskEvalPlanDeptList().size() > 0) {
+            for (int i = 0; i < workRiskEvalPlan.getWorkRiskEvalPlanDeptList().size(); i++) {
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setPlantCd(workRiskEvalPlan.getPlantCd());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setEvalYear(workRiskEvalPlan.getEvalYear());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setEvalNo(workRiskEvalPlan.getEvalNo());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setEvalTypeCd(workRiskEvalPlan.getEvalTypeCd());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setRApprRqstNo(workRiskEvalPlan.getApprRqstNo());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setCreateUserId(workRiskEvalPlan.getCreateUserId());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setUpdateUserId(workRiskEvalPlan.getUpdateUserId());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setRsltStepCd("RREGI"); // 평가결과진행상태코드(등록)
 
-                workRiskEval01Mapper.createWorkRiskEval01PlanDept(workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i));
+                workRiskEvalPlanMapper.createWorkRiskEvalPlanDept(workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i));
             }
         }
 
-        return workRiskEval01Plan.getEvalNo();
+        return workRiskEvalPlan.getEvalNo();
     }
 
     /**
      * 작업위험성평가 관리 수정
      * 
-     * @param WorkRiskEval01Plan
+     * @param WorkRiskEvalPlan
      *            작업위험성평가 관리 List
      * @return 작업위험성평가 관리 Key값
      * @throws Exception
      */
     @Transactional(readOnly = true)
-    public String updateWorkRiskEval01(WorkRiskEval01Plan workRiskEval01Plan) throws Exception {
-        workRiskEval01Mapper.updateWorkRiskEval01(workRiskEval01Plan);
-        workRiskEval01Mapper.deleteWorkRiskEval01detpLists(workRiskEval01Plan.getPlantCd(), workRiskEval01Plan.getEvalYear(), workRiskEval01Plan.getEvalNo());
+    public String updateWorkRiskEvalPlan(WorkRiskEvalPlan workRiskEvalPlan) throws Exception {
+        workRiskEvalPlanMapper.updateWorkRiskEvalPlan(workRiskEvalPlan);
+        workRiskEvalPlanMapper.deleteWorkRiskEvalPlandetpLists(workRiskEvalPlan.getPlantCd(), workRiskEvalPlan.getEvalYear(), workRiskEvalPlan.getEvalNo());
 
-        if (workRiskEval01Plan.getWorkRiskEval01PlanDeptList() != null && workRiskEval01Plan.getWorkRiskEval01PlanDeptList().size() > 0) {
-            for (int i = 0; i < workRiskEval01Plan.getWorkRiskEval01PlanDeptList().size(); i++) {
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setPlantCd(workRiskEval01Plan.getPlantCd());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setEvalYear(workRiskEval01Plan.getEvalYear());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setEvalNo(workRiskEval01Plan.getEvalNo());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setEvalTypeCd(workRiskEval01Plan.getEvalTypeCd());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setRApprRqstNo(workRiskEval01Plan.getApprRqstNo());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setCreateUserId(workRiskEval01Plan.getCreateUserId());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setUpdateUserId(workRiskEval01Plan.getUpdateUserId());
-                workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i).setRsltStepCd("RREGI"); // 평가결과진행상태코드(등록)
+        if (workRiskEvalPlan.getWorkRiskEvalPlanDeptList() != null && workRiskEvalPlan.getWorkRiskEvalPlanDeptList().size() > 0) {
+            for (int i = 0; i < workRiskEvalPlan.getWorkRiskEvalPlanDeptList().size(); i++) {
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setPlantCd(workRiskEvalPlan.getPlantCd());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setEvalYear(workRiskEvalPlan.getEvalYear());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setEvalNo(workRiskEvalPlan.getEvalNo());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setEvalTypeCd(workRiskEvalPlan.getEvalTypeCd());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setRApprRqstNo(workRiskEvalPlan.getApprRqstNo());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setCreateUserId(workRiskEvalPlan.getCreateUserId());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setUpdateUserId(workRiskEvalPlan.getUpdateUserId());
+                workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i).setRsltStepCd("RREGI"); // 평가결과진행상태코드(등록)
 
-                workRiskEval01Mapper.createWorkRiskEval01PlanDept(workRiskEval01Plan.getWorkRiskEval01PlanDeptList().get(i));
+                workRiskEvalPlanMapper.createWorkRiskEvalPlanDept(workRiskEvalPlan.getWorkRiskEvalPlanDeptList().get(i));
             }
         }
 
-        return workRiskEval01Plan.getEvalNo();
+        return workRiskEvalPlan.getEvalNo();
     }
 
     /**
@@ -148,10 +148,10 @@ public class WorkRiskEval01Service {
      * @return 작업위험성평가 관리 상세조회
      * @throws Exception
      */
-    public WorkRiskEval01Plan getWorkRiskEval01Info(String plantCd, String evalYear, String evalNo, DefaultParam defaultParam) throws Exception {
-        WorkRiskEval01Plan workRiskEval01Plan = workRiskEval01Mapper.getWorkRiskEval01Info(plantCd, evalYear, evalNo, defaultParam);
+    public WorkRiskEvalPlan getWorkRiskEvalPlanInfo(String plantCd, String evalYear, String evalNo, DefaultParam defaultParam) throws Exception {
+        WorkRiskEvalPlan workRiskEvalPlan = workRiskEvalPlanMapper.getWorkRiskEvalPlanInfo(plantCd, evalYear, evalNo, defaultParam);
 
-        return workRiskEval01Plan;
+        return workRiskEvalPlan;
     }
 
     /**
@@ -162,10 +162,10 @@ public class WorkRiskEval01Service {
      * @return 작업위험성평가 관리 조회
      * @throws Exception
      */
-    public List<WorkRiskEval01PlanDeptList> getWorkRiskEval01detpLists(String plantCd, String evalYear, String evalNo, DefaultParam defaultParam) throws Exception {
-        List<WorkRiskEval01PlanDeptList> workRiskEval01PlanDeptList = workRiskEval01Mapper.getWorkRiskEval01detpLists(plantCd, evalYear, evalNo, defaultParam);
+    public List<WorkRiskEvalPlanDeptList> getWorkRiskEvalPlandetpLists(String plantCd, String evalYear, String evalNo, DefaultParam defaultParam) throws Exception {
+        List<WorkRiskEvalPlanDeptList> workRiskEvalPlanDeptList = workRiskEvalPlanMapper.getWorkRiskEvalPlandetpLists(plantCd, evalYear, evalNo, defaultParam);
 
-        return workRiskEval01PlanDeptList;
+        return workRiskEvalPlanDeptList;
     }
 
     /**
@@ -176,8 +176,8 @@ public class WorkRiskEval01Service {
      * @return 작업위험성평가 관리 삭제
      * @throws Exception
      */
-    public int deleteWorkRiskEval01(String plantCd, String evalYear, String evalNo) throws Exception {
-        return workRiskEval01Mapper.deleteWorkRiskEval01(plantCd, evalYear, evalNo);
+    public int deleteWorkRiskEvalPlan(String plantCd, String evalYear, String evalNo) throws Exception {
+        return workRiskEvalPlanMapper.deleteWorkRiskEvalPlan(plantCd, evalYear, evalNo);
     }
 
     /**
@@ -188,10 +188,10 @@ public class WorkRiskEval01Service {
      * @throws Exception
      */
     public Map<String, String> createApprContents(String plantCd, String evalYear, String evalNo, String apprRqstNm, String apprBizCd, String linkUrl, DefaultParam defaultParam) throws Exception {
-        WorkRiskEval01Plan workRiskEval01Plan = workRiskEval01Mapper.getWorkRiskEval01Info(plantCd, evalYear, evalNo, defaultParam);
+        WorkRiskEvalPlan workRiskEvalPlan = workRiskEvalPlanMapper.getWorkRiskEvalPlanInfo(plantCd, evalYear, evalNo, defaultParam);
 
         Map<String, Object> param = new HashMap<>();
-        param.put("model", workRiskEval01Plan);
+        param.put("model", workRiskEvalPlan);
 
 //        String html = templateService.createApprHtml(param, apprRqstNm, apprBizCd, linkUrl);
         String html = "";
@@ -208,23 +208,23 @@ public class WorkRiskEval01Service {
 
     @Transactional
     public int updateAppr(String plantCd, String evalYear, String evalNo, String bizApprStepCd, int apprRqstNo) throws Exception {
-        int upAppr = workRiskEval01Mapper.updateAppr(plantCd, evalYear, evalNo, apprRqstNo, bizApprStepCd);
+        int upAppr = workRiskEvalPlanMapper.updateAppr(plantCd, evalYear, evalNo, apprRqstNo, bizApprStepCd);
         DefaultParam defaultParam = new DefaultParam("KR");
 
         // 결재완료일 경우 평가대상부서 팀장에게 메일발송
         if (bizApprStepCd.equals(ConstVal.COM_BIZ_APPR_STEP_COMPLETE)) {
-            WorkRiskEval01Plan workRiskEval01Plan = workRiskEval01Mapper.getWorkRiskEval01Info(plantCd, evalYear, evalNo, defaultParam);
-            List<WorkRiskEval01PlanDeptList> workRiskEval01PlanDeptList = workRiskEval01Mapper.getWorkRiskEval01detpLists(plantCd, evalYear, evalNo, defaultParam);
-            workRiskEval01Plan.setWorkRiskEval01PlanDeptList(workRiskEval01PlanDeptList);
+            WorkRiskEvalPlan workRiskEvalPlan = workRiskEvalPlanMapper.getWorkRiskEvalPlanInfo(plantCd, evalYear, evalNo, defaultParam);
+            List<WorkRiskEvalPlanDeptList> workRiskEvalPlanDeptList = workRiskEvalPlanMapper.getWorkRiskEvalPlandetpLists(plantCd, evalYear, evalNo, defaultParam);
+            workRiskEvalPlan.setWorkRiskEvalPlanDeptList(workRiskEvalPlanDeptList);
 
-            this.workRiskSendEmail(workRiskEval01Plan, ConstVal.ALARM_S10016, workRiskEval01Plan.getMgrId());
+            this.workRiskSendEmail(workRiskEvalPlan, ConstVal.ALARM_S10016, workRiskEvalPlan.getMgrId());
         }
 
         return upAppr;
     }
 
 	
-	  public int workRiskSendEmail(WorkRiskEval01Plan workRiskEval01Plan, String  alarmCd, String senderId) throws Exception { 
+	  public int workRiskSendEmail(WorkRiskEvalPlan workRiskEvalPlan, String  alarmCd, String senderId) throws Exception { 
 		  int resultNo = 0;
 		  
 		  if (Strings.isNullOrEmpty(alarmCd) || Strings.isNullOrEmpty(senderId)) {  
@@ -247,12 +247,12 @@ public class WorkRiskEval01Service {
 			  List<MailVo> mailVoList = new ArrayList<>(); 
 			  List<MailResult> results = null;
 			  
-			  for (WorkRiskEval01PlanDeptList workRiskEval01PlanDeptList :  workRiskEval01Plan.getWorkRiskEval01PlanDeptList()) {
+			  for (WorkRiskEvalPlanDeptList workRiskEvalPlanDeptList :  workRiskEvalPlan.getWorkRiskEvalPlanDeptList()) {
 				  HashMap<String, Object>  param = new HashMap<>(); 
-				  param.put("workRiskEval01Plan", workRiskEval01Plan);
+				  param.put("workRiskEvalPlan", workRiskEvalPlan);
 				  mailContents = templateService.createMailContents(param, templateUrl);
 				  
-				  receivers =  userService.getTeamLeader(workRiskEval01PlanDeptList.getDeptCd());
+				  receivers =  userService.getTeamLeader(workRiskEvalPlanDeptList.getDeptCd());
 				  receiverNms = String.join(",",  receivers.stream().map(User::getUserNm).toArray(String[]::new));
 				  receiverEmails = receivers.stream().map(User::getEmail).toArray(String[]::new);
 					  

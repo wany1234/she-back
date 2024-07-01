@@ -3,7 +3,7 @@ package com.she.rsa.model;
 import lombok.Data;
 
 @Data
-public class WorkRiskEval01PlanDeptList {
+public class WorkRiskEvalPlanDeptList {
 
     private String plantCd; // (C)사업장코드
     private String evalYear; // 평가년도

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace= "com.she.rsa.workRiskEval.mapper.WorkRiskEval01Mapper">
+<mapper namespace= "com.she.rsa.workRiskEval.mapper.WorkRiskEvalPlanMapper">
     <!-- 작업위험성평가계획 목록 조회 -->
-    <select id= "getworkRiskEval01Lists" resultType= "com.she.rsa.model.WorkRiskEval01Plan">
-    /* WorkRiskEval01Mapper.getworkRiskEval01Lists [WorkRiskEval01.xml] */
+    <select id= "getworkRiskEvalPlanLists" resultType= "com.she.rsa.model.WorkRiskEvalPlan">
+    /* WorkRiskEvalPlanMapper.getworkRiskEvalPlanLists [WorkRiskEvalPlan.xml] */
        select 
              rwep.plant_cd
            , cpc.code_nm as plant_nm
@@ -56,7 +56,7 @@
     
     <!-- 작업위험성평가계획 평가번호 채번 -->
     <select id= "getCreateEvalNo" resultType= "String">
-    /* WorkRiskEval01Mapper.getCreateEvalNo [WorkRiskEval01.xml] */
+    /* WorkRiskEvalPlanMapper.getCreateEvalNo [WorkRiskEvalPlan.xml] */
        select CONCAT('J','2023',FORMAT(ISNULL(MAX(CAST(SUBSTRING(eval_no, 6,3) AS integer)),0)+1, 'D3'))
        from rsa_wk_eval_plan
        where plant_cd   = #{plantCd}
@@ -64,8 +64,8 @@
     </select>
     
     <!-- 작업위험성평가 계획 등록 -->
-    <insert id ="createWorkRiskEval01" parameterType= "com.she.rsa.model.WorkRiskEval01Plan">
-    /* WorkRiskEval01Mapper.createWorkRiskEval01 [WorkRiskEval01.xml] */
+    <insert id ="createWorkRiskEvalPlan" parameterType= "com.she.rsa.model.WorkRiskEvalPlan">
+    /* WorkRiskEvalPlanMapper.createWorkRiskEvalPlan [WorkRiskEvalPlan.xml] */
        insert into rsa_wk_eval_plan
         (
              plant_cd
@@ -111,8 +111,8 @@
     </insert>
     
     <!-- 작업위험성평가 계획 수정 -->
-    <update id= "updateWorkRiskEval01" parameterType= "com.she.rsa.model.WorkRiskEval01Plan">
-        /* WorkRiskEval01Mapper.updateWorkRiskEval01 [WorkRiskEval01.xml] */
+    <update id= "updateWorkRiskEvalPlan" parameterType= "com.she.rsa.model.WorkRiskEvalPlan">
+        /* WorkRiskEvalPlanMapper.updateWorkRiskEvalPlan [WorkRiskEvalPlan.xml] */
         update rsa_wk_eval_plan
           set  eval_type_cd     = #{evalTypeCd}
              , eval_nm          = #{evalNm}
@@ -133,8 +133,8 @@
     </update>
     
     <!-- 작업위험성평가 계획 평가대상부서등록 -->
-    <insert id ="createWorkRiskEval01PlanDept" parameterType= "com.she.rsa.model.WorkRiskEval01PlanDeptList">
-    /* WorkRiskEval01Mapper.createRiskEval01PlanDept [WorkRiskEval01.xml] */
+    <insert id ="createWorkRiskEvalPlanDept" parameterType= "com.she.rsa.model.WorkRiskEvalPlanDeptList">
+    /* WorkRiskEvalPlanMapper.createRiskEval01PlanDept [WorkRiskEvalPlan.xml] */
         insert into rsa_wk_eval_dept
         (
              plant_cd
@@ -169,8 +169,8 @@
         )
     </insert>
     
-    <select id= "getWorkRiskEval01Info" resultType= "com.she.rsa.model.WorkRiskEval01Plan">
-        /* WorkRiskEval01Mapper.getWorkRiskEval01Info [WorkRiskEval01.xml] */
+    <select id= "getWorkRiskEvalPlanInfo" resultType= "com.she.rsa.model.WorkRiskEvalPlan">
+        /* WorkRiskEvalPlanMapper.getWorkRiskEvalPlanInfo [WorkRiskEvalPlan.xml] */
         select 
              rwep.plant_cd
            , cpc.code_nm as plant_nm
@@ -211,8 +211,8 @@
         and rwep.eval_no    = #{evalNo}
     </select>
     
-    <select id="getWorkRiskEval01detpLists" resultType= "com.she.rsa.model.WorkRiskEval01PlanDeptList">
-        /* WorkRiskEval01Mapper.getWorkRiskEval01detpLists [WorkRiskEval01.xml] */
+    <select id="getWorkRiskEvalPlandetpLists" resultType= "com.she.rsa.model.WorkRiskEvalPlanDeptList">
+        /* WorkRiskEvalPlanMapper.getWorkRiskEvalPlandetpLists [WorkRiskEvalPlan.xml] */
         select
              plant_cd
            , eval_year
@@ -238,22 +238,22 @@
           and eval_no   = #{evalNo}
     </select>
     
-    <delete id= "deleteWorkRiskEval01detpLists">
-        /* WorkRiskEval01Mapper.deleteWorkRiskEval01detpLists [WorkRiskEval01.xml] */
+    <delete id= "deleteWorkRiskEvalPlandetpLists">
+        /* WorkRiskEvalPlanMapper.deleteWorkRiskEvalPlandetpLists [WorkRiskEvalPlan.xml] */
         delete from rsa_wk_eval_dept
         where plant_cd  = #{plantCd}
           and eval_year = #{evalYear}
           and eval_no   = #{evalNo}
     </delete>
     
-    <delete id="deleteWorkRiskEval01">
-        /* WorkRiskEval01Mapper.deletePlanmgmt [WorkRiskEval01.xml] */
+    <delete id="deleteWorkRiskEvalPlan">
+        /* WorkRiskEvalPlanMapper.deletePlanmgmt [WorkRiskEvalPlan.xml] */
         delete from rsa_wk_eval_plan where plant_cd = #{plantCd} and eval_year = #{evalYear} and eval_no = #{evalNo}
         delete from rsa_wk_eval_dept where plant_cd = #{plantCd} and eval_year = #{evalYear} and eval_no = #{evalNo}
     </delete>
     
     <update id="updateAppr">
-        /* WorkRiskEval01Mapper.updateAppr [WorkRiskEval01.xml] */
+        /* WorkRiskEvalPlanMapper.updateAppr [WorkRiskEvalPlan.xml] */
         UPDATE rsa_wk_eval_plan
         SET appr_rqst_no = #{apprRqstNo}           
         <if test="bizApprStepCd != null and !bizApprStepCd.equals('')">

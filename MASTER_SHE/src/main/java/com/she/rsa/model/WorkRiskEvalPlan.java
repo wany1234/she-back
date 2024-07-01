@@ -6,7 +6,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-public class WorkRiskEval01Plan {
+public class WorkRiskEvalPlan {
 
     private String plantCd; // 사업장코드
     private String plantNm; // 사업장명
@@ -40,6 +40,6 @@ public class WorkRiskEval01Plan {
     private String docId;
 
     @ApiModelProperty(value = "평가대상부서 목록")
-    private List<WorkRiskEval01PlanDeptList> workRiskEval01PlanDeptList;
+    private List<WorkRiskEvalPlanDeptList> workRiskEvalPlanDeptList;
 
 }

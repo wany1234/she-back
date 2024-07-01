@@ -50,7 +50,7 @@ import com.she.mgt.mgtTarget.service.MgtTargetService;
 import com.she.psm.PsmDocu.service.PsmDocuService;
 import com.she.rsa.assess.service.AssessPlanService;
 import com.she.rsa.planmgmt.service.PlanmgmtService;
-import com.she.rsa.workRiskEval.service.WorkRiskEval01Service;
+import com.she.rsa.workRiskEval.service.WorkRiskEvalPlanService;
 import com.she.rsa.workRiskEval.service.WorkRiskEval04Service;
 import com.she.rsa.workRiskEval.service.WorkRiskEval05Service;
 import com.she.safety.accident.service.AccidentService;
@@ -178,7 +178,7 @@ public class ApprService {
     private GovImplChkService govImplChkService;
     
     @Autowired
-    private WorkRiskEval01Service workRiskEval01Service;
+    private WorkRiskEvalPlanService workRiskEvalPlanService;
     
     @Autowired
     private WorkRiskEval04Service workRiskEval04Service;
@@ -1086,7 +1086,7 @@ public class ApprService {
             inspectionSHService.resultUpdateAppr(Integer.parseInt(requestParams.get("implChkDeptNo")), bizApprStepCd, apprRqstNo);
         } else if (StringUtils.equals(appr.getApprBizCd(), "WK-EV-01")) {
             // 작업위험성평가 계획
-            workRiskEval01Service.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), bizApprStepCd, apprRqstNo);
+        	workRiskEvalPlanService.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), bizApprStepCd, apprRqstNo);
         } else if (StringUtils.equals(appr.getApprBizCd(), "WK-EV-02")) {
             // 작업 위험성평가 결과 결재요청
             workRiskEval04Service.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), requestParams.get("deptCd"), bizApprStepCd, apprRqstNo);
