@@ -10,6 +10,7 @@ public class SafHistory {
 	public String accidentYmd;
 	public String accidentLvlCd;
 	public String accidentAttCd;
+	public String accidentStepCd; 
 	public String accidentAttNm;
 	public String victimNm;
 	public String investYn; 

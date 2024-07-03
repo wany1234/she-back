@@ -519,6 +519,7 @@
 			, sa.accident_ymd 
 			, sa.accident_lvl_cd 
 			, sa.accident_att_cd 
+			, sa.accident_step_cd 
 			, saa.code_nm as accident_att_nm
 			, CONCAT(sav.victim_nm, '외 ', (SELECT count(*) from saf_accident_victim vv where sa.saf_accident_no = vv.saf_accident_no), '명') as victim_nm
 			, case when sa.invest_yn = 'Y' then '해당' else '미해당' end as invest_yn 
