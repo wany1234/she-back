@@ -46,7 +46,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.she.common.model.AttachFile;
 import com.she.common.model.DefaultParam;
 import com.she.common.model.Menu;
+import com.she.manage.model.EduHistory;
+import com.she.manage.model.EhrHistory;
+import com.she.manage.model.HeaHistory;
 import com.she.manage.model.LoginUserInfo;
+import com.she.manage.model.SafHistory;
 import com.she.manage.model.User;
 import com.she.manage.service.UserService;
 import com.she.security.auth.IAuthenticationFacade;
@@ -370,5 +374,49 @@ public class UserController {
     @GetMapping("/user/fileSearch")
     public ResponseEntity<AttachFile> fileSearch(@RequestParam HashMap<String, Object> param) throws Exception {
         return ResponseEntity.ok().body(userService.fileSearch(param));
+    }
+    
+    /**
+     * EHR 근무이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/user/ehrHistory/{userId}")
+    public ResponseEntity<List<EhrHistory>> ehrHistory(@PathVariable String userId) throws Exception {
+        return ResponseEntity.ok().body(userService.getEhrHistory(userId));
+    }
+    
+    /**
+     * 교육이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/user/eduHistory/{userId}")
+    public ResponseEntity<List<EduHistory>> eduHistory(@PathVariable String userId) throws Exception {
+        return ResponseEntity.ok().body(userService.getEduHistory(userId));
+    }
+    
+    /**
+     * 검진이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/user/heaHistory/{userId}")
+    public ResponseEntity<List<HeaHistory>> heaHistory(@PathVariable String userId) throws Exception {
+        return ResponseEntity.ok().body(userService.getHeaHistory(userId));
+    }
+    
+    /**
+     * 사고이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/user/safHistory/{userId}")
+    public ResponseEntity<List<SafHistory>> safHistory(@PathVariable String userId) throws Exception {
+        return ResponseEntity.ok().body(userService.getSafHistory(userId));
     }
 }

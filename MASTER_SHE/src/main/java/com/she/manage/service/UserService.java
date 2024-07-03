@@ -30,7 +30,11 @@ import com.she.common.model.Log;
 import com.she.common.model.Menu;
 import com.she.common.service.LogService;
 import com.she.manage.mapper.UserMapper;
+import com.she.manage.model.EduHistory;
+import com.she.manage.model.EhrHistory;
+import com.she.manage.model.HeaHistory;
 import com.she.manage.model.LoginUserInfo;
+import com.she.manage.model.SafHistory;
 import com.she.manage.model.User;
 import com.she.manage.model.UserAuthGrp;
 import com.she.manage.model.VendorUser;
@@ -341,5 +345,45 @@ public class UserService {
      */
     public List<User> getTeamLeader(@Param("deptCd") String deptCd) throws Exception {
         return userMapper.getTeamLeader(deptCd);
+    }
+    
+    /**
+     * EHR 근무이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public List<EhrHistory> getEhrHistory(@Param("userId") String userId) throws Exception{
+    	return userMapper.getEhrHistory(userId);
+    }
+    
+    /**
+     * 교육이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public List<EduHistory> getEduHistory(@Param("userId") String userId) throws Exception{
+    	return userMapper.getEduHistory(userId);
+    }
+    
+    /**
+     * 검진이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public List<HeaHistory> getHeaHistory(@Param("userId") String userId) throws Exception{
+    	return userMapper.getHeaHistory(userId);
+    }
+    
+    /**
+     * 사고이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public List<SafHistory> getSafHistory(@Param("userId") String userId) throws Exception{
+    	return userMapper.getSafHistory(userId);
     }
 }

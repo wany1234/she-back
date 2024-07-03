@@ -21,6 +21,10 @@ import org.springframework.stereotype.Repository;
 import com.she.common.model.AttachFile;
 import com.she.common.model.DefaultParam;
 import com.she.common.model.Menu;
+import com.she.manage.model.EduHistory;
+import com.she.manage.model.EhrHistory;
+import com.she.manage.model.HeaHistory;
+import com.she.manage.model.SafHistory;
 import com.she.manage.model.User;
 import com.she.manage.model.VendorUser;
 
@@ -197,4 +201,36 @@ public interface UserMapper {
      * @throws Exception
      */
     public List<User> getTeamLeader(@Param("deptCd") String deptCd) throws Exception;
+    
+    /**
+     * EHR 근무이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public List<EhrHistory> getEhrHistory(@Param("userId") String userId) throws Exception;
+    
+    /**
+     * 교육이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public List<EduHistory> getEduHistory(@Param("userId") String userId) throws Exception;
+    
+    /**
+     * 검진이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public List<HeaHistory> getHeaHistory(@Param("userId") String userId) throws Exception;
+    
+    /**
+     * 사고이력 조회
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public List<SafHistory> getSafHistory(@Param("userId") String userId) throws Exception;
 }

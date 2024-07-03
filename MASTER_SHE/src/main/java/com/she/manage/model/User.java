@@ -83,6 +83,10 @@ public class User {
     public String updateDt;
 
     public String signature;
+    
+    public String imageUrl;
+    
+	public String age;
 
     @ApiModelProperty(value = "패스워드SALT")
     public String salt;
@@ -552,5 +556,21 @@ public class User {
     public void setDeptNmHr(String deptNmHr) {
         this.deptNmHr = deptNmHr;
     }
+    
+    public String getImageUrl() {
+		return imageUrl;
+	}
+
+	public void setImageUrl(String imageUrl) {
+		this.imageUrl = imageUrl;
+	}
+
+	public String getAge() {
+		return age;
+	}
+
+	public void setAge(String age) {
+		this.age = age;
+	}
 
 }

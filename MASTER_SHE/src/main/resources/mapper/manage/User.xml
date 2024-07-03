@@ -101,6 +101,7 @@
             , u.duty_cd, duty.duty_nm
             , u.position_cd, position.position_nm
             , u.signature
+            , FLOOR(CAST(DATEDIFF(day,u.birth_ymd,getdate()) AS integer)/365.2422) as age
         from com_user u
         inner join com_dept d
         on u.dept_cd = d.dept_cd
@@ -435,6 +436,99 @@
         where u.dept_cd = #{deptCd}
         and u.duty_cd = '21'
         and u.use_yn = 'Y'
+    </select>
+    
+    <select id="getEhrHistory" resultType="com.she.manage.model.EhrHistory">
+    /* UserMapper.getEhrHistory [User.xml] */
+    	SELECT 
+	      	ewi.plant_cd
+			,ewi.user_id
+			,ewi.work_no
+			,ewi.appo_cd
+			,ewi.appo_ymd
+			,ewi.end_ymd
+			,ewi.appo_nm
+			,ewi.dept_cd
+			,d.dept_nm
+			,ewi.position_cd
+			,ewi.duty_cd
+			,ewi.work_situ_cd
+			,ewi.history
+			,ewi.last_yn
+      from ehr_work_info ewi
+      inner join com_dept d
+      on ewi.dept_cd = d.dept_cd
+      where 1 = 1
+      and user_id = #{userId}
+    </select>
+    
+    <select id="getEduHistory" resultType="com.she.manage.model.EduHistory">
+    /* UserMapper.getEduHistory [User.xml] */
+    	SELECT  sem.saf_edu_mst_no 
+		      , sem.saf_edu_course_no 
+		      , sem.year 
+		      , saet.code_nm as etc_pe_nm
+		      , saec.code_nm as etc_de_nm
+		      , sem.edu_nm 
+		      , sec.edu_course_nm 
+		      , sem.edu_s_ymd 
+		      , sem.edu_e_ymd 
+		      , CONCAT(sem.edu_s_ymd,' ~ ',sem.edu_e_ymd ) as prd 
+		      , sedp.complet_ymd 
+		      , sedp.complet_yn 
+	      from saf_edu_mst sem 
+	      inner join saf_edu_dtl_psn sedp 
+	      on sem.saf_edu_mst_no = sedp.saf_edu_mst_no 
+	      inner join saf_edu_course sec 
+	      on sem.saf_edu_course_no = sec.saf_edu_course_no 
+	      inner join dbo.LANG_CODE_MASTER('kr', 'SAF_EDU_TYPE') saet
+	      on sem.edu_type_cd  = saet.code  
+	      inner join dbo.LANG_CODE_MASTER('kr', 'SAF_EDU_COURSE') saec
+	      on sec.edu_type_cd  = saec.code 
+	      where sedp.user_id = #{userId}
+	      order by sem.edu_s_ymd desc
+    </select>
+    
+    <select id="getHeaHistory" resultType="com.she.manage.model.HeaHistory">
+    /* UserMapper.getHeaHistory [User.xml] */
+    SELECT  hcp.hea_checkup_plan_no 
+		, hcp.hea_checkup_plan_nm 
+		, hcr.hea_checked_ymd 
+		, hcc.code_nm as hcc_nm
+		, hct.code_nm as htc_nm
+		, (SELECT hsh.suspect_yn
+			from hea_suspect_hst hsh 
+			where  hcr.hea_checkup_plan_no = hsh.hea_checkup_plan_no 
+			and hsh.user_id = #{userId}) as suspect_yn
+		from hea_checkup_result hcr 
+		inner join hea_checkup_plan hcp 
+		on hcr.hea_checkup_plan_no = hcp.hea_checkup_plan_no 
+		inner join dbo.LANG_CODE_MASTER('kr', 'HEA_CHECKUP_CLASS') hcc
+		on hcp.hea_checkup_class_cd  = hcc.code  
+		inner join dbo.LANG_CODE_MASTER('kr', 'HEA_CHECKUP_TYPE') hct
+		on hcr.hea_checkup_type_cd  = hct.code  
+		where 1 = 1
+		and hcr.user_id = #{userId}
+    </select>
+    
+    <select id="getSafHistory" resultType="com.she.manage.model.SafHistory">
+    /* UserMapper.getSafHistory [User.xml] */
+    SELECT  sa.saf_accident_no 
+			, sa.accident_title 
+			, sa.area 
+			, sa.accident_ymd 
+			, sa.accident_lvl_cd 
+			, sa.accident_att_cd 
+			, saa.code_nm as accident_att_nm
+			, CONCAT(sav.victim_nm, '외 ', (SELECT count(*) from saf_accident_victim vv where sa.saf_accident_no = vv.saf_accident_no), '명') as victim_nm
+			, case when sa.invest_yn = 'Y' then '해당' else '미해당' end as invest_yn 
+		from saf_accident sa
+		inner join saf_accident_victim sav
+		on sav.saf_accident_no = sa.saf_accident_no 
+		inner join dbo.LANG_CODE_MASTER('kr', 'SAF_ACCIDENT_ATT') saa
+		on sa.accident_att_cd  = saa.code
+		where 1 = 1
+		and victim_user_id = 'manager'
     </select>
 
 </mapper>
