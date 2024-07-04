@@ -111,6 +111,9 @@ public class FacilityChemprodController {
      */
     @GetMapping("print/{plantCd}/{plantNm}")
     public @ResponseBody byte[] getRiskHazardPrint(@PathVariable("plantCd") String plantCd, @PathVariable("plantNm") String plantNm) throws Exception {
+    	if(plantCd.equals("null")) { // 문자 "null"일경우 null처리
+    		plantCd = null;
+    	}
 
         File file = facilityChemprodService.getRiskHazardPrint(plantCd, plantNm);
 
