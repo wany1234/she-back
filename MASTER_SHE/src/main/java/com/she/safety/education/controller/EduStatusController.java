@@ -87,8 +87,11 @@ public class EduStatusController {
         String mainDeptSubYn = map.containsKey("mainDeptSubYn") ? map.get("mainDeptSubYn").toString() : "";
         String targetDeptSubYn = map.containsKey("targetDeptSubYn") ? map.get("targetDeptSubYn").toString() : "";
         String execDeptSubYn = map.containsKey("execDeptSubYn") ? map.get("execDeptSubYn").toString() : "";
+        String reEduYn = map.containsKey("reEduYn") ? map.get("reEduYn").toString() : "";
+        String eduMethodCd = map.containsKey("eduMethodCd") ? map.get("eduMethodCd").toString() : "";
 
-        List<EduMaster> eduMasterList = eduStatusService.getEduStatuss(year, pStateCd, isTypeCd, mainDeptCd, targetDeptCd, execDeptCd, fromYmd, toYmd, deptCd, deptSubYn, tgtDeptCd, eduAttCd, safEduCourseNo, eduTypeCd, eduNm, eduClassCd, plantCd, pProcStepNm, pYear, pMonth, mainDeptSubYn, targetDeptSubYn, execDeptSubYn, defaultParam);
+        List<EduMaster> eduMasterList = eduStatusService.getEduStatuss(year, pStateCd, isTypeCd, mainDeptCd, targetDeptCd, execDeptCd, fromYmd, toYmd, deptCd, deptSubYn, tgtDeptCd, eduAttCd, safEduCourseNo, eduTypeCd, eduNm, eduClassCd, plantCd, pProcStepNm, pYear, pMonth, mainDeptSubYn, targetDeptSubYn, execDeptSubYn, reEduYn, eduMethodCd,
+                defaultParam);
 
         return ResponseEntity.ok().body(eduMasterList);
     }

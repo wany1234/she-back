@@ -29,7 +29,7 @@ public class EduDetailPerson {
 
     private String remark;
 
-    private String reEduYn;
+    private String reEduExcYn;
 
     private String eduEvalPnt;
 

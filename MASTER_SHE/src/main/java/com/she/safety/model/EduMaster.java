@@ -220,7 +220,7 @@ public class EduMaster {
 
     private String month12Num;
 
-    private String reEduYn;
+    private String reEduExcYn;
 
     private String reEduSYmd;
 
@@ -273,4 +273,13 @@ public class EduMaster {
     private String reEduNotYn;
 
     private String eduCompletYn;
+
+    private String reEduYn;
+
+    private String eduMethodCd;
+
+    private String eduMethodNm;
+
+    EduVideo eduVideo;
+
 }

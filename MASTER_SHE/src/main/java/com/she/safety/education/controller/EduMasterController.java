@@ -44,6 +44,7 @@ import com.she.safety.model.EduMaster;
 import com.she.safety.model.EduOutsideUser;
 import com.she.safety.model.EduProblemMgt;
 import com.she.safety.model.EduQuestionList;
+import com.she.safety.model.EduVideo;
 import com.she.utils.ConstVal;
 import com.she.utils.RequestMapper;
 
@@ -598,5 +599,21 @@ public class EduMasterController {
         String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
 
         return ResponseEntity.ok().body(eduMasterService.getEduCoursePsn(safEduCourseNo, plantCd));
+    }
+
+    /**
+     * 교육동영상 상세조회
+     *
+     * @param safEduMstNo
+     *            교육마스터번호
+     * @param safEduCourseNo
+     *            교육과정번호
+     * @return EduVideo 교육동영상
+     * @throws Exception
+     *             예외
+     */
+    @GetMapping("/eduvideo/{safEduMstNo}/{safEduCourseNo}")
+    public ResponseEntity<EduVideo> getEduVideo(@PathVariable("safEduMstNo") int safEduMstNo, @PathVariable("safEduCourseNo") int safEduCourseNo) throws Exception {
+        return ResponseEntity.ok().body(eduMasterService.getEduVideo(safEduMstNo, safEduCourseNo));
     }
 }

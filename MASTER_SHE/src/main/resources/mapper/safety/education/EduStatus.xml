@@ -88,7 +88,7 @@
             left outer join saf_edu_dtl_psn b
             on a.saf_edu_mst_no = b.saf_edu_mst_no
             where a.saf_edu_mst_no = m.saf_edu_mst_no
-            and a.re_edu_yn = 'Y' ) else 0 end as reEduPerson
+            and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduPerson
 
 
 
@@ -97,12 +97,15 @@
             left outer join saf_edu_dtl_psn b
             on a.saf_edu_mst_no = b.saf_edu_mst_no
             where a.saf_edu_mst_no = m.saf_edu_mst_no
-            and a.re_edu_yn = 'Y' ) else 0 end as reEduAbsentPerson
+            and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduAbsentPerson
            --  , count(*) as totalUserNum
             -- , sum(case when p.complet_yn='Y' then 1 else 0 end ) as passUserNum
-            -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_yn,'N')='N' then 1 else 0 end ) as failUserNum
-            -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_yn,'N')='Y' then 1 else 0 end ) as exceptUserNum
+            -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='N' then 1 else 0 end ) as failUserNum
+            -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='Y' then 1 else 0 end ) as exceptUserNum
             ,ar.appr_rqst_no as rapprRqstNo
+            ,m.re_edu_yn
+            ,m.edu_method_cd
+            ,c8.code_nm as edu_method_nm
         from saf_edu_mst m
        left outer join com_dept cd1 on m.main_dept_cd = cd1.dept_cd
         left outer join com_dept cd2 on m.target_dept_cd = cd2.dept_cd
@@ -115,6 +118,7 @@
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c4 on m.plant_cd = c4.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') c6 on co.is_type_cd = c6.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP')c7 on m.process_step_cd=c7.code  
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD')c8 on m.edu_method_cd=c8.code 
         left outer join com_dept c5 on c5.dept_cd = m.dept_cd
         left outer join com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm on cm.code = ar.biz_appr_step_cd
@@ -198,6 +202,12 @@
         </if>
         <if test='isTypeCd != null and isTypeCd != "" '>
         and co.is_type_cd = #{isTypeCd}
+        </if>
+        <if test='reEduYn != null and reEduYn != "" '>
+        and m.re_edu_yn = #{reEduYn}
+        </if>
+        <if test='eduMethodCd != null and eduMethodCd != "" '>
+        and m.edu_method_cd = #{eduMethodCd}
         </if>
 
         order by writer_dt desc, m.edu_s_ymd desc
@@ -287,7 +297,7 @@
             left outer join saf_edu_dtl_psn b
             on a.saf_edu_mst_no = b.saf_edu_mst_no
             where a.saf_edu_mst_no = m.saf_edu_mst_no
-            and a.re_edu_yn = 'Y' ) else 0 end as reEduPerson
+            and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduPerson
 
 
 
@@ -296,11 +306,11 @@
             left outer join saf_edu_dtl_psn b
             on a.saf_edu_mst_no = b.saf_edu_mst_no
             where a.saf_edu_mst_no = m.saf_edu_mst_no
-            and a.re_edu_yn = 'Y' ) else 0 end as reEduAbsentPerson
+            and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduAbsentPerson
            --  , count(*) as totalUserNum
             -- , sum(case when p.complet_yn='Y' then 1 else 0 end ) as passUserNum
-            -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_yn,'N')='N' then 1 else 0 end ) as failUserNum
-            -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_yn,'N')='Y' then 1 else 0 end ) as exceptUserNum
+            -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='N' then 1 else 0 end ) as failUserNum
+            -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='Y' then 1 else 0 end ) as exceptUserNum
             ,ar.appr_rqst_no as papprRqstNo
             ,arr.appr_rqst_no as rapprRqstNo
         from saf_edu_mst m

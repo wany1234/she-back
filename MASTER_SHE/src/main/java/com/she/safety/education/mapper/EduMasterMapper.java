@@ -12,6 +12,7 @@ import com.she.manage.model.User;
 import com.she.safety.model.EduDetailPerson;
 import com.she.safety.model.EduMaster;
 import com.she.safety.model.EduOutsideUser;
+import com.she.safety.model.EduVideo;
 
 @Mapper
 @Repository("com.she.safety.education.mapper.EduMasterMapper")
@@ -366,5 +367,51 @@ public interface EduMasterMapper {
      *             예외
      */
     public List<EduDetailPerson> getEduCoursePsn(@Param("safEduCourseNo") int safEduCourseNo, @Param("plantCd") String plantCd) throws Exception;
+
+    /**
+     * 교육과정별동영상 신규등록
+     * 
+     * @param EduVideo
+     *            교육과정별동영상
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+    public int createEduVideo(EduVideo eduVideo) throws Exception;
+
+    /**
+     * 교육과정별동영상 수정
+     * 
+     * @param EduVideo
+     *            교육과정별동영상
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+    public int updateEduVideo(EduVideo eduVideo) throws Exception;
+
+    /**
+     * 교육과정별동영상 삭제
+     * 
+     * @param eduVideoNo
+     *            교육과정별동영상번호
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+    public int deleteEduVideo(@Param("eduVideoNo") int eduVideoNo) throws Exception;
+
+    /**
+     * 교육동영상 상세조회
+     *
+     * @param safEduMstNo
+     *            교육마스터번호
+     * @param safEduCourseNo
+     *            교육과정번호
+     * @return EduVideo 교육동영상
+     * @throws Exception
+     *             예외
+     */
+    public EduVideo getEduVideo(@Param("safEduMstNo") int safEduMstNo, @Param("safEduCourseNo") int safEduCourseNo) throws Exception;
 
 }

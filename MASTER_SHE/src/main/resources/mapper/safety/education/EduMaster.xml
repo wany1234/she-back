@@ -80,7 +80,7 @@
               ,m.update_dt
               ,cu.user_nm as create_user_nm
               ,uu.user_nm as update_user_nm
-              ,m.re_edu_yn    
+              ,m.re_edu_exc_yn    
               ,m.re_edu_s_ymd 
               ,m.re_edu_e_ymd 
               ,m.re_edu_time  
@@ -92,6 +92,8 @@
               ,sc.saf_chng_no
               ,sc.chng_num -->
               ,m.chng_num
+              ,m.edu_method_cd
+              ,c5.code_nm as edu_method_nm
           FROM saf_edu_mst m
          INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code
           LEFT OUTER JOIN saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
@@ -110,6 +112,7 @@
           LEFT OUTER JOIN com_user cu on m.create_user_id = cu.user_id
           LEFT OUTER JOIN com_user uu on m.update_user_id = uu.user_id
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') cc4 on co.is_type_cd = cc4.code
+          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') c5 on co.is_type_cd = c5.code
         <!-- 변경관리 연동 X
           LEFT OUTER JOIN saf_chng_ref_work scrw
             ON scrw.ref_table_nm = 'saf_edu_mst'
@@ -154,6 +157,7 @@
             ,p_step_cd
             ,p_proc_step_cd
             ,p_state_cd
+            ,edu_method_cd
         )
         VALUES
         ( 
@@ -190,6 +194,7 @@
             <if test="pStateNm == null or pStateNm.equals('')">
             ,'STATE2'  
             </if>  
+            ,#{eduMethodCd}
         )
     </insert>
 
@@ -222,6 +227,7 @@
             ,update_user_id = #{updateUserId}
             ,update_dt = getDate()
             ,chng_num = #{chngNum}
+            ,edu_method_cd = #{eduMethodCd}
         where saf_edu_mst_no = #{safEduMstNo}
     </update>
     
@@ -453,7 +459,7 @@
     <!-- 불참자 재교육  -->    
     <update id= "updateReEduMaster" parameterType= "com.she.safety.model.EduMaster">
         update saf_edu_mst set
-             re_edu_yn    = 'Y'
+             re_edu_exc_yn    = 'Y'
             ,re_edu_s_ymd = #{reEduSYmd}
             ,re_edu_e_ymd = #{reEduEYmd}
             ,re_edu_time = #{reEduTime}
@@ -728,6 +734,90 @@
                                     inner join saf_edu_course_grp secg on sec.saf_edu_course_no = secg.saf_edu_course_no
                                     where sec.saf_edu_course_no = #{safEduCourseNo}
                                     and sec.plant_cd = #{plantCd})
+    </select>
+    
+    
+    <insert id= "createEduVideo" parameterType= "com.she.safety.model.EduVideo">
+        <selectKey keyProperty= "eduVideoNo" resultType= "int" order= "BEFORE">
+             SELECT ISNULL(MAX(edu_video_no),0)+1 AS edu_video_no
+              FROM saf_edu_video
+        </selectKey>
+     
+        insert into saf_edu_video
+        ( 
+            saf_edu_mst_no
+            ,saf_edu_course_no
+            ,edu_video_no
+            ,plant_cd            
+            ,video_url
+            ,video_total_time
+            ,video_comp_time
+            ,use_yn
+            ,create_user_id
+            ,create_dt
+            ,create_dept_cd
+            ,create_dept_nm
+            ,create_position_cd
+            ,create_position_nm
+        )
+        VALUES
+        ( 
+            #{safEduMstNo}
+            ,#{safEduCourseNo}
+            ,#{eduVideoNo}
+            ,#{plantCd}
+            ,#{videoUrl}
+            ,#{videoTotalTime}
+            ,#{videoCompTime}
+            ,'Y'
+            ,#{createUserId}
+            ,getDate()
+            , (select dept_cd from com_user where user_id = #{createUserId})
+            , (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
+            , (select position_cd from com_user where user_id = #{createUserId})
+            , (select position_nm from com_user where user_id = #{createUserId})
+        )
+    </insert>
+    
+    <update id= "updateEduVideo" parameterType= "com.she.safety.model.EduVideo">
+        update saf_edu_video
+        SET video_url = #{videoUrl}
+            ,video_total_time= #{videoTotalTime}
+            ,video_comp_time= #{videoCompTime}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+            , update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
+            , update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
+            , update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
+            , update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
+        where edu_video_no = #{eduVideoNo}
+    </update>
+    
+    <delete id= "deleteEduVideo">
+        delete from saf_edu_video
+        where edu_video_no = #{eduVideoNo}
+    </delete>
+    
+    <select id= "getEduVideo" resultType= "com.she.safety.model.EduVideo">
+        select TOP 1
+             saf_edu_mst_no
+            ,saf_edu_course_no
+            ,edu_video_no
+            ,plant_cd            
+            ,video_url
+            ,video_total_time
+            ,video_comp_time
+            ,use_yn
+            ,sort_order
+            ,create_user_id
+            ,create_dt
+            ,update_user_id
+            ,update_dt
+        FROM saf_edu_video
+        where 1=1
+            and saf_edu_mst_no = #{safEduMstNo}
+            and saf_edu_course_no = #{safEduCourseNo}
+        order by edu_video_no desc
     </select>
     
 </mapper>

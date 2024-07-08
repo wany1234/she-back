@@ -31,6 +31,7 @@ import com.she.safety.education.mapper.EduMasterMapper;
 import com.she.safety.model.EduDetailPerson;
 import com.she.safety.model.EduMaster;
 import com.she.safety.model.EduOutsideUser;
+import com.she.safety.model.EduVideo;
 import com.she.utils.ConstVal;
 import com.she.utils.ExcelReader;
 import com.she.utils.POIUtil;
@@ -108,6 +109,16 @@ public class EduMasterService {
             this.eduMasterMapper.createPlanQuestion(String.valueOf(eduMaster.getSafEduMstNo()), String.valueOf(eduQuestionLstNo));
         }
 
+        if (ConstVal.EDU_METHOD_VIDEO.equals(eduMaster.getEduMethodCd())) {
+            EduVideo eduVideo = new EduVideo();
+            eduVideo = eduMaster.getEduVideo();
+            eduVideo.setSafEduMstNo(eduMaster.getSafEduMstNo());
+            eduVideo.setSafEduCourseNo(eduMaster.getSafEduCourseNo());
+            eduVideo.setPlantCd(eduMaster.getPlantCd());
+            eduVideo.setCreateUserId(eduMaster.getCreateUserId());
+            this.eduMasterMapper.createEduVideo(eduVideo);
+        }
+
         /**
          * 2022.02.21 LHJ MOC 번호 직접입력으로 변경
          */
@@ -154,6 +165,29 @@ public class EduMasterService {
             for (int eduQuestionLstNo : Optional.ofNullable(eduMaster.getQuestionLsts()).orElse(new int[0])) {
                 this.eduMasterMapper.createPlanQuestion(String.valueOf(eduMaster.getSafEduMstNo()), String.valueOf(eduQuestionLstNo));
             }
+        }
+
+        if (ConstVal.EDU_METHOD_VIDEO.equals(eduMaster.getEduMethodCd())) {
+            if (eduMaster.getEduVideo().getEduVideoNo() == 0) {
+                EduVideo eduVideo = new EduVideo();
+                eduVideo = eduMaster.getEduVideo();
+                eduVideo.setSafEduMstNo(eduMaster.getSafEduMstNo());
+                eduVideo.setSafEduCourseNo(eduMaster.getSafEduCourseNo());
+                eduVideo.setPlantCd(eduMaster.getPlantCd());
+                eduVideo.setCreateUserId(eduMaster.getCreateUserId());
+                this.eduMasterMapper.createEduVideo(eduVideo);
+            } else {
+                EduVideo eduVideo = new EduVideo();
+                eduVideo = eduMaster.getEduVideo();
+                eduVideo.setUpdateUserId(eduMaster.getUpdateUserId());
+                this.eduMasterMapper.updateEduVideo(eduVideo);
+            }
+
+        } else {
+            if (eduMaster.getEduVideo() != null) {
+                this.eduMasterMapper.deleteEduVideo(eduMaster.getEduVideo().getEduVideoNo());
+            }
+
         }
 
         /**
@@ -611,5 +645,20 @@ public class EduMasterService {
      */
     public List<EduDetailPerson> getEduCoursePsn(int safEduCourseNo, String plantCd) throws Exception {
         return eduMasterMapper.getEduCoursePsn(safEduCourseNo, plantCd);
+    }
+
+    /**
+     * 교육동영상 상세조회
+     *
+     * @param safEduMstNo
+     *            교육마스터번호
+     * @param safEduCourseNo
+     *            교육과정번호
+     * @return EduVideo 교육동영상
+     * @throws Exception
+     *             예외
+     */
+    public EduVideo getEduVideo(int safEduMstNo, int safEduCourseNo) throws Exception {
+        return eduMasterMapper.getEduVideo(safEduMstNo, safEduCourseNo);
     }
 }
