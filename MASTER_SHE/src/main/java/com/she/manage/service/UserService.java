@@ -353,8 +353,8 @@ public class UserService {
      * @return
      * @throws Exception
      */
-    public List<EhrHistory> getEhrHistory(@Param("userId") String userId) throws Exception{
-    	return userMapper.getEhrHistory(userId);
+    public List<EhrHistory> getEhrHistory(@Param("userId") String userId, DefaultParam defaultParam) throws Exception{
+    	return userMapper.getEhrHistory(userId, defaultParam);
     }
     
     /**
@@ -363,8 +363,8 @@ public class UserService {
      * @return
      * @throws Exception
      */
-    public List<EduHistory> getEduHistory(@Param("userId") String userId) throws Exception{
-    	return userMapper.getEduHistory(userId);
+    public List<EduHistory> getEduHistory(@Param("userId") String userId, DefaultParam defaultParam) throws Exception{
+    	return userMapper.getEduHistory(userId, defaultParam);
     }
     
     /**
@@ -373,8 +373,8 @@ public class UserService {
      * @return
      * @throws Exception
      */
-    public List<HeaHistory> getHeaHistory(@Param("userId") String userId) throws Exception{
-    	return userMapper.getHeaHistory(userId);
+    public List<HeaHistory> getHeaHistory(@Param("userId") String userId, DefaultParam defaultParam) throws Exception{
+    	return userMapper.getHeaHistory(userId, defaultParam);
     }
     
     /**
@@ -383,7 +383,7 @@ public class UserService {
      * @return
      * @throws Exception
      */
-    public List<SafHistory> getSafHistory(@Param("userId") String userId) throws Exception{
-    	return userMapper.getSafHistory(userId);
+    public List<SafHistory> getSafHistory(@Param("userId") String userId, DefaultParam defaultParam) throws Exception{
+    	return userMapper.getSafHistory(userId, defaultParam);
     }
 }

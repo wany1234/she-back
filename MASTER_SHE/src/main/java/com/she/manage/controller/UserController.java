@@ -383,8 +383,8 @@ public class UserController {
      * @throws Exception
      */
     @GetMapping("/user/ehrHistory/{userId}")
-    public ResponseEntity<List<EhrHistory>> ehrHistory(@PathVariable String userId) throws Exception {
-        return ResponseEntity.ok().body(userService.getEhrHistory(userId));
+    public ResponseEntity<List<EhrHistory>> ehrHistory(@PathVariable String userId, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        return ResponseEntity.ok().body(userService.getEhrHistory(userId, defaultParam));
     }
     
     /**
@@ -394,8 +394,8 @@ public class UserController {
      * @throws Exception
      */
     @GetMapping("/user/eduHistory/{userId}")
-    public ResponseEntity<List<EduHistory>> eduHistory(@PathVariable String userId) throws Exception {
-        return ResponseEntity.ok().body(userService.getEduHistory(userId));
+    public ResponseEntity<List<EduHistory>> eduHistory(@PathVariable String userId, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        return ResponseEntity.ok().body(userService.getEduHistory(userId, defaultParam));
     }
     
     /**
@@ -405,8 +405,8 @@ public class UserController {
      * @throws Exception
      */
     @GetMapping("/user/heaHistory/{userId}")
-    public ResponseEntity<List<HeaHistory>> heaHistory(@PathVariable String userId) throws Exception {
-        return ResponseEntity.ok().body(userService.getHeaHistory(userId));
+    public ResponseEntity<List<HeaHistory>> heaHistory(@PathVariable String userId, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        return ResponseEntity.ok().body(userService.getHeaHistory(userId, defaultParam));
     }
     
     /**
@@ -416,7 +416,7 @@ public class UserController {
      * @throws Exception
      */
     @GetMapping("/user/safHistory/{userId}")
-    public ResponseEntity<List<SafHistory>> safHistory(@PathVariable String userId) throws Exception {
-        return ResponseEntity.ok().body(userService.getSafHistory(userId));
+    public ResponseEntity<List<SafHistory>> safHistory(@PathVariable String userId, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        return ResponseEntity.ok().body(userService.getSafHistory(userId, defaultParam));
     }
 }

@@ -208,7 +208,7 @@ public interface UserMapper {
      * @return
      * @throws Exception
      */
-    public List<EhrHistory> getEhrHistory(@Param("userId") String userId) throws Exception;
+    public List<EhrHistory> getEhrHistory(@Param("userId") String userId, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
     
     /**
      * 교육이력 조회
@@ -216,7 +216,7 @@ public interface UserMapper {
      * @return
      * @throws Exception
      */
-    public List<EduHistory> getEduHistory(@Param("userId") String userId) throws Exception;
+    public List<EduHistory> getEduHistory(@Param("userId") String userId, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
     
     /**
      * 검진이력 조회
@@ -224,7 +224,7 @@ public interface UserMapper {
      * @return
      * @throws Exception
      */
-    public List<HeaHistory> getHeaHistory(@Param("userId") String userId) throws Exception;
+    public List<HeaHistory> getHeaHistory(@Param("userId") String userId, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
     
     /**
      * 사고이력 조회
@@ -232,5 +232,5 @@ public interface UserMapper {
      * @return
      * @throws Exception
      */
-    public List<SafHistory> getSafHistory(@Param("userId") String userId) throws Exception;
+    public List<SafHistory> getSafHistory(@Param("userId") String userId, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 }

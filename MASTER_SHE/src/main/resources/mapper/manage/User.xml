@@ -481,9 +481,9 @@
 	      on sem.saf_edu_mst_no = sedp.saf_edu_mst_no 
 	      inner join saf_edu_course sec 
 	      on sem.saf_edu_course_no = sec.saf_edu_course_no 
-	      inner join dbo.LANG_CODE_MASTER('kr', 'SAF_EDU_TYPE') saet
+	      inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_TYPE') saet
 	      on sem.edu_type_cd  = saet.code  
-	      inner join dbo.LANG_CODE_MASTER('kr', 'SAF_EDU_COURSE') saec
+	      inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') saec
 	      on sec.edu_type_cd  = saec.code 
 	      where sedp.user_id = #{userId}
 	      order by sem.edu_s_ymd desc
@@ -503,9 +503,9 @@
 		from hea_checkup_result hcr 
 		inner join hea_checkup_plan hcp 
 		on hcr.hea_checkup_plan_no = hcp.hea_checkup_plan_no 
-		inner join dbo.LANG_CODE_MASTER('kr', 'HEA_CHECKUP_CLASS') hcc
+		inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'HEA_CHECKUP_CLASS') hcc
 		on hcp.hea_checkup_class_cd  = hcc.code  
-		inner join dbo.LANG_CODE_MASTER('kr', 'HEA_CHECKUP_TYPE') hct
+		inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'HEA_CHECKUP_TYPE') hct
 		on hcr.hea_checkup_type_cd  = hct.code  
 		where 1 = 1
 		and hcr.user_id = #{userId}
@@ -526,7 +526,7 @@
 		from saf_accident sa
 		inner join saf_accident_victim sav
 		on sav.saf_accident_no = sa.saf_accident_no 
-		inner join dbo.LANG_CODE_MASTER('kr', 'SAF_ACCIDENT_ATT') saa
+		inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACCIDENT_ATT') saa
 		on sa.accident_att_cd  = saa.code
 		where 1 = 1
 		and victim_user_id = 'manager'
