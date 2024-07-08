@@ -1500,4 +1500,35 @@
         from com_signature
         where wkod_no = #{wkodNo}
     </select>
+    
+    <select id="getSafWkodMapBig" resultType="com.she.safety.model.WkodMapBig">
+    	SELECT sem.saf_edu_mst_no 
+    	, (SELECT COUNT(*)  from saf_edu_dtl_psn sedp where sem.saf_edu_mst_no = sedp.saf_edu_mst_no) as cnt
+	     from saf_edu_mst sem 
+	     where sem.saf_edu_course_no = #{safEduCourseNo}
+    </select>
+    
+    <select id="getSafWkodMapMid" resultType="com.she.safety.model.WkodMapMid">
+    SELECT 
+      sem.edu_nm 
+     , sedp.complet_yn 
+     , count(*) as cnt
+     from saf_edu_mst sem 
+     inner join saf_edu_dtl_psn sedp
+     on sem.saf_edu_mst_no = sedp.saf_edu_mst_no
+     where sem.saf_edu_course_no = #{safEduCourseNo}
+     and sem.saf_edu_mst_no = #{safEduMstNo}
+     GROUP by sem.edu_nm , complet_yn
+    </select>
+    
+    <select id="getSafWkodMapSml" resultType="com.she.safety.model.WkodMapSml">
+	    SELECT sedp.user_id 
+	     , sedp.complet_yn 
+	     from saf_edu_mst sem 
+	     inner join saf_edu_dtl_psn sedp
+	     on sem.saf_edu_mst_no = sedp.saf_edu_mst_no
+	     where sem.saf_edu_course_no = #{safEduCourseNo}
+	     and sem.saf_edu_mst_no = #{safEduMstNo}
+	     and complet_yn = #{completYn}
+    </select>
 </mapper>

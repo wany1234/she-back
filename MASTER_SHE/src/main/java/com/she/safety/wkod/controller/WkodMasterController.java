@@ -52,6 +52,9 @@ import com.she.safety.model.LOTO;
 import com.she.safety.model.Map;
 import com.she.safety.model.Signature;
 import com.she.safety.model.WkodChkResult;
+import com.she.safety.model.WkodMapBig;
+import com.she.safety.model.WkodMapMid;
+import com.she.safety.model.WkodMapSml;
 import com.she.safety.model.WkodMaster;
 import com.she.safety.model.WkodSubconnWorker;
 import com.she.safety.wkod.service.WkodMasterService;
@@ -605,5 +608,18 @@ public class WkodMasterController {
     public ResponseEntity<List<Signature>> getConfirmSigns(@PathVariable("wkodNo") int wkodNo) throws Exception {
         ;
         return ResponseEntity.ok().body(wkodMasterService.getConfirmSigns(wkodNo));
+    }
+    
+    @GetMapping("/user/wkodMapBig/{safEduCourseNo}")
+    public ResponseEntity<List<WkodMapBig>> wkodMapBig(@PathVariable String safEduCourseNo) throws Exception {
+        return ResponseEntity.ok().body(wkodMasterService.getSafWkodMapBig(safEduCourseNo));
+    }
+    @GetMapping("/user/wkodMapMid/{safEduCourseNo}/{safEduMstNo}")
+    public ResponseEntity<List<WkodMapMid>> wkodMapMid(@PathVariable String safEduCourseNo, @PathVariable String safEduMstNo) throws Exception {
+        return ResponseEntity.ok().body(wkodMasterService.getSafWkodMapMid(safEduCourseNo, safEduMstNo));
+    }
+    @GetMapping("/user/wkodMapSml/{safEduCourseNo}/{safEduMstNo}/{completYn}")
+    public ResponseEntity<List<WkodMapSml>> wkodMapSml(@PathVariable String safEduCourseNo, @PathVariable String safEduMstNo, @PathVariable String completYn) throws Exception {
+        return ResponseEntity.ok().body(wkodMasterService.getSafWkodMapSml(safEduCourseNo, safEduMstNo, completYn));
     }
 }

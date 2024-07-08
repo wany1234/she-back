@@ -18,6 +18,9 @@ import com.she.safety.model.WkodChkItem;
 import com.she.safety.model.WkodChkResult;
 import com.she.safety.model.WkodGasMeas;
 import com.she.safety.model.WkodKind;
+import com.she.safety.model.WkodMapBig;
+import com.she.safety.model.WkodMapMid;
+import com.she.safety.model.WkodMapSml;
 import com.she.safety.model.WkodMaster;
 import com.she.safety.model.WkodSpeKind;
 import com.she.safety.model.WkodSubconnWorker;
@@ -602,4 +605,8 @@ public interface WkodMasterMapper {
     public List<WkodChkResult> getSafWkodChkResultBase(@Param("wkodNo") int wkodNo, @Param("plantCd") String plantCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     public com.she.safety.model.Map getSafWkodMap(@Param("mapNo") int mapNo, @Param("plantCd") String plantCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    
+    public List<WkodMapBig> getSafWkodMapBig(@Param("safEduCourseNo") String safEduCourseNo) throws Exception;
+    public List<WkodMapMid> getSafWkodMapMid(@Param("safEduCourseNo") String safEduCourseNo, @Param("safEduMstNo") String safEduMstNo) throws Exception;
+    public List<WkodMapSml> getSafWkodMapSml(@Param("safEduCourseNo") String safEduCourseNo, @Param("safEduMstNo") String safEduMstNo, @Param("completYn") String completYn) throws Exception;
 }

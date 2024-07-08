@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,9 @@ import com.she.safety.model.WkodChkItem;
 import com.she.safety.model.WkodChkResult;
 import com.she.safety.model.WkodGasMeas;
 import com.she.safety.model.WkodKind;
+import com.she.safety.model.WkodMapBig;
+import com.she.safety.model.WkodMapMid;
+import com.she.safety.model.WkodMapSml;
 import com.she.safety.model.WkodMaster;
 import com.she.safety.model.WkodSubconnWorker;
 import com.she.safety.wkod.mapper.WkodMasterMapper;
@@ -1128,5 +1132,15 @@ public class WkodMasterService {
 
     public com.she.safety.model.Map getSafWkodMap(int mapNo, String plantCd, DefaultParam defaultParam) throws Exception {
         return wkodMasterMapper.getSafWkodMap(mapNo, plantCd, defaultParam);
+    }
+    
+    public List<WkodMapBig> getSafWkodMapBig(@Param("safEduCourseNo") String safEduCourseNo) throws Exception{
+    	return wkodMasterMapper.getSafWkodMapBig(safEduCourseNo);
+    }
+    public List<WkodMapMid> getSafWkodMapMid(@Param("safEduCourseNo") String safEduCourseNo, @Param("safEduMstNo") String safEduMstNo) throws Exception{
+    	return wkodMasterMapper.getSafWkodMapMid(safEduCourseNo, safEduMstNo);
+    }
+    public List<WkodMapSml> getSafWkodMapSml(@Param("safEduCourseNo") String safEduCourseNo, @Param("safEduMstNo") String safEduMstNo, @Param("completYn") String completYn) throws Exception{
+    	return wkodMasterMapper.getSafWkodMapSml(safEduCourseNo, safEduMstNo, completYn);
     }
 }
