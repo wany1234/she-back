@@ -167,7 +167,7 @@ public class EduMasterService {
             }
         }
 
-        if (ConstVal.EDU_METHOD_VIDEO.equals(eduMaster.getEduMethodCd())) {
+        if (ConstVal.EDU_METHOD_VIDEO.equals(eduMaster.getEduMethodCd()) && eduMaster.getEduVideo() != null) {
             if (eduMaster.getEduVideo().getEduVideoNo() == 0) {
                 EduVideo eduVideo = new EduVideo();
                 eduVideo = eduMaster.getEduVideo();
@@ -184,8 +184,15 @@ public class EduMasterService {
             }
 
         } else {
+            int eduVideoNo = 0;
             if (eduMaster.getEduVideo() != null) {
-                this.eduMasterMapper.deleteEduVideo(eduMaster.getEduVideo().getEduVideoNo());
+                eduVideoNo = eduMaster.getEduVideo().getEduVideoNo();
+            } else {
+                EduVideo video = eduMasterMapper.getEduVideo(eduMaster.getSafEduMstNo(), eduMaster.getSafEduCourseNo());
+                eduVideoNo = video != null ? video.getEduVideoNo() : 0;
+            }
+            if (eduVideoNo != 0) {
+                this.eduMasterMapper.deleteEduVideo(eduVideoNo);
             }
 
         }
