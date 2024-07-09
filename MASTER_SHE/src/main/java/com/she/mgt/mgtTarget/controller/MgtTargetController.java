@@ -71,12 +71,13 @@ public class MgtTargetController {
         String plantRoleYn = map.containsKey("plantEditable") ? map.get("plantEditable").toString() == "true" ? "Y" : "N" : "";
         String deptRoleYn = map.containsKey("deptEditable") ? map.get("deptEditable").toString() == "true" ? "Y" : "N" : "";
         String userId = map.containsKey("userId") ? map.get("userId").toString() : "";
+        String processCd = map.containsKey("processCd") ? map.get("processCd").toString() : "";
 
-        return ResponseEntity.ok().body(mgtTargetService.getMgtTargets(from, to, plantCd, deptCd, bizFieldCd, bizFieldItemNm, unregistered, areaType, plantRoleYn, deptRoleYn, userId, defaultParam));
+        return ResponseEntity.ok().body(mgtTargetService.getMgtTargets(from, to, plantCd, deptCd, bizFieldCd, bizFieldItemNm, unregistered, areaType, plantRoleYn, deptRoleYn, userId, processCd, defaultParam));
     }
 
     /**
-     * 목표 등록/수정
+     * 목표 계획 상세
      * 
      * @param mgtTargetGrpNo
      *            목표그룹번호
@@ -123,8 +124,9 @@ public class MgtTargetController {
 
         String year = convertedParameter.containsKey("year") ? convertedParameter.get("year").toString() : ""; // 목표년도
         String plantCd = convertedParameter.containsKey("plantCd") ? convertedParameter.get("plantCd").toString() : ""; // 사업장코드
-        String deptCd = convertedParameter.containsKey("deptCd") ? convertedParameter.get("deptCd").toString() : ""; // 부서코드
-        return ResponseEntity.ok().body(mgtTargetService.checkMgtTarget(year, plantCd, deptCd, defaultParam));
+//        String deptCd = convertedParameter.containsKey("deptCd") ? convertedParameter.get("deptCd").toString() : ""; // 부서코드
+        String processCd = convertedParameter.containsKey("processCd") ? convertedParameter.get("processCd").toString() : ""; // 부서코드
+        return ResponseEntity.ok().body(mgtTargetService.checkMgtTarget(year, plantCd, processCd, defaultParam));
     }
 
     /**

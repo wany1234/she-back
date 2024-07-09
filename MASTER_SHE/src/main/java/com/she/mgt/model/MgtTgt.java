@@ -27,6 +27,10 @@ public class MgtTgt {
     private String deptCd;
     @ApiModelProperty(value = "대상부서명")
     private String deptNm;
+    @ApiModelProperty(value = "공정코드")
+    private String processCd;
+    @ApiModelProperty(value = "공정명")
+    private String processNm;
     @ApiModelProperty(value = "목표단계(상태)")
     private String tstepCd;
     @ApiModelProperty(value = "목표단계(상태)명")

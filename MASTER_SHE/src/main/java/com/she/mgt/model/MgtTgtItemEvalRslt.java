@@ -73,4 +73,8 @@ public class MgtTgtItemEvalRslt {
     private String createUserId;
     @ApiModelProperty(value = "등록일")
     private String createDt;
+    @ApiModelProperty(value = "공정코드")
+    private String processCd;
+    @ApiModelProperty(value = "공정명")
+    private String processNm;
 }

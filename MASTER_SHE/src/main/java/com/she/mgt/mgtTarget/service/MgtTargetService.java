@@ -32,8 +32,8 @@ public class MgtTargetService {
      * @throws Exception
      *             예외
      */
-    public List<MgtTgtItemEvalRslt> getMgtTargets(String from, String to, String plantCd, String deptCd, String bizFieldCd, String bizFieldItemNm, String unregistered, String areaType, String plantRoleYn, String deptRoleYn, String userId, DefaultParam defaultParam) throws Exception {
-        return mgtTargetMapper.getMgtTargets(from, to, plantCd, deptCd, bizFieldCd, bizFieldItemNm, unregistered, areaType, plantRoleYn, deptRoleYn, userId, defaultParam);
+    public List<MgtTgtItemEvalRslt> getMgtTargets(String from, String to, String plantCd, String deptCd, String bizFieldCd, String bizFieldItemNm, String unregistered, String areaType, String plantRoleYn, String deptRoleYn, String userId, String processCd, DefaultParam defaultParam) throws Exception {
+        return mgtTargetMapper.getMgtTargets(from, to, plantCd, deptCd, bizFieldCd, bizFieldItemNm, unregistered, areaType, plantRoleYn, deptRoleYn, userId, processCd, defaultParam);
     }
 
     /**
@@ -71,8 +71,8 @@ public class MgtTargetService {
      * @throws Exception
      *             예외
      */
-    public List<HashMap<String, Object>> checkMgtTarget(String year, String plantCd, String deptCd, DefaultParam defaultParam) throws Exception {
-        return mgtTargetMapper.checkMgtTarget(year, plantCd, deptCd, defaultParam);
+    public List<HashMap<String, Object>> checkMgtTarget(String year, String plantCd, String processCd, DefaultParam defaultParam) throws Exception {
+        return mgtTargetMapper.checkMgtTarget(year, plantCd, processCd, defaultParam);
     }
 
     public Integer getMgtTargetGrpSeq() throws Exception {

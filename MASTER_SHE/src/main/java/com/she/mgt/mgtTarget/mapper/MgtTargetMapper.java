@@ -29,7 +29,7 @@ public interface MgtTargetMapper {
      *             예외
      */
     public List<MgtTgtItemEvalRslt> getMgtTargets(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("deptCd") String deptCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNm") String bizFieldItemNm, @Param("unregistered") String unregistered, @Param("areaType") String areaType,
-            @Param("plantRoleYn") String plantRoleYn, @Param("deptRoleYn") String deptRoleYn, @Param("userId") String userId, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+            @Param("plantRoleYn") String plantRoleYn, @Param("deptRoleYn") String deptRoleYn, @Param("userId") String userId, @Param("processCd") String processCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 목표 등록/수정
@@ -62,7 +62,7 @@ public interface MgtTargetMapper {
      * @throws Exception
      *             예외
      */
-    public List<HashMap<String, Object>> checkMgtTarget(@Param("year") String year, @Param("plantCd") String plantCd, @Param("deptCd") String deptCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    public List<HashMap<String, Object>> checkMgtTarget(@Param("year") String year, @Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     public Integer getMgtTargetGrpSeq();
 
