@@ -19,6 +19,10 @@ public class MgtTgtStatus {
     private String deptCd;
     @ApiModelProperty(value = "대상부서명")
     private String deptNm;
+    @ApiModelProperty(value = "공정코드")
+    private String processCd;
+    @ApiModelProperty(value = "공정명")
+    private String processNm;
     @ApiModelProperty(value = "SHE분야명")
     private String bizFieldNm;
     @ApiModelProperty(value = "SHE분야별 항목명")

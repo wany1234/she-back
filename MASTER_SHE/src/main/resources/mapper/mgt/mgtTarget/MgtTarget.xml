@@ -142,7 +142,7 @@
         left outer join com_process p on sat.process_cd = p.process_cd        
         where 1=1   
         and sat.mgt_target_grp_no = #{mgtTargetGrpNo}                
-        group by sat.mgt_target_grp_no, sat.year, satirs.biz_field_cd, satirs.biz_field_nm, satirs.biz_field_item_no                    
+        group by sat.mgt_target_grp_no, sat.year, satirs.biz_field_cd, satirs.biz_field_nm, satirs.biz_field_item_no, sat.process_cd, p.process_nm                
                 , satirs.biz_field_item_nm, sat.step_cd, cm1.code_nm, cm11.sort_order, satirs.sort_order, satirs.dec_place  
                 , cm5.code_nm, cm8.code_nm    
         order by cm11.sort_order, satirs.sort_order

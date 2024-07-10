@@ -26,14 +26,14 @@ public class MgtTargetService {
      * 목표/실적/평가 관리 목록
      * 
      * @param from
-     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 deptCd 부서코드 bizFieldCd 분야코드
+     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 processCd 공정코드 bizFieldCd 분야코드
      *            bizFieldItemNm 항목명 unregistered 미등록건 areaType 전사/사업장/부서 구분
      * @return MgtTgtItemEvalRslt 목표/실적/평가 목폭
      * @throws Exception
      *             예외
      */
-    public List<MgtTgtItemEvalRslt> getMgtTargets(String from, String to, String plantCd, String deptCd, String bizFieldCd, String bizFieldItemNm, String unregistered, String areaType, String plantRoleYn, String deptRoleYn, String userId, String processCd, DefaultParam defaultParam) throws Exception {
-        return mgtTargetMapper.getMgtTargets(from, to, plantCd, deptCd, bizFieldCd, bizFieldItemNm, unregistered, areaType, plantRoleYn, deptRoleYn, userId, processCd, defaultParam);
+    public List<MgtTgtItemEvalRslt> getMgtTargets(String from, String to, String plantCd, String bizFieldCd, String bizFieldItemNm, String unregistered, String areaType, String plantRoleYn, String deptRoleYn, String userId, String processCd, DefaultParam defaultParam) throws Exception {
+        return mgtTargetMapper.getMgtTargets(from, to, plantCd, bizFieldCd, bizFieldItemNm, unregistered, areaType, plantRoleYn, deptRoleYn, userId, processCd, defaultParam);
     }
 
     /**
@@ -66,7 +66,7 @@ public class MgtTargetService {
      * 목표 중복 체크
      * 
      * @param year
-     *            대상연도 plantCd 사업장코드 deptCd 부서코드
+     *            대상연도 plantCd 사업장코드 processCd 공정코드
      * @return HashMap 중복데이터 목록
      * @throws Exception
      *             예외
@@ -375,13 +375,13 @@ public class MgtTargetService {
      * SHE목표달성 현황 목록
      * 
      * @param from
-     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 deptCd 부서코드 bizFieldCd 분야코드
+     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 processCd 공정코드 bizFieldCd 분야코드
      *            bizFieldItemNm 항목명 areaType 전사/사업장/부서 구분
      * @return MgtTgtStatus SHE목표달성 현황 목폭
      * @throws Exception
      *             예외
      */
-    public List<MgtTgtStatus> getMgtTargetStatus(String from, String to, String plantCd, String deptCd, String bizFieldCd, String bizFieldItemNm, String areaType, DefaultParam defaultParam) throws Exception {
-        return mgtTargetMapper.getMgtTargetStatus(from, to, plantCd, deptCd, bizFieldCd, bizFieldItemNm, areaType, defaultParam);
+    public List<MgtTgtStatus> getMgtTargetStatus(String from, String to, String plantCd, String processCd, String bizFieldCd, String bizFieldItemNm, String areaType, DefaultParam defaultParam) throws Exception {
+        return mgtTargetMapper.getMgtTargetStatus(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, areaType, defaultParam);
     }
 }

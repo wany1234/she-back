@@ -22,13 +22,13 @@ public interface MgtTargetMapper {
      * 목표/실적/평가 관리 목록
      * 
      * @param from
-     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 deptCd 부서코드 bizFieldCd 분야코드
+     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 processCd 공정코드 bizFieldCd 분야코드
      *            bizFieldItemNm 항목명 unregistered 미등록건 areaType 전사/사업장/부서 구분
      * @return MgtTgtItemEvalRslt 목표/실적/평가 목폭
      * @throws Exception
      *             예외
      */
-    public List<MgtTgtItemEvalRslt> getMgtTargets(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("deptCd") String deptCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNm") String bizFieldItemNm, @Param("unregistered") String unregistered, @Param("areaType") String areaType,
+    public List<MgtTgtItemEvalRslt> getMgtTargets(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNm") String bizFieldItemNm, @Param("unregistered") String unregistered, @Param("areaType") String areaType,
             @Param("plantRoleYn") String plantRoleYn, @Param("deptRoleYn") String deptRoleYn, @Param("userId") String userId, @Param("processCd") String processCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
@@ -57,7 +57,7 @@ public interface MgtTargetMapper {
      * 목표 중복 체크
      * 
      * @param year
-     *            대상연도 plantCd 사업장코드 deptCd 부서코드
+     *            대상연도 plantCd 사업장코드 processCd 공정코드
      * @return HashMap 중복데이터 목록
      * @throws Exception
      *             예외
@@ -157,13 +157,13 @@ public interface MgtTargetMapper {
      * SHE목표달성 현황 목록
      * 
      * @param from
-     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 deptCd 부서코드 bizFieldCd 분야코드
+     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 processCd 공정코드 bizFieldCd 분야코드
      *            bizFieldItemNm 항목명 areaType 전사/사업장/부서 구분
      * @return MgtTgtStatus SHE목표달성 현황 목폭
      * @throws Exception
      *             예외
      */
-    public List<MgtTgtStatus> getMgtTargetStatus(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("deptCd") String deptCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNm") String bizFieldItemNm, @Param("areaType") String areaType, @Param("defaultParam") DefaultParam defaultParam)
+    public List<MgtTgtStatus> getMgtTargetStatus(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNm") String bizFieldItemNm, @Param("areaType") String areaType, @Param("defaultParam") DefaultParam defaultParam)
             throws Exception;
 
 }

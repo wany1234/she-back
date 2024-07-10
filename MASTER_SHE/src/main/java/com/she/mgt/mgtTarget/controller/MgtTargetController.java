@@ -50,7 +50,7 @@ public class MgtTargetController {
      * 목표/실적/평가 관리 목록
      * 
      * @param from
-     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 deptCd 부서코드 bizFieldCd 분야코드
+     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 processCd 공정코드 bizFieldCd 분야코드
      *            bizFieldItemNm 항목명 unregistered 미등록건 areaType 전사/사업장/부서 구분
      * @return MgtTgtItemEvalRslt 목표/실적/평가 목폭
      * @throws Exception
@@ -63,7 +63,6 @@ public class MgtTargetController {
         String from = map.containsKey("from") ? map.get("from").toString() : "";
         String to = map.containsKey("to") ? map.get("to").toString() : "";
         String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
-        String deptCd = map.containsKey("deptCd") ? map.get("deptCd").toString() : "";
         String bizFieldCd = map.containsKey("bizFieldCd") ? map.get("bizFieldCd").toString() : "";
         String bizFieldItemNm = map.containsKey("bizFieldItemNm") ? map.get("bizFieldItemNm").toString() : "";
         String unregistered = map.containsKey("unregistered") ? map.get("unregistered").toString() : "";
@@ -73,7 +72,7 @@ public class MgtTargetController {
         String userId = map.containsKey("userId") ? map.get("userId").toString() : "";
         String processCd = map.containsKey("processCd") ? map.get("processCd").toString() : "";
 
-        return ResponseEntity.ok().body(mgtTargetService.getMgtTargets(from, to, plantCd, deptCd, bizFieldCd, bizFieldItemNm, unregistered, areaType, plantRoleYn, deptRoleYn, userId, processCd, defaultParam));
+        return ResponseEntity.ok().body(mgtTargetService.getMgtTargets(from, to, plantCd, bizFieldCd, bizFieldItemNm, unregistered, areaType, plantRoleYn, deptRoleYn, userId, processCd, defaultParam));
     }
 
     /**
@@ -113,7 +112,7 @@ public class MgtTargetController {
      * 목표 중복 체크
      * 
      * @param year
-     *            대상연도 plantCd 사업장코드 deptCd 부서코드
+     *            대상연도 plantCd 사업장코드 processCd 공정코드
      * @return HashMap 중복데이터 목록
      * @throws Exception
      *             예외
@@ -124,7 +123,6 @@ public class MgtTargetController {
 
         String year = convertedParameter.containsKey("year") ? convertedParameter.get("year").toString() : ""; // 목표년도
         String plantCd = convertedParameter.containsKey("plantCd") ? convertedParameter.get("plantCd").toString() : ""; // 사업장코드
-//        String deptCd = convertedParameter.containsKey("deptCd") ? convertedParameter.get("deptCd").toString() : ""; // 부서코드
         String processCd = convertedParameter.containsKey("processCd") ? convertedParameter.get("processCd").toString() : ""; // 부서코드
         return ResponseEntity.ok().body(mgtTargetService.checkMgtTarget(year, plantCd, processCd, defaultParam));
     }
@@ -221,7 +219,7 @@ public class MgtTargetController {
      * SHE목표달성 현황 목록
      * 
      * @param from
-     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 deptCd 부서코드 bizFieldCd 분야코드
+     *            대상연월 시작 to 대상연월 종료 plantCd 사업장코드 processCd 공정코드 bizFieldCd 분야코드
      *            bizFieldItemNm 항목명 areaType 전사/사업장/부서 구분
      * @return MgtTgtStatus SHE목표달성 현황 목폭
      * @throws Exception
@@ -234,11 +232,11 @@ public class MgtTargetController {
         String from = map.containsKey("from") ? map.get("from").toString() : "";
         String to = map.containsKey("to") ? map.get("to").toString() : "";
         String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
-        String deptCd = map.containsKey("deptCd") ? map.get("deptCd").toString() : "";
+        String processCd = map.containsKey("processCd") ? map.get("processCd").toString() : "";
         String bizFieldCd = map.containsKey("bizFieldCd") ? map.get("bizFieldCd").toString() : "";
         String bizFieldItemNm = map.containsKey("bizFieldItemNm") ? map.get("bizFieldItemNm").toString() : "";
         String areaType = map.containsKey("areaType") ? map.get("areaType").toString() : "";
 
-        return ResponseEntity.ok().body(mgtTargetService.getMgtTargetStatus(from, to, plantCd, deptCd, bizFieldCd, bizFieldItemNm, areaType, defaultParam));
+        return ResponseEntity.ok().body(mgtTargetService.getMgtTargetStatus(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, areaType, defaultParam));
     }
 }
