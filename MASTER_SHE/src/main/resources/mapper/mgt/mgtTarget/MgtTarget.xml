@@ -6,7 +6,7 @@
     <select id="getMgtTargets" resultType= "com.she.mgt.model.MgtTgtItemEvalRslt">
         /* MgtTargetMapper.getMgtTargets [MgtTarget.xml] */
         select sat.mgt_target_no, sat.mgt_target_grp_no, satm.mgt_target_month_no, sat.year, satm.month, sat.plant_cd, cm4.code_nm as plant_nm                
-                , sat.dept_cd, d.dept_nm, satirs.biz_field_nm, satirs.biz_field_item_nm
+                , satirs.biz_field_nm, satirs.biz_field_item_nm
                 , sat.target, sat.policy
                 , case when isnull(satirs.dec_place, 0) = 0 then convert(varchar, convert(int, round(satirs.target_val, satirs.dec_place))) else left(convert(varchar, round(satirs.target_val, satirs.dec_place)), charindex('.', satirs.target_val) + satirs.dec_place) end as target_val
                 , case when isnull(satirs.dec_place, 0) = 0 then convert(varchar, convert(int, round(satirs.rslt_val, satirs.dec_place))) else left(convert(varchar, round(satirs.rslt_val, satirs.dec_place)), charindex('.', satirs.rslt_val) + satirs.dec_place) end as rslt_val
@@ -23,7 +23,7 @@
                         when satm.r_appr_rqst_no is not null then satm.rslt_create_dt
                         else sat.create_dt end), 120) as create_dt
                 , sat.process_cd
-                , (SELECT process_nm from com_process cp where cp.process_cd = sat.process_cd) as process_nm
+                , p.process_nm
         from mgt_target sat                 
         inner join mgt_target_month satm on sat.mgt_target_no = satm.mgt_target_no                  
         inner join mgt_target_item_rslt satirs on satm.mgt_target_month_no = satirs.mgt_target_month_no                 
@@ -38,7 +38,7 @@
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_STATE') cm9 on satm.r_state_cd = cm9.code and cm9.use_yn = 'Y'
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_STATE') cm10 on satm.e_state_cd = cm10.code and cm10.use_yn = 'Y'
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_BIZ_FIELD') cm11 on satirs.biz_field_cd = cm11.code and cm11.use_yn = 'Y'
-        left outer join com_dept d on sat.dept_cd = d.dept_cd
+        left outer join com_process p on sat.process_cd = p.process_cd
         left outer join com_user u on (case when satm.e_appr_rqst_no is not null then satm.eval_create_user_id
                                             when satm.r_appr_rqst_no is not null then satm.rslt_create_user_id
                                             else sat.create_user_id end) = u.user_id
@@ -52,9 +52,6 @@
         <if test='plantCd != null and !plantCd.equals("")'>
         and sat.plant_cd = #{plantCd}
         </if>     
-        <!-- <if test='deptCd != null and !deptCd.equals("")'>
-        and sat.dept_cd = #{deptCd}
-        </if> -->    
         <if test='processCd != null and !processCd.equals("")'>
         and sat.process_cd = #{processCd}
         </if>
@@ -93,28 +90,24 @@
         </if>  
         <if test='areaType != null and areaType.equals("plant")'> 
         and sat.plant_cd is not null
-        and sat.dept_cd is null
+        and sat.process_cd is null
         </if>
         <if test='areaType != null and areaType.equals("dept")'> 
         and sat.process_cd is not null
         </if>
-        <if test='deptRoleYn != null and deptRoleYn.equals("Y")'> 
-        and (satm.e_step_cd = 'BAPSB' or (sat.dept_cd = (select dept_cd from com_user where user_id = #{userId})))
-        </if>
-        order by sat.mgt_target_grp_no, sat.year, sat.plant_cd, sat.dept_cd, satm.month, cm11.sort_order, satirs.sort_order
+        order by sat.mgt_target_grp_no, sat.year, sat.plant_cd, sat.process_cd, satm.month, cm11.sort_order, satirs.sort_order
     </select>
     
     <select id= "getMgtTarget" resultType= "com.she.mgt.model.MgtTgt">
         /* MgtTargetMapper.getMgtTarget [MgtTarget.xml] */
         select sat.mgt_target_grp_no, sat.year, sat.plant_cd
-            , sat.dept_cd, d.dept_nm
             , sat.target, sat.policy    
             , sat.step_cd as t_step_cd, sat.t_appr_rqst_no
             , (select max(r_state_cd) from mgt_target_month where mgt_target_no = sat.mgt_target_no) as r_state_cd
             , sat.process_cd
-            , (SELECT process_nm from com_process cp where cp.process_cd = sat.process_cd) as process_nm
+            , p.process_nm
         from mgt_target sat          
-        left outer join com_dept d on sat.dept_cd = d.dept_cd
+        left outer join com_process p on sat.process_cd = p.process_cd
         where sat.mgt_target_grp_no = #{mgtTargetGrpNo}   
     </select>
     
@@ -124,6 +117,7 @@
         select  sat.mgt_target_grp_no, sat.year, satirs.biz_field_cd, satirs.biz_field_nm                   
                 , satirs.biz_field_item_no, satirs.biz_field_item_nm
                 , sat.step_cd as t_step_cd   
+                , sat.process_cd, p.process_nm
                 , concat(cm5.code_nm,' (', case when sat.step_cd = 'BAPSD' then cm1.code_nm else cm8.code_nm end , ')') as t_step_nm 
                 , satirs.dec_place, satirs.sort_order         
                 , max(case when satm.month = '01' then case when isnull(satirs.dec_place, 0) = 0 then convert(varchar, convert(int, round(satirs.target_val, satirs.dec_place))) else left(convert(varchar, round(satirs.target_val, satirs.dec_place)), charindex('.', satirs.target_val) + satirs.dec_place) end else null end) m1_val          
@@ -144,7 +138,8 @@
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm1 on sat.step_cd = cm1.code and cm1.use_yn = 'Y' 
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_TGT_STEP') cm5 on sat.proc_step_cd = cm5.code and cm5.use_yn = 'Y'
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_STATE') cm8 on sat.state_cd = cm8.code and cm8.use_yn = 'Y'
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_BIZ_FIELD') cm11 on satirs.biz_field_cd = cm11.code and cm11.use_yn = 'Y'           
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_BIZ_FIELD') cm11 on satirs.biz_field_cd = cm11.code and cm11.use_yn = 'Y'   
+        left outer join com_process p on sat.process_cd = p.process_cd        
         where 1=1   
         and sat.mgt_target_grp_no = #{mgtTargetGrpNo}                
         group by sat.mgt_target_grp_no, sat.year, satirs.biz_field_cd, satirs.biz_field_nm, satirs.biz_field_item_no                    
@@ -175,7 +170,7 @@
         where year = #{year}
         <if test='plantCd == null or plantCd.equals("")'>           
         and plant_cd is null
-        and dept_cd is null
+        and process_cd is null
         </if>
         <if test='plantCd != null and !plantCd.equals("")'>   
         and plant_cd = #{plantCd}
@@ -364,7 +359,7 @@
     <select id= "getMgtTargetRslt" resultType= "com.she.mgt.model.MgtTgt">
         /* MgtTargetMapper.getMgtTargetRslt [MgtTarget.xml] */
         select tm.mgt_target_month_no, t.mgt_target_no, t.mgt_target_grp_no
-            , t.year, tm.month, t.plant_cd, t.dept_cd, t.target, t.policy
+            , t.year, tm.month, t.plant_cd, t.process_cd, t.target, t.policy
             , t.step_cd as t_step_cd, tm.r_step_cd, tm.e_step_cd   
             , t.t_appr_rqst_no, tm.r_appr_rqst_no, tm.e_appr_rqst_no
         from mgt_target_month tm
@@ -374,8 +369,8 @@
     
     <select id="getMgtTargetRslts" resultType= "com.she.mgt.model.MgtTgtItemEvalRslt">
         /* MgtTargetMapper.getMgtTargetRslts [MgtTarget.xml] */
-        select sat.mgt_target_no, satm.mgt_target_month_no, sat.year, satm.month, sat.plant_cd                  
-          , sat.dept_cd, satirs.biz_field_nm, satirs.biz_field_item_no, satirs.biz_field_item_nm
+        select sat.mgt_target_no, satm.mgt_target_month_no, sat.year, satm.month, sat.plant_cd, sat.process_cd         
+          , satirs.biz_field_nm, satirs.biz_field_item_no, satirs.biz_field_item_nm
           , case when isnull(satirs.dec_place, 0) = 0 then convert(varchar, convert(int, round(satirs.target_val, satirs.dec_place))) else left(convert(varchar, round(satirs.target_val, satirs.dec_place)), charindex('.', satirs.target_val) + satirs.dec_place) end as target_val
           , case when sat.step_cd = 'BAPSG' and satirs.rslt_val is null then '0' else case when isnull(satirs.dec_place, 0) = 0 then convert(varchar, convert(int, round(satirs.rslt_val, satirs.dec_place))) else left(convert(varchar, round(satirs.rslt_val, satirs.dec_place)), charindex('.', satirs.rslt_val) + satirs.dec_place) end end as rslt_val
           , case when satm.r_step_cd = 'BAPSG' and satirs.eval_val is null then '0' else case when isnull(satirs.dec_place, 0) = 0 then convert(varchar, convert(int, round(satirs.eval_val, satirs.dec_place))) else left(convert(varchar, round(satirs.eval_val, satirs.dec_place)), charindex('.', satirs.eval_val) + satirs.dec_place) end end as eval_val
@@ -500,7 +495,7 @@
     
     <select id="getMgtTargetStatus" resultType= "com.she.mgt.model.MgtTgtStatus">
         /* MgtTargetMapper.getMgtTargetStatus [MgtTarget.xml] */
-        select t.year, t.plant_cd, cm1.code_nm as plant_nm, t.dept_cd, d.dept_nm, tir.biz_field_nm, tir.biz_field_item_nm
+        select t.year, t.plant_cd, cm1.code_nm as plant_nm, t.process_cd, p.process_nm, tir.biz_field_nm, tir.biz_field_item_nm
             , max(case when tm.month = '01' then case when isnull(tir.dec_place, 0) = 0 then convert(varchar, convert(int, round(tir.target_val, tir.dec_place))) else left(convert(varchar, round(tir.target_val, tir.dec_place)), charindex('.', tir.target_val) + iif(tir.dec_place = 0, -1, tir.dec_place)) end end) as m1_target_val           
             , max(case when tm.month = '01' then case when isnull(tir.dec_place, 0) = 0 then convert(varchar, convert(int, round(tir.rslt_val, tir.dec_place))) else left(convert(varchar, round(tir.rslt_val, tir.dec_place)), charindex('.', tir.rslt_val) + iif(tir.dec_place = 0, -1, tir.dec_place)) end end) as m1_rslt_val           
             , max(case when tm.month = '01' and isnull(tir.target_val, 0) > 0 then left(tir.rslt_val/tir.target_val*100, charindex('.', tir.rslt_val/tir.target_val*100) + iif(tir.dec_place = 0, -1, tir.dec_place)) else null end) as m1_achi_rate
@@ -555,7 +550,7 @@
         left outer join mgt_target_item_rslt tir on tm.mgt_target_month_no = tir.mgt_target_month_no
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') cm1 on t.plant_cd = cm1.code and cm1.use_yn = 'Y'   
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_BIZ_FIELD') cm2 on tir.biz_field_cd = cm2.code and cm2.use_yn = 'Y'
-        left outer join com_dept d on t.dept_cd = d.dept_cd
+        left outer join com_process p on t.process_cd = p.process_cd
         where 1=1  
         and tm.e_step_cd = 'BAPSG'      
         <if test='from != null and !from.equals("") and to != null and !to.equals("")'>
@@ -564,8 +559,8 @@
         <if test='plantCd != null and !plantCd.equals("")'>
         and t.plant_cd = #{plantCd}
         </if>     
-        <if test='deptCd != null and !deptCd.equals("")'>
-        and t.dept_cd = #{deptCd}
+        <if test='processCd != null and !processCd.equals("")'>
+        and t.process_cd = #{processCd}
         </if>     
         <if test='bizFieldCd != null and !bizFieldCd.equals("")'>               
         and tir.biz_field_cd = #{bizFieldCd}              
@@ -578,12 +573,12 @@
         </if>  
         <if test='areaType != null and areaType.equals("plant")'> 
         and t.plant_cd is not null
-        and t.dept_cd is null
+        and t.process_cd is null
         </if>
         <if test='areaType != null and areaType.equals("dept")'> 
-        and t.dept_cd is not null
+        and t.process_cd is not null
         </if>
-        group by t.mgt_target_grp_no, t.mgt_target_no, t.year, t.plant_cd, cm1.code_nm, t.dept_cd, d.dept_nm, cm2.sort_order, tir.biz_field_nm, tir.biz_field_item_nm
+        group by t.mgt_target_grp_no, t.mgt_target_no, t.year, t.plant_cd, cm1.code_nm, t.process_cd, p.process_nm, cm2.sort_order, tir.biz_field_nm, tir.biz_field_item_nm
         order by t.mgt_target_grp_no, t.mgt_target_no, t.year, cm2.sort_order, max(tir.mgt_target_item_rslt_no)
     </select>
 </mapper>
