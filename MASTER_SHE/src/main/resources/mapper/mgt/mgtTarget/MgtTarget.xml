@@ -52,9 +52,9 @@
         <if test='plantCd != null and !plantCd.equals("")'>
         and sat.plant_cd = #{plantCd}
         </if>     
-        <if test='deptCd != null and !deptCd.equals("")'>
+        <!-- <if test='deptCd != null and !deptCd.equals("")'>
         and sat.dept_cd = #{deptCd}
-        </if>     
+        </if> -->    
         <if test='processCd != null and !processCd.equals("")'>
         and sat.process_cd = #{processCd}
         </if>
@@ -94,6 +94,9 @@
         <if test='areaType != null and areaType.equals("plant")'> 
         and sat.plant_cd is not null
         and sat.dept_cd is null
+        </if>
+        <if test='areaType != null and areaType.equals("dept")'> 
+        and sat.process_cd is not null
         </if>
         <if test='deptRoleYn != null and deptRoleYn.equals("Y")'> 
         and (satm.e_step_cd = 'BAPSB' or (sat.dept_cd = (select dept_cd from com_user where user_id = #{userId})))

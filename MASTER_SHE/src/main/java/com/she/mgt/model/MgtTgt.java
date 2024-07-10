@@ -75,7 +75,7 @@ public class MgtTgt {
     }
 
     public MgtTgt(int mgtTargetNo, int mgtTargetMonthNo, int mgtTargetGrpNo, String year, String month, String plantCd, String deptCd, String target, String policy, String tstepCd, String tstepNm, String rstepCd, String rstepNm, String estepCd, String estepNm, String tapprRqstNo, String rapprRqstNo, String eapprRqstNo, String createUserId,
-            String createDt, String updateUserId, String updateDt, String parameter, List<MgtTgtItemPlanRslt> planDataList, List<MgtTgtItemEvalRslt> evalDataList) {
+            String createDt, String updateUserId, String updateDt, String parameter, List<MgtTgtItemPlanRslt> planDataList, List<MgtTgtItemEvalRslt> evalDataList, String processCd, String processNm) {
         super();
         this.mgtTargetNo = mgtTargetNo;
         this.mgtTargetMonthNo = mgtTargetMonthNo;
@@ -102,5 +102,7 @@ public class MgtTgt {
         this.parameter = parameter;
         this.planDataList = planDataList;
         this.evalDataList = evalDataList;
+        this.processCd = processCd;
+        this.processNm = processNm;
     }
 }
