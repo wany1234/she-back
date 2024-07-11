@@ -11,6 +11,8 @@ import lombok.Setter;
 public class MgtTgtStatusGraph {
     @ApiModelProperty(value = "대상연도")
     private String year;
+    @ApiModelProperty(value = "대상월")
+    private String month;
     @ApiModelProperty(value = "사업장코드")
     private String plantCd;
     @ApiModelProperty(value = "공정코드")

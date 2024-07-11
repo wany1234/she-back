@@ -585,8 +585,7 @@
     <select id="getMgtTargetStatusGraph" resultType= "com.she.mgt.model.MgtTgtStatusGraph">
     /* MgtTargetMapper.getMgtTargetStatusGraph [MgtTarget.xml] */
     	SELECT 
-		tir.biz_field_item_no 
-		, tir.biz_field_item_nm
+		CAST (tm.month as int ) as month
 		, ISNULL(SUM(tir.target_val),0) as target_val
 		, ISNULL(SUM(tir.rslt_val),0) as rslt_val
 		, ISNULL(SUM(tir.eval_val),0) as eval_val
@@ -598,7 +597,9 @@
 		and tm.e_step_cd = 'BAPSG'
 		and t.process_cd is not null
 		and t.year between #{from} and #{to}
+		<if test='processCd != null and !processCd.equals("")'>
 		and t.process_cd = #{processCd}
+		</if>
 		<if test='plantCd != null and !plantCd.equals("")'>
 		and t.plant_cd = #{plantCd}
 		</if>
@@ -608,10 +609,8 @@
 		<if test='bizFieldItemNm != null and !bizFieldItemNm.equals("")'>
 		and tir.biz_field_item_nm like '%' + #{bizFieldItemNm} + '%'
 		</if>
-		group by 
-		tir.biz_field_item_no 
-		, tir.biz_field_item_nm
-		ORDER BY tir.biz_field_item_no 
+		group by tm.month 
+		ORDER BY tm.month
     </select>
     
 </mapper>
