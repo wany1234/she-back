@@ -581,4 +581,37 @@
         group by t.mgt_target_grp_no, t.mgt_target_no, t.year, t.plant_cd, cm1.code_nm, t.process_cd, p.process_nm, cm2.sort_order, tir.biz_field_nm, tir.biz_field_item_nm
         order by t.mgt_target_grp_no, t.mgt_target_no, t.year, cm2.sort_order, max(tir.mgt_target_item_rslt_no)
     </select>
+    
+    <select id="getMgtTargetStatusGraph" resultType= "com.she.mgt.model.MgtTgtStatusGraph">
+    /* MgtTargetMapper.getMgtTargetStatusGraph [MgtTarget.xml] */
+    	SELECT 
+		tir.biz_field_item_no 
+		, tir.biz_field_item_nm
+		, ISNULL(SUM(tir.target_val),0) as target_val
+		, ISNULL(SUM(tir.rslt_val),0) as rslt_val
+		, ISNULL(SUM(tir.eval_val),0) as eval_val
+		from mgt_target t
+		left outer join mgt_target_month tm on t.mgt_target_no = tm.mgt_target_no
+		left outer join mgt_target_item_rslt tir on tm.mgt_target_month_no = tir.mgt_target_month_no
+		left outer join com_process p on t.process_cd = p.process_cd
+		where 1=1  
+		and tm.e_step_cd = 'BAPSG'
+		and t.process_cd is not null
+		and t.year between #{from} and #{to}
+		and t.process_cd = #{processCd}
+		<if test='plantCd != null and !plantCd.equals("")'>
+		and t.plant_cd = #{plantCd}
+		</if>
+		<if test='bizFieldCd != null and !bizFieldCd.equals("")'>
+		and tir.biz_field_cd = #{bizFieldCd}
+		</if>
+		<if test='bizFieldItemNm != null and !bizFieldItemNm.equals("")'>
+		and tir.biz_field_item_nm like '%' + #{bizFieldItemNm} + '%'
+		</if>
+		group by 
+		tir.biz_field_item_no 
+		, tir.biz_field_item_nm
+		ORDER BY tir.biz_field_item_no 
+    </select>
+    
 </mapper>

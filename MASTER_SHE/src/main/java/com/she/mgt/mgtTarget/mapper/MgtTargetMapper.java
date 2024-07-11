@@ -13,6 +13,7 @@ import com.she.mgt.model.MgtTgtItemEvalRslt;
 import com.she.mgt.model.MgtTgtItemPlanRslt;
 import com.she.mgt.model.MgtTgtItemRslt;
 import com.she.mgt.model.MgtTgtStatus;
+import com.she.mgt.model.MgtTgtStatusGraph;
 
 @Mapper
 @Repository("com.she.mgt.mgtTarget.mapper.MgtTargetMapper")
@@ -165,5 +166,12 @@ public interface MgtTargetMapper {
      */
     public List<MgtTgtStatus> getMgtTargetStatus(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNm") String bizFieldItemNm, @Param("areaType") String areaType, @Param("defaultParam") DefaultParam defaultParam)
             throws Exception;
+    
+    /**
+     * 제조공정별 실적/평가 그래프
+     * @return
+     * @throws Exception
+     */
+    public List<MgtTgtStatusGraph> getMgtTargetStatusGraph(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNm") String bizFieldItemNm, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
 }

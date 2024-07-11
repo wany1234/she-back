@@ -15,6 +15,7 @@ import com.she.mgt.model.MgtTgtItemEvalRslt;
 import com.she.mgt.model.MgtTgtItemPlanRslt;
 import com.she.mgt.model.MgtTgtItemRslt;
 import com.she.mgt.model.MgtTgtStatus;
+import com.she.mgt.model.MgtTgtStatusGraph;
 import com.she.utils.ConstVal;
 
 @Service
@@ -383,5 +384,9 @@ public class MgtTargetService {
      */
     public List<MgtTgtStatus> getMgtTargetStatus(String from, String to, String plantCd, String processCd, String bizFieldCd, String bizFieldItemNm, String areaType, DefaultParam defaultParam) throws Exception {
         return mgtTargetMapper.getMgtTargetStatus(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, areaType, defaultParam);
+    }
+    
+    public List<MgtTgtStatusGraph> getMgtTargetStatusGraph(String from, String to, String plantCd, String processCd, String bizFieldCd, String bizFieldItemNm, DefaultParam defaultParam) throws Exception {
+        return mgtTargetMapper.getMgtTargetStatusGraph(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, defaultParam);
     }
 }

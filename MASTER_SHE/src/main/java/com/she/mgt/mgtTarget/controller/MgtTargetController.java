@@ -32,6 +32,7 @@ import com.she.mgt.model.MgtTgt;
 import com.she.mgt.model.MgtTgtItemEvalRslt;
 import com.she.mgt.model.MgtTgtItemPlanRslt;
 import com.she.mgt.model.MgtTgtStatus;
+import com.she.mgt.model.MgtTgtStatusGraph;
 import com.she.utils.RequestMapper;
 
 @RestController
@@ -238,5 +239,19 @@ public class MgtTargetController {
         String areaType = map.containsKey("areaType") ? map.get("areaType").toString() : "";
 
         return ResponseEntity.ok().body(mgtTargetService.getMgtTargetStatus(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, areaType, defaultParam));
+    }
+    
+    @GetMapping("/mgttargetstatusgraph")
+    public ResponseEntity<List<MgtTgtStatusGraph>> getMgtTargetStatusGraph(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
+
+        String from = map.containsKey("from") ? map.get("from").toString() : "";
+        String to = map.containsKey("to") ? map.get("to").toString() : "";
+        String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
+        String processCd = map.containsKey("processCd") ? map.get("processCd").toString() : "";
+        String bizFieldCd = map.containsKey("bizFieldCd") ? map.get("bizFieldCd").toString() : "";
+        String bizFieldItemNm = map.containsKey("bizFieldItemNm") ? map.get("bizFieldItemNm").toString() : "";
+
+        return ResponseEntity.ok().body(mgtTargetService.getMgtTargetStatusGraph(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, defaultParam));
     }
 }
