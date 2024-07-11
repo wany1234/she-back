@@ -250,8 +250,8 @@ public class MgtTargetController {
         String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
         String processCd = map.containsKey("processCd") ? map.get("processCd").toString() : "";
         String bizFieldCd = map.containsKey("bizFieldCd") ? map.get("bizFieldCd").toString() : "";
-        String bizFieldItemNm = map.containsKey("bizFieldItemNm") ? map.get("bizFieldItemNm").toString() : "";
+        String bizFieldItemNo = map.containsKey("bizFieldItemNo") ? map.get("bizFieldItemNo").toString() : "";
 
-        return ResponseEntity.ok().body(mgtTargetService.getMgtTargetStatusGraph(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, defaultParam));
+        return ResponseEntity.ok().body(mgtTargetService.getMgtTargetStatusGraph(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNo, defaultParam));
     }
 }

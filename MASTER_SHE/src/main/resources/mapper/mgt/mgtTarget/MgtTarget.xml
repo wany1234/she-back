@@ -606,8 +606,8 @@
 		<if test='bizFieldCd != null and !bizFieldCd.equals("")'>
 		and tir.biz_field_cd = #{bizFieldCd}
 		</if>
-		<if test='bizFieldItemNm != null and !bizFieldItemNm.equals("")'>
-		and tir.biz_field_item_nm like '%' + #{bizFieldItemNm} + '%'
+		<if test='bizFieldItemNo != null and !bizFieldItemNo.equals("")'>
+		and tir.biz_field_item_no = #{bizFieldItemNo}
 		</if>
 		group by tm.month 
 		ORDER BY tm.month

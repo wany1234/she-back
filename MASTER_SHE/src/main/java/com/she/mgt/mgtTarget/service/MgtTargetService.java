@@ -386,7 +386,7 @@ public class MgtTargetService {
         return mgtTargetMapper.getMgtTargetStatus(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, areaType, defaultParam);
     }
     
-    public List<MgtTgtStatusGraph> getMgtTargetStatusGraph(String from, String to, String plantCd, String processCd, String bizFieldCd, String bizFieldItemNm, DefaultParam defaultParam) throws Exception {
-        return mgtTargetMapper.getMgtTargetStatusGraph(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNm, defaultParam);
+    public List<MgtTgtStatusGraph> getMgtTargetStatusGraph(String from, String to, String plantCd, String processCd, String bizFieldCd, String bizFieldItemNo, DefaultParam defaultParam) throws Exception {
+        return mgtTargetMapper.getMgtTargetStatusGraph(from, to, plantCd, processCd, bizFieldCd, bizFieldItemNo, defaultParam);
     }
 }

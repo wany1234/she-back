@@ -172,6 +172,6 @@ public interface MgtTargetMapper {
      * @return
      * @throws Exception
      */
-    public List<MgtTgtStatusGraph> getMgtTargetStatusGraph(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNm") String bizFieldItemNm, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    public List<MgtTgtStatusGraph> getMgtTargetStatusGraph(@Param("from") String from, @Param("to") String to, @Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("bizFieldCd") String bizFieldCd, @Param("bizFieldItemNo") String bizFieldItemNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
 }
