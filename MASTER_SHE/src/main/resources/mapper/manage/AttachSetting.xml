@@ -31,7 +31,7 @@
         <if test="taskClassDesc != null and !taskClassDesc.equals('')">
            and t.task_class_desc like '%'+#{taskClassDesc}+'%'
         </if>
-        order by writer_dt desc, t.task_class_nm
+        order by t.task_class_desc, writer_dt desc
     </select>
     
     <!-- 첨부파일 설정 상세조회 -->
