@@ -111,7 +111,15 @@ public class VendorMasterController {
         String vendorCd = map.containsKey("vendorCd") ? map.get("vendorCd").toString() : "";
         // 작업자성명
         String workerNm = map.containsKey("workerNm") ? map.get("workerNm").toString() : "";
-        return ResponseEntity.ok().body(this.vendorMasterService.getChemicalVendorMasterWorkers(vendorCd, workerNm, defaultParam));
+        // 업체코드
+        String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
+        // 작업자성명
+        String vendorTypeCd = map.containsKey("vendorTypeCd") ? map.get("vendorTypeCd").toString() : "";
+        // 업체코드
+        String vendorAttCd = map.containsKey("vendorAttCd") ? map.get("vendorAttCd").toString() : "";
+        // 작업자성명
+        String vendorNm = map.containsKey("vendorNm") ? map.get("vendorNm").toString() : "";
+        return ResponseEntity.ok().body(this.vendorMasterService.getChemicalVendorMasterWorkers(vendorCd, workerNm, plantCd, vendorTypeCd, vendorAttCd, vendorNm, defaultParam));
     }
 
     /**

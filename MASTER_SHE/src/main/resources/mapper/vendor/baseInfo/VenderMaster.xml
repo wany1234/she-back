@@ -232,7 +232,17 @@
     </select>
 
     <select id= "getChemicalVendorMasterWorkers" resultType= "com.she.vendor.model.VendorWorker">
-        select cvw.vendor_worker_no
+        select 
+            DISTINCT(cvw.vendor_worker_no) 
+            ,STUFF((
+                select ',' +  splant.code_nm as plant_nm 
+                from com_vendor_worker scvw
+                        left outer join com_vendor_plant scvp 
+                            on scvw.vendor_cd = scvp.vendor_cd
+                        left outer join dbo.LANG_CODE_MASTER('kr', 'COM_PLANT_CD') splant 
+                            on scvp.plant_cd = splant.code
+                where scvw.vendor_worker_no = cvw.vendor_worker_no
+              FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as plant_nms
             ,cvw.vendor_cd
             ,cvm.vendor_nm
             ,cvw.worker_nm
@@ -241,11 +251,17 @@
             ,sexType.code_nm as gender_nm
             ,cvw.worker_job
             ,cvw.spe_commts
+<!--             , cvm.vendor_type_cd 업체분류코드  -->
+            , c1.code_nm as vendor_type_nm
+ <!--            , cvm.vendor_att_cd , 업체유형코드 -->
+            , c2.code_nm as vendor_att_nm
         from com_vendor_worker cvw
         inner join com_vendor_mst cvm
         on cvw.vendor_cd = cvm.vendor_cd
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_SEX_TYPE') sexType
         on cvw.gender_cd = sexType.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_VENDOR_TYPE')c1 on cvm.vendor_type_cd = c1.code
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_VENDOR_ATT')c2 on cvm.vendor_att_cd = c2.code
         where 1=1
         <if test= "vendorCd != null and !vendorCd.equals('')">
         and cvw.vendor_cd = #{vendorCd}
@@ -253,6 +269,19 @@
         <if test= "workerNm != null and !workerNm.equals('')">
         and cvw.worker_nm = #{workerNm}
         </if>
+        <if test= "plantCd != null and !plantCd.equals('')">
+        and cvp.plant_cd = #{plantCd}
+        </if>
+        <if test= "!vendorTypeCd != null and !vendorTypeCd.equals('')">
+        and cvm.vendor_type_cd = #{vendorTypeCd}
+        </if>
+        <if test= "vendorAttCd != null and !vendorAttCd.equals('')">
+        and cvm.vendor_att_cd = #{vendorAttCd}
+        </if>
+        <if test= "vendorNm != null and !vendorNm.equals('')">
+        and cvm.vendor_nm like '%' + #{vendorNm} + '%'
+        </if>
+        
     </select>
 
     <insert id= "createChemicalVendorMaster" parameterType= "com.she.vendor.model.ChemicalVendorMaster">

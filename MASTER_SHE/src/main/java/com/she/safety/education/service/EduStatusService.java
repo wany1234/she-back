@@ -49,8 +49,8 @@ public class EduStatusService {
      * 교육결과 현황 조회
      */
     public List<EduMaster> getEduResults(String year, String rStateCd, String isTypeCd, String mainDeptCd, String targetDeptCd, String execDeptCd, String fromYmd, String toYmd, String deptCd, String deptSubYn, String tgtDeptCd, String eduAttCd, int safEduCourseNo, String eduTypeCd, String eduNm, String eduClassCd, String plantCd,
-            String rProcStepNm, String pYear, String pMonth, String mainDeptSubYn, String targetDeptSubYn, String execDeptSubYn, DefaultParam defaultParam) throws Exception {
-        return eduStatusMapper.getEduResults(year, rStateCd, isTypeCd, mainDeptCd, targetDeptCd, execDeptCd, fromYmd, toYmd, deptCd, deptSubYn, tgtDeptCd, eduAttCd, safEduCourseNo, eduTypeCd, eduNm, eduClassCd, plantCd, rProcStepNm, pYear, pMonth, mainDeptSubYn, targetDeptSubYn, execDeptSubYn, defaultParam);
+            String rProcStepNm, String pYear, String pMonth, String mainDeptSubYn, String targetDeptSubYn, String execDeptSubYn, String reEduYn, String eduMethodCd, DefaultParam defaultParam) throws Exception {
+        return eduStatusMapper.getEduResults(year, rStateCd, isTypeCd, mainDeptCd, targetDeptCd, execDeptCd, fromYmd, toYmd, deptCd, deptSubYn, tgtDeptCd, eduAttCd, safEduCourseNo, eduTypeCd, eduNm, eduClassCd, plantCd, rProcStepNm, pYear, pMonth, mainDeptSubYn, targetDeptSubYn, execDeptSubYn, reEduYn, eduMethodCd, defaultParam);
     }
 
     /**

@@ -27,4 +27,10 @@ public class VendorWorker {
     private String workerJob;
     @ApiModelProperty(value = "특이사항")
     private String speCommts;
+    @ApiModelProperty(value = "업체분류명")
+    private String vendorTypeNm;
+    @ApiModelProperty(value = "업체유형명")
+    private String vendorAttNm;
+    @ApiModelProperty(value = "사업장명")
+    private String plantNms;
 }

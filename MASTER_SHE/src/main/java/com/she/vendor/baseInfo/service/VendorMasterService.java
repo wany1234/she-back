@@ -81,8 +81,8 @@ public class VendorMasterService {
      * @return 업체
      * @throws Exception
      */
-    public List<VendorWorker> getChemicalVendorMasterWorkers(String vendorCd, String workerNm, DefaultParam defaultParam) throws Exception {
-        return this.chemicalVendorMasterMapper.getChemicalVendorMasterWorkers(vendorCd, workerNm, defaultParam);
+    public List<VendorWorker> getChemicalVendorMasterWorkers(String vendorCd, String workerNm, String plantCd, String vendorTypeCd, String vendorAttCd, String vendorNm, DefaultParam defaultParam) throws Exception {
+        return this.chemicalVendorMasterMapper.getChemicalVendorMasterWorkers(vendorCd, workerNm, plantCd, vendorTypeCd, vendorAttCd, vendorNm, defaultParam);
     }
 
     /**
@@ -182,7 +182,7 @@ public class VendorMasterService {
     public ChemicalVendorMaster getVendorInfoDetail(String vendorCd, DefaultParam defaultParam) throws Exception {
         ChemicalVendorMaster chemicalVendorMaster = this.chemicalVendorMasterMapper.getChemicalVendorMaster(vendorCd, defaultParam);
         if (chemicalVendorMaster != null) {
-            chemicalVendorMaster.setWorkers(this.chemicalVendorMasterMapper.getChemicalVendorMasterWorkers(vendorCd, "", defaultParam));
+            chemicalVendorMaster.setWorkers(this.chemicalVendorMasterMapper.getChemicalVendorMasterWorkers(vendorCd, "", "", "", "", "", defaultParam));
         }
         return chemicalVendorMaster;
     }

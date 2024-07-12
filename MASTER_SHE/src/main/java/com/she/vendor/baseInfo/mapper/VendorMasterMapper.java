@@ -73,7 +73,8 @@ public interface VendorMasterMapper {
      * @return 업체
      * @throws Exception
      */
-    public List<VendorWorker> getChemicalVendorMasterWorkers(@Param("vendorCd") String vendorCd, @Param("workerNm") String workerNm, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    public List<VendorWorker> getChemicalVendorMasterWorkers(@Param("vendorCd") String vendorCd, @Param("workerNm") String workerNm, @Param("plantCd") String plantCd, @Param("vendorTypeCd") String vendorTypeCd, @Param("vendorAttCd") String vendorAttCd, @Param("vendorNm") String vendorNm, @Param("defaultParam") DefaultParam defaultParam)
+            throws Exception;
 
     /**
      * 업체 신규등록

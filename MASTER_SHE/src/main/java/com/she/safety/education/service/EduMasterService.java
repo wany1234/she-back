@@ -668,4 +668,16 @@ public class EduMasterService {
     public EduVideo getEduVideo(int safEduMstNo, int safEduCourseNo) throws Exception {
         return eduMasterMapper.getEduVideo(safEduMstNo, safEduCourseNo);
     }
+
+    /**
+     * 교육 미이수자 조회
+     *
+     * @param 교육마스터번호
+     * @return 교육계획 유저 List
+     * @throws Exception
+     */
+    public List<User> getEduNotCompletUser(int safEduMstNo, DefaultParam defaultParam) throws Exception {
+        return eduMasterMapper.getEduNotCompletUser(safEduMstNo, defaultParam);
+    }
+
 }

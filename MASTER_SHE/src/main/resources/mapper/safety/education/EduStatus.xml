@@ -313,6 +313,9 @@
             -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='Y' then 1 else 0 end ) as exceptUserNum
             ,ar.appr_rqst_no as papprRqstNo
             ,arr.appr_rqst_no as rapprRqstNo
+            ,m.re_edu_yn
+            ,m.edu_method_cd
+            ,c7.code_nm as edu_method_nm
         from saf_edu_mst m
       left outer join com_dept cd1 on m.main_dept_cd = cd1.dept_cd
             left outer join com_dept cd2 on m.target_dept_cd = cd2.dept_cd
@@ -321,9 +324,10 @@
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc2 on co.edu_type_cd = cc2.code
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_TYPE') c2 on m.edu_type_cd = c2.code
-            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_STEP') c3 on m.r_proc_step_cd = c3.code
+            inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EDU_PLAN_STATE') c3 on m.edu_plan_state = c3.code
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c4 on m.plant_cd = c4.code
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') c6 on co.is_type_cd = c6.code
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD')c7 on m.edu_method_cd=c7.code 
             left outer join com_dept c5 on c5.dept_cd = m.dept_cd
             left outer join com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
             left outer join com_appr_rqst arr on arr.appr_rqst_no = m.r_appr_rqst_no
@@ -334,6 +338,7 @@
             left outer join com_user uu on m.update_user_id = uu.user_id
         where 1=1
         and isnull(m.dis_yn, 'N') = 'Y'
+        and ( m.edu_plan_state = 'EPS02' OR m.edu_plan_state = 'EPS03')
         <if test='fromYmd != null and fromYmd != "" and toYmd != null and toYmd != ""'>
         and  m.edu_e_ymd <![CDATA[>=]]>  #{fromYmd} 
         and  m.edu_s_ymd <![CDATA[<=]]> #{toYmd}
@@ -406,6 +411,12 @@
         </if>
         <if test='isTypeCd != null and isTypeCd != "" '>
         and co.is_type_cd = #{isTypeCd}
+        </if>
+        <if test='reEduYn != null and reEduYn != "" '>
+        and m.re_edu_yn = #{reEduYn}
+        </if>
+        <if test='eduMethodCd != null and eduMethodCd != "" '>
+        and m.edu_method_cd = #{eduMethodCd}
         </if>
 
         order by writer_dt desc, m.edu_s_ymd desc

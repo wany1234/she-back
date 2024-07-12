@@ -414,4 +414,13 @@ public interface EduMasterMapper {
      */
     public EduVideo getEduVideo(@Param("safEduMstNo") int safEduMstNo, @Param("safEduCourseNo") int safEduCourseNo) throws Exception;
 
+    /**
+     * 교육 미이수자 조회
+     *
+     * @param 교육마스터번호
+     * @return 교육계획 유저 List
+     * @throws Exception
+     */
+    public List<User> getEduNotCompletUser(@Param("safEduMstNo") int safEduMstNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+
 }

@@ -280,6 +280,16 @@ public class EduMaster {
 
     private String eduMethodNm;
 
-    EduVideo eduVideo;
+    private EduVideo eduVideo;
+
+    private String eduPlanState;
+
+    private String oriSafEduMstNo;
+
+    private String oriEduNm;
+
+    private String reSafEduMstNo;
+
+    private String reEduNm;
 
 }

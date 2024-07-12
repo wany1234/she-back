@@ -48,7 +48,8 @@ public interface EduStatusMapper {
 
     public List<EduMaster> getEduResults(@Param("year") String year, @Param("rStateCd") String rStateCd, @Param("isTypeCd") String isTypeCd, @Param("mainDeptCd") String mainDeptCd, @Param("targetDeptCd") String targetDeptCd, @Param("execDeptCd") String execDeptCd, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
             @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn, @Param("tgtDeptCd") String tgtDeptCd, @Param("eduAttCd") String eduAttCd, @Param("safEduCourseNo") int safEduCourseNo, @Param("eduTypeCd") String eduTypeCd, @Param("eduNm") String eduNm, @Param("eduClassCd") String eduClassCd, @Param("plantCd") String plantCd,
-            @Param("rProcStepNm") String rProcStepNm, @Param("pYear") String pYear, @Param("pMonth") String pMonth, @Param("mainDeptSubYn") String mainDeptSubYn, @Param("targetDeptSubYn") String targetDeptSubYn, @Param("execDeptSubYn") String execDeptSubYn, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+            @Param("rProcStepNm") String rProcStepNm, @Param("pYear") String pYear, @Param("pMonth") String pMonth, @Param("mainDeptSubYn") String mainDeptSubYn, @Param("targetDeptSubYn") String targetDeptSubYn, @Param("execDeptSubYn") String execDeptSubYn, @Param("reEduYn") String reEduYn, @Param("eduMethodCd") String eduMethodCd,
+            @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 교육 문제 조회 (모바일 )

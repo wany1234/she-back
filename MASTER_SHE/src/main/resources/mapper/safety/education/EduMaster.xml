@@ -94,6 +94,12 @@
               ,m.chng_num
               ,m.edu_method_cd
               ,c5.code_nm as edu_method_nm
+              , m.edu_plan_state 
+              , m.ori_saf_edu_mst_no
+              , (select edu_nm from saf_edu_mst where saf_edu_mst_no = m.ori_saf_edu_mst_no) as ori_edu_nm
+              , rm.edu_nm as re_edu_nm
+              , rm.saf_edu_mst_no as re_saf_edu_mst_no
+              , m.re_edu_yn
           FROM saf_edu_mst m
          INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code
           LEFT OUTER JOIN saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
@@ -113,6 +119,7 @@
           LEFT OUTER JOIN com_user uu on m.update_user_id = uu.user_id
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') cc4 on co.is_type_cd = cc4.code
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') c5 on co.is_type_cd = c5.code
+          LEFT OUTER JOIN saf_edu_mst rm on m.saf_edu_mst_no = rm.ori_saf_edu_mst_no
         <!-- 변경관리 연동 X
           LEFT OUTER JOIN saf_chng_ref_work scrw
             ON scrw.ref_table_nm = 'saf_edu_mst'
@@ -158,6 +165,8 @@
             ,p_proc_step_cd
             ,p_state_cd
             ,edu_method_cd
+            ,re_edu_yn
+            ,ori_saf_edu_mst_no 
         )
         VALUES
         ( 
@@ -195,6 +204,8 @@
             ,'STATE2'  
             </if>  
             ,#{eduMethodCd}
+            ,#{reEduYn}
+            ,#{oriSafEduMstNo}
         )
     </insert>
 
@@ -228,6 +239,7 @@
             ,update_dt = getDate()
             ,chng_num = #{chngNum}
             ,edu_method_cd = #{eduMethodCd}
+            ,edu_plan_state = #{eduPlanState}
         where saf_edu_mst_no = #{safEduMstNo}
     </update>
     
@@ -818,6 +830,24 @@
             and saf_edu_mst_no = #{safEduMstNo}
             and saf_edu_course_no = #{safEduCourseNo}
         order by edu_video_no desc
+    </select>
+    
+    <select id= "getEduNotCompletUser" resultType= "com.she.manage.model.User">
+        select u.user_id, u.user_nm, d.dept_cd, d.dept_nm,d.plant_cd
+            ,dbo.GET_CODE_NM_LANG('kr','COM_PLANT_CD', d.plant_cd) as plant_nm
+            , u.com_sex_type_cd, case when u.com_sex_type_cd = '1' then '남자' else '여자' end as com_sex_type_nm
+            , u.office_tel, u.phone_no, u.email, u.birth_ymd, u.entry_ymd
+            , u.use_yn
+            , u.create_user_id, cu.user_nm as create_user_nm, u.create_dt
+            , u.update_user_id, uu.user_nm as update_user_nm, u.update_dt
+        from com_user u
+        inner join com_dept d on u.dept_cd = d.dept_cd
+        inner join com_user cu on u.create_user_id = cu.user_id
+        left outer join com_user uu on u.update_user_id = uu.user_id
+        inner join saf_edu_dtl_psn edu on u.user_id = edu.user_id
+        where 1 = 1
+            and edu.saf_edu_mst_no = #{safEduMstNo}
+            and edu.complet_yn = 'N'
     </select>
     
 </mapper>

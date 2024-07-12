@@ -616,4 +616,18 @@ public class EduMasterController {
     public ResponseEntity<EduVideo> getEduVideo(@PathVariable("safEduMstNo") int safEduMstNo, @PathVariable("safEduCourseNo") int safEduCourseNo) throws Exception {
         return ResponseEntity.ok().body(eduMasterService.getEduVideo(safEduMstNo, safEduCourseNo));
     }
+
+    /**
+     * 교육 미이수자 조회
+     *
+     * @param 교육마스터번호
+     * @return 교육계획 유저 List
+     * @throws Exception
+     */
+    @GetMapping("/getedunotcompletuser/{safEduMstNo}")
+    public ResponseEntity<List<User>> getEduNotCompletUser(@PathVariable("safEduMstNo") int safEduMstNo, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        List<User> userList = eduMasterService.getEduNotCompletUser(safEduMstNo, defaultParam);
+
+        return ResponseEntity.ok().body(userList);
+    }
 }
