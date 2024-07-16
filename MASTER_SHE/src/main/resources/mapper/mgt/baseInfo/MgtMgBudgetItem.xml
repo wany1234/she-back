@@ -23,7 +23,7 @@
 		<if test="useYn !=null and !useYn.equals('')">
 		and mbc.use_yn = #{useYn}
 		</if>
-		order by mbc.create_dt, sort_order desc
+		order by mbc.create_dt desc, mbcd.sort_order
 	</select>
 
     <delete id="deleteBudgetDetailItem">
