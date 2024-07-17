@@ -77,7 +77,6 @@
             select cd.dept_cd
                 ,cd.dept_nm
                 ,cd.p_dept_cd
-                ,cd.plant_cd
                 ,cd.dept_lvl
                 ,cd.use_yn
             from com_dept cd
@@ -97,7 +96,6 @@
             select cdd.dept_cd
                 ,cdd.dept_nm
                 ,cdd.p_dept_cd
-                ,cdd.plant_cd
                 ,cdd.dept_lvl
                 ,cdd.use_yn
             from com_dept cdd
@@ -132,7 +130,6 @@
             ,depttree.dept_nm
             ,depttree.dept_nm as label
             ,depttree.p_dept_cd
-            ,depttree.plant_cd, plant.code_nm as plant_nm
             ,depttree.dept_lvl
             ,deptLvl.code_nm as dept_lvl_nm
             ,depttree.use_yn
@@ -142,23 +139,18 @@
             ,processlist.process_list
             ,processlist.process_cd_list
         from depttree
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on plant.code = plant_cd
         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_DEPT_LVL') deptLvl
          on dept_lvl = deptLvl.code
         left outer join processlist
          on depttree.dept_cd = processlist.dept_cd
         where 1=1
-        <if test= "plantCd != null and plantCd != ''">
-        and depttree.plant_cd = #{plantCd}
-        </if>
         <if test= "deptCd != null and deptCd != ''">
         and upper(depttree.dept_cd) = upper(#{deptCd})
         </if>
         <if test= "deptNm != null and deptNm != ''">
         and upper(depttree.dept_nm) like '%'+upper(#{deptNm})+'%'
         </if>
-        order by p_dept_cd, depttree.plant_cd, depttree.dept_nm
+        order by p_dept_cd, depttree.dept_nm
     </select>
     
     <select id= "getTreeDeptsForMobile" resultType= "com.she.manage.model.Dept">

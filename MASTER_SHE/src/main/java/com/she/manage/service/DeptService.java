@@ -66,7 +66,13 @@ public class DeptService {
      */
     public Dept getDept(String deptCd, DefaultParam defaultParam) throws Exception {
         Dept dept = this.deptMapper.getDept(deptCd, defaultParam);
-        dept.setSelectProcess(this.processMapper.getProcesses("", "", deptCd, "", "", defaultParam));
+
+        List<Process> selectProcess = this.processMapper.getProcesses("", "", deptCd, "", "", defaultParam);
+
+        if (selectProcess != null && selectProcess.size() > 0) {
+            dept.setSelectProcess(selectProcess);
+        }
+
         return dept;
     }
 
@@ -163,7 +169,7 @@ public class DeptService {
      * @return 등록 행 수
      * @throws Exception
      */
-	@CacheEvict(cacheNames = { "DeptTreeCashe", "DeptTreeMobileCashe" }, allEntries = true)
+    @CacheEvict(cacheNames = { "DeptTreeCashe", "DeptTreeMobileCashe" }, allEntries = true)
     public int createDeptProcess(List<Process> processes) throws Exception {
         int resultNo = 0;
         for (Process process : processes) {
@@ -179,7 +185,7 @@ public class DeptService {
      * @return 등록 행 수
      * @throws Exception
      */
-	@CacheEvict(cacheNames = { "DeptTreeCashe", "DeptTreeMobileCashe" }, allEntries = true)
+    @CacheEvict(cacheNames = { "DeptTreeCashe", "DeptTreeMobileCashe" }, allEntries = true)
     public int deleteDeptProcess(List<Process> processes) throws Exception {
         int resultNo = 0;
         for (Process process : processes) {

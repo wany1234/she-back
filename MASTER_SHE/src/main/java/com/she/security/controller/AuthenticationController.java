@@ -245,10 +245,10 @@ public class AuthenticationController {
                 throw new RestAuthException(HttpStatus.UNAUTHORIZED, "접근이 거부 되었습니다.", ExceptionCode.UNAUTHORIZED.name());
             }
         } catch (NullPointerException e) {
-        	LOGGER.error(e.getMessage());
+            LOGGER.error(e.getMessage());
         } catch (Exception e) {
             // TODO: handle exception
-        	LOGGER.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             throw new RestAuthException(HttpStatus.UNAUTHORIZED, "관리자에게 문의바랍니다.", ExceptionCode.UNAUTHORIZED.name());
         }
         // catch (AgentException e) {
@@ -273,9 +273,7 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity<JwtJoseToken> login(@ApiParam(name = "account", value = "", required = true) @RequestBody RequestAuthentication account, HttpServletRequest request, HttpServletResponse response) throws RestAuthException {
         
-    	System.out.println("===account.getUserPwdSHA()===" + account.getUserPwdSHA());
-    	
-    	if (account.getUserId() == null || account.getUserPwdSHA() == null) {
+        if (account.getUserId() == null || account.getUserPwdSHA() == null) {
             // 사용자 아이디와 암호를 입력하세요.
             throw new RestAuthException(HttpStatus.UNAUTHORIZED, "M0000000001", ExceptionCode.UNAUTHORIZED.name());
         }
