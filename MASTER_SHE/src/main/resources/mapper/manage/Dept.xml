@@ -50,9 +50,7 @@
             , d.p_dept_cd, upperDept.dept_nm as p_dept_nm
             , d.create_user_id, cu.user_nm as create_user_nm, d.create_dt
             , d.update_user_id, uu.user_nm as update_user_nm, d.update_dt
-            ,d.plant_cd, plant.code_nm as plant_nm
             ,d.dept_lvl
-            ,deptLvl.code_nm as dept_lvl_nm
             ,d.use_yn
             ,case when d.use_yn = 'Y' then '사용'
                 else '미사용'
@@ -60,14 +58,10 @@
         from com_dept d
         left outer join com_dept upperDept
          on d.p_dept_cd = upperDept.dept_cd
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on plant.code = d.plant_cd
-        inner join com_user cu
+        left outer join com_user cu
          on d.create_user_id = cu.user_id
         left outer join com_user uu
          on d.update_user_id = uu.user_id
-        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_DEPT_LVL') deptLvl
-         on d.dept_lvl = deptLvl.code
         where d.dept_cd = #{deptCd}
     </select>
 
