@@ -84,13 +84,6 @@
                         where p.process_cd = cpd.process_cd
                     )
                 </when>
-                <otherwise>
-                    and p.process_cd in (select process_cd
-                                        from com_process_dept cpd
-                                        inner join com_dept cd
-                                        on cpd.dept_cd = cd.dept_cd
-                                        where cd.plant_cd = #{plantCd})
-                </otherwise>
             </choose>
         </if>
         order by writer_dt desc, p.sort_order
