@@ -98,9 +98,6 @@
             from com_dept_auth_grp cdag
             inner join com_dept cd 
             on cdag.dept_cd = cd.dept_cd
-            inner join com_code_master plant
-            on cd.plant_cd = plant.code
-            and plant.code_group_cd = 'COM_PLANT_CD'
             inner join com_code_master deptLvl
             on cd.dept_lvl = deptLvl.code
             and deptLvl.code_group_cd = 'COM_DEPT_LVL'
@@ -118,9 +115,6 @@
             on cuag.user_id = cu.user_id
             inner join com_dept cd 
             on cu.dept_cd = cd.dept_cd
-            inner join com_code_master plant
-            on cd.plant_cd = plant.code
-            and plant.code_group_cd = 'COM_PLANT_CD'
             inner join com_code_master deptLvl
             on cd.dept_lvl = deptLvl.code
             and deptLvl.code_group_cd = 'COM_DEPT_LVL'
