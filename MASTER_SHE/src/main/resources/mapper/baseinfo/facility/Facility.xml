@@ -355,7 +355,6 @@
             select cd.dept_cd
                 ,cd.dept_nm
                 ,cd.p_dept_cd
-                ,cd.plant_cd
             from com_dept cd
             where 1=1
             <choose>
@@ -370,7 +369,6 @@
             select cdd.dept_cd
                 ,cdd.dept_nm
                 ,cdd.p_dept_cd
-                ,cdd.plant_cd
             from com_dept cdd
             inner join depttree
             on cdd.p_dept_cd = depttree.dept_cd
@@ -378,18 +376,11 @@
         select depttree.dept_cd
             ,depttree.dept_nm
             ,depttree.p_dept_cd
-            ,depttree.plant_cd, plant.code_nm as plant_nm
             ,(select count(*)
             from saf_facility_mst sfm
-            where depttree.dept_cd = sfm.dept_cd
-            and sfm.plant_cd = depttree.plant_cd) as facility_count
+            where depttree.dept_cd = sfm.dept_cd) as facility_count
         from depttree
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on depttree.plant_cd = plant.code
         where 1=1
-        <if test= "plantCd != null and !plantCd.equals('')">
-        and depttree.plant_cd = #{plantCd}
-        </if>
         <choose>
             <when test= "specHealth">
             and depttree.dept_cd in (select distinct sfm.dept_cd
@@ -413,7 +404,7 @@
                 
             </otherwise>
         </choose>
-        order by plant.sort_order, depttree.dept_cd
+        order by depttree.dept_cd
     </select>
     
 </mapper>
