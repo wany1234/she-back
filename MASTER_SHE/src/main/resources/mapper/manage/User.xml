@@ -97,7 +97,7 @@
             , u.use_yn
             , u.create_user_id, cu.user_nm as create_user_nm, u.create_dt
             , u.update_user_id, uu.user_nm as update_user_nm, u.update_dt
-            , u.plant_cd , plant.code_nm as plant_nm
+            , d.plant_cd , plant.code_nm as plant_nm
             , u.duty_cd, duty.duty_nm
             , u.position_cd, position.position_nm
             , u.signature
@@ -107,7 +107,7 @@
         on u.dept_cd = d.dept_cd
         and u.plant_cd = d.plant_cd 
         left outer join com_code_master plant
-        on u.plant_cd = plant.code
+        on d.plant_cd = plant.code
         and plant.code_group_cd = 'COM_PLANT_CD'
         left outer join com_hr_duty duty
         on u.duty_cd = duty.duty_cd
