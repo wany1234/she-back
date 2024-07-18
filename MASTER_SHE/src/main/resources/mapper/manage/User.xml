@@ -105,6 +105,7 @@
         from com_user u
         inner join com_dept d
         on u.dept_cd = d.dept_cd
+        and u.plant_cd = d.plant_cd 
         left outer join com_code_master plant
         on u.plant_cd = plant.code
         and plant.code_group_cd = 'COM_PLANT_CD'
