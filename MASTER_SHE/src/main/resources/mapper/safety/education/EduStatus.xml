@@ -497,7 +497,6 @@
             select cd.dept_cd
                 ,cd.dept_nm
                 ,cd.p_dept_cd
-                ,cd.plant_cd
             from com_dept cd
             where 1=1
             <choose>
@@ -519,7 +518,6 @@
             select cdd.dept_cd
                 ,cdd.dept_nm
                 ,cdd.p_dept_cd
-                ,cdd.plant_cd
             from com_dept cdd
             inner join depttree
             on cdd.p_dept_cd = depttree.dept_cd
@@ -528,7 +526,7 @@
             , case when t.law_edu_tm = '-' then '-' when  t.dft_edu_tm >= t.n_law_edu_tm then 'Y' else 'N' end as complet_yn
         from (
             select #{year} as year
-                , p.code_nm as plant_nm, d.plant_cd, d.dept_nm, d.dept_cd, u.user_nm, u.user_id
+                , p.code_nm as plant_nm, u.plant_cd, d.dept_nm, d.dept_cd, u.user_nm, u.user_id
                 --교육대분류
                 , c1.code_nm as edu_att_nm, c1.code as edu_att_cd
                 --교육분류
@@ -555,7 +553,7 @@
             inner join com_dept d
             on u.dept_cd = d.dept_cd
             inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') p
-            on d.plant_cd = p.code
+            on u.plant_cd = p.code
             inner join depttree td
             on d.dept_cd = td.dept_cd
             inner join saf_edu_dtl_psn ep
@@ -574,7 +572,7 @@
             <if test='userId != null and !userId.equals("")'>
              and ep.user_id = #{userId}
             </if>
-            group by p.code_nm, d.plant_cd, d.dept_nm, d.dept_cd, u.user_nm, u.user_id
+            group by p.code_nm, u.plant_cd, d.dept_nm, d.dept_cd, u.user_nm, u.user_id
                 --교육대분류
                 , c1.code_nm, c1.code
                 --교육분류
@@ -677,7 +675,7 @@
         select t.*
             , case when convert(datetime, t.edu_schedule_ymd) &lt; getdate() then 'Y' else 'N' end as edu_schedule_yn
         from (
-            select u.user_id, u.user_nm, d.dept_cd, d.dept_nm, d.plant_cd, p.code_nm as plant_nm
+            select u.user_id, u.user_nm, d.dept_cd, d.dept_nm, u.plant_cd, p.code_nm as plant_nm
                 , t.edu_att_cd, c1.code_nm as edu_att_nm, t.edu_type_cd as edu_class_cd, c2.code_nm as edu_class_nm, t.saf_edu_course_no, t.edu_course_nm, cg.pre_edu_cd, pt.edu_course_nm as pre_edu_nm
                 , g.edu_grp_no, g.grp_nm, cg.edu_com_yn, cg.edu_com_std, cgc.code_nm as edu_com_std_nm, cg.edu_com_per, cg.edu_com_time, cg.edu_repeat_yn, cg.doc_keep_per, cg.law_desk
                 , m.complet_ymd, pm.complet_ymd as pre_complet_ymd, u.entry_ymd, g.apply_ymd
@@ -712,7 +710,7 @@
             inner join com_dept d
             on u.dept_cd = d.dept_cd
             inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'com_plant_cd') p
-            on d.plant_cd = p.code
+            on u.plant_cd = p.code
             left join (
                 select m.saf_edu_mst_no, m.saf_edu_course_no, p.user_id, p.complet_ymd, rank() over (partition by m.saf_edu_course_no, p.user_id order by p.complet_ymd desc, p.saf_edu_mst_no desc) as rn
                 from saf_edu_mst m
@@ -1011,7 +1009,7 @@
                      ,dbo.GET_CODE_NM(ec.plant_cd, 'COM_PLANT_CD') as plant_nm
                      ,ec.is_type_cd
                      ,dbo.GET_CODE_NM(ec.is_type_cd, 'MGT_LAW_CLASS') as is_type_nm
-                     ,case when em.r_step_cd = 'BAPSG' then 
+                     ,case when em.edu_plan_state = 'EPS03' then 
                         case when dp.complet_yn ='Y' then '교육 이수자(명)' else '교육 대상자(명)' end
                         else '교육 대상자(명)' end as gubun
                      ,convert(numeric(10),sum(case when substring(convert(char(10), em.edu_e_ymd, 23), 1, 4) &lt; #{year}  then 1  else 0 end)) as oldCnt
@@ -1040,7 +1038,7 @@
                <if test="isTypeCd !=null and !isTypeCd.equals('')">
                     and ec.is_type_cd = #{isTypeCd}
                </if>
-             group by ec.plant_cd,ec.is_type_cd, case when em.r_step_cd = 'BAPSG' then 
+             group by ec.plant_cd,ec.is_type_cd, case when em.edu_plan_state = 'EPS03' then 
                 case when dp.complet_yn ='Y' then '교육 이수자(명)' else '교육 대상자(명)' end
                 else '교육 대상자(명)' end
             ), result as(
