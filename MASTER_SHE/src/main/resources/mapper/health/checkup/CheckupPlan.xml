@@ -400,7 +400,7 @@
              INNER JOIN com_chem cc
                 ON ccpc.chem_no = cc.chem_no
         )
-        SELECT cd.plant_cd
+        SELECT cu.plant_cd
               ,plant.code_nm as plant_nm
               ,cd.dept_cd
               ,cd.dept_nm
@@ -447,7 +447,7 @@
             ON cu.dept_cd = cd.dept_cd
            AND cd.use_yn = 'Y'
          INNER JOIN com_code_master plant
-            ON cd.plant_cd = plant.code
+            ON cu.plant_cd = plant.code
            AND plant.code_group_cd = 'COM_PLANT_CD'
          INNER JOIN com_code_master sex
             ON cu.com_sex_type_cd = sex.code
@@ -498,7 +498,7 @@
              INNER JOIN com_chem cc
                 ON ccpc.chem_no = cc.chem_no
         )
-        SELECT cd.plant_cd
+        SELECT cu.plant_cd
               ,plant.code_nm as plant_nm
               ,cd.dept_cd
               ,cd.dept_nm
@@ -540,7 +540,7 @@
                                      WHERE a.process_cd = chem.process_cd)
                          FOR xml PATH('')),1,1,'') as chem_nm_krs
               , IIF((
-                     SELECT COUNT(*)
+                     SELECT ISNULL(COUNT(*),'0')
                       FROM hea_checkup_plan p         
                      INNER JOIN hea_checkup_result r
                         ON p.hea_checkup_plan_no = r.hea_checkup_plan_no
@@ -551,7 +551,7 @@
                      WHERE 1=1
                        AND p.hea_checkup_plan_no = #{heaCheckupPlanNo}
                        AND u.user_id = cu.user_id                   
-                    ) > 0 , '등록', '미등록'
+                    ) != '0' , '등록', '미등록'
                 ) AS checkUpResult            
               ,count(*) over() as total_cnt
           FROM com_user cu
@@ -559,7 +559,7 @@
             ON cu.dept_cd = cd.dept_cd
            AND cd.use_yn = 'Y'
          INNER JOIN com_code_master plant
-            ON cd.plant_cd = plant.code
+            ON cu.plant_cd = plant.code
            AND plant.code_group_cd = 'COM_PLANT_CD'
          INNER JOIN com_code_master sex
             ON cu.com_sex_type_cd = sex.code
@@ -586,7 +586,7 @@
         </if>
         <if test="checkUpResult != null and !checkUpResult.equals('')">
            AND IIF((
-                     SELECT count(*)
+                     SELECT ISNULL(COUNT(*),'0')
                       FROM hea_checkup_plan pp      
                      INNER JOIN hea_checkup_result rr
                         ON pp.hea_checkup_plan_no = rr.hea_checkup_plan_no
@@ -597,7 +597,7 @@
                      WHERE 1=1
                        AND pp.hea_checkup_plan_no = #{heaCheckupPlanNo}
                        AND uu.user_id = cu.user_id                  
-                    ) > 0 , '등록', '미등록'
+                    ) != '0' , '등록', '미등록'
                 ) = #{checkUpResult}
         </if>
         <choose>
@@ -684,7 +684,7 @@
                 ON ccpc.chem_no = cc.chem_no
         )
         SELECT plant.code_nm as plant_nm
-              ,cd.plant_cd
+              ,cu.plant_cd
               ,cd.dept_nm
               ,cd.dept_cd
               ,p.hea_checkup_plan_no
@@ -731,7 +731,7 @@
             ON cu.dept_cd = cd.dept_cd
            AND cd.use_yn = 'Y'
          INNER JOIN com_code_master plant
-            ON cd.plant_cd = plant.code
+            ON cu.plant_cd = plant.code
            AND plant.code_group_cd = 'COM_PLANT_CD'
          INNER JOIN com_code_master sex
             ON cu.com_sex_type_cd = sex.code
@@ -752,7 +752,7 @@
          WHERE hea_checkup_plan_no = p.hea_checkup_plan_no
            AND user_id = cu.user_id)
         <if test="plantCd != null and !plantCd.equals('')">
-           AND cd.plant_cd = #{plantCd}
+           AND cu.plant_cd = #{plantCd}
         </if>
         <if test="deptCd != null and !deptCd.equals('')">
            AND cd.dept_cd = #{deptCd}
@@ -851,7 +851,7 @@
                 ON ccpc.chem_no = cc.chem_no
         )
         SELECT plant.code_nm as plant_nm
-              ,cd.plant_cd
+              ,cu.plant_cd
               ,cd.dept_nm
               ,cd.dept_cd
               ,p.hea_checkup_plan_no
@@ -896,7 +896,7 @@
             ON cu.dept_cd = cd.dept_cd
            AND cd.use_yn = 'Y'
          INNER JOIN com_code_master plant
-            ON cd.plant_cd = plant.code
+            ON cu.plant_cd = plant.code
            AND plant.code_group_cd = 'COM_PLANT_CD'
          INNER JOIN com_code_master sex
             ON cu.com_sex_type_cd = sex.code
@@ -917,7 +917,7 @@
                             WHERE hea_checkup_plan_no = p.hea_checkup_plan_no
                               AND user_id = cu.user_id)
         <if test="plantCd != null and !plantCd.equals('')">
-           AND cd.plant_cd = #{plantCd}
+           AND cu.plant_cd = #{plantCd}
         </if>
         <if test="deptCd != null and !deptCd.equals('')">
            AND cd.dept_cd = #{deptCd}
