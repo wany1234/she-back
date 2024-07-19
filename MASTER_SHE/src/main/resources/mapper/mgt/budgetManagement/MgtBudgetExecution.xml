@@ -973,4 +973,144 @@
             (badi.budget_cls_cd, badi.budget_cls_nm)
         )
     </select>
+    
+    <select id="getbudgetExecutionList" resultType="com.she.mgt.model.MgtBudgetExecution">
+    /* MgtBudgetExecutionMapper.getbudgetExecutionList[MgtBudgetExec.xml] */
+    	SELECT mbad.budget_act_no  
+			, mbadc.budget_act_dept_cate_no 
+			, mbad.year
+			, mbad.dept_cd 
+			, dbo.GET_DEPT_NM(mbad.dept_cd) as dept_nm
+			, mbadc.budget_cate_cd 
+			, mbadc.budget_cate_nm 
+			, mbadc.budget_cate_dtl_cd 
+			, mbadc.budget_cate_dtl_nm 
+			, mbadc.org_amt 
+			, mbadc.create_user_id 
+			, convert(char(10), mbadc.create_dt, 23) as create_dt
+			, max(case when mbe.exec_mm = '01' then mbe.budget_exec_no end) as b1_exec_no
+			, isnull(max(case when mbe.exec_mm = '01' then mbe.exec_amt  end),0) as b1_exec_amt
+			, isnull(max(case when mbe.exec_mm = '01' then mbe.exec_mm  end),'01') as b1_exec_mm
+			, max(case when mbe.exec_mm = '02' then mbe.budget_exec_no end) as b2_exec_no
+			, isnull(max(case when mbe.exec_mm = '02' then mbe.exec_amt  end),0) as b2_exec_amt
+			, isnull(max(case when mbe.exec_mm = '02' then mbe.exec_mm  end),'02') as b2_exec_mm
+			, max(case when mbe.exec_mm = '03' then mbe.budget_exec_no end) as b3_exec_no
+			, isnull(max(case when mbe.exec_mm = '03' then mbe.exec_amt  end),0) as b3_exec_amt
+			, isnull(max(case when mbe.exec_mm = '03' then mbe.exec_mm  end),'03') as b3_exec_mm
+			, max(case when mbe.exec_mm = '04' then mbe.budget_exec_no end) as b4_exec_no
+			, isnull(max(case when mbe.exec_mm = '04' then mbe.exec_amt  end),0) as b4_exec_amt
+			, isnull(max(case when mbe.exec_mm = '04' then mbe.exec_mm  end),'04') as b4_exec_mm
+			, max(case when mbe.exec_mm = '05' then mbe.budget_exec_no end) as b5_exec_no
+			, isnull(max(case when mbe.exec_mm = '05' then mbe.exec_amt  end),0) as b5_exec_amt
+			, isnull(max(case when mbe.exec_mm = '05' then mbe.exec_mm  end),'05') as b5_exec_mm
+			, max(case when mbe.exec_mm = '06' then mbe.budget_exec_no end) as b6_exec_no
+			, isnull(max(case when mbe.exec_mm = '06' then mbe.exec_amt  end),0) as b6_exec_amt
+			, isnull(max(case when mbe.exec_mm = '06' then mbe.exec_mm  end),'06') as b6_exec_mm
+			, max(case when mbe.exec_mm = '07' then mbe.budget_exec_no end) as b7_exec_no
+			, isnull(max(case when mbe.exec_mm = '07' then mbe.exec_amt  end),0) as b7_exec_amt
+			, isnull(max(case when mbe.exec_mm = '07' then mbe.exec_mm  end),'07') as b7_exec_mm
+			, max(case when mbe.exec_mm = '08' then mbe.budget_exec_no end) as b8_exec_no
+			, isnull(max(case when mbe.exec_mm = '08' then mbe.exec_amt  end),0) as b8_exec_amt
+			, isnull(max(case when mbe.exec_mm = '08' then mbe.exec_mm  end),'08') as b8_exec_mm
+			, max(case when mbe.exec_mm = '09' then mbe.budget_exec_no end) as b9_exec_no
+			, isnull(max(case when mbe.exec_mm = '09' then mbe.exec_amt  end),0) as b9_exec_amt
+			, isnull(max(case when mbe.exec_mm = '09' then mbe.exec_mm  end),'09') as b9_exec_mm
+			, max(case when mbe.exec_mm = '10' then mbe.budget_exec_no end) as b10_exec_no
+			, isnull(max(case when mbe.exec_mm = '10' then mbe.exec_amt  end),0) as b10_exec_amt
+			, isnull(max(case when mbe.exec_mm = '10' then mbe.exec_mm  end),'10') as b10_exec_mm
+			, max(case when mbe.exec_mm = '11' then mbe.budget_exec_no end) as b11_exec_no
+			, isnull(max(case when mbe.exec_mm = '11' then mbe.exec_amt  end),0) as b11_exec_amt
+			, isnull(max(case when mbe.exec_mm = '11' then mbe.exec_mm  end),'11') as b11_exec_mm
+			, max(case when mbe.exec_mm = '12' then mbe.budget_exec_no end) as b12_exec_no
+			, isnull(max(case when mbe.exec_mm = '12' then mbe.exec_amt  end),0) as b12_exec_amt
+			, isnull(max(case when mbe.exec_mm = '12' then mbe.exec_mm  end),'12') as b12_exec_mm
+			, isnull(SUM(mbe.exec_amt),0) as exec_amt_sum 
+			, concat(isnull(ROUND(SUM(mbe.exec_amt) / CONVERT(float,mbadc.org_amt) , 2),0) * 100,'%') as ratio
+		from mgt_budget_act_dept mbad 
+		LEFT OUTER JOIN mgt_budget_act_dept_cate mbadc 
+		on mbad.budget_act_no = mbadc.budget_act_no 
+		LEFT OUTER JOIN mgt_budget_exec mbe 
+		on mbadc.budget_act_dept_cate_no = mbe.budget_act_dept_cate_no 
+		where 1 = 1
+		and mbadc.budget_act_dept_cate_no is not null
+		<if test="year !=null and !year.equals('')">
+		and mbad.year = #{year}
+		</if>
+		<if test="deptCd !=null and !deptCd.equals('')">
+		and mbad.dept_cd = #{deptCd}
+		</if>
+		<if test="budgetCateCd !=null and !budgetCateCd.equals('')">
+		and mbadc.budget_cate_cd = #{budgetCateCd} 
+		</if>
+		<if test="budgetCateDtlNm !=null and !budgetCateDtlNm.equals('')">
+		and mbadc.budget_cate_dtl_nm like '%' + #{budgetCateDtlNm} + '%' 
+		</if> 
+		group by mbad.budget_act_no  
+			, mbadc.budget_act_dept_cate_no 
+			, mbad.year
+			, mbad.dept_cd 
+			, mbadc.budget_cate_cd 
+			, mbadc.budget_cate_nm 
+			, mbadc.budget_cate_dtl_cd 
+			, mbadc.budget_cate_dtl_nm 
+			, mbadc.org_amt 
+			, mbadc.remark 
+			, mbadc.create_user_id
+			, mbadc.create_dt
+		order by mbad.year
+    </select>
+    
+    <select id="getBudgetExcutionKey" resultType="int">
+    	select next value for seq_mgt_budget_exec as budgetExecNo
+    </select>
+    
+    <update id="saveBudgetExcution" parameterType="com.she.mgt.model.MgtBudgetExecutionDetail">
+	/* MgtBudgetExecutionMapper.saveBudgetExcution[MgtBudgetExec.xml] */
+		MERGE into mgt_budget_exec d
+		using (select #{budgetActDeptCateNo} as budget_act_dept_cate_no
+			,	#{execMm} as exec_mm 
+			,	#{deptCd} as dept_cd 
+		) s
+		on (d.budget_act_dept_cate_no = s.budget_act_dept_cate_no and d.exec_mm = s.exec_mm and d.dept_cd = s.dept_cd)
+		WHEN MATCHED THEN 
+		 update set 
+		 	d.exec_amt = #{execAmt}
+			,d.remark = #{remark}
+			,d.update_user_id = #{updateUserId}
+			,d.update_dt = getdate()
+		WHEN NOT MATCHED THEN     
+		INSERT ( 
+	   			budget_exec_no
+				,budget_act_dept_cate_no
+				,exec_mm
+				,dept_cd
+				,exec_amt
+				,create_user_id
+				,create_dt
+				,remark
+			)
+			values(
+			 #{budgetExecNo}
+			, #{budgetActDeptCateNo}
+			, #{execMm}
+			, #{deptCd}
+			, #{execAmt}
+			, #{createUserId}
+			, getdate()
+			, #{remark}
+			);
+	</update>
+	
+	<select id="getBudgetExcutionDetail" resultType="com.she.mgt.model.MgtBudgetExecutionDetail">
+		select mbe.budget_exec_no 
+		, mbe.exec_amt
+		, mbe.remark 
+		from mgt_budget_exec mbe 
+		where 1=1
+		and mbe.budget_act_dept_cate_no = #{budgetActDeptCateNo}
+		and mbe.exec_mm = #{execMm}
+		and mbe.dept_cd = #{deptCd}
+	</select>
+	
+	
 </mapper>

@@ -4,6 +4,8 @@ import com.google.common.base.Strings;
 import com.she.common.model.DefaultParam;
 import com.she.mgt.budgetManagement.service.MgtBudgetExecutionService;
 import com.she.mgt.model.MgtBudgetExec;
+import com.she.mgt.model.MgtBudgetExecution;
+import com.she.mgt.model.MgtBudgetExecutionDetail;
 import com.she.mgt.model.MgtBudgetStat;
 import com.she.utils.RequestMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -298,5 +300,62 @@ public class MgtBudgetExecutionController {
         int budgetActMstNo = map.containsKey("budgetActMstNo") ? Integer.parseInt("".equals(map.get("budgetActMstNo").toString()) ? "0" : map.get("budgetActMstNo").toString()) : 0;
 
         return ResponseEntity.ok().body(mgtBudgetExecutionService.getBudgetStatus(year, plantCd, budgetTypeCd, budgetClsCd, budgetActMstNo, defaultParam));
+    }
+
+    /**
+     * 예산집행 목록 조회
+     * @param parameter
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/mgtbudgetexcution")
+    public ResponseEntity<List<MgtBudgetExecution>> getbudgetExecutionList(@RequestParam HashMap<String, Object> parameter) throws Exception {
+        HashMap<String, Object> map = requestMapper.convertAsParameter(parameter);
+
+        String year = map.containsKey("year") ? map.get("year").toString() : "";
+		String deptCd = map.containsKey("deptCd") ? map.get("deptCd").toString() : "";
+		String budgetCateCd = map.containsKey("budgetCateCd") ? map.get("budgetCateCd").toString() : "";
+		String budgetCateDtlNm = map.containsKey("budgetCateDtlNm") ? map.get("budgetCateDtlNm").toString() : "";
+		
+        return ResponseEntity.ok().body(mgtBudgetExecutionService.getbudgetExecutionList(year, deptCd, budgetCateCd, budgetCateDtlNm) );
+    }
+    
+    /**
+     * 예산집행 저장
+     * @param mgtBudgetExecutionDetail
+     * @return
+     * @throws Exception
+     */
+    @PostMapping("/saveMgtbudgetexcution")
+    public ResponseEntity<MgtBudgetExecutionDetail> saveBudgetExcution(@RequestBody MgtBudgetExecutionDetail mgtBudgetExecutionDetail) throws Exception{
+    	return ResponseEntity.ok().body(mgtBudgetExecutionService.saveBudgetExcution(mgtBudgetExecutionDetail));
+    }
+    
+    /**
+     * 예산집행 수정
+     * @param mgtBudgetExecutionDetail
+     * @return
+     * @throws Exception
+     */
+    @PutMapping("/saveMgtbudgetexcution")
+    public ResponseEntity<MgtBudgetExecutionDetail> updateBudgetExcution(@RequestBody MgtBudgetExecutionDetail mgtBudgetExecutionDetail) throws Exception{
+    	return ResponseEntity.ok().body(mgtBudgetExecutionService.updateBudgetExcution(mgtBudgetExecutionDetail));
+    }
+    
+    /**
+     * 예산집행 상세
+     * @param mgtBudgetExecutionDetail
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/mgtbudgetexcutionDetail")
+    public ResponseEntity<MgtBudgetExecutionDetail> getBudgetExcutionDetail(@RequestParam HashMap<String, Object> parameter) throws Exception{
+    	HashMap<String, Object> map = requestMapper.convertAsParameter(parameter);
+
+        String budgetActDeptCateNo = map.containsKey("budgetActDeptCateNo") ? map.get("budgetActDeptCateNo").toString() : "";
+		String deptCd = map.containsKey("deptCd") ? map.get("deptCd").toString() : "";
+		String execMm = map.containsKey("execMm") ? map.get("execMm").toString() : "";
+		
+    	return ResponseEntity.ok().body(mgtBudgetExecutionService.getBudgetExcutionDetail(execMm, budgetActDeptCateNo, deptCd));
     }
 }

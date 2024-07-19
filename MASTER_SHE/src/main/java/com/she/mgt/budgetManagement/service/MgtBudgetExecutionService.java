@@ -4,9 +4,12 @@ import com.google.common.base.Strings;
 import com.she.common.model.DefaultParam;
 import com.she.mgt.budgetManagement.mapper.MgtBudgetExecutionMapper;
 import com.she.mgt.model.MgtBudgetExec;
+import com.she.mgt.model.MgtBudgetExecution;
+import com.she.mgt.model.MgtBudgetExecutionDetail;
 import com.she.mgt.model.MgtBudgetStat;
 import com.she.utils.ConstVal;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -211,5 +214,51 @@ public class MgtBudgetExecutionService {
      */
     public List<MgtBudgetStat> getBudgetStatus(String year, String plantCd, String budgetTypeCd, String budgetClsCd, int budgetActMstNo, DefaultParam defaultParam) throws Exception {
         return mgtBudgetExecutionMapper.getBudgetStatus(year, plantCd, budgetTypeCd, budgetClsCd, budgetActMstNo, defaultParam);
+    }
+    
+    /**
+     * 예산집행 목록 조회
+     * @param year
+     * @param deptCd
+     * @param budgetCateCd
+     * @param budgetCateDtlNm
+     * @return
+     * @throws Exception
+     */
+    public List<MgtBudgetExecution> getbudgetExecutionList(@Param("year") String year, @Param("deptCd") String deptCd, @Param("budgetCateCd") String budgetCateCd, @Param("budgetCateDtlNm") String budgetCateDtlNm) throws Exception{
+    	return mgtBudgetExecutionMapper.getbudgetExecutionList(year, deptCd, budgetCateCd, budgetCateDtlNm);
+    }
+    
+    /**
+     * 예산집행 저장
+     * @param mgtBudgetExecutionDetail
+     * @return
+     * @throws Exception
+     */
+    public MgtBudgetExecutionDetail saveBudgetExcution(MgtBudgetExecutionDetail mgtBudgetExecutionDetail) throws Exception{
+    	mgtBudgetExecutionDetail.setBudgetExecNo(mgtBudgetExecutionMapper.getBudgetExcutionKey());
+    	mgtBudgetExecutionMapper.saveBudgetExcution(mgtBudgetExecutionDetail);
+    	return mgtBudgetExecutionDetail;
+    }
+    
+    /**
+     * 예산집행 수정
+     * @param mgtBudgetExecutionDetail
+     * @return
+     * @throws Exception
+     */
+    public MgtBudgetExecutionDetail updateBudgetExcution(MgtBudgetExecutionDetail mgtBudgetExecutionDetail) throws Exception{
+    	mgtBudgetExecutionMapper.saveBudgetExcution(mgtBudgetExecutionDetail);
+    	return mgtBudgetExecutionDetail;
+    }
+    
+    /**
+     * 예산집행 상세
+     * @param mgtBudgetExecutionDetail
+     * @return
+     * @throws Exception
+     */
+    public MgtBudgetExecutionDetail getBudgetExcutionDetail(String execMm, String budgetActDeptCateNo, String deptCd) throws Exception{
+    	return mgtBudgetExecutionMapper.getBudgetExcutionDetail(execMm, budgetActDeptCateNo, deptCd);
     }
 }

@@ -2,6 +2,8 @@ package com.she.mgt.budgetManagement.mapper;
 
 import com.she.common.model.DefaultParam;
 import com.she.mgt.model.MgtBudgetExec;
+import com.she.mgt.model.MgtBudgetExecution;
+import com.she.mgt.model.MgtBudgetExecutionDetail;
 import com.she.mgt.model.MgtBudgetStat;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -147,5 +149,33 @@ public interface MgtBudgetExecutionMapper {
      * @throws Exception
      */
     public List<MgtBudgetStat> getBudgetStatus(@Param("year") String year, @Param("plantCd") String plantCd, @Param("budgetTypeCd") String budgetTypeCd, @Param("budgetClsCd") String budgetClsCd, @Param("budgetActMstNo") int budgetActMstNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    
+    
+    /**
+     * 예산집행 목록 조회
+     * @param year
+     * @param deptCd
+     * @param budgetCateCd
+     * @param budgetCateDtlNm
+     * @return
+     * @throws Exception
+     */
+    public List<MgtBudgetExecution> getbudgetExecutionList(@Param("year") String year, @Param("deptCd") String deptCd, @Param("budgetCateCd") String budgetCateCd, @Param("budgetCateDtlNm") String budgetCateDtlNm) throws Exception;
 
+    /**
+     * 예산집행 저장
+     * @param mgtBudgetExecutionDetail
+     * @return
+     * @throws Exception
+     */
+    public int saveBudgetExcution(MgtBudgetExecutionDetail mgtBudgetExecutionDetail) throws Exception;
+    
+    /**
+     * 예산집행 상세
+     * @param mgtBudgetExecutionDetail
+     * @return
+     * @throws Exception
+     */
+    public MgtBudgetExecutionDetail getBudgetExcutionDetail(@Param("execMm") String execMm, @Param("budgetActDeptCateNo") String budgetActDeptCateNo, @Param("deptCd") String deptCd) throws Exception;
+    public int getBudgetExcutionKey() throws  Exception;
 }
