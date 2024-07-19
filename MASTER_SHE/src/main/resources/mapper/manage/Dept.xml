@@ -3,6 +3,7 @@
 
 <mapper namespace= "com.she.manage.mapper.DeptMapper">
     <select id= "getDepts" resultType= "com.she.manage.model.Dept">
+    /* Dept.getDepts*/
         select d.dept_cd, d.dept_nm
             , d.create_user_id, cu.user_nm as create_user_nm, d.create_dt
             , d.update_user_id, uu.user_nm as update_user_nm, d.update_dt
@@ -11,12 +12,12 @@
             , deptLvl.code_nm as dept_lvl_nm
             , d.use_yn
         from com_dept d
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on plant.code = cu.plant_cd
         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'com_dept_LVL') deptLvl
          on d.dept_lvl = deptLvl.code
         inner join com_user cu
          on d.create_user_id = cu.user_id
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+         on plant.code = cu.plant_cd
         left outer join com_user uu
          on d.update_user_id = uu.user_id
         where 1=1
