@@ -7,7 +7,7 @@
     /* ElectTitleMapper.getElectTitles [ElectTitle.xml] */
         select distinct et.saf_elect_titl_no
             ,et.plant_cd
-            ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang},'com_plant_cd', plant_cd ) as plant_nm
+            ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang},'com_plant_cd', et.plant_cd ) as plant_nm
             ,et.elect_cls_cd
             ,electCls.code_nm as elect_cls_nm
             ,et.elect_att_cd
