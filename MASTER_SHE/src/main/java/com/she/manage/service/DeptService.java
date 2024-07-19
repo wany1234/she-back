@@ -92,9 +92,9 @@ public class DeptService {
      * @return 부서목록
      * @throws Exception
      */
-    @Cacheable(cacheNames = "DeptTreeCashe", key = "'DEPTTREE' + #plantCd + #deptCd + #deptNm + #pdeptCd + #useYn")
-    public List<Dept> getTreeDepts(String plantCd, String deptCd, String deptNm, String pdeptCd, String useYn, DefaultParam defaultParam) throws Exception {
-        return this.deptMapper.getTreeDepts(plantCd, deptCd, deptNm, pdeptCd, useYn, defaultParam);
+    @Cacheable(cacheNames = "DeptTreeCashe", key = "'DEPTTREE' + #deptCd + #deptNm + #pdeptCd + #useYn")
+    public List<Dept> getTreeDepts(String deptCd, String deptNm, String pdeptCd, String useYn, DefaultParam defaultParam) throws Exception {
+        return this.deptMapper.getTreeDepts(deptCd, deptNm, pdeptCd, useYn, defaultParam);
     }
 
     /**

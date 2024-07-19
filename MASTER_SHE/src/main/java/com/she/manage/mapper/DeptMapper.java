@@ -59,8 +59,6 @@ public interface DeptMapper {
     /**
      * 부서 트리 조회
      * 
-     * @param plantCd
-     *            사업장
      * @param deptCd
      *            부서코드
      * @param deptNm
@@ -72,7 +70,7 @@ public interface DeptMapper {
      * @return 부서목록
      * @throws Exception
      */
-    public List<Dept> getTreeDepts(@Param("plantCd") String plantCd, @Param("deptCd") String deptCd, @Param("deptNm") String deptNm, @Param("pdeptCd") String pdeptCd, @Param("useYn") String useYn, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    public List<Dept> getTreeDepts(@Param("deptCd") String deptCd, @Param("deptNm") String deptNm, @Param("pdeptCd") String pdeptCd, @Param("useYn") String useYn, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 부서 트리 조회

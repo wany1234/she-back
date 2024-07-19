@@ -6,14 +6,14 @@
         select d.dept_cd, d.dept_nm
             , d.create_user_id, cu.user_nm as create_user_nm, d.create_dt
             , d.update_user_id, uu.user_nm as update_user_nm, d.update_dt
-            , d.plant_cd , plant.code_nm as plant_nm
+            , cu.plant_cd , plant.code_nm as plant_nm
             , d.dept_lvl
             , deptLvl.code_nm as dept_lvl_nm
             , d.use_yn
         from com_dept d
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on plant.code = d.plant_cd
-        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_DEPT_LVL') deptLvl
+         on plant.code = cu.plant_cd
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'com_dept_LVL') deptLvl
          on d.dept_lvl = deptLvl.code
         inner join com_user cu
          on d.create_user_id = cu.user_id
@@ -29,7 +29,7 @@
         )
         </if>
         <if test= "plantCd != null and plantCd != ''">
-        and d.plant_cd = #{plantCd}
+        and cu.plant_cd = #{plantCd}
         </if>
         <if test= "deptCd != null and deptCd != ''">
         and d.dept_cd = #{deptCd}
@@ -50,23 +50,23 @@
             , d.p_dept_cd, upperDept.dept_nm as p_dept_nm
             , d.create_user_id, cu.user_nm as create_user_nm, d.create_dt
             , d.update_user_id, uu.user_nm as update_user_nm, d.update_dt
-            ,d.plant_cd, plant.code_nm as plant_nm
-            ,d.dept_lvl
-            ,deptLvl.code_nm as dept_lvl_nm
-            ,d.use_yn
-            ,case when d.use_yn = 'Y' then '사용'
-                else '미사용'
-             end as use_yn_nm
+            , cu.plant_cd, plant.code_nm as plant_nm
+            , d.dept_lvl
+            , deptLvl.code_nm as dept_lvl_nm
+            , d.use_yn
+            , case when d.use_yn = 'Y' then '사용'
+                   else '미사용'
+              end as use_yn_nm
         from com_dept d
         left outer join com_dept upperDept
          on d.p_dept_cd = upperDept.dept_cd
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on plant.code = d.plant_cd
+         on plant.code = cu.plant_cd
         inner join com_user cu
          on d.create_user_id = cu.user_id
         left outer join com_user uu
          on d.update_user_id = uu.user_id
-        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_DEPT_LVL') deptLvl
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'com_dept_LVL') deptLvl
          on d.dept_lvl = deptLvl.code
         where d.dept_cd = #{deptCd}
     </select>
@@ -77,11 +77,10 @@
             select cd.dept_cd
                 ,cd.dept_nm
                 ,cd.p_dept_cd
-                ,cd.plant_cd
                 ,cd.dept_lvl
                 ,cd.use_yn
             from com_dept cd
-            where cd.plant_cd = #{plantCd}
+            where 1=1
             <choose>
                 <when test= "pdeptCd != null and pdeptCd != ''">
                     and cd.dept_cd = #{pdeptCd}
@@ -97,13 +96,11 @@
             select cdd.dept_cd
                 ,cdd.dept_nm
                 ,cdd.p_dept_cd
-                ,cdd.plant_cd
                 ,cdd.dept_lvl
                 ,cdd.use_yn
             from com_dept cdd
             inner join depttree
             on cdd.p_dept_cd = depttree.dept_cd
-            and cdd.plant_cd = #{plantCd}
             where 1=1
            <if test= "useYn != null and useYn != ''">
            and cdd.use_yn = #{useYn}
@@ -133,7 +130,6 @@
             ,depttree.dept_nm
             ,depttree.dept_nm as label
             ,depttree.p_dept_cd
-            ,depttree.plant_cd, plant.code_nm as plant_nm
             ,depttree.dept_lvl
             ,deptLvl.code_nm as dept_lvl_nm
             ,depttree.use_yn
@@ -143,9 +139,7 @@
             ,processlist.process_list
             ,processlist.process_cd_list
         from depttree
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on plant.code = plant_cd
-        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_DEPT_LVL') deptLvl
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'com_dept_LVL') deptLvl
          on dept_lvl = deptLvl.code
         left outer join processlist
          on depttree.dept_cd = processlist.dept_cd
@@ -156,7 +150,7 @@
         <if test= "deptNm != null and deptNm != ''">
         and upper(depttree.dept_nm) like '%'+upper(#{deptNm})+'%'
         </if>
-        order by p_dept_cd, depttree.plant_cd, depttree.dept_nm
+        order by p_dept_cd, depttree.dept_nm
     </select>
     
     <select id= "getTreeDeptsForMobile" resultType= "com.she.manage.model.Dept">
@@ -164,7 +158,6 @@
             select cd.dept_cd
                 ,cd.dept_nm
                 ,cd.p_dept_cd
-                ,cd.plant_cd
                 ,cd.dept_lvl
                 ,cd.use_yn
             from com_dept cd
@@ -184,7 +177,6 @@
             select cdd.dept_cd
                 ,cdd.dept_nm
                 ,cdd.p_dept_cd
-                ,cdd.plant_cd
                 ,cdd.dept_lvl
                 ,cdd.use_yn
             from com_dept cdd
@@ -213,7 +205,6 @@
         select depttree.dept_cd as id
             ,depttree.dept_nm as label
             ,depttree.p_dept_cd
-            ,depttree.plant_cd, plant.code_nm as plant_nm
             ,depttree.dept_lvl
             ,deptLvl.code_nm as dept_lvl_nm
             ,depttree.use_yn
@@ -223,16 +214,11 @@
             ,processlist.process_list
             ,processlist.process_cd_list
         from depttree
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on plant.code = plant_cd
-        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_DEPT_LVL') deptLvl
+        inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'com_dept_LVL') deptLvl
          on dept_lvl = deptLvl.code
         left outer join processlist
          on depttree.dept_cd = processlist.dept_cd
         where 1=1
-        <if test= "plantCd != null and plantCd != ''">
-        and depttree.plant_cd = #{plantCd}
-        </if>
         <if test= "deptCd != null and deptCd != ''">
         and upper(depttree.dept_cd) = upper(#{deptCd})
         </if>
@@ -248,7 +234,6 @@
             dept_cd
             , dept_nm
             , p_dept_cd
-            , plant_cd
             , dept_lvl
             , create_user_id
             , use_yn
@@ -259,7 +244,6 @@
             #{deptCd}
             , #{deptNm}
             , #{pdeptCd}
-            , #{plantCd}
             , #{deptLvl}
             , #{createUserId}
             , #{useYn}
