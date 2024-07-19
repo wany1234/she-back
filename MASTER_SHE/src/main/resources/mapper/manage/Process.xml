@@ -111,7 +111,7 @@
         inner join com_dept cd
          on cpd.dept_cd = cd.dept_cd
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-         on plant.code = cd.plant_cd
+         on plant.code = p.plant_cd
         where p.process_cd = #{processCd}
         group by plant.code_nm
     </select>
