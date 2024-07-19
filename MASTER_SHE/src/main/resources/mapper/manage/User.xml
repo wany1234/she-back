@@ -70,7 +70,7 @@
         )
         </if>
         <if test= "plantCd != null and !plantCd.equals('')">
-        and depttree.plant_cd = #{plantCd}
+        and u.plant_cd = #{plantCd}
         </if>
         <if test= "userId != null and !userId.equals('')">
         and u.user_id like '%' + #{userId} + '%'
