@@ -43,18 +43,8 @@ public interface MgtBudgetingItemMapper {
 	 */
 	public List<MgtMgBudgetItem> getBudgetingItemList(@Param("budgetCateCd") String budgetCateCd, @Param("budgetCateDtlNm") String budgetCateDtlNm) throws Exception;
 	
-	// 예산편성 키 조회
-	public int getBudgetActNo() throws Exception;
 	// 예산편성부서 키 조회
 	public int getBudgetActDeptNo() throws Exception;
-	
-	/**
-	 * 예산편성 등록
-	 * @param mgtBudgetActItem
-	 * @return
-	 * @throws Exception
-	 */
-	public int insertBudgetAct(MgtBudgetActItem mgtBudgetActItem) throws Exception;
 	
 	/**
 	 * 예산편성부서 등록

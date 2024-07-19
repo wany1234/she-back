@@ -59,19 +59,16 @@ public class MgtBudgetingItemService {
 	 */
 	@Transactional
 	public MgtBudgetActItem saveBudgetAct(MgtBudgetActItem mgtBudgetActItem) throws Exception {
-		// 예산편성번호
-		mgtBudgetActItem.setBudgetActNo(mgtBudgetingItemMapper.getBudgetActNo());
-		mgtBudgetingItemMapper.insertBudgetAct(mgtBudgetActItem);
 		
 		// 예산편성부서번호
-		int actDeptNo = mgtBudgetingItemMapper.getBudgetActDeptNo();
-		mgtBudgetActItem.setBudgetActDeptNo(actDeptNo);
+		int actNo = mgtBudgetingItemMapper.getBudgetActDeptNo();
+		mgtBudgetActItem.setBudgetActNo(actNo);
 		mgtBudgetingItemMapper.insertBudgetActDept(mgtBudgetActItem);
 		
 		// 예산편성부서항목 저장
 		if(CollectionUtils.isNotEmpty(mgtBudgetActItem.getBudgetActDeptCateList())) {
 			for(MgtBudgetActDeptCate mgtBudgetActDeptCate : mgtBudgetActItem.getBudgetActDeptCateList()) {
-				mgtBudgetActDeptCate.setBudgetActDeptNo(actDeptNo);
+				mgtBudgetActDeptCate.setBudgetActNo(actNo);
 				mgtBudgetActDeptCate.setCreateUserId(mgtBudgetActItem.getCreateUserId());
 				mgtBudgetingItemMapper.saveBudgetActDeptCate(mgtBudgetActDeptCate);
 			}

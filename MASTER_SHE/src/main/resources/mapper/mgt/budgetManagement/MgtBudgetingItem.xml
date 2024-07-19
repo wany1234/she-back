@@ -4,11 +4,10 @@
 <mapper namespace= "com.she.mgt.budgetManagement.mapper.MgtBudgetingItemMapper">
 
 	<select id="getBudgetActList" resultType="com.she.mgt.model.MgtBudgetActDeptCate">
-	/* MgtBudgetingItemMapper.getBudgetActList [MgtBudgetingItemMapper.xml] */
-		SELECT mba.budget_act_no  
-			, mbad.budget_act_dept_no 
+	/* MgtBudgetingItemMapper.getBudgetActList [MgtBudgetingItem.xml] */
+		SELECT mbad.budget_act_no  
 			, mbadc.budget_act_dept_cate_no 
-			, mba.year
+			, mbad.year
 			, mbad.dept_cd 
 			, dbo.GET_DEPT_NM(mbad.dept_cd) as dept_nm
 			, mbadc.budget_cate_cd 
@@ -19,15 +18,13 @@
 			, mbadc.remark 
 			, mbadc.create_user_id 
 			, convert(char(10), mbadc.create_dt, 23) as create_dt
-		from mgt_budget_act mba 
-		inner join mgt_budget_act_dept mbad 
-		on mba.budget_act_no = mbad.budget_act_no 
+		from mgt_budget_act_dept mbad 
 		LEFT OUTER JOIN mgt_budget_act_dept_cate mbadc 
-		on mbad.budget_act_dept_no = mbadc.budget_act_dept_no 
+		on mbad.budget_act_no = mbadc.budget_act_no 
 		where 1 = 1
 		and mbadc.budget_act_dept_cate_no is not null 
 		<if test="year !=null and !year.equals('')">
-		and mba.year = #{year}
+		and mbad.year = #{year}
 		</if>
 		<if test="deptCd !=null and !deptCd.equals('')">
 		and mbad.dept_cd = #{deptCd}
@@ -38,11 +35,11 @@
 		<if test="budgetCateDtlNm !=null and !budgetCateDtlNm.equals('')">
 		and mbadc.budget_cate_dtl_nm like '%' + #{budgetCateDtlNm} + '%' 
 		</if>
-		order by mba.year
+		order by mbad.year
 	</select>
 
 	<select id="getBudgetItemList" resultType="com.she.mgt.baseInfo.model.MgtMgBudgetItem">
-	/* MgtBudgetingItemMapper.getBudgetItemList [MgtBudgetingItemMapper.xml] */
+	/* MgtBudgetingItemMapper.getBudgetItemList [MgtBudgetingItem.xml] */
 		SELECT budget_cate_cd 
 			, budget_cate_nm 
 		from mgt_budget_category mbc 
@@ -51,7 +48,7 @@
 	</select>
 	
 	<select id="getBudgetingItemList" resultType="com.she.mgt.baseInfo.model.MgtMgBudgetItem">
-	/* MgtBudgetingItemMapper.getBudgetingItemList [MgtBudgetingItemMapper.xml] */
+	/* MgtBudgetingItemMapper.getBudgetingItemList [MgtBudgetingItem.xml] */
 	SELECT 
 		mbc.budget_cate_cd
 		, mbc.budget_cate_nm
@@ -75,54 +72,39 @@
 		order by mbc.create_dt desc, mbcd.sort_order
 	</select>
 	
-	<select id="getBudgetActNo" resultType="int">
-		select next value for seq_mgt_budget_act
-	</select>
-	
 	<select id="getBudgetActDeptNo" resultType="int">
 		select next value for seq_mgt_budget_act_dept
 	</select>
 	
-	<insert id="insertBudgetAct" parameterType="com.she.mgt.model.MgtBudgetActItem">
-	/* MgtBudgetingItemMapper.insertBudgetAct [MgtBudgetingItemMapper.xml] */
-		INSERT INTO mgt_budget_act(
+	<insert id="insertBudgetActDept" parameterType="com.she.mgt.model.MgtBudgetActItem">
+	/* MgtBudgetingItemMapper.insertBudgetActDept [MgtBudgetingItem.xml] */
+		INSERT INTO mgt_budget_act_dept
+		(
 			budget_act_no
+			, dept_cd
 			,year
 			,create_user_id
 			,create_dt
 		) values (
 			#{budgetActNo}
+			,#{deptCd}
 			,#{year}
 			,#{createUserId}
 			,getdate()
 		)
 	</insert>
 	
-	<insert id="insertBudgetActDept" parameterType="com.she.mgt.model.MgtBudgetActItem">
-	/* MgtBudgetingItemMapper.insertBudgetActDept [MgtBudgetingItemMapper.xml] */
-		INSERT INTO mgt_budget_act_dept
-		(
-			budget_act_no
-			, budget_act_dept_no
-			, dept_cd
-		) values (
-			#{budgetActNo}
-			,#{budgetActDeptNo}
-			,#{deptCd}
-		)
-	</insert>
-	
 	<update id="saveBudgetActDeptCate" parameterType="com.she.mgt.model.MgtBudgetActDeptCate">
-	/* MgtBudgetingItemMapper.saveBudgetActDeptCate [MgtBudgetingItemMapper.xml] */
+	/* MgtBudgetingItemMapper.saveBudgetActDeptCate [MgtBudgetingItem.xml] */
 		<selectKey keyProperty="budgetActDeptCateNo" resultType="int" order="BEFORE">
             select next value for seq_mgt_budget_act_dept_cate as budgetActDeptCateNo
         </selectKey>
 	MERGE into mgt_budget_act_dept_cate d
-	using (select #{budgetActDeptNo} as budget_act_dept_no
+	using (select #{budgetActNo} as budget_act_no
 		,	#{budgetCateCd} as budget_cate_cd 
 		,	#{budgetCateDtlCd} as budget_cate_dtl_cd 
 	) s
-	on (d.budget_act_dept_no = s.budget_act_dept_no and d.budget_cate_cd = s.budget_cate_cd and d.budget_cate_dtl_cd = s.budget_cate_dtl_cd)
+	on (d.budget_act_no = s.budget_act_no and d.budget_cate_cd = s.budget_cate_cd and d.budget_cate_dtl_cd = s.budget_cate_dtl_cd)
 	WHEN MATCHED THEN 
 	 update set 
 		d.org_amt = #{orgAmt}
@@ -130,7 +112,7 @@
 		,d.update_dt = getdate()
 	WHEN NOT MATCHED THEN     
 	INSERT ( 
-       	budget_act_dept_no
+       	budget_act_no
 		,budget_act_dept_cate_no
 		,budget_cate_cd
 		,budget_cate_nm
@@ -142,7 +124,7 @@
 		,create_dt
 		)
 		values(
-		 #{budgetActDeptNo}
+		 #{budgetActNo}
 		, #{budgetActDeptCateNo}
 		, #{budgetCateCd}
 		, #{budgetCateNm}
@@ -156,23 +138,26 @@
 	</update>
 	
 	<delete id="deleteBudgetActDeptCate">
-        /* MgtBudgetingItemMapper.deleteBudgetActDeptCate [MgtBudgetingItemMapper.xml] */
+        /* MgtBudgetingItemMapper.deleteBudgetActDeptCate [MgtBudgetingItem.xml] */
         delete from mgt_budget_act_dept_cate
-        where budget_act_dept_no = #{budgetActDeptNo}
+        where budget_act_no = #{budgetActNo}
         and budget_act_dept_cate_no = #{budgetActDeptCateNo}
     </delete>
     
     <select id="getBudgetActDetail" resultType="com.she.mgt.model.MgtBudgetActItem">
-    	SELECT mba.year
+    /* MgtBudgetingItemMapper.getBudgetActDetail [MgtBudgetingItem.xml] */
+    	SELECT mbad.year
 		, mbad.dept_cd 
-		from mgt_budget_act mba 
-		inner join mgt_budget_act_dept mbad 
-		on mba.budget_act_no = mbad.budget_act_no 
-		where mba.budget_act_no = #{budgetActNo}
+		from mgt_budget_act_dept mbad 
+		where 1=1
+		<if test="budgetActNo !=null and !budgetActNo.equals('')">
+		and mbad.budget_act_no = #{budgetActNo}
+		</if>
     </select>
     
     <select id="getBudgetActItemDetail" resultType="com.she.mgt.model.MgtBudgetActDeptCate">
-    	SELECT mbad.budget_act_dept_no 
+    /* MgtBudgetingItemMapper.getBudgetActItemDetail [MgtBudgetingItem.xml] */
+    	SELECT mbad.budget_act_no 
 			, mbadc.budget_act_dept_cate_no 
 			, mbad.dept_cd 
 			, dbo.GET_DEPT_NM(mbad.dept_cd) as dept_nm
@@ -184,9 +169,11 @@
 			, mbadc.remark 
 		from mgt_budget_act_dept_cate mbadc 
 		inner join mgt_budget_act_dept mbad 
-		on mbad.budget_act_dept_no = mbadc.budget_act_dept_no 
-		INNER join mgt_budget_act mba 
-		on mba.budget_act_no = mbad.budget_act_no and mba.budget_act_no = #{budgetActNo}
+		on mbad.budget_act_no = mbadc.budget_act_no 
+		where 1=1
+		<if test="budgetActNo !=null and !budgetActNo.equals('')">
+		and mbad.budget_act_no = #{budgetActNo}
+		</if>
     </select>
-
+    
 </mapper>
