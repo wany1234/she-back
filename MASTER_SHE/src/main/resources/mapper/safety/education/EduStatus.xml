@@ -106,8 +106,10 @@
             ,m.re_edu_yn
             ,m.edu_method_cd
             ,c8.code_nm as edu_method_nm
+            ,m.edu_plan_state
+            ,isnull(c9.code_nm, '계획(작성중)') as edu_plan_state_nm
         from saf_edu_mst m
-       left outer join com_dept cd1 on m.main_dept_cd = cd1.dept_cd
+       left outer join com_dept cd1 on m.main_dept_cd = cd1.dept_cd 
         left outer join com_dept cd2 on m.target_dept_cd = cd2.dept_cd
         left outer join com_dept cd3 on m.exec_dept_cd = cd3.dept_cd
         left outer join saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
@@ -119,6 +121,7 @@
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') c6 on co.is_type_cd = c6.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP')c7 on m.process_step_cd=c7.code  
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD')c8 on m.edu_method_cd=c8.code 
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EDU_PLAN_STATE')c9 on m.edu_plan_state=c9.code 
         left outer join com_dept c5 on c5.dept_cd = m.dept_cd
         left outer join com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm on cm.code = ar.biz_appr_step_cd
@@ -197,9 +200,14 @@
         <if test='year != null and year != "" '>
         and m.year = #{year}
         </if>
-        <if test='pStateCd != null and pStateCd != "" '>
-        and m.p_state_cd = #{pStateCd}
-        </if>
+        <choose>
+            <when test='eduPlanState != null and eduPlanState != "" '>
+                and m.edu_plan_state = #{eduPlanState}
+            </when>
+            <otherwise>
+                 and (m.edu_plan_state != 'EPS03' or m.edu_plan_state is null)
+            </otherwise>
+        </choose>
         <if test='isTypeCd != null and isTypeCd != "" '>
         and co.is_type_cd = #{isTypeCd}
         </if>
@@ -219,8 +227,6 @@
          select 
              m.year
              ,m.r_proc_step_cd
-             ,c3.code_nm as r_proc_step_nm
-             ,m.r_state_cd
              ,m.p_step_cd
              ,m.r_step_cd
              ,concat(dbo.GET_CODE_NM(m.r_proc_step_cd, 'COM_STEP'),' (', case when m.r_step_cd = 'BAPSD' then cmr.code_nm else dbo.GET_CODE_NM(m.r_state_cd, 'COM_STATE') end , ')') as r_state_nm
@@ -316,6 +322,8 @@
             ,m.re_edu_yn
             ,m.edu_method_cd
             ,c7.code_nm as edu_method_nm
+            ,m.edu_plan_state
+            ,c3.code_nm as edu_plan_state_nm
         from saf_edu_mst m
       left outer join com_dept cd1 on m.main_dept_cd = cd1.dept_cd
             left outer join com_dept cd2 on m.target_dept_cd = cd2.dept_cd
@@ -327,7 +335,7 @@
             inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EDU_PLAN_STATE') c3 on m.edu_plan_state = c3.code
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c4 on m.plant_cd = c4.code
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') c6 on co.is_type_cd = c6.code
-            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD')c7 on m.edu_method_cd=c7.code 
+            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD')c7 on m.edu_method_cd=c7.code  
             left outer join com_dept c5 on c5.dept_cd = m.dept_cd
             left outer join com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
             left outer join com_appr_rqst arr on arr.appr_rqst_no = m.r_appr_rqst_no
@@ -406,9 +414,14 @@
         <if test='year != null and year != "" '>
         and m.year = #{year}
         </if>
-        <if test='rStateCd != null and rStateCd != "" '>
-        and m.r_state_cd = #{rStateCd}
-        </if>
+        <choose>
+            <when test='eduPlanState != null and eduPlanState != "" '>
+                and m.edu_plan_state = #{eduPlanState}
+            </when>
+            <otherwise>
+                 and m.edu_plan_state != 'EPS01'
+            </otherwise>
+        </choose>
         <if test='isTypeCd != null and isTypeCd != "" '>
         and co.is_type_cd = #{isTypeCd}
         </if>
@@ -788,6 +801,9 @@
            ,isnull(psn.edu_eval_pnt_sec, '0') as edu_eval_pnt_sec
            , psn.user_id as sub_ject_id
            , dbo.GET_USER_NM(psn.user_id) as sub_ject_nm
+           , m.edu_method_cd
+           , sev.video_url
+           , sev.video_comp_time
         from saf_edu_mst m
            left outer join saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc2 on co.edu_type_cd = cc2.code
@@ -800,6 +816,7 @@
            left outer join com_dept c5 on c5.dept_cd = m.dept_cd
            left outer join com_user a  on a.user_id = m.user_id
            left outer join saf_edu_dtl_psn psn on psn.saf_edu_mst_no = m.saf_edu_mst_no
+           left outer join saf_edu_video sev on m.saf_edu_mst_no = sev.saf_edu_mst_no and m.saf_edu_course_no = sev.saf_edu_course_no
         where 1 = 1
         <if test='fromYmd != null and fromYmd != "" and toYmd != null and toYmd != ""'>
         and  m.edu_e_ymd <![CDATA[>=]]>  #{fromYmd} 

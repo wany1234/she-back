@@ -423,4 +423,14 @@ public interface EduMasterMapper {
      */
     public List<User> getEduNotCompletUser(@Param("safEduMstNo") int safEduMstNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
+    /**
+     * 이수점수 조회
+     *
+     * @param safEduMstNo
+     *            교육마스터번호
+     * @return 이수점수
+     * @throws Exception
+     */
+    public int getSubconnScore(@Param("safEduMstNo") int safEduMstNo) throws Exception;
+
 }

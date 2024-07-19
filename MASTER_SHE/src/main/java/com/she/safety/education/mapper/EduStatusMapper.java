@@ -37,7 +37,7 @@ public interface EduStatusMapper {
      * @throws Exception
      *             예외
      */
-    public List<EduMaster> getEduStatuss(@Param("year") String year, @Param("pStateCd") String pStateCd, @Param("isTypeCd") String isTypeCd, @Param("mainDeptCd") String mainDeptCd, @Param("targetDeptCd") String targetDeptCd, @Param("execDeptCd") String execDeptCd, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
+    public List<EduMaster> getEduStatuss(@Param("year") String year, @Param("eduPlanState") String eduPlanState, @Param("isTypeCd") String isTypeCd, @Param("mainDeptCd") String mainDeptCd, @Param("targetDeptCd") String targetDeptCd, @Param("execDeptCd") String execDeptCd, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
             @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn, @Param("tgtDeptCd") String tgtDeptCd, @Param("eduAttCd") String eduAttCd, @Param("safEduCourseNo") int safEduCourseNo, @Param("eduTypeCd") String eduTypeCd, @Param("eduNm") String eduNm, @Param("eduClassCd") String eduClassCd, @Param("plantCd") String plantCd,
             @Param("pProcStepNm") String pProcStepNm, @Param("pYear") String pYear, @Param("pMonth") String pMonth, @Param("mainDeptSubYn") String mainDeptSubYn, @Param("targetDeptSubYn") String targetDeptSubYn, @Param("execDeptSubYn") String execDeptSubYn, @Param("reEduYn") String reEduYn, @Param("eduMethodCd") String eduMethodCd,
             @Param("defaultParam") DefaultParam defaultParam) throws Exception;
@@ -46,7 +46,7 @@ public interface EduStatusMapper {
      * 교육결과 현황 조회
      */
 
-    public List<EduMaster> getEduResults(@Param("year") String year, @Param("rStateCd") String rStateCd, @Param("isTypeCd") String isTypeCd, @Param("mainDeptCd") String mainDeptCd, @Param("targetDeptCd") String targetDeptCd, @Param("execDeptCd") String execDeptCd, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
+    public List<EduMaster> getEduResults(@Param("year") String year, @Param("eduPlanState") String eduPlanState, @Param("isTypeCd") String isTypeCd, @Param("mainDeptCd") String mainDeptCd, @Param("targetDeptCd") String targetDeptCd, @Param("execDeptCd") String execDeptCd, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
             @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn, @Param("tgtDeptCd") String tgtDeptCd, @Param("eduAttCd") String eduAttCd, @Param("safEduCourseNo") int safEduCourseNo, @Param("eduTypeCd") String eduTypeCd, @Param("eduNm") String eduNm, @Param("eduClassCd") String eduClassCd, @Param("plantCd") String plantCd,
             @Param("rProcStepNm") String rProcStepNm, @Param("pYear") String pYear, @Param("pMonth") String pMonth, @Param("mainDeptSubYn") String mainDeptSubYn, @Param("targetDeptSubYn") String targetDeptSubYn, @Param("execDeptSubYn") String execDeptSubYn, @Param("reEduYn") String reEduYn, @Param("eduMethodCd") String eduMethodCd,
             @Param("defaultParam") DefaultParam defaultParam) throws Exception;

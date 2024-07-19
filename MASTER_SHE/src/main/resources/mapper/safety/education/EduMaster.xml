@@ -100,6 +100,7 @@
               , rm.edu_nm as re_edu_nm
               , rm.saf_edu_mst_no as re_saf_edu_mst_no
               , m.re_edu_yn
+              , m.subconn_score
           FROM saf_edu_mst m
          INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code
           LEFT OUTER JOIN saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
@@ -167,6 +168,7 @@
             ,edu_method_cd
             ,re_edu_yn
             ,ori_saf_edu_mst_no 
+            ,subconn_score
         )
         VALUES
         ( 
@@ -206,6 +208,7 @@
             ,#{eduMethodCd}
             ,#{reEduYn}
             ,#{oriSafEduMstNo}
+            ,#{subconnScore}
         )
     </insert>
 
@@ -240,6 +243,7 @@
             ,chng_num = #{chngNum}
             ,edu_method_cd = #{eduMethodCd}
             ,edu_plan_state = #{eduPlanState}
+            ,subconn_score = #{subconnScore}
         where saf_edu_mst_no = #{safEduMstNo}
     </update>
     
@@ -258,8 +262,8 @@
     </delete>
     
     <select id= "getEduMasterUser" resultType= "com.she.manage.model.User">
-        select u.user_id, u.user_nm, d.dept_cd, d.dept_nm,d.plant_cd
-            ,dbo.GET_CODE_NM_LANG('kr','COM_PLANT_CD', d.plant_cd) as plant_nm
+        select u.user_id, u.user_nm, d.dept_cd, d.dept_nm,u.plant_cd
+            ,dbo.GET_CODE_NM_LANG('kr','COM_PLANT_CD', u.plant_cd) as plant_nm
             , u.com_sex_type_cd, case when u.com_sex_type_cd = '1' then '남자' else '여자' end as com_sex_type_nm
             , u.office_tel, u.phone_no, u.email, u.birth_ymd, u.entry_ymd
             , u.use_yn
@@ -721,8 +725,8 @@
                 ,dbo.GET_USER_NM(segu.user_id) as user_nm
                 ,u.dept_cd
                 ,dbo.GET_DEPT_NM(u.dept_cd) as dept_nm
-                ,d.plant_cd
-                ,dbo.GET_CODE_NM(d.plant_cd, 'COM_PLANT_CD') as plant_nm
+                ,u.plant_cd
+                ,dbo.GET_CODE_NM(u.plant_cd, 'COM_PLANT_CD') as plant_nm
         from saf_edu_grp seg
         inner join saf_edu_grp_user segu on segu.edu_grp_no = seg.edu_grp_no
         inner join com_user u on u.user_id = segu.user_id
@@ -737,8 +741,8 @@
                 ,dbo.GET_USER_NM(seh.user_id) as user_nm
                 ,u.dept_cd
                 ,dbo.GET_DEPT_NM(u.dept_cd) as dept_nm
-                ,d.plant_cd
-                ,dbo.GET_CODE_NM(d.plant_cd, 'COM_PLANT_CD') as plant_nm
+                ,u.plant_cd
+                ,dbo.GET_CODE_NM(u.plant_cd, 'COM_PLANT_CD') as plant_nm
         from saf_elect_his seh
         inner join com_user u on u.user_id = seh.user_id
         inner join com_dept d on u.dept_cd = d.dept_cd
@@ -833,8 +837,8 @@
     </select>
     
     <select id= "getEduNotCompletUser" resultType= "com.she.manage.model.User">
-        select u.user_id, u.user_nm, d.dept_cd, d.dept_nm,d.plant_cd
-            ,dbo.GET_CODE_NM_LANG('kr','COM_PLANT_CD', d.plant_cd) as plant_nm
+        select u.user_id, u.user_nm, d.dept_cd, d.dept_nm,u.plant_cd
+            ,dbo.GET_CODE_NM_LANG('kr','COM_PLANT_CD', u.plant_cd) as plant_nm
             , u.com_sex_type_cd, case when u.com_sex_type_cd = '1' then '남자' else '여자' end as com_sex_type_nm
             , u.office_tel, u.phone_no, u.email, u.birth_ymd, u.entry_ymd
             , u.use_yn
@@ -849,5 +853,12 @@
             and edu.saf_edu_mst_no = #{safEduMstNo}
             and edu.complet_yn = 'N'
     </select>
+    
+    <select id ="getSubconnScore" resultType="int">
+        select 
+            subconn_score
+        from saf_edu_mst 
+        where saf_edu_mst_no = #{safEduMstNo}
+    </select>         
     
 </mapper>

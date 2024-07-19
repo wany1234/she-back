@@ -630,4 +630,21 @@ public class EduMasterController {
 
         return ResponseEntity.ok().body(userList);
     }
+
+    /**
+     * 교육이수자 교육동영상 시청 등록/수정
+     * 
+     * @param EduDetailPerson
+     *            교육이수자
+     *
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+
+    @PutMapping("/viewuservideo")
+    public ResponseEntity<Integer> updateViewUserVideo(@RequestBody EduDetailPerson EduDetailPerson, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        return ResponseEntity.ok().body(eduQuestionService.updateViewUserVideo(EduDetailPerson, defaultParam));
+    }
+
 }

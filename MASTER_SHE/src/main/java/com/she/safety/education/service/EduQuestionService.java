@@ -18,6 +18,7 @@ import com.she.env.waste.model.DisposalResult;
 import com.she.manage.mapper.CodeMasterMapper;
 import com.she.safety.education.mapper.EduMasterMapper;
 import com.she.safety.education.mapper.EduQuestionMapper;
+import com.she.safety.model.EduDetailPerson;
 import com.she.safety.model.EduQuestion;
 import com.she.safety.model.EduQuestionAnswer;
 import com.she.safety.model.EduQuestionList;
@@ -298,7 +299,15 @@ public class EduQuestionService {
                     scoreSum = scoreSum + new BigDecimal(100).divide(new BigDecimal(eduQuestionList.size()), 1, BigDecimal.ROUND_UP).floatValue();
                 }
             }
-            eduQuestionMapper.updateAnswerChk("N", String.valueOf(scoreSum), null, eduQuestionList.get(0).getSafEduMstNo(), eduQuestionList.get(0).getUserId());
+
+            // 이수점수 조회
+            int subconnScore = eduMasterMapper.getSubconnScore(eduQuestionList.get(0).getSafEduMstNo());
+            if (scoreSum >= subconnScore) {
+                eduQuestionMapper.updateAnswerChk("N", "Y", String.valueOf(scoreSum), null, eduQuestionList.get(0).getSafEduMstNo(), eduQuestionList.get(0).getUserId());
+
+            } else {
+                eduQuestionMapper.updateAnswerChk("N", "N", String.valueOf(scoreSum), null, eduQuestionList.get(0).getSafEduMstNo(), eduQuestionList.get(0).getUserId());
+            }
         }
         return scoreSum;
     }
@@ -341,7 +350,15 @@ public class EduQuestionService {
                 }
 
             }
-            eduQuestionMapper.updateAnswerChk("Y", null, String.valueOf(scoreSum), eduQuestionList.get(0).getSafEduMstNo(), eduQuestionList.get(0).getUserId());
+
+            // 이수점수 조회
+            int subconnScore = eduMasterMapper.getSubconnScore(eduQuestionList.get(0).getSafEduMstNo());
+            if (scoreSum >= subconnScore) {
+                eduQuestionMapper.updateAnswerChk("Y", "Y", null, String.valueOf(scoreSum), eduQuestionList.get(0).getSafEduMstNo(), eduQuestionList.get(0).getUserId());
+
+            } else {
+                eduQuestionMapper.updateAnswerChk("Y", "N", null, String.valueOf(scoreSum), eduQuestionList.get(0).getSafEduMstNo(), eduQuestionList.get(0).getUserId());
+            }
         }
         return scoreSum;
     }
@@ -443,6 +460,20 @@ public class EduQuestionService {
         } else {
             return String.valueOf(o);
         }
+    }
+
+    /**
+     * 교육이수자 교육동영상 시청 등록/수정
+     * 
+     * @param eduDetailPerson
+     *            교육이수자
+     * 
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+    public int updateViewUserVideo(EduDetailPerson eduDetailPerson, DefaultParam defaultParam) throws Exception {
+        return eduQuestionMapper.updateViewUserVideo(eduDetailPerson);
     }
 
 }

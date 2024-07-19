@@ -282,7 +282,13 @@ public class EduMaster {
 
     private EduVideo eduVideo;
 
+    private String videoUrl;
+
+    private int videoCompTime;
+
     private String eduPlanState;
+
+    private String eduPlanStateNm;
 
     private String oriSafEduMstNo;
 
@@ -291,5 +297,7 @@ public class EduMaster {
     private String reSafEduMstNo;
 
     private String reEduNm;
+
+    private int subconnScore;
 
 }

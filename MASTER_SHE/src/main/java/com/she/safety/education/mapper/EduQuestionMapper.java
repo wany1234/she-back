@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import com.she.common.model.DefaultParam;
+import com.she.safety.model.EduDetailPerson;
 import com.she.safety.model.EduQuestion;
 import com.she.safety.model.EduQuestionAnswer;
 import com.she.safety.model.EduQuestionList;
@@ -288,6 +289,18 @@ public interface EduQuestionMapper {
      */
     public HashMap<String, Object> selectQuestionYmdChk(@Param("safEduMstNo") int safEduMstNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
-    public int updateAnswerChk(@Param("secQuestionYn") String secQuestionYn, @Param("eduEvalPnt") String eduEvalPnt, @Param("eduEvalPntSec") String eduEvalPntSec, @Param("safEduMstNo") int safEduMstNo, @Param("userId") String userId) throws Exception;
+    public int updateAnswerChk(@Param("secQuestionYn") String secQuestionYn, @Param("completYn") String completYn, @Param("eduEvalPnt") String eduEvalPnt, @Param("eduEvalPntSec") String eduEvalPntSec, @Param("safEduMstNo") int safEduMstNo, @Param("userId") String userId) throws Exception;
+
+    /**
+     * 교육이수자 교육동영상 시청 등록/수정
+     * 
+     * @param eduDetailPerson
+     *            교육이수자
+     * 
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+    public int updateViewUserVideo(EduDetailPerson eduDetailPerson) throws Exception;
 
 }

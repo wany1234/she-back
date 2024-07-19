@@ -414,11 +414,14 @@
         and user_id = #{userId}
     </select>    
         
-    <delete id= "updateAnswerChk">
+    <update id= "updateAnswerChk">
         update saf_edu_dtl_psn
         set sec_question_yn = #{secQuestionYn}
-        ,re_edu_not_yn = 'Y'
-        ,complet_yn = 'Y'
+        ,re_edu_not_yn = #{completYn}
+        ,complet_yn = #{completYn}
+        <if test= "completYn == 'Y'.toString()">
+        ,complet_ymd = getDate()
+        </if>
         <if test= "eduEvalPnt != null">
         ,edu_eval_pnt = ROUND(#{eduEvalPnt},3)
         </if>
@@ -428,7 +431,7 @@
         ,edu_eval_time = getDate()
         where saf_edu_mst_no = #{safEduMstNo}
         and user_id = #{userId}
-    </delete>                        
+    </update>                        
                         
     <select id = "selectQuestionYmdChk" resultType = "hashmap">
     select 
@@ -445,9 +448,14 @@
     </select>                   
 
             
-        
-        
-        
-        
-
+    <update id= "updateEduUserVideo" parameterType= "com.she.safety.model.EduDetailPerson"> 
+        update saf_edu_dtl_psn
+        set video_watch_time = #{videoWatchTime}
+        ,complet_yn = #{completYn}
+        ,re_edu_not_yn = #{completYn}
+        ,edu_eval_time = getDate()
+        where saf_edu_mst_no = #{safEduMstNo}
+        and user_id = #{userId}
+    </update>       
+    
 </mapper>

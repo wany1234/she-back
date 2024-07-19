@@ -2,7 +2,6 @@ package com.she.safety.model;
 
 import java.util.List;
 
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -59,5 +58,7 @@ public class EduQuestion {
     private String writerUserNm;
 
     private String writerDt;
+
+    private int subconnScore;
 
 }

@@ -40,17 +40,17 @@ public class EduStatusService {
      * @throws Exception
      *             예외
      */
-    public List<EduMaster> getEduStatuss(String year, String pStateCd, String isTypeCd, String mainDeptCd, String targetDeptCd, String execDeptCd, String fromYmd, String toYmd, String deptCd, String deptSubYn, String tgtDeptCd, String eduAttCd, int safEduCourseNo, String eduTypeCd, String eduNm, String eduClassCd, String plantCd,
+    public List<EduMaster> getEduStatuss(String year, String eduPlanState, String isTypeCd, String mainDeptCd, String targetDeptCd, String execDeptCd, String fromYmd, String toYmd, String deptCd, String deptSubYn, String tgtDeptCd, String eduAttCd, int safEduCourseNo, String eduTypeCd, String eduNm, String eduClassCd, String plantCd,
             String pProcStepNm, String pYear, String pMonth, String mainDeptSubYn, String targetDeptSubYn, String execDeptSubYn, String reEduYn, String eduMethodCd, DefaultParam defaultParam) throws Exception {
-        return eduStatusMapper.getEduStatuss(year, pStateCd, isTypeCd, mainDeptCd, targetDeptCd, execDeptCd, fromYmd, toYmd, deptCd, deptSubYn, tgtDeptCd, eduAttCd, safEduCourseNo, eduTypeCd, eduNm, eduClassCd, plantCd, pProcStepNm, pYear, pMonth, mainDeptSubYn, targetDeptSubYn, execDeptSubYn, reEduYn, eduMethodCd, defaultParam);
+        return eduStatusMapper.getEduStatuss(year, eduPlanState, isTypeCd, mainDeptCd, targetDeptCd, execDeptCd, fromYmd, toYmd, deptCd, deptSubYn, tgtDeptCd, eduAttCd, safEduCourseNo, eduTypeCd, eduNm, eduClassCd, plantCd, pProcStepNm, pYear, pMonth, mainDeptSubYn, targetDeptSubYn, execDeptSubYn, reEduYn, eduMethodCd, defaultParam);
     }
 
     /**
      * 교육결과 현황 조회
      */
-    public List<EduMaster> getEduResults(String year, String rStateCd, String isTypeCd, String mainDeptCd, String targetDeptCd, String execDeptCd, String fromYmd, String toYmd, String deptCd, String deptSubYn, String tgtDeptCd, String eduAttCd, int safEduCourseNo, String eduTypeCd, String eduNm, String eduClassCd, String plantCd,
+    public List<EduMaster> getEduResults(String year, String eduPlanState, String isTypeCd, String mainDeptCd, String targetDeptCd, String execDeptCd, String fromYmd, String toYmd, String deptCd, String deptSubYn, String tgtDeptCd, String eduAttCd, int safEduCourseNo, String eduTypeCd, String eduNm, String eduClassCd, String plantCd,
             String rProcStepNm, String pYear, String pMonth, String mainDeptSubYn, String targetDeptSubYn, String execDeptSubYn, String reEduYn, String eduMethodCd, DefaultParam defaultParam) throws Exception {
-        return eduStatusMapper.getEduResults(year, rStateCd, isTypeCd, mainDeptCd, targetDeptCd, execDeptCd, fromYmd, toYmd, deptCd, deptSubYn, tgtDeptCd, eduAttCd, safEduCourseNo, eduTypeCd, eduNm, eduClassCd, plantCd, rProcStepNm, pYear, pMonth, mainDeptSubYn, targetDeptSubYn, execDeptSubYn, reEduYn, eduMethodCd, defaultParam);
+        return eduStatusMapper.getEduResults(year, eduPlanState, isTypeCd, mainDeptCd, targetDeptCd, execDeptCd, fromYmd, toYmd, deptCd, deptSubYn, tgtDeptCd, eduAttCd, safEduCourseNo, eduTypeCd, eduNm, eduClassCd, plantCd, rProcStepNm, pYear, pMonth, mainDeptSubYn, targetDeptSubYn, execDeptSubYn, reEduYn, eduMethodCd, defaultParam);
     }
 
     /**

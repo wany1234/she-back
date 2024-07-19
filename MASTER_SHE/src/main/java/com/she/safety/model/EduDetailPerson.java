@@ -47,4 +47,6 @@ public class EduDetailPerson {
 
     private String reEduTime;
 
+    private int videoWatchTime;
+
 }
