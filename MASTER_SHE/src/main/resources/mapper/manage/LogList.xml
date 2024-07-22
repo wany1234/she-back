@@ -19,7 +19,7 @@
         From com_login_log CLL
         Join com_user CU On CU.user_id = CLL.conn_user_id
         Join com_dept CD ON CD.dept_cd = CU.dept_cd
-        Join com_code_master CCM ON CCM.code = CD.plant_cd And code_group_cd = 'COM_PLANT_CD'
+        Join com_code_master CCM ON CCM.code = CU.plant_cd And code_group_cd = 'COM_PLANT_CD'
         Where Convert(char(10), insert_dt, 112) Between #{fromDt} And #{toDt}
         <if test="deptCd != null and !deptCd.equals('')">
             and CD.dept_cd = #{deptCd}
@@ -45,7 +45,7 @@
         From com_log CL
                  Left Join com_user CU ON CU.user_id = CL.user_id
                  Left Join com_dept CD ON CD.dept_cd = CU.dept_cd
-                 Left Join com_code_master CCM On CCM.code = CD.plant_cd And CCM.code_group_cd = 'COM_PLANT_CD'
+                 Left Join com_code_master CCM On CCM.code = CU.plant_cd And CCM.code_group_cd = 'COM_PLANT_CD'
         Where Convert(char(8), CL.create_dt, 112) Between #{fromDt} And #{toDt} And log_class_cd In('sql error', 'error')
         Order By logNo Desc
     </select>
