@@ -1,0 +1,77 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.mgt.baseInfo.mapper.DisasterIndexMapper">
+
+	<select id="getDisasterIndexList" resultType="com.she.mgt.baseInfo.model.DisasterIndex">
+	/* DisasterIndexMapper.getDisasterIndexList [getDisasterIndex.xml] */
+		select snai.year
+			, snai.plant_cd 
+			, plant.code_nm as plant_nm
+			, snai.comp_disa_index 
+			, snai.acci_rate_target 
+			, snai.working_hours_offi 
+			, snai.working_hours_manu 
+			, snai.create_user_id
+			, snai.create_dt
+			, snai.update_user_id
+			, snai.update_dt
+		from saf_no_accident_info snai
+		inner join dbo.LANG_CODE_MASTER('kr', 'COM_PLANT_CD') plant
+		on snai.plant_cd = plant.code
+		<if test="year !=null and !year.equals('')">
+		where snai.year = #{year}
+		</if>
+	</select>
+
+	<select id="getDisasterIndexDetail" resultType="com.she.mgt.baseInfo.model.DisasterIndex">
+	/* DisasterIndexMapper.getDisasterIndexDetail [getDisasterIndex.xml] */
+		select year
+			, plant_cd 
+			, comp_disa_index 
+			, acci_rate_target 
+			, working_hours_offi 
+			, working_hours_manu 
+		from saf_no_accident_info snai
+		where 1 = 1
+		and year = #{year}
+		and plant_cd = #{plantCd} 
+	</select>
+	
+	<insert id="insertDisasterIndex" parameterType="com.she.mgt.baseInfo.model.DisasterIndex">
+	/* DisasterIndexMapper.insertDisasterIndex [getDisasterIndex.xml] */
+		INSERT INTO saf_no_accident_info(
+			year
+			, plant_cd
+			, comp_disa_index
+			, acci_rate_target
+			, working_hours_offi
+			, working_hours_manu
+			, create_user_id
+			, create_dt
+		) values (
+			#{year}
+			, #{plantCd}
+			, #{compDisaIndex}
+			, #{acciRateTarget}
+			, #{workingHoursOffi}
+			, #{workingHoursManu}
+			, #{createUserId}
+			, getdate()
+		)	
+	</insert>
+	
+	<update id="updateDisasterIndex" parameterType="com.she.mgt.baseInfo.model.DisasterIndex">
+	/* DisasterIndexMapper.updateDisasterIndex [getDisasterIndex.xml] */
+		UPDATE saf_no_accident_info 
+		SET  comp_disa_index = #{compDisaIndex}
+			, acci_rate_target = #{acciRateTarget}
+			, working_hours_offi = #{workingHoursOffi}
+			, working_hours_manu = #{workingHoursManu}
+			, update_user_id = #{updateUserId}
+			, update_dt = getdate()
+		where year = #{year}
+		and plant_cd = #{plantCd}
+	</update>
+
+</mapper>
