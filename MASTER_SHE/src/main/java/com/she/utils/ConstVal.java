@@ -30,10 +30,12 @@ public class ConstVal {
      * 공통 코드도메인 - 안전
      */
     public static String COM_CODE_DOMAIN_SAF = "SAF";
+
     /**
      * 공통 코드그룹 - 인적피해
      */
     public static String COM_CODE_GROUP_HUMAN_DAMAGE = "SAF_ACCIDENT_HD_CLS";
+
     /**
      * 공통 코드그룹 - 원인(직접)
      */
@@ -55,38 +57,7 @@ public class ConstVal {
      * 공통 결재자구분코드 - 기안자
      */
     public static String COM_APPR_TYPE_REQUESTER = "APTP0";
-    /**
-     * 공통 결재자구분코드 - 검토자
-     */
-    public static String COM_APPR_TYPE_APPROVALER = "APTP1";
-    /**
-     * 공통 결재자구분코드 - 최종승인자
-     */
-    public static String COM_APPR_TYPE_FINAL_APPROVALER = "APTP2";
-    /**
-     * 공통 결재자처리상태 - 결재요청중
-     */
-    public static String COM_APPR_STEP_REQUEST_ING = "APSP0";
-    /**
-     * 공통 결재자처리상태 - 결재대기
-     */
-    public static String COM_APPR_STEP_REQUEST_WAITING = "APSP1";
-    /**
-     * 공통 결재자처리상태 - 반려
-     */
-    public static String COM_APPR_STEP_REQUEST_RETURN = "APSP2";
-    /**
-     * 공통 결재자처리상태 - 승인
-     */
-    public static String COM_APPR_STEP_CONFIRM = "APSP3";
-    /**
-     * 공통 결재통보구분 - 메일
-     */
-    public static String COM_APPR_NOTI_MAIL = "NMAIL";
-    /**
-     * 공통 결재통보구분 - SMS
-     */
-    public static String COM_APPR_NOTI_SMS = "NSMSX";
+
     /**
      * 공통 결재 - 작성중
      */
@@ -96,22 +67,9 @@ public class ConstVal {
      */
     public static String COM_BIZ_APPR_APPR_ING = "BAPS1";
     /**
-     * 공통 결재 - 결재반려
-     */
-    public static String COM_BIZ_APPR_RETURN = "BAPS2";
-    /**
-     * 공통 결재 - 결재완료
-     */
-    public static String COM_BIZ_APPR_COMPLETE = "BAPS3";
-    /**
      * 공통 결재선 범위 구분 - 공통
      */
     public static String COM_PLANT_SAME_COMMON = "CSSE1";
-    /**
-     * 공통 결재선 범위 구분 - 상이
-     */
-    public static String COM_PLANT_SAME_DIFF = "CSSE2";
-
     /**
      * 공통 결재진행단계 - 결재중
      */
@@ -128,7 +86,6 @@ public class ConstVal {
      * 공통 결재진행단계 - 재기안
      */
     public static String COM_BIZ_APPR_STEP_REAPPROVAL = "BAPST";
-
     /**
      * 공통 결재자 유형코드 - 기안
      */
@@ -150,11 +107,6 @@ public class ConstVal {
      * 공통 결재자 처리상태코드 - 승인
      */
     public static String COM_APPR_STEP_APPROVAL = "APSPA";
-    /**
-     * 공통 결재자 처리상태코드 - 반려
-     */
-    public static String COM_APPR_STEP_REJECT = "APSPD";
-
     /**
      * 파일 경로 코드그룹코드 - FORM
      */
@@ -196,65 +148,14 @@ public class ConstVal {
     public static String FILE_NAME_JOB = "TFN04";
 
     /**
-     * 작업환경측정결과 화학적인자 템플릿 구분자
-     */
-    public static String WORK_MEASURE_RESULT_CHEMICAL_TASK_CLASS_NM = "WORK_MEASURE_RESULT_TEMPLETE";
-
-    /**
-     * 작업환경측정결과 화학적인자 템플릿 키
-     */
-    public static String WORK_MEASURE_RESULT_CHEMICAL_TASK_KEY = "0";
-
-    /**
-     * 작업환경측정결과 화학적인자 템플릿 키
-     */
-    public static String WORK_MEASURE_RESULT_PHYSICAL_TASK_KEY = "1";
-
-    /**
-     * 유해위험인자 템플릿 구분자
-     */
-    public static String RISK_HAZARD_TEMPLETE_TASK_CLASS_NM = "RISK_HAZARD_TEMPLETE";
-
-    /**
-     * 유해위험인자 템플릿 키
-     */
-    public static String RISK_HAZARD_TEMPLETE_TASK_KEY = "0";
-
-    /**
-     * 직무 템플릿 구분자
-     */
-    public static String JOB_TEMPLETE_TASK_CLASS_NM = "JOB_TEMPLETE";
-
-    /**
-     * 직무 템플릿 키
-     */
-    public static String JOB_TEMPLETE_TASK_KEY = "0";
-
-    /**
      * 코드도메인 - 환경
      */
     public static String CODE_DOMAIN_CD_ENV = "ENV";
 
     /**
-     * 코드도메인 - 환경>대기
-     */
-    public static String CODE_DOMAIN_CD_ENV_AIR = "EAIR";
-
-    /**
      * 코드도메인 - 환경>폐기물
      */
     public static String CODE_DOMAIN_CD_ENV_WASTE = "EWST";
-
-    /**
-     * 코드도메인 - 환경>수질
-     */
-    public static String CODE_DOMAIN_CD_ENV_WATER = "EWTR";
-
-    // 보건
-    /**
-     * 코드그룹 - 질환분류 코드명
-     */
-    public static String CODE_GROUP_HEA_DISEASE_CLASS_CD = "HEA_DISEASE_CLASS";
 
     /**
      * 코드그룹 - 결과진단코드(판정코드)명
@@ -272,39 +173,14 @@ public class ConstVal {
     public static String CODE_GROUP_HEA_FOLLOW_UP_CD = "HEA_FOLLOW_UP";
 
     /**
-     * 코드그룹 - 사후관리 코드명
-     */
-    public static String CODE_GROUP_HEA_MUS_CLS_CD = "HEA_MUS_CLS";
-
-    /**
-     * 코드그룹 - 분기 코드명
-     */
-    public static String CODE_GROUP_RSA_HALF_YEAR_CD = "RSA_HALF_YEAR";
-
-    /**
      * 코드마스터 - 건강검진 항목결과값 타입_수치형
      */
     public static String CODE_MASTER_HEA_RESULT_TYPE_NUNBER = "N";
 
     /**
-     * 코드마스터 - 건강검진 항목결과값 타입_서술형
-     */
-    public static String CODE_MASTER_HEA_RESULT_TYPE_CHAR = "D";
-
-    /**
-     * 코드마스터 - (종합)건강검진 유형 (종합)건강검진 아닌 것
-     */
-    public static String CODE_MASTER_HEA_CHECKUP_TYPE_NON = "01";
-
-    /**
      * 코드마스터 - 특수검진 코드명
      */
     public static String CODE_MASTER_HEA_CHECKUP_CLASS_SPECIAL = "B1";
-
-    /**
-     * 기관별 검사항목 - 선택항목 여부 공통
-     */
-    public static String CHECKUP_ORG_TEST_ITEM_OPTIONAL_YN_COMMON = "N";
 
     /**
      * 문진항목 - 흡연>흡연여부
@@ -340,10 +216,6 @@ public class ConstVal {
      * 근골격계 질환 - 진행단계 (유해요인조사완료) SK E&S
      */
     public static String MUSC_RESEARCH_HARMFUL_SUR_COMPLETE = "HMCS6";
-    /**
-     * 근골격계 질환 - 진행단계 (결재요청) SK E&S
-     */
-    public static String MUSC_RESEARCH_HARMFUL_APPR_END = "HMCS7";
 
     // 보건
     /**
@@ -839,49 +711,6 @@ public class ConstVal {
     public static String SAF_NEARMISS_STEP_REGISTRATION = "NEMS2";
 
     /**
-     * 코드마스터 - 아차사고 진행단계 - 개선완료
-     */
-    public static String SAF_NEARMISS_STEP_COMPLTE = "NEMS3";
-
-    /**
-     * 코드마스터 - 점검자 구분코드 - 내부
-     */
-    public static String SAF_INSPECTOR_CLASS_INNER = "CLS01";
-
-    /**
-     * 코드마스터 - 점검자 구분코드 - 외부
-     */
-    public static String SAF_INSPECTOR_CLASS_OUTER = "CLS02";
-
-    // 안전
-
-    // 직무위험성평가
-
-    /**
-     * 평가기법 - KRAS
-     */
-    public static int RSA_KRAS = 1;
-    /**
-     * 평가기법 - JSA
-     */
-    public static int RSA_JSA = 2;
-    /**
-     * 평가기법 - CHARM
-     */
-    public static int RSA_CHARM = 3;
-    /**
-     * 평가기법 - KRAS code
-     */
-    public static String RSA_KRAS_CODE = "AT001";
-    /**
-     * 평가기법 - JSA code
-     */
-    public static String RSA_JSA_CODE = "AT002";
-    /**
-     * 평가기법 - CHARM code
-     */
-    public static String RSA_CHARM_CODE = "AT003";
-    /**
      * 평가계획 - 작성중 code
      */
     public static String RSA_ASSESS_PLAN_STEP_WRITE = "P";
@@ -899,58 +728,9 @@ public class ConstVal {
     public static String RSA_ASSESS_PLAN_STEP_EVAL_CMPLT_CODE = "C";
 
     /**
-     * 분기 - 상반기
-     */
-    public static String RSA_HALF_YEAR_FIRST = "FHALF";
-    /**
-     * 분기 - 하반기
-     */
-    public static String RSA_HALF_YEAR_SECOND = "SHALF";
-
-    /**
-     * 분기 - 하반기
-     */
-    public static String RSA_WORK_AREA_GRADE_CD_CHEMICAL = "C";
-    /**
-     * 분기 - 하반기
-     */
-    public static String RSA_WORK_AREA_GRADE_CD_PHYSICAL = "P";
-
-    // 직무위험성평가 end
-
-    // 공정안저자료관리 start
-    /**
-     * 공정시설정보 - 동력기계
-     */
-    public static String PSM_FACILITY_TYPE_POWER_MACHINE = "FCTYPE019";
-    /**
-     * 공정시설정보 - 장치 및 설비
-     */
-    public static String PSM_FACILITY_TYPE_EQUIPMENT = "FCTYPE020";
-    /**
-     * 공정시설정보 - 배관 및 개스킷
-     */
-    public static String PSM_FACILITY_TYPE_PIPE = "FCTYPE021";
-    /**
-     * 공정시설정보 - 안전밸브 및 파열판
-     */
-    public static String PSM_FACILITY_TYPE_SAFETY_VALVE = "FCTYPE022";
-    // 공정안저자료관리 end
-
-    /**
      * 협력업체 출입신청 진행상태 - 신청
      */
     public static String COM_PASS_REQ_STEP_REQUEST = "PASS1";
-
-    /**
-     * 협력업체 출입신청 진행상태 - 신청
-     */
-    public static String COM_PASS_REQ_STEP_APPROVAL = "PASS2";
-
-    /**
-     * 업체조회범위 - 전 업체
-     */
-    public static String COM_VENDOR_RGE_ALL = "CVR01";
 
     /**
      * 업체조회범위 - 업체유형
@@ -1240,5 +1020,18 @@ public class ConstVal {
      * 교육방법코드 - 동영상
      */
     public static String EDU_METHOD_VIDEO = "EDM03";
+
+    /**
+     * 사업장코드 - 외주동(잉크테크)
+     */
+    public static String PLANT_CD_05 = "FD05";
+    /**
+     * 사업장코드 - 해외
+     */
+    public static String PLANT_CD_09 = "FD09";
+    /**
+     * 사업장코드 - 기타
+     */
+    public static String PLANT_CD_10 = "FD10";
 
 }

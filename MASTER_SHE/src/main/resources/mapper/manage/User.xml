@@ -34,7 +34,7 @@
             , u.use_yn, case when u.use_yn = 'Y' then '재직O' else '재직X' end as use_yn_nm
             , u.create_user_id, cu.user_nm as create_user_nm, u.create_dt
             , u.update_user_id, uu.user_nm as update_user_nm, u.update_dt
-            , u.plant_cd , plant.code_nm as plant_nm
+            , u.plant_cd , ISNULL(plant.code_nm, '기타') as plant_nm
             , u.duty_cd, duty.duty_nm
             , u.position_cd, position.position_nm
             , u.signature
@@ -70,7 +70,14 @@
         )
         </if>
         <if test= "plantCd != null and !plantCd.equals('')">
-        and u.plant_cd = #{plantCd}
+        	<choose>
+				<when test = "plantCd == @com.she.utils.ConstVal@PLANT_CD_10">
+					and u.plant_cd in ('${@com.she.utils.ConstVal@PLANT_CD_05}', '${@com.she.utils.ConstVal@PLANT_CD_09}')
+				</when>
+				<otherwise>
+					and u.plant_cd = #{plantCd}
+				</otherwise>
+			</choose>
         </if>
         <if test= "userId != null and !userId.equals('')">
         and u.user_id like '%' + #{userId} + '%'
