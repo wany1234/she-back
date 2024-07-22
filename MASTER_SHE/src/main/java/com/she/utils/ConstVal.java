@@ -218,28 +218,11 @@ public class ConstVal {
     public static String MUSC_RESEARCH_HARMFUL_SUR_COMPLETE = "HMCS6";
 
     // 보건
-    /**
-     * 코드그룹 - 직무스트레스 (설문작성중)
-     */
-    public static String CHKLIST_STATE_WRITE = "30";
 
-    /**
-     * 코드그룹 - 직무스트레스 (설문작성중)
-     */
-    public static String CHKLIST_STATE_END = "40";
-
-    /**
-     * 코드마스터 - 작업환경측정 계획등록
-     */
-    public static String WORK_MEASURE_PLAN_INS = "WMS20";
     /**
      * 코드마스터 - 작업환경측정 계획접수
      */
     public static String WORK_MEASURE_PLAN_COMP = "WMS20";
-    /**
-     * 코드마스터 - 작업환경측정 결과입력중
-     */
-    public static String WORK_MEASURE_RESULT_WRITE = "WMS30";
 
     /**
      * 코드마스터 - 작업환경측정 결과완료
@@ -252,30 +235,6 @@ public class ConstVal {
     public static String LAW_MAKING_COMPLETE = "LMCS4";
 
     // 환경
-    /**
-     * 코드마스터 - 운영일지 상태(작성중)
-     */
-    public static String ENV_OPERATION_LOG_STATUS_WRITE = "11";
-
-    /**
-     * 코드마스터 - 운영일지 상태(검토중)
-     */
-    public static String ENV_OPERATION_LOG_STATUS_CONFIRM = "21";
-
-    /**
-     * 코드마스터 - 운영일지 상태(검토완료)
-     */
-    public static String ENV_OPERATION_LOG_STATUS_CONFIRM_COMPLETE = "29";
-
-    /**
-     * 코드마스터 - 운영일지 상태(결재중)
-     */
-    public static String ENV_OPERATION_LOG_STATUS_APPROVAL = "31";
-
-    /**
-     * 코드마스터 - 운영일지 상태(결재완료)
-     */
-    public static String ENV_OPERATION_LOG_STATUS_APPROVAL_COMPLETE = "39";
 
     /**
      * 코드마스터 - 폐기물처리요청 상태(요청)
@@ -302,34 +261,11 @@ public class ConstVal {
      * 안전 변경관리 진행 - 공정위험성평가
      */
     public static String SAF_CHNG_REF_WORK_2 = "CGRW2";
-    /**
-     * 안전 변경관리 진행 - 교육/훈련
-     */
-    public static String SAF_CHNG_REF_WORK_3 = "CGRW3";
-    /**
-     * 안전 변경관리 진행 - 안전운전계획
-     */
-    public static String SAF_CHNG_REF_WORK_4 = "CGRW4";
+
     /**
      * 안전 변경관리 진행 - 가동전점검
      */
     public static String SAF_CHNG_REF_WORK_5 = "CGRW5";
-    /**
-     * 안전 변경관리 진행 - 비상조치계획
-     */
-    public static String SAF_CHNG_REF_WORK_6 = "CGRW6";
-    /**
-     * 안전 변경관리 진행 - 장외영향평가
-     */
-    public static String SAF_CHNG_REF_WORK_7 = "CGRW7";
-    /**
-     * 안전 변경관리 진행 - 위해관리계획
-     */
-    public static String SAF_CHNG_REF_WORK_8 = "CGRW8";
-    /**
-     * 안전 변경관리 진행 - 설치검사
-     */
-    public static String SAF_CHNG_REF_WORK_9 = "CGRW9";
 
     /**
      * 코드마스터 - 변경관리 변경요청
@@ -381,10 +317,6 @@ public class ConstVal {
      * 코드마스터 - 안전점검진행상태 일정상태
      */
     public static String SAF_CHECK_STEP_SCHEDULE_CD = "CHS00";
-    /**
-     * 코드마스터 - 안전점검진행상태 계획상태
-     */
-    public static String SAF_CHECK_STEP_PLAN_CD = "CHS01";
 
     /**
      * 코드마스터 - 안전점검진행상태 결과상태
@@ -402,24 +334,9 @@ public class ConstVal {
     public static String SAF_CHECK_STEP_IMPROVED_CD = "CHS04";
 
     /**
-     * 점검계획진행상태 - 완료
-     */
-    public static String SAF_CHECK_PLAN_STEP_COMPLETE_CD = "Y";
-
-    /**
-     * 점검계획진행상태 - 작성중
-     */
-    public static String SAF_CHECK_PLAN_STEP_NOT_COMPLETE_CD = "N";
-
-    /**
      * 코드마스터 - 개선분류 사고
      */
     public static String SAF_IMPR_CLASS_ACCIDENT = "ICL01";
-
-    /**
-     * 코드마스터 - 개선분류 아차사고
-     */
-    public static String SAF_IMPR_CLASS_NEARMISS = "ICL02";
 
     /**
      * 코드마스터 - 개선분류 안전점검
@@ -467,16 +384,6 @@ public class ConstVal {
     public static String SAF_IMPR_CLASS_MUSC = "ICL10";
 
     /**
-     * 코드마스터 - 개선분류 안전관찰(SK E&S)
-     */
-    public static String SAF_IMPR_CLASS_OBSR = "ICL11";
-
-    /**
-     * 코드마스터 - 개선분류 합동점검(SK E&S)
-     */
-    public static String SAF_IMPR_CLASS_CONSOL = "ICL12";
-
-    /**
      * 코드마스터 - 개선분류 산업안전보건위원회(SK E&S)
      */
     public static String SAF_IMPR_CLASS_COMMITTEE = "ICL13";
@@ -496,14 +403,6 @@ public class ConstVal {
      */
     public static String SAF_IMPR_CLASS_PREOPER = "ICL17";
 
-    /**
-     * 코드마스터 - 법규준수평가결과
-     */
-    public static String SAF_IMPR_CLASS_LAWRSLT = "ICL20";
-    /**
-     * 코드마스터 - 평가결과 관리
-     */
-    public static String SAF_IMPR_CLASS_RSARESULT = "ICL36";
     /**
      * 코드마스터 - 비상대응훈련 관리
      */
