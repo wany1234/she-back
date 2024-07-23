@@ -300,6 +300,10 @@ public class EduQuestionService {
                 }
             }
 
+            if (scoreSum > 100) {
+                scoreSum = 100f;
+            }
+
             // 이수점수 조회
             int subconnScore = eduMasterMapper.getSubconnScore(eduQuestionList.get(0).getSafEduMstNo());
             if (scoreSum >= subconnScore) {
@@ -349,6 +353,10 @@ public class EduQuestionService {
                     scoreSum = scoreSum + new BigDecimal(100).divide(new BigDecimal(eduQuestionList.size()), 1, BigDecimal.ROUND_UP).floatValue();
                 }
 
+            }
+
+            if (scoreSum > 100) {
+                scoreSum = 100f;
             }
 
             // 이수점수 조회

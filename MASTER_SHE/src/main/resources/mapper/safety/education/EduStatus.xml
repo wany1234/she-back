@@ -802,6 +802,7 @@
            , m.edu_method_cd
            , sev.video_url
            , sev.video_comp_time
+           , m.edu_plan_state
         from saf_edu_mst m
            left outer join saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc2 on co.edu_type_cd = cc2.code
@@ -862,7 +863,7 @@
                    )
         </if>
        <!--  and m.process_step_cd != 'SES01' -->
-        and m.saf_edu_mst_no in (select distinct saf_edu_mst_no from saf_edu_mst_question)
+       <!--  and m.saf_edu_mst_no in (select distinct saf_edu_mst_no from saf_edu_mst_question) -->
         order by writer_dt desc
     </select>
     
@@ -1033,7 +1034,7 @@
              inner join saf_edu_dtl_psn dp
              on dp.saf_edu_mst_no = em.saf_edu_mst_no
              where 1=1
-               and em.p_step_cd = 'BAPSG'
+               and (em.edu_plan_state = 'EPS02' or em.edu_plan_state = 'EPS03')
                and ec.is_type_cd is not null
                <if test="isTypeCd !=null and !isTypeCd.equals('')">
                     and ec.is_type_cd = #{isTypeCd}
@@ -1135,7 +1136,7 @@
             from saf_edu_course ec
             left join saf_edu_mst em on em.saf_edu_course_no = ec.saf_edu_course_no
             inner join saf_edu_dtl_psn dp on dp.saf_edu_mst_no = em.saf_edu_mst_no
-            where em.p_step_cd='BAPSG'
+            where (em.edu_plan_state='EPS02' or em.edu_plan_state='EPS03')
             and ec.is_type_cd is not null
             <if test= 'plantCd != null and !plantCd.equals("") and !plantCd.equals("합계")'>
                 and ec.plant_cd = #{plantCd}
@@ -1162,7 +1163,7 @@
             </if>
              <if test= "completYn != null and completYn!=''">
                 and dp.complet_yn = #{completYn}
-                and em.r_step_cd='BAPSG'
+                and em.edu_plan_state='EPS03'
             </if>
     </select>
 </mapper>

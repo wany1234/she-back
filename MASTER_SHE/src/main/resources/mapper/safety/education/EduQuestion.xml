@@ -448,9 +448,9 @@
     </select>                   
 
             
-    <update id= "updateEduUserVideo" parameterType= "com.she.safety.model.EduDetailPerson"> 
+    <update id= "updateViewUserVideo" parameterType= "com.she.safety.model.EduDetailPerson"> 
         update saf_edu_dtl_psn
-        set video_watch_time = #{videoWatchTime}
+        set video_watch_tjime = #{videoWatchTime}
         ,complet_yn = #{completYn}
         ,re_edu_not_yn = #{completYn}
         ,edu_eval_time = getDate()
