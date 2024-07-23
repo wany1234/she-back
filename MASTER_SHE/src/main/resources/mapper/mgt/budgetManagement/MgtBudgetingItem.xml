@@ -35,7 +35,7 @@
 		<if test="budgetCateDtlNm !=null and !budgetCateDtlNm.equals('')">
 		and mbadc.budget_cate_dtl_nm like '%' + #{budgetCateDtlNm} + '%' 
 		</if>
-		order by mbad.year
+		order by mbad.year desc, dept_cd 
 	</select>
 
 	<select id="getBudgetItemList" resultType="com.she.mgt.baseInfo.model.MgtMgBudgetItem">

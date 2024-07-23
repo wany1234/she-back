@@ -1057,7 +1057,7 @@
 			, mbadc.remark 
 			, mbadc.create_user_id
 			, mbadc.create_dt
-		order by mbad.year
+		order by mbad.year desc, dept_cd
     </select>
     
     <select id="getBudgetExcutionKey" resultType="int">
