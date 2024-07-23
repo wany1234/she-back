@@ -637,10 +637,6 @@
              , c.create_dt                  -- 등록일
              , c.update_user_id             -- 수정자
              , c.update_dt                  -- 수정일
-             , c.create_dept_cd
-             , c.create_dept_nm
-             , c.update_dept_cd
-             , c.update_dept_nm
              , case
                  when dbo.GET_USER_NM(c.update_user_id) = '' then dbo.GET_USER_NM(c.create_user_id)
                  else dbo.GET_USER_NM(c.update_user_id) end as writer_user_nm
