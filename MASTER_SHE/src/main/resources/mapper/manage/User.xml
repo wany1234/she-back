@@ -72,7 +72,7 @@
         <if test= "plantCd != null and !plantCd.equals('')">
         	<choose>
 				<when test = "plantCd == @com.she.utils.ConstVal@PLANT_CD_10">
-					and u.plant_cd in ('${@com.she.utils.ConstVal@PLANT_CD_05}', '${@com.she.utils.ConstVal@PLANT_CD_09}')
+					and u.plant_cd in ('${@com.she.utils.ConstVal@PLANT_CD_05}', '${@com.she.utils.ConstVal@PLANT_CD_09}', '${@com.she.utils.ConstVal@PLANT_CD_10}')
 				</when>
 				<otherwise>
 					and u.plant_cd = #{plantCd}
