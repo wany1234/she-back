@@ -516,7 +516,7 @@
         on car.biz_appr_step_cd = bizAppr.code
         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_ACCIDENT_STEP') accidentstep
         on sa.accident_step_cd = accidentstep.code
-        inner join com_user createUser
+        left outer join com_user createUser
         on sa.create_user_id = createUser.user_id
         left outer join com_user updateUser
         on sa.update_user_id = updateUser.user_id
