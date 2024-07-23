@@ -28,7 +28,7 @@
         inner join com_code_master diseaseclass 
         on diseaseclass.code = hd.hea_disease_class_cd 
         and diseaseclass.code_group_cd = 'HEA_DISEASE_CLASS'
-        inner join com_user createUser 
+        left outer join com_user createUser 
         on hd.create_user_id = createUser.user_id
         left outer join com_user updateUser 
         on hd.update_user_id = updateUser.user_id

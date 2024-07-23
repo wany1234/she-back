@@ -28,7 +28,7 @@
                  else dbo.GET_USER_NM(hco.update_user_id) end    as writer_user_nm
             , case when hco.update_dt is null then convert(date, hco.create_dt) else convert(date, hco.update_dt) end   as writer_dt
         from hea_checkup_org hco
-        inner join com_user createUser
+        left outer join com_user createUser
         on hco.create_user_id = createUser.user_id
         left outer join com_user updateUser
         on hco.update_user_id = updateUser.user_id

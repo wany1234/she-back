@@ -35,7 +35,7 @@
         inner join com_code_master testclass
         on hti.hea_test_class_cd = testclass.code
         and testclass.code_group_cd = 'HEA_TEST_CLASS'
-        inner join com_user createUser
+        left outer join com_user createUser
         on hti.create_user_id = createUser.user_id
         left outer join com_user updateUser
         on hti.update_user_id = updateUser.user_id
