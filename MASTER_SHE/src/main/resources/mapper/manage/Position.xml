@@ -18,7 +18,7 @@
             ,updateUser.user_nm as update_user_nm
             ,p.update_dt
         from com_hr_position p
-        inner join com_user createUser
+        left outer join com_user createUser
         on p.create_user_id = createUser.user_id
         left outer join com_user updateUser
         on p.update_user_id = updateUser.user_id
