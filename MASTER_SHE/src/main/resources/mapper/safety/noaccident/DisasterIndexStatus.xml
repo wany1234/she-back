@@ -1,0 +1,83 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.noaccident.mapper.DisasterIndexStatusMapper">
+
+	<select id="getDisasterIndexStatusList" resultType="com.she.safety.model.DisasterIndexStatus">
+		SELECT snai.year
+			, snai.plant_cd
+			, plant.code_nm as plant_nm
+			, cmu.mon as month
+			, cmu.total_count 
+			, cmu.offi_count 
+			, cmu.manu_count 
+			, ROUND(cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12),0) as total_working_hours
+			, COUNT(sa.saf_accident_no) as accident_cnt
+			, isnull(SUM(sa.work_lost_day),0) as work_lost_day
+			, ROUND(((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)),2) as freq_rate
+			, ROUND(isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3), 3) as intens_rate
+			, ROUND((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3)),4) as frxin
+			, snai.comp_disa_index 
+			, ROUND(SQRT((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3))),2) as comp_perform_rate
+			, CONCAT(ROUND(ROUND(SQRT((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3))),2) / snai.comp_disa_index, 2) * 100, '%') as comp_disa_ratio
+			, snai.acci_rate_target 
+			, ROUND((COUNT(sa.saf_accident_no) / cmu.total_count) * 100,2) as acci_perfom_rate
+			, CONCAT(convert(int,ROUND(ROUND((COUNT(sa.saf_accident_no) / cmu.total_count) * 100,2) / snai.acci_rate_target, 2) * 100),'%') as acci_ratio
+		from saf_no_accident_info snai 
+		inner join com_mon_user cmu 
+		on snai.year = cmu.year and snai.plant_cd = cmu.plant_cd 
+		inner join dbo.LANG_CODE_MASTER('kr', 'COM_PLANT_CD') plant
+		on snai.plant_cd = plant.code
+		left outer join saf_accident sa 
+		on snai.plant_cd = sa.plant_cd and sa.accident_step_cd = 'ACCS4' and DATEPART(YY, sa.accident_ymd) = snai.year and DATEPART(MM, sa.accident_ymd) = cmu.mon
+		where 1 = 1
+		<if test="year != null and !year.equals('')">
+		and snai.year = #{year}
+		</if>
+		<if test="month != null and !month.equals('')">
+		and cmu.mon = #{month}
+		</if>
+		group by snai.year, snai.plant_cd
+		, snai.comp_disa_index ,snai.acci_rate_target ,snai.working_hours_offi ,snai.working_hours_manu
+		, plant.code_nm, plant.sort_order
+		, cmu.mon , cmu.total_count , cmu.offi_count , cmu.manu_count 
+		order by snai.year desc, cmu.mon, plant.sort_order
+	</select>
+	
+	<select id="getAccidentList" resultType="com.she.safety.model.DisasterIndexAccident">
+		SELECT sa.saf_accident_no 
+			, sa.plant_cd 
+			, plant.code_nm as plant_nm
+			, sa.accident_title 
+			, sa.dept_cd 
+			, cd.dept_nm
+			, sa.area
+			, sa.accident_step_cd
+			, sa.invest_yn
+			, stuff((select ', ' + accidentType.code_nm
+                        from saf_accident_occtype aco
+                        inner join com_code_master accidentType
+                        on aco.accident_type_cd = accidentType.code
+                        and accidentType.code_group_cd= 'SAF_OCC_TYPE'
+                        where aco.saf_accident_no = sa.saf_accident_no
+                        for xml path('')),1,1,'') as accident_type_nms
+            ,stuff((select ', ' + accidentKind.code_nm
+                        from saf_accident_kind ack
+                        inner join com_code_master accidentKind
+                        on ack.acc_kind_cd = accidentKind.code
+                        and accidentKind.code_group_cd= 'SAF_ACCIDENT_KIND'
+                        where ack.saf_accident_no = sa.saf_accident_no
+                        for xml path('')),1,1,'') as acc_kind_nms
+		from saf_accident sa 
+		inner join dbo.LANG_CODE_MASTER('kr', 'COM_PLANT_CD') plant
+		on sa.plant_cd = plant.code
+		inner join com_dept cd
+        on sa.dept_cd = cd.dept_cd
+		where 1 = 1
+		and sa.accident_step_cd = 'ACCS4'
+		and plant_cd = #{plantCd}
+		and DATEPART(YY, sa.accident_ymd) = #{year}
+		and DATEPART(MM, sa.accident_ymd) = #{month}
+	</select>
+
+</mapper>

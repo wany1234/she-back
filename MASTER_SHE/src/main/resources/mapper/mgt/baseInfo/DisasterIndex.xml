@@ -22,6 +22,7 @@
 		<if test="year !=null and !year.equals('')">
 		where snai.year = #{year}
 		</if>
+		order by snai.year desc, plant.sort_order
 	</select>
 
 	<select id="getDisasterIndexDetail" resultType="com.she.mgt.baseInfo.model.DisasterIndex">
