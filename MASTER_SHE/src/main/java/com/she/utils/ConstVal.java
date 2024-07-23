@@ -416,14 +416,6 @@ public class ConstVal {
      * 코드마스터 - 안전보건법령 이행점검 관리
      */
     public static String SAF_IMPR_CLASS_MAJ_DISA = "ICL40";
-    /**
-     * 코드마스터 - 작업 위험성평가 관리
-     */
-    public static String SAF_IMPR_CLASS_WORK_RSLT = "ICL41";
-    /**
-     * 코드마스터 - 공정 위험성평가 관리
-     */
-    public static String SAF_IMPR_CLASS_PROC_RSLT = "ICL42";
 
     /**
      * 코드마스터 - 개선분류 종사자청취의견관리
@@ -445,11 +437,6 @@ public class ConstVal {
     public static String SAF_ACT_CLASS_REQUEST_IMPROVEMENT = "ACL02";
 
     /**
-     * 코드마스터 - 개선진행단계 요청등록
-     */
-    public static String SAF_IMPR_STEP_REQUEST_REGISTRATION = "IMST1";
-
-    /**
      * 코드마스터 - 개선진행단계 미접수
      */
     public static String SAF_IMPR_STEP_UNRELIEVED = "IMST2";
@@ -458,11 +445,6 @@ public class ConstVal {
      * 코드마스터 - 개선진행단계 조치부서조치중
      */
     public static String SAF_IMPR_STEP_MEASURES_ACTION = "IMST3";
-
-    /**
-     * 코드마스터 - 개선진행단계 요청부서확인
-     */
-    public static String SAF_IMPR_STEP_REQUEST_DEPARTMENT_CONFIRMATION = "IMST4";
 
     /**
      * 코드마스터 - 개선진행단계 개선완료
@@ -515,11 +497,6 @@ public class ConstVal {
     public static String SAF_CONST_STEP_WORKING = "CONS3";
 
     /**
-     * 코드마스터 - 공사현황 진행단계 공사완료
-     */
-    public static String SAF_CONST_STEP_COMPLETE = "CONS4";
-
-    /**
      * 코드마스터 - 안전작업 점검확인항목 확인사항 구분 - 공통
      */
     public static String SAF_WKOD_ITEM_DPTY_COMM = "WDT03";
@@ -540,16 +517,6 @@ public class ConstVal {
     public static String SAF_WKOD_STEP_REQUEST = "WKS01";
 
     /**
-     * 코드마스터 - 작업허가서진행단계 발행
-     */
-    public static String SAF_WKOD_STEP_PUBLISH = "WKS02";
-
-    /**
-     * 코드마스터 - 작업허가서진행단계 승인
-     */
-    public static String SAF_WKOD_STEP_APPROVAL = "WKS03";
-
-    /**
      * 코드마스터 - 작업허가서진행단계 출력
      */
     public static String SAF_WKOD_STEP_PRINT = "WKS04";
@@ -568,16 +535,6 @@ public class ConstVal {
      * 코드마스터 - 작업허가서진행단계 연장
      */
     public static String SAF_WKOD_STEP_OVER = "WKS07";
-
-    /**
-     * 코드마스터 - 작업허가서점검확인사항구분 요청부서
-     */
-    public static String SAF_WKOD_DPTY_REQUEST = "WDT01";
-
-    /**
-     * 코드마스터 - 작업허가서점검확인사항구분 작업부서
-     */
-    public static String SAF_WKOD_DPTY_WORK = "WDT02";
 
     /**
      * 코드마스터 - 진행단계 - 작성중
@@ -627,11 +584,6 @@ public class ConstVal {
     public static String RSA_ASSESS_PLAN_STEP_EVAL_CMPLT_CODE = "C";
 
     /**
-     * 협력업체 출입신청 진행상태 - 신청
-     */
-    public static String COM_PASS_REQ_STEP_REQUEST = "PASS1";
-
-    /**
      * 업체조회범위 - 업체유형
      */
     public static String COM_VENDOR_RGE_ATTRIBUTE = "CVR02";
@@ -642,39 +594,9 @@ public class ConstVal {
     public static String COM_VENDOR_RGE_VENDOR = "CVR03";
 
     /**
-     * 순회대상구분코드 - 부서
-     */
-    public static String COM_TGT_CLS_DEPT = "ACTDP";
-
-    /**
-     * 순회대상구분코드 - 협력업체
-     */
-    public static String COM_TGT_CLS_VENDOR = "ACTSC";
-
-    /**
-     * 경영정보항목 - 근로시간
-     */
-    public static int MGT_MG_INFO_ITM_WORK_TIME = 2101;
-
-    /**
-     * 경영정보항목 - 근로자수
-     */
-    public static int MGT_MG_INFO_ITM_WORKER = 2102;
-
-    /**
-     * 경영정보항목 - 근로손실일수
-     */
-    public static int MGT_MG_INFO_ITM_WORK_DAY = 2103;
-
-    /**
      * 보호구진행단계코드 - 신청작성중
      */
     public static String SAF_SPE_STEP_REQ_ING = "SPES1";
-
-    /**
-     * 보호구진행단계코드 - 신청완료
-     */
-    public static String SAF_SPE_STEP_REQ_CMPLT = "SPES2";
 
     /**
      * 보호구진행단계코드 - 지급처리중
@@ -723,11 +645,6 @@ public class ConstVal {
      */
     public static String LAW_ELAW_RGL = "LAWRGL";
 
-    /**
-     * 입법예고 - 소관부처 코드
-     */
-    public static String LAW_MAKING_ORG = "1492000,1721000,1450000,1661000,1530000,1192000,1741000,1480000 ";
-
     // PSM 감사
     /**
      * 코드마스터 - PSM 계획등록
@@ -760,67 +677,6 @@ public class ConstVal {
     public static String CODE_MASTER_PSM_PROG_STATE_RESULT_APPR_COMPLETE = "PPS60";
 
     /**
-     * 코드마스터 - 선임 감사원
-     */
-    public static String AUDIT_TYPE_CD_SENIOR_AUDITOR = "AT10";
-
-    /**
-     * 코드마스터 - 감사원
-     */
-    public static String AUDIT_TYPE_CD_AUDITOR = "AT20";
-
-    /**
-     * 수시
-     */
-    public static String RSA_REG_REGDEM_FREQ = "REG02";
-
-    /**
-     * 계획
-     */
-    public static String SAF_EDU_STEP_PLAN = "SES01";
-
-    /**
-     * 결과
-     */
-    public static String SAF_EDU_STEP_RESULT = "SES02";
-
-    /**
-     * 완료
-     */
-    public static String SAF_EDU_STEP_COMPLETE = "SES03";
-
-    // 교육마스터
-    /**
-     * 표시여부 - Y
-     */
-    public static String SAF_EDU_DIS_CD = "Y";
-
-    /**
-     * 표시여부 - N
-     */
-    public static String SAF_EDU_NOT_DIS_CD = "N";
-
-    /**
-     * 코드마스터 - 교육 대상 부서 등록
-     */
-    public static String CODE_MASTER_RSLT_APPR_STATE_WRITE = "RSLTAPPR10";
-
-    /**
-     * 코드마스터 - 교육진행단계코드 계획
-     */
-    public static String CODE_MASTER_SAF_EDU_STEP_PLAN = "SES01";
-
-    /**
-     * 코드마스터 - 교육진행단계코드 결과
-     */
-    public static String CODE_MASTER_SAF_EDU_STEP_RESULT = "SES02";
-
-    /**
-     * 코드마스터 - 교육진행단계코드 교육완료
-     */
-    public static String CODE_MASTER_SAF_EDU_STEP_COMPLETE = "SES03";
-
-    /**
      * 환경-환경영향평가-진행단계-계획
      */
     public static String SAF_ENV_EFFECT_EVAL_STEP_PLAN = "EEE01";
@@ -829,21 +685,6 @@ public class ConstVal {
      * 환경-환경영향평가-진행단계-결과
      */
     public static String SAF_ENV_EFFECT_EVAL_STEP_RSLT = "EEE02";
-
-    /**
-     * 경영-SHE예산관리-진행단계-편성
-     */
-    public static String MGT_BUDGET_STEP_BUDGETING = "MBS01";
-
-    /**
-     * 경영-SHE예산관리-진행단계-집행
-     */
-    public static String MGT_BUDGET_STEP_EXECUTION = "MBS02";
-
-    /**
-     * 공통-상태코드-미작성
-     */
-    public static String COM_STATE_INIT = "STATE1";
 
     /**
      * 공통-상태코드-작성중
@@ -861,29 +702,14 @@ public class ConstVal {
     public static String COM_STATE_COMPLETE = "STATE4";
 
     /**
-     * 경영-법정선임자 평가관리-진행단계-계획
-     */
-    public static String MGT_ELECT_EVAL_STEP_PLAN = "SETS1";
-
-    /**
      * 경영-법정선임자 평가관리-진행단계-본인평가
      */
     public static String MGT_ELECT_EVAL_STEP_ME_RSLT = "SETS2";
 
     /**
-     * 경영-법정선임자 평가관리-진행단계-상위평가
-     */
-    public static String MGT_ELECT_EVAL_STEP_UP_RSLT = "SETS3";
-
-    /**
      * 경영-법정선임자 평가관리 본인평가/상위평가 진행단계-미작성
      */
     public static String SAF_PROCESS_STEP2_UNWRITTEN = "PSURE";
-
-    /**
-     * 경영-법정선임자 평가관리 본인평가/상위평가 진행단계-작성중
-     */
-    public static String SAF_PROCESS_STEP2_ING = "PSREG";
 
     /**
      * 경영-법정선임자 평가관리 본인평가/상위평가 진행단계-완료
