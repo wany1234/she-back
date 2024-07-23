@@ -93,16 +93,8 @@
               ,pl.code_nm as plant_nm                    -- 사업장 명
               ,hcr.create_user_id
               ,hcr.create_dt
-              ,hcr.create_dept_cd
-              ,hcr.create_dept_nm
-              ,hcr.create_position_cd
-              ,hcr.create_position_nm
               ,hcr.update_user_id
               ,hcr.update_dt
-              ,hcr.update_dept_cd
-              ,hcr.update_dept_nm
-              ,hcr.update_position_cd
-              ,hcr.update_position_nm
               ,case
                   when dbo.GET_USER_NM(hcr.update_user_id) = '' then dbo.GET_USER_NM(hcr.create_user_id)
                   else dbo.GET_USER_NM(hcr.update_user_id) end as writer_user_nm
