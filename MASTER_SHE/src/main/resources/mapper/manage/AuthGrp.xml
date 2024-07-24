@@ -97,10 +97,10 @@
             ON cu.dept_cd = cd.dept_cd
          INNER JOIN com_code_master plant
             ON plant.code_group_cd = 'COM_PLANT_CD'
-           AND cd.plant_cd = plant.code
+           AND cu.plant_cd = plant.code
          WHERE 1=1
         <if test= "plantCd != null and !plantCd.equals('')">
-           AND cd.plant_cd = #{plantCd}
+           AND cu.plant_cd = #{plantCd}
         </if>
         <if test= "deptCd != null and !deptCd.equals('')">
            AND cd.dept_cd = #{deptCd}
@@ -143,7 +143,6 @@
             SELECT cd.dept_cd
                   ,cd.dept_nm
                   ,cd.p_dept_cd
-                  ,cd.plant_cd
               FROM com_dept cd
              WHERE 1=1
                AND isnull(cd.p_dept_cd, '') = ''
@@ -152,7 +151,6 @@
             SELECT cdd.dept_cd
                   ,cdd.dept_nm
                   ,cdd.p_dept_cd
-                  ,cdd.plant_cd
               FROM com_dept cdd
              INNER join depttree
                 ON cdd.p_dept_cd = depttree.dept_cd
@@ -162,15 +160,8 @@
         SELECT depttree.dept_cd
               ,depttree.dept_nm
               ,depttree.p_dept_cd
-              ,depttree.plant_cd, plant.code_nm as plant_nm
           FROM depttree
-          LEFT OUTER JOIN com_code_master plant
-            ON depttree.plant_cd = plant.code
-           AND plant.code_group_cd = 'COM_PLANT_CD'
          WHERE 1=1
-        <if test= "plantCd != null and plantCd != ''">
-           AND depttree.plant_cd = #{plantCd}
-        </if>
         <if test= "keyword != null and keyword != ''">
            AND (upper(depttree.dept_nm) like '%'+upper(#{keyword})+'%' or
                 exists(SELECT 1

@@ -272,7 +272,7 @@
         From com_crud_log CL
         Join com_user CU On CU.user_id = CL.user_id
         Join com_dept CD ON CD.dept_cd = CU.dept_cd
-        Join com_code_master CP On CP.code = CD.plant_cd And code_group_cd = 'COM_PLANT_CD'
+        Join com_code_master CP On CP.code = CU.plant_cd And code_group_cd = 'COM_PLANT_CD'
         Where Convert(char(8), log_dt, 112) Between #{fromDt} And #{toDt}
         <if test="crudNm != null and !crudNm.equals('')">
             And crud_nm Like '%' + #{crudNm} + '%'

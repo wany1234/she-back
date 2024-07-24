@@ -5,10 +5,9 @@
 <mapper namespace= "com.she.manage.mapper.UserAuthGrpMapper">
     <!-- 권한에 따른 사용자 목록 조회 -->
     <select id="getAuthGrpUsers" resultType="com.she.manage.model.UserAuthGrp">
+    /* UserAuthGrpMapper.getAuthGrpUsers [UserAuthGrp.xml] */
         select caug.user_id
             ,cu.user_nm
-            ,plant.code_nm as plant_nm
-            ,cd.plant_cd
             ,cd.dept_nm
             ,cd.dept_cd
             ,caug.auth_grp_no
@@ -20,9 +19,6 @@
         on caug.user_id = cu.user_id
         inner join com_dept cd
         on cu.dept_cd = cd.dept_cd
-        inner join com_code_master plant
-        on cd.plant_cd = plant.code
-        and plant.code_group_cd = 'COM_PLANT_CD'
         inner join com_auth_grp cag
         on caug.auth_grp_no = cag.auth_grp_no
         where caug.auth_grp_no = #{authGrpNo}
@@ -30,6 +26,7 @@
     
      <!-- 사용자 권한 그룹 목록 조회 -->
     <select id= "getUserAuthGrps" resultType= "com.she.manage.model.UserAuthGrp" parameterType= "java.util.HashMap">
+    /* UserAuthGrpMapper.getUserAuthGrps [UserAuthGrp.xml] */
         select agp.auth_grp_no
         ,agp.auth_grp_nm
         ,ugp.user_id
@@ -69,21 +66,17 @@
     
     
     <select id="getAuthGrpDepts" resultType="com.she.manage.model.DeptAuthGrp">
+    /* UserAuthGrpMapper.getAuthGrpDepts [UserAuthGrp.xml] */
         select cdag.dept_cd
             ,cd.dept_nm
             ,cd.dept_lvl
             ,deptLvl.code_nm as dept_lvl_nm
-            ,cd.plant_cd
-            ,plant.code_nm as plant_nm
             ,cdag.auth_grp_no
             ,cdag.create_user_id
             ,cdag.create_dt
         from com_dept_auth_grp cdag
         inner join com_dept cd 
         on cdag.dept_cd = cd.dept_cd
-        inner join com_code_master plant
-        on cd.plant_cd = plant.code
-        and plant.code_group_cd = 'COM_PLANT_CD'
         inner join com_code_master deptLvl
         on cd.dept_lvl = deptLvl.code
         and deptLvl.code_group_cd = 'COM_DEPT_LVL'
@@ -91,6 +84,7 @@
     </select>
     
     <select id="getAuth" resultType="com.she.manage.model.DeptAuthGrp">
+    /* UserAuthGrpMapper.getAuth [UserAuthGrp.xml] */
         with A as (
             select cdag.auth_grp_no
                 ,isnull(cdag.plant_access_yn, 'N') as plant_access_yn
@@ -150,12 +144,13 @@
     </select>
     
     <select id="getAuthPlants" resultType="com.she.manage.model.DeptAuthGrp">
+    /* UserAuthGrpMapper.getAuthPlants [UserAuthGrp.xml] */
         select cdag.dept_cd
             ,cd.dept_nm
             ,cd.dept_lvl
             ,deptLvl.code_nm as dept_lvl_nm
-            ,cd.plant_cd
-            ,plant.code_nm as plant_nm
+            ,'' as plant_cd
+            ,'' as plant_nm
             ,cdag.auth_grp_no
             ,isnull(cdag.plant_access_yn, 'N') as plant_access_yn
             ,isnull(cdag.dept_access_yn, 'N') as dept_access_yn
@@ -166,9 +161,6 @@
         from com_dept_auth_grp cdag
         inner join com_dept cd 
         on cdag.dept_cd = cd.dept_cd
-        inner join com_code_master plant
-        on cd.plant_cd = plant.code
-        and plant.code_group_cd = 'COM_PLANT_CD'
         inner join com_code_master deptLvl
         on cd.dept_lvl = deptLvl.code
         and deptLvl.code_group_cd = 'COM_DEPT_LVL'
@@ -179,7 +171,7 @@
             ,cd.dept_nm
             ,cd.dept_lvl
             ,deptLvl.code_nm as dept_lvl_nm
-            ,cd.plant_cd
+            ,cu.plant_cd
             ,plant.code_nm as plant_nm
             ,cuag.auth_grp_no
             ,isnull(cuag.plant_access_yn, 'N') as plant_access_yn
@@ -194,7 +186,7 @@
         inner join com_dept cd 
         on cu.dept_cd = cd.dept_cd
         inner join com_code_master plant
-        on cd.plant_cd = plant.code
+        on cu.plant_cd = plant.code
         and plant.code_group_cd = 'COM_PLANT_CD'
         inner join com_code_master deptLvl
         on cd.dept_lvl = deptLvl.code
@@ -204,12 +196,13 @@
     </select>
     
     <select id="getAuthDepts" resultType="com.she.manage.model.DeptAuthGrp">
+    /* UserAuthGrpMapper.getAuthDepts [UserAuthGrp.xml] */
         select cdag.dept_cd
             ,cd.dept_nm
             ,cd.dept_lvl
             ,deptLvl.code_nm as dept_lvl_nm
-            ,cd.plant_cd
-            ,plant.code_nm as plant_nm
+            ,'' as plant_cd
+            ,'' as plant_nm
             ,cdag.auth_grp_no
             ,isnull(cdag.plant_access_yn, 'N') as plant_access_yn
             ,isnull(cdag.dept_access_yn, 'N') as dept_access_yn
@@ -220,9 +213,6 @@
         from com_dept_auth_grp cdag
         inner join com_dept cd 
         on cdag.dept_cd = cd.dept_cd
-        inner join com_code_master plant
-        on cd.plant_cd = plant.code
-        and plant.code_group_cd = 'COM_PLANT_CD'
         inner join com_code_master deptLvl
         on cd.dept_lvl = deptLvl.code
         and deptLvl.code_group_cd = 'COM_DEPT_LVL'
@@ -233,7 +223,7 @@
             ,cd.dept_nm
             ,cd.dept_lvl
             ,deptLvl.code_nm as dept_lvl_nm
-            ,cd.plant_cd
+            ,cu.plant_cd
             ,plant.code_nm as plant_nm
             ,cuag.auth_grp_no
             ,isnull(cuag.plant_access_yn, 'N') as plant_access_yn
@@ -248,7 +238,7 @@
         inner join com_dept cd 
         on cu.dept_cd = cd.dept_cd
         inner join com_code_master plant
-        on cd.plant_cd = plant.code
+        on cu.plant_cd = plant.code
         and plant.code_group_cd = 'COM_PLANT_CD'
         inner join com_code_master deptLvl
         on cd.dept_lvl = deptLvl.code
@@ -259,6 +249,7 @@
     
     <!-- 사용자 권한 그룹 생성 -->
     <insert id= "createUserAuthGrp" parameterType= "com.she.manage.model.UserAuthGrp">
+    /* UserAuthGrpMapper.createUserAuthGrp [UserAuthGrp.xml] */
         insert into com_user_auth_grp
         (user_id
         ,auth_grp_no
@@ -273,6 +264,7 @@
 
     <!-- 사용자 권한 그룹 삭제(사용권한 그룹번호 기준) -->
     <delete id= "deleteUserAuthGrp" parameterType= "String">
+    /* UserAuthGrpMapper.deleteUserAuthGrp [UserAuthGrp.xml] */
         delete
         from com_user_auth_grp
         where 1 = 1
@@ -282,6 +274,7 @@
 
     <!-- 부서 권한 그룹 생성 -->
     <insert id= "createDeptAuthGrp" parameterType= "com.she.manage.model.DeptAuthGrp">
+    /* UserAuthGrpMapper.createDeptAuthGrp [UserAuthGrp.xml] */
         insert into com_dept_auth_grp
         (dept_cd
         ,auth_grp_no
@@ -296,6 +289,7 @@
 
     <!-- 부서 권한 그룹 삭제(사용권한 그룹번호 기준) -->
     <delete id= "deleteDeptAuthGrp" parameterType= "String">
+    /* UserAuthGrpMapper.deleteDeptAuthGrp [UserAuthGrp.xml] */
         delete
         from com_dept_auth_grp
         where 1 = 1
@@ -304,6 +298,7 @@
     </delete>
     
     <insert id="saveDeptAuth" parameterType= "com.she.manage.model.DeptAuthGrp">
+    /* UserAuthGrpMapper.saveDeptAuth [UserAuthGrp.xml] */
         merge into com_dept_auth_grp as a
         using (select 'X' as DUAL) b
         on (a.dept_cd = #{deptCd}
@@ -342,6 +337,7 @@
     </insert>
     
     <insert id="saveUserAuth" parameterType= "com.she.manage.model.DeptAuthGrp">
+    /* UserAuthGrpMapper.saveUserAuth [UserAuthGrp.xml] */
         merge into com_user_auth_grp as a
         using (select 'X' as DUAL) b
         on (a.user_id = #{userId}
@@ -381,6 +377,7 @@
     
     <!-- 하위부서 조회 -->
     <select id="getAuthGrpSubDepts" resultType= "com.she.manage.model.DeptAuthGrp">
+    /* UserAuthGrpMapper.getAuthGrpSubDepts [UserAuthGrp.xml] */
         with depttree as (
             select cd.dept_cd
                 ,cd.dept_nm
