@@ -65,7 +65,7 @@
             and cu.use_yn = 'Y'
             inner join com_dept cd
             on cu.dept_cd = cd.dept_cd
-            inner join com_user createUser 
+            left outer join com_user createUser 
             on seh.create_user_id = createUser.user_id
             and createUser.use_yn = 'Y'
             left outer join com_user updateUser 
