@@ -174,4 +174,7 @@ public class CheckupResult {
 
     @ApiModelProperty(value = "작성일")
     private String writerDt;
+    
+    @ApiModelProperty(value = "검진년도")
+    private String checkupYear;
 }

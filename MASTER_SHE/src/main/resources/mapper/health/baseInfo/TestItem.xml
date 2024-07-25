@@ -49,15 +49,6 @@
         <if test= "heaTestClassCd != null and !heaTestClassCd.equals('')">
         and hea_test_class_cd = #{heaTestClassCd}
         </if>
-        <if test= "heaCheckupOrgNo != null and heaCheckupOrgNo > 0 and year != null and !year.equals('') and heaCheckupTypeCd != null and !heaCheckupTypeCd.equals('')">
-        and not exists (select hea_test_item_cd
-                from hea_checkup_org_test_item hcoti
-                where hcoti.hea_test_item_cd = hti.hea_test_item_cd
-                and hcoti.hea_checkup_org_no = #{heaCheckupOrgNo}
-                and hcoti.year = #{year}
-                and hcoti.hea_checkup_type_cd = #{heaCheckupTypeCd}
-                and (isnull(#{optionalYn}, '') = '' or hcoti.optional_yn = #{optionalYn}))
-        </if>
         order by writer_dt desc, testclass.sort_order, hti.sort_order
     </select>
 

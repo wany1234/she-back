@@ -58,6 +58,7 @@
                    when dbo.GET_USER_NM(r.update_user_id) = '' then dbo.GET_USER_NM(r.create_user_id)
                    else dbo.GET_USER_NM(r.update_user_id) end    as writer_user_nm
               , case when r.update_dt is null then convert(date, r.create_dt) else convert(date, r.update_dt) end   as writer_dt
+              , convert(varchar(4), p.start_ymd) as checkup_year
           FROM hea_checkup_plan p
          INNER JOIN com_code_master che
             ON che.code_group_cd = 'HEA_CHECKUP_CLASS'
@@ -283,8 +284,6 @@
               ,ir.hea_checkup_org_test_item_no
               ,o.hea_checkup_org_no
               ,o.hea_checkup_org_nm
-              ,r.hea_checkup_type_cd
-              ,tc.code_nm as hea_checkup_type_nm
               ,i.hea_test_class_cd
               ,ic.code_nm as hea_test_class_nm
               ,i.hea_test_item_cd
@@ -323,9 +322,6 @@
             ON r.hea_checkup_plan_no = ir.hea_checkup_plan_no and r.user_id = ir.user_id
          INNER JOIN hea_checkup_org o
             ON r.hea_checkup_org_no = o.hea_checkup_org_no
-         INNER JOIN com_code_master tc
-            ON tc.code_group_cd = 'HEA_CHECKUP_TYPE'
-           AND r.hea_checkup_type_cd = tc.code
          INNER JOIN hea_test_item i
             ON ir.hea_test_item_cd = i.hea_test_item_cd
          INNER JOIN com_code_master ic
@@ -372,37 +368,24 @@
                       ,notify_plan_yn = 'N'
                       ,update_user_id = #{createUserId}
                       ,update_dt = getdate()
-                      ,update_dept_cd = (select dept_cd from com_user where user_id = #{createUserId})
-                      ,update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
-                      ,update_position_cd = (select position_cd from com_user where user_id = #{createUserId})
-                      ,update_position_nm = (select position_nm from com_user where user_id = #{createUserId})
               WHEN NOT MATCHED THEN
                 INSERT (hea_checkup_plan_no
                        ,user_id
                        ,dept_cd
                        ,hea_checked_ymd
                        ,hea_checkup_org_no
-                       ,hea_checkup_type_cd
                        ,notify_plan_yn
                        ,create_user_id
                        ,create_dt
-                       ,create_dept_cd
-                       ,create_dept_nm
-                       ,create_position_cd
-                       ,create_position_nm)
+                       )
                 VALUES (#{heaCheckupPlanNo}
                        ,#{userId}
                        ,#{deptCd}
                        ,#{heaCheckedYmd}
                        ,#{heaCheckupOrgNo}
-                       ,'01'
                        ,'N'
                        ,#{createUserId}
                        ,getdate()
-                       ,(select dept_cd from com_user where user_id = #{createUserId})
-                       ,(select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
-                       ,(select position_cd from com_user where user_id = #{createUserId})
-                       ,(select position_nm from com_user where user_id = #{createUserId})
                        );
     </insert>
 
@@ -424,10 +407,6 @@
         </if>
               ,update_user_id = #{updateUserId}
               ,update_dt = getDate()
-              ,update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
-              ,update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
-              ,update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
-              ,update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
          WHERE hea_checkup_plan_no = #{heaCheckupPlanNo}
            AND user_id = #{userId}
     </update>

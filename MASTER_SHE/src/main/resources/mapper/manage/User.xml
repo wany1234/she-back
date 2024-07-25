@@ -500,7 +500,6 @@
 		, hcp.hea_checkup_plan_nm 
 		, hcr.hea_checked_ymd 
 		, hcc.code_nm as hcc_nm
-		, hct.code_nm as htc_nm
 		, (SELECT hsh.suspect_yn
 			from hea_suspect_hst hsh 
 			where  hcr.hea_checkup_plan_no = hsh.hea_checkup_plan_no 
@@ -510,8 +509,6 @@
 		on hcr.hea_checkup_plan_no = hcp.hea_checkup_plan_no 
 		inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'HEA_CHECKUP_CLASS') hcc
 		on hcp.hea_checkup_class_cd  = hcc.code  
-		inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'HEA_CHECKUP_TYPE') hct
-		on hcr.hea_checkup_type_cd  = hct.code  
 		where 1 = 1
 		and hcr.user_id = #{userId}
     </select>

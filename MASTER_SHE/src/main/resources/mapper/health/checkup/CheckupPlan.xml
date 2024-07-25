@@ -191,7 +191,6 @@
             (hea_checkup_plan_no
             ,user_id
             ,dept_cd
-            ,hea_checkup_type_cd
             ,notify_plan_yn
             ,consent_yn
             ,reserve_batch_yn
@@ -202,7 +201,6 @@
             (#{heaCheckupPlanNo}
             ,#{userId}
             ,#{deptCd}
-            ,#{heaCheckupTypeCd}
             ,'N'
             ,'N'
             ,'N'
@@ -256,7 +254,6 @@
     <select id= "getCheckupUsersNoPage" resultType= "com.she.health.model.CheckupUser">
         /* CheckupPlanMapper.getCheckupUsersNoPage [CheckupPlan.xml] */
         select p.hea_checkup_plan_no, p.hea_checkup_plan_nm, p.hea_checkup_class_cd, cp.code_nm as hea_checkup_class_nm
-            , r.hea_checkup_type_cd, cr.code_nm as hea_checkup_type_nm
             , o.hea_checkup_org_no, o.hea_checkup_org_nm
             
            <!-- 공정 표시 시작!-->
@@ -311,9 +308,6 @@
         and p.hea_checkup_class_cd = cp.code
         inner join hea_checkup_result r 
         on p.hea_checkup_plan_no = r.hea_checkup_plan_no
-        inner join com_code_master cr 
-        on cr.code_group_cd = 'HEA_CHECKUP_TYPE' 
-        and r.hea_checkup_type_cd = cr.code
         inner join com_user u 
         on r.user_id = u.user_id
         inner join com_dept d 
@@ -688,8 +682,6 @@
               ,cd.dept_nm
               ,cd.dept_cd
               ,p.hea_checkup_plan_no
-              ,cr.code as hea_checkup_type_cd
-              ,cr.code_nm as hea_checkup_type_nm
               -- 공정
               ,stuff((SELECT ', ' + b.process_nm
                         FROM com_process_dept a
@@ -738,14 +730,6 @@
            AND sex.code_group_cd = 'COM_SEX_TYPE'
          INNER JOIN hea_checkup_plan p
             ON p.hea_checkup_plan_no = #{heaCheckupPlanNo}
-         INNER JOIN com_code_master cr
-            ON cr.code_group_cd = 'HEA_CHECKUP_TYPE'
-           AND (case when p.hea_checkup_class_cd != 'A0' then '01'
-                     when datediff(month, convert(datetime, cu.birth_ymd), getdate())/12 <![CDATA[<=]]> 30 then 'A'
-                     when datediff(month, convert(datetime, cu.birth_ymd), getdate())/12 <![CDATA[>]]> 30
-                      and datediff(month, convert(datetime, cu.birth_ymd), getdate())/12 <![CDATA[<=]]> 40 then 'B'
-                     else 'C'
-                end) = cr.code
          WHERE 1=1
            AND not exists (SELECT 1
           FROM hea_checkup_result
@@ -855,8 +839,6 @@
               ,cd.dept_nm
               ,cd.dept_cd
               ,p.hea_checkup_plan_no
-              ,cr.code as hea_checkup_type_cd
-              ,cr.code_nm as hea_checkup_type_nm
               ,stuff((SELECT ', ' + b.process_nm
                         FROM com_process_dept a
                        INNER JOIN com_process b
@@ -903,14 +885,6 @@
            AND sex.code_group_cd = 'COM_SEX_TYPE'
          INNER JOIN hea_checkup_plan p
             ON p.hea_checkup_plan_no = #{heaCheckupPlanNo}
-         INNER JOIN com_code_master cr
-            ON cr.code_group_cd = 'HEA_CHECKUP_TYPE'
-           AND (case when p.hea_checkup_class_cd != 'A0' then '01'
-                     when datediff(month, convert(datetime, cu.birth_ymd), getdate())/12 <![CDATA[<=]]> 30 then 'A'
-                     when datediff(month, convert(datetime, cu.birth_ymd), getdate())/12 <![CDATA[>]]> 30
-                      and datediff(month, convert(datetime, cu.birth_ymd), getdate())/12 <![CDATA[<=]]> 40 then 'B'
-                     else 'C'
-                end) = cr.code
          WHERE 1=1
            AND not exists (SELECT 1
                              FROM hea_checkup_result
