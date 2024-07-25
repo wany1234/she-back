@@ -27,14 +27,11 @@
            AND atg.use_yn = #{useYn}
         </if>
         <choose>
-            <when test= 'searchFlag.equals("n")'>
-                AND atg.auth_grp_no != 1015
-            </when>
             <when test= 'searchFlag.equals("pd")'>
-                AND atg.auth_grp_no not in (1020, 1089)
+                AND atg.auth_grp_no not in (1020)
             </when>
             <when test= 'searchFlag.equals("all")'>
-                AND atg.auth_grp_no not in (1020, 1089, 1015)
+                AND atg.auth_grp_no not in (1020)
             </when>
             <otherwise>
             </otherwise>
@@ -124,7 +121,6 @@
          INNER JOIN com_user_auth_grp cuag
             ON cag.auth_grp_no = cuag.auth_grp_no
          WHERE cag.use_yn = 'Y'
-           AND cag.auth_grp_no != 1015
         <if test= "userId != null and !userId.equals('')">
            AND cuag.user_id = #{userId}
         </if>
@@ -181,7 +177,6 @@
          INNER JOIN com_dept_auth_grp cdag
             ON cag.auth_grp_no = cdag.auth_grp_no
          WHERE cag.use_yn = 'Y'
-           AND cag.auth_grp_no != 1015
         <if test= "deptCd != null and !deptCd.equals('')">
            AND cdag.dept_cd = #{deptCd}
         </if>

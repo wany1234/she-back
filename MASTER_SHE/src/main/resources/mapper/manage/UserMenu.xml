@@ -82,28 +82,6 @@
               order by cm.menu_lvl, cm.sort_order
     </select>
 
-    <!-- 사용자 메뉴 기본값 조회 -->
-<!--     <select id= "getDefaultUserMenus" resultType= "com.she.manage.model.UserMenu">
-        /* UserMenuMapper.getDefaultUserMenus [UserMenu.xml] */
-        select   cm.menu_id
-               , cm.menu_nm
-               , cm.menu_lvl
-               , cm.up_menu_id
-               , cm.front_end_url
-               , cm.sort_order
-               , agm.write_yn
-               , cm.color
-               , cm.icon
-          from dbo.LANG_MENU(#{defaultParam.lang}) cm
-         inner join com_auth_grp_menu agm
-            on agm.menu_id = cm.menu_id
-         inner join com_auth_grp ag
-            on ag.auth_grp_no = agm.auth_grp_no
-         where cm.use_yn = 'Y'
-           and ag.auth_grp_no = 1020
-         order by cm.menu_lvl, cm.sort_order
-    </select> -->
-
     <!-- 사용자의 권한 그룹 별 메뉴 일괄 등록 안씀 -->
     <insert id= "createUserMenuByAuthGrp" parameterType= "com.she.manage.model.UserMenu">
         insert into com_user_menu
