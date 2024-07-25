@@ -93,6 +93,7 @@
             inner join com_dept cd 
             on cdag.dept_cd = cd.dept_cd
             where 1=1
+            and cdag.auth_grp_no = 1015
             and cdag.dept_cd = (select dept_cd
                                   from com_user cu
                                  where user_id = #{userId})
@@ -106,6 +107,7 @@
             inner join com_dept cd 
             on cu.dept_cd = cd.dept_cd
             where 1=1
+            and cuag.auth_grp_no = 1015
             and cuag.user_id = #{userId}
         )
         select auth_grp_no
@@ -113,6 +115,32 @@
             ,max(dept_access_yn) as dept_access_yn
         from A
         group by auth_grp_no
+
+        <!-- select cdag.dept_cd
+            ,cd.dept_nm
+            ,cd.dept_lvl
+            ,deptLvl.code_nm as dept_lvl_nm
+            ,cd.plant_cd
+            ,plant.code_nm as plant_nm
+            ,cdag.auth_grp_no
+            ,isnull(cdag.plant_access_yn, 'N') as plant_access_yn
+            ,isnull(cdag.dept_access_yn, 'N') as dept_access_yn
+            ,cdag.create_user_id
+            ,cdag.create_dt
+        from com_dept_auth_grp cdag
+        inner join com_dept cd 
+        on cdag.dept_cd = cd.dept_cd
+        inner join com_code_master plant
+        on cd.plant_cd = plant.code
+        and plant.code_group_cd = 'COM_PLANT_CD'
+        inner join com_code_master deptLvl
+        on cd.dept_lvl = deptLvl.code
+        and deptLvl.code_group_cd = 'COM_DEPT_LVL'
+        where 1=1
+        and cdag.auth_grp_no = 1015
+        and cdag.dept_cd = (select dept_cd
+                            from com_user cu
+                            where user_id = #{userId}) -->
     </select>
     
     <select id="getAuthPlants" resultType="com.she.manage.model.DeptAuthGrp">
