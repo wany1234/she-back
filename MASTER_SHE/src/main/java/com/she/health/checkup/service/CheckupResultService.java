@@ -889,7 +889,6 @@ public class CheckupResultService {
              }
              
 		} catch (Exception e) {
-			e.printStackTrace();
 			map.put("success", false);
             map.put("message", "업로드 도중 에러발생");
 		}

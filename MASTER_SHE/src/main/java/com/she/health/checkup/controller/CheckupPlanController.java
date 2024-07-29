@@ -148,8 +148,8 @@ public class CheckupPlanController {
      * @return
      * @throws Exception
      */
-    @PostMapping("/checkupallusers")
-    public ResponseEntity<Integer> addCheckupAllUsers(@RequestBody HashMap<String, Object> parameter) throws Exception {
+    @GetMapping("/checkupallusers")
+    public ResponseEntity<Integer> addCheckupAllUsers(@RequestParam HashMap<String, Object> parameter) throws Exception {
         HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
         int heaCheckupPlanNo = map.containsKey("heaCheckupPlanNo") ? Integer.parseInt(map.get("heaCheckupPlanNo").toString()) : 0;
         String processCd = map.containsKey("processCd") ? map.get("processCd").toString() : "";
