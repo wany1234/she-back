@@ -830,6 +830,12 @@ public class CheckupResultService {
                  for (int row = 1; row < sheet.length; row++) {
                 	 Map<String, Object> failmap = new HashMap<String, Object>();
                 	 totalCount++;
+                	 
+                	 // 비어있는행 패스
+                	 if(sheet[row][0] == null && sheet[row][1] == null && sheet[row][2] == null) {
+                		 continue;
+                	 }
+                	 
                 	 // 사번 없음
                 	 if(sheet[row][0] == null) {
                 		 failmap.put("failRowNo", row);
