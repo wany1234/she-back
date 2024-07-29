@@ -257,7 +257,7 @@ public class WorkMeasureResultService {
 
                         // 업로드양식 통과 후 데이터검사
                         // 부서 조회
-                        List<Dept> depts = deptMapper.getDepts(plantCd, null, null, null, "Y", new DefaultParam("kr"));
+                        List<Dept> depts = deptMapper.getDepts(plantCd, null, null, null, "Y", null, new DefaultParam("kr"));
                         // 공정 조회
                         List<Process> processes = processService.getProcesses("Y", null, null, null, plantCd, new DefaultParam("kr"));
                         // 유해인자 조회

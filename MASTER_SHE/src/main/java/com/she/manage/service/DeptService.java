@@ -52,8 +52,8 @@ public class DeptService {
      * @return 부서목록
      * @throws Exception
      */
-    public List<Dept> getDepts(String plantCd, String processCd, String deptCd, String deptNm, String useYn, DefaultParam defaultParam) throws Exception {
-        return this.deptMapper.getDepts(plantCd, processCd, deptCd, deptNm, useYn, defaultParam);
+    public List<Dept> getDepts(String plantCd, String processCd, String deptCd, String deptNm, String useYn, String deptLvl, DefaultParam defaultParam) throws Exception {
+        return this.deptMapper.getDepts(plantCd, processCd, deptCd, deptNm, useYn, deptLvl, defaultParam);
     }
 
     /**
@@ -92,9 +92,9 @@ public class DeptService {
      * @return 부서목록
      * @throws Exception
      */
-    @Cacheable(cacheNames = "DeptTreeCashe", key = "'DEPTTREE' + #deptCd + #deptNm + #pdeptCd + #useYn")
-    public List<Dept> getTreeDepts(String deptCd, String deptNm, String pdeptCd, String useYn, DefaultParam defaultParam) throws Exception {
-        return this.deptMapper.getTreeDepts(deptCd, deptNm, pdeptCd, useYn, defaultParam);
+    @Cacheable(cacheNames = "DeptTreeCashe", key = "'DEPTTREE' + #deptCd + #deptNm + #pdeptCd + #useYn + #deptLvl")
+    public List<Dept> getTreeDepts(String deptCd, String deptNm, String pdeptCd, String useYn, String deptLvl, DefaultParam defaultParam) throws Exception {
+        return this.deptMapper.getTreeDepts(deptCd, deptNm, pdeptCd, useYn, deptLvl, defaultParam);
     }
 
     /**

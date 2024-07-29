@@ -72,8 +72,8 @@ public class DeptController {
         String deptCd = map.containsKey("deptCd") ? map.get("deptCd").toString() : "";
         String deptNm = map.containsKey("deptNm") ? map.get("deptNm").toString() : "";
         String useYn = map.containsKey("useYn") ? map.get("useYn").toString() : "";
-
-        return ResponseEntity.ok().body(this.deptService.getDepts(plantCd, processCd, deptCd, deptNm, useYn, defaultParam));
+        String deptLvl = map.containsKey("deptLvl") ? map.get("deptLvl").toString() : "";
+        return ResponseEntity.ok().body(this.deptService.getDepts(plantCd, processCd, deptCd, deptNm, useYn, deptLvl, defaultParam));
     }
 
     /**
@@ -99,7 +99,7 @@ public class DeptController {
      */
     @ApiOperation(value = "부서 트리 조회[MNG01003]", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiImplicitParams({ @ApiImplicitParam(name = "deptCd", value = "부서", required = false, dataType = "string", paramType = "query"), @ApiImplicitParam(name = "deptNm", value = "부서명", required = false, dataType = "string", paramType = "query"),
-            @ApiImplicitParam(name = "pdeptCd", value = "상위부서", required = false, dataType = "string", paramType = "query"), @ApiImplicitParam(name = "useYn", value = "사용여부", required = false, dataType = "string", paramType = "query"),
+            @ApiImplicitParam(name = "pdeptCd", value = "상위부서", required = false, dataType = "string", paramType = "query"), @ApiImplicitParam(name = "useYn", value = "사용여부", required = false, dataType = "string", paramType = "query"), @ApiImplicitParam(name = "deptLvl", value = "부서레벨", required = false, dataType = "string", paramType = "query"),
             @ApiImplicitParam(name = "parameter", value = "안쓰는값", required = false, dataType = "java.util.HashMap", paramType = "query"), })
     @GetMapping("/treedepts")
     public ResponseEntity<List<Dept>> getTreeDepts(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
@@ -108,8 +108,8 @@ public class DeptController {
         String deptNm = map.containsKey("deptNm") ? map.get("deptNm").toString() : "";
         String pdeptCd = map.containsKey("pdeptCd") ? map.get("pdeptCd").toString() : "";
         String useYn = map.containsKey("useYn") ? map.get("useYn").toString() : "";
-
-        return ResponseEntity.ok().body(this.deptService.getTreeDepts(deptCd, deptNm, pdeptCd, useYn, defaultParam));
+        String deptLvl = map.containsKey("deptLvl") ? map.get("deptLvl").toString() : "";
+        return ResponseEntity.ok().body(this.deptService.getTreeDepts(deptCd, deptNm, pdeptCd, useYn, deptLvl, defaultParam));
     }
 
     /**
@@ -132,7 +132,6 @@ public class DeptController {
         String deptNm = map.containsKey("deptNm") ? map.get("deptNm").toString() : "";
         String pdeptCd = map.containsKey("pdeptCd") ? map.get("pdeptCd").toString() : "";
         String useYn = map.containsKey("useYn") ? map.get("useYn").toString() : "";
-
         return ResponseEntity.ok().body(this.deptService.getTreeDeptsForMobile(plantCd, deptCd, deptNm, pdeptCd, useYn, defaultParam));
     }
 

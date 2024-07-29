@@ -41,6 +41,9 @@
         <if test= "useYn != null and useYn != ''">
         and d.use_yn = #{useYn}
         </if>
+        <if test= "deptLvl != null and deptLvl != ''">
+        and d.dept_lvl like '%'+#{deptLvl}+'%'
+        </if>
         order by d.dept_nm
     </select>
     
@@ -144,6 +147,9 @@
         </if>
         <if test= "deptNm != null and deptNm != ''">
         and upper(depttree.dept_nm) like '%'+upper(#{deptNm})+'%'
+        </if>
+        <if test= "deptLvl != null and deptLvl != ''">
+        and depttree.dept_lvl = #{deptLvl}
         </if>
         order by p_dept_cd, depttree.dept_nm
     </select>
