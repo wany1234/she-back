@@ -498,4 +498,51 @@
            AND r.user_id = #{userId}
            AND p.hea_checkup_plan_no = #{heaCheckupPlanNo}
     </select>
+    
+    <select id="getExistsUser" resultType="int">
+    	SELECT COUNT(*) 
+           from com_user cu
+           where  cu.user_id = #{userId}
+    </select>
+    
+    <insert id= "excelUploadCheckupUser" parameterType= "com.she.health.model.CheckupUser">
+        /* CheckupResultMapper.excelUploadCheckupUser [CheckupResult.xml] */
+        MERGE into hea_checkup_result d
+		using (select #{heaCheckupPlanNo} as hea_checkup_plan_no
+			,	#{userId} as user_id 
+		) s
+		on (d.hea_checkup_plan_no = s.hea_checkup_plan_no and d.user_id = s.user_id)
+		WHEN MATCHED THEN 
+		 update set d.out_checkup_yn = #{outCheckupYn}
+			,d.remark = #{remark}
+			,d.update_user_id = #{createUserId}
+			,d.update_dt = getdate()
+		WHEN NOT MATCHED THEN     
+		INSERT (hea_checkup_plan_no
+	            ,user_id
+	            ,dept_cd
+	            ,notify_plan_yn
+	            ,consent_yn
+	            ,reserve_batch_yn
+	            ,notify_result_yn
+	            ,create_user_id
+	            ,create_dt
+	            ,out_checkup_yn
+	            ,remark
+	            )
+	            values
+	        	(
+	        	#{heaCheckupPlanNo}
+	            ,#{userId}
+	            ,(select dept_cd from com_user i where i.user_id = #{userId})
+	            ,'N'
+	            ,'N'
+	            ,'N'
+	            ,'N'
+	            ,#{createUserId}
+	            ,getdate()
+	            ,#{outCheckupYn}
+	            ,#{remark}
+	        	);
+    </insert>
 </mapper>

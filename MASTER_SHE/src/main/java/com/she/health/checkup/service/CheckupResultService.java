@@ -12,6 +12,7 @@
 package com.she.health.checkup.service;
 
 import java.io.File;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -793,5 +795,98 @@ public class CheckupResultService {
      */
     public List<CheckupResult> getCheckupPastResults(String userId, int heaCheckupPlanNo) throws Exception {
         return this.checkupResultMapper.getCheckupPastResults(userId, heaCheckupPlanNo);
+    }
+    
+    /**
+     * 검진대상자 엑셀 업로드
+     * @param heaCheckupPlanNo
+     * @param createUserId
+     * @param files
+     * @return
+     * @throws Exception
+     */
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    public Map<String, Object> checkupUserUploadExcel(int heaCheckupPlanNo, String createUserId, MultipartFile[] files) throws Exception {
+    	Map<String, Object> map = new HashMap<String, Object>();
+        map.put("success", true);
+        map.put("message", "");
+        
+        List<Map<String, Object>> failList = new ArrayList<Map<String, Object>>(); 
+        int totalCount = 0;
+        int successCount = 0;
+        int failCount = 0;
+        try {
+        	 InputStream stream = files[0].getInputStream();
+             File tempFile = File.createTempFile(String.valueOf(stream.hashCode()), ".xlsx");
+             tempFile.deleteOnExit();
+             FileUtils.copyInputStreamToFile(stream, tempFile);
+             
+             ExcelReader reader = new ExcelReader();
+             List<String[][]> sheets = reader.read(tempFile);
+             
+             if (sheets != null && sheets.size() > 0) {
+                 String[][] sheet = sheets.get(0);
+                 
+                 for (int row = 1; row < sheet.length; row++) {
+                	 Map<String, Object> failmap = new HashMap<String, Object>();
+                	 totalCount++;
+                	 // 사번 없음
+                	 if(sheet[row][0] == null) {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "사원번호 없음");
+                		 failCount++;
+                		 failList.add(failmap);
+                		 continue;
+                	 } 
+                	 // 외진여부 없음
+                	 if(sheet[row][1] == null) {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "외진여부 없음");
+                		 failCount++;
+                		 failList.add(failmap);
+                		 continue;
+                	 }
+                	 
+                	 CheckupUser checkupUser = new CheckupUser();
+                	 
+                	 int exists = checkupResultMapper.getExistsUser(sheet[row][0]);
+                	 
+                	 // 존재하지 않는 사원번호
+                	 if(exists != 1) {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "사원번호 존재하지않음");
+                		 failCount++;
+                		 failList.add(failmap);
+                		 continue;
+                	 }
+                	 
+                	 // 사원번호
+                	 checkupUser.setUserId(sheet[row][0]);
+                	 // 외진여부
+                	 checkupUser.setOutCheckupYn(sheet[row][1]);
+                	 // 비고
+                	 checkupUser.setRemark(sheet[row][2]);
+                	 // 등록자ID
+                	 checkupUser.setCreateUserId(createUserId);
+                	 // 검진계획 번호
+                	 checkupUser.setHeaCheckupPlanNo(heaCheckupPlanNo);
+                	 
+                	 // 등록
+                	 int result = checkupResultMapper.excelUploadCheckupUser(checkupUser);
+                	 
+                	 successCount++;
+                 }
+                 map.put("failResult", failList);// 실패정보
+                 map.put("totalCount", totalCount);// 총 로우수
+                 map.put("successCount", successCount);// 성공한 로우수
+                 map.put("failCount", failCount); // 실패한 로우수 
+             }
+             
+		} catch (Exception e) {
+			e.printStackTrace();
+			map.put("success", false);
+            map.put("message", "업로드 도중 에러발생");
+		}
+    	return map;
     }
 }

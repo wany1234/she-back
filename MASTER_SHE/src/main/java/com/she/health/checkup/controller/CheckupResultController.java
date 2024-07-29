@@ -74,6 +74,8 @@ public class CheckupResultController {
 	private String normalExcelDownloadFileName = "일반검진결과_엑셀업로드양식.xlsx";
 
 	private String specialExcelDownloadFileName = "특수검진결과_엑셀업로드양식.xlsx";
+	
+	private String checkupUserExcelDownloadFileName = "검진대상자_엑셀업로드양식.xlsx";
 
 	private String templetePath = "templates"; // 엑셀 양식 경로
 
@@ -402,4 +404,45 @@ public class CheckupResultController {
 		List<CheckupResult> checkupResults = this.checkupResultService.getCheckupPastResults(userId, heaCheckupPlanNo);
 		return ResponseEntity.ok().body(checkupResults);
 	}
+	
+	/**
+	 * 검진대상자 양식 엑셀다운로드
+	 *
+	 * @return 엑셀업로드 양식
+	 * @throws Exception
+	 */
+	@GetMapping("/checkupuesrexceldownload")
+	public @ResponseBody byte[] downloadExcelCheckupUser() throws Exception {
+		CodeMaster filePath = this.codeMasterMapper.getCodeMaster(ConstVal.CODE_GROUP_FILE_PATH,
+				ConstVal.CODE_FILE_PATH_FORM, "Y");
+
+		ClassPathResource classPathResource = new ClassPathResource(
+				templetePath + filePath.getCodeNm() + checkupUserExcelDownloadFileName);
+		File file = classPathResource.getFile();
+		InputStream inputStream = null;
+		try {
+			inputStream = new BufferedInputStream(new FileInputStream(file));
+			byte[] encoded = Base64.encodeBase64(IOUtils.toByteArray(inputStream));
+			String encodedString = new String(encoded);
+			return encodedString.getBytes("UTF-8");
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			throw e;
+		} finally {
+			inputStream.close();
+		}
+		return null;
+	}
+
+    /**
+     * 개선사항 엑셀 업로드
+     *
+     * @throws Exception
+     */
+    @PostMapping("/excelUpload/checkupUesr")
+    public ResponseEntity<Map<String, Object>> getUploadExcelData(@RequestParam("createUserId") String createUserId, @RequestParam("heaCheckupPlanNo") int heaCheckupPlanNo, @RequestParam("files") MultipartFile[] files) throws Exception {
+        return ResponseEntity.ok().body(this.checkupResultService.checkupUserUploadExcel(heaCheckupPlanNo, createUserId, files));
+    }
 }

@@ -176,4 +176,10 @@ public class CheckupUser {
 
     @ApiModelProperty(value = "검진등록")
     private String checkUpResult;
+    
+    @ApiModelProperty(value = "외부검진여부")
+    private String outCheckupYn;
+    
+    @ApiModelProperty(value = "비고")
+    private String remark;
 }

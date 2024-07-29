@@ -11,19 +11,39 @@
 
 package com.she.health.checkup.service;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.she.common.model.AttachFile;
+import com.she.common.model.AttachFileGrp;
+import com.she.common.model.DefaultParam;
 import com.she.health.baseInfo.mapper.CheckupOrgMapper;
 import com.she.health.checkup.mapper.CheckupPlanMapper;
 import com.she.health.checkup.mapper.CheckupResultMapper;
 import com.she.health.model.CheckupPlan;
 import com.she.health.model.CheckupPlanOrg;
+import com.she.health.model.CheckupResult;
+import com.she.health.model.CheckupResultDiag;
 import com.she.health.model.CheckupUser;
+import com.she.health.model.Disease;
+import com.she.health.model.TestItem;
+import com.she.health.model.TestItemResult;
+import com.she.manage.model.CodeMaster;
+import com.she.security.util.StringUtil;
+import com.she.utils.ConstVal;
+import com.she.utils.ExcelReader;
 
 /**
  * 건강검진계획 기능정의
@@ -357,4 +377,6 @@ public class CheckupPlanService {
     public List<CheckupPlanOrg> getCheckupPlanOrgs(int heaCheckupPlanNo, int heaCheckupOrgNo, String standardYmd) throws Exception {
         return this.checkupPlanMapper.getCheckupPlanOrgs(heaCheckupPlanNo, heaCheckupOrgNo, standardYmd);
     }
+    
+    
 }

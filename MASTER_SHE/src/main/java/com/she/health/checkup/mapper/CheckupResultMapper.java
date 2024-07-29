@@ -19,6 +19,7 @@ import org.springframework.stereotype.Repository;
 
 import com.she.health.model.CheckupResult;
 import com.she.health.model.CheckupResultDiag;
+import com.she.health.model.CheckupUser;
 import com.she.health.model.TestItemResult;
 
 /**
@@ -190,4 +191,12 @@ public interface CheckupResultMapper {
      */
     public List<CheckupResult> getCheckupPastResults(@Param("userId") String userId, @Param("heaCheckupPlanNo") int heaCheckupPlanNo) throws Exception;
 
+    /**
+     * 검진대상자 엑셀업로드
+     * @param checkupUser
+     * @return
+     * @throws Exception
+     */
+    public int excelUploadCheckupUser(CheckupUser checkupUser) throws Exception; 
+    public int getExistsUser(@Param("userId") String userId)throws Exception; 
 }
