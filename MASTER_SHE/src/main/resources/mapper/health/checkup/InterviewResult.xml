@@ -6,7 +6,7 @@
             , d.dept_cd, d.dept_nm, u.user_id, u.user_nm, od.dept_cd as dept_cd_org, od.dept_nm as dept_nm_org
             , u.com_sex_type_cd, case when u.com_sex_type_cd = '1' then '남' else '여' end as com_sex_type_nm
             , r.notify_plan_yn, r.notify_plan_ymd, r.special_checkup_ym, r.consent_yn, r.consent_ymd
-            , r.hea_checked_org_no, co.hea_checkup_org_nm as hea_checked_org_nm, r.hea_checked_ymd
+            , r.hea_checkup_org_no, co.hea_checkup_org_nm as hea_checked_org_nm, r.hea_checked_ymd
             , r.diagnosed_ymd, r.notify_result_yn, r.notify_result_ymd
             , r.hea_follow_up_cd, fc.code_nm as hea_follow_up_nm, r.hea_follow_up_remark
             , r.hea_workable_cd, wc.code_nm as hea_workable_nm, r.overall_opinion
@@ -25,7 +25,7 @@
         inner join com_dept d 
         on u.dept_cd = d.dept_cd
         inner join  hea_checkup_org co
-        on r.hea_checked_org_no = co.hea_checkup_org_no
+        on r.hea_checkup_org_no = co.hea_checkup_org_no
         left outer join com_code_master fc
         on fc.code_group_cd = 'HEA_FOLLOW_UP'
         and r.hea_follow_up_cd = fc.code
@@ -74,7 +74,7 @@
             , d.dept_cd, d.dept_nm, u.user_id, u.user_nm, od.dept_cd as dept_cd_org, od.dept_nm as dept_nm_org
             , u.com_sex_type_cd, case when u.com_sex_type_cd = 'M' then '남' else '여' end as com_sex_type_nm
             , r.notify_plan_yn, r.notify_plan_ymd, r.special_checkup_ym, r.consent_yn, r.consent_ymd
-            , r.hea_checked_org_no, co.hea_checkup_org_nm as hea_checked_org_nm, r.hea_checked_ymd
+            , r.hea_checkup_org_no, co.hea_checkup_org_nm as hea_checked_org_nm, r.hea_checked_ymd
             , r.diagnosed_ymd, r.notify_result_yn, r.notify_result_ymd
             , r.hea_follow_up_cd, fc.code_nm as hea_follow_up_nm, r.hea_follow_up_remark
             , r.hea_workable_cd, wc.code_nm as hea_workable_nm, r.overall_opinion
@@ -93,7 +93,7 @@
         inner join com_dept d 
         on u.dept_cd = d.dept_cd
         inner join  hea_checkup_org co
-        on r.hea_checked_org_no = co.hea_checkup_org_no
+        on r.hea_checkup_org_no = co.hea_checkup_org_no
         left outer join com_code_master fc
         on fc.code_group_cd = 'HEA_FOLLOW_UP'
         and r.hea_follow_up_cd = fc.code

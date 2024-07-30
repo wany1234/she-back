@@ -70,7 +70,7 @@
               ,hcr.hea_checkup_plan_no                   -- 건강검진 계획 번호
               ,hcp.hea_checkup_plan_nm                   -- 건강검진 계획 명칭
               ,convert(char(10), convert(date, hcr.hea_checked_ymd), 23) as hea_checked_ymd                       -- 검진일
-              ,hcr.hea_checked_org_no                    -- 검진 받은 기관 번호
+              ,hcr.hea_checkup_org_no                    -- 검진 받은 기관 번호
               ,hco.hea_checkup_org_nm                    -- 기관 명칭
               ,hcr.hea_follow_up_cd                      -- 사후관리 판정 코드
               ,cm3.code_nm as hea_follow_up_nm
@@ -376,7 +376,7 @@
                        ON u.dept_cd = d.dept_cd
                INNER JOIN com_code_master pl
                        ON pl.code_group_cd = 'COM_PLANT_CD'
-                      AND d.plant_cd = pl.code
+                      AND u.plant_cd = pl.code
          <!-- LEFT OUTER JOIN com_appr_rqst ar -->
          WHERE 1=1
          <if test="heaCheckedYear != null and !heaCheckedYear.equals('')">
@@ -392,7 +392,7 @@
           AND u.user_nm like '%' + #{userNm} + '%'
          </if>
          <if test="plantCd != null and !plantCd.equals('')">
-          AND d.plant_cd = #{plantCd}
+          AND u.plant_cd = #{plantCd}
          </if>
           -- 요청X
           AND NOT EXISTS (SELECT 1
@@ -578,7 +578,7 @@
                        ON u.dept_cd = d.dept_cd
                LEFT OUTER JOIN com_code_master pl
                        ON pl.code_group_cd = 'COM_PLANT_CD'
-                      AND d.plant_cd = pl.code
+                      AND u.plant_cd = pl.code
          WHERE req.suspect_req_no = #{suspectReqNo}
     </select>
 
@@ -740,10 +740,6 @@
             ,cholesterol_val
             ,create_user_id
             ,create_dt
-            ,create_dept_cd
-            ,create_dept_nm
-            ,create_position_cd
-            ,create_position_nm
         )
         VALUES
         (
@@ -765,10 +761,6 @@
             ,round(#{cholesterolVal}, 1)
             ,#{createUserId}
             ,getDate()
-            ,(select dept_cd from com_user where user_id = #{createUserId})
-            ,(select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
-            ,(select position_cd from com_user where user_id = #{createUserId})
-            ,(select position_nm from com_user where user_id = #{createUserId})
         )
     </insert>
 
@@ -825,10 +817,6 @@
             ,cholesterol_val = round(#{cholesterolVal}, 1)
             ,update_user_id = #{updateUserId}
             ,update_dt = getDate()
-            ,update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
-            ,update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
-            ,update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
-            ,update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
         where hea_consult_no = #{heaConsultNo}
     </update>
 
@@ -869,10 +857,10 @@
             ON h.dept_cd = d.dept_cd
          INNER JOIN com_code_master pl
             ON pl.code_group_cd = 'COM_PLANT_CD'
-           AND d.plant_cd = pl.code
+           AND u.plant_cd = pl.code
          WHERE 1=1
         <if test="plantCd != null and !plantCd.equals('')">
-           AND d.plant_cd = #{plantCd}
+           AND u.plant_cd = #{plantCd}
         </if>
         <if test="userNm != null and !userNm.equals('')">
            AND u.user_nm like '%' + #{userNm} + '%'
@@ -924,10 +912,10 @@
             ON h.dept_cd = d.dept_cd
          INNER JOIN com_code_master pl
             ON pl.code_group_cd = 'COM_PLANT_CD'
-           AND d.plant_cd = pl.code
+           AND u.plant_cd = pl.code
          WHERE 1=1
         <if test="plantCd != null and !plantCd.equals('')">
-           AND d.plant_cd = #{plantCd}
+           AND u.plant_cd = #{plantCd}
         </if>
         <if test="userNm != null and !userNm.equals('')">
            AND u.user_nm like '%' + #{userNm} + '%'
@@ -1053,7 +1041,7 @@
         ON h.dept_cd = d.dept_cd
         INNER JOIN com_code_master pl
         ON pl.code_group_cd = 'COM_PLANT_CD'
-        AND d.plant_cd = pl.code
+        AND u.plant_cd = pl.code
         WHERE 1=1
         and hea_hearing_mgr_list_no = #{heaHearingMgrListNo}
     </select>

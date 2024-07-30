@@ -19,19 +19,8 @@
               ,case when u.com_sex_type_cd = '1' then '남' else '여' end as com_sex_type_nm
               ,o.hea_checkup_org_no
               ,o.hea_checkup_org_nm
-              ,r.notify_plan_yn
-              ,r.notify_plan_ymd
-              ,r.special_checkup_ym
-              ,r.consent_yn
-              ,r.consent_ymd
-              ,r.reserve_ymd
-              ,r.reserve_batch_yn
-              ,r.hea_checked_org_no
               ,co.hea_checkup_org_nm as hea_checked_org_nm
               ,convert(char(10), convert(date, r.hea_checked_ymd), 23) as hea_checked_ymd
-              ,r.diagnosed_ymd
-              ,r.notify_result_yn
-              ,r.notify_result_ymd
               ,r.hea_follow_up_cd
               ,fc.code_nm as hea_follow_up_nm
               ,r.hea_follow_up_remark
@@ -77,7 +66,7 @@
          INNER JOIN hea_checkup_org o
             ON r.hea_checkup_org_no = o.hea_checkup_org_no
           LEFT OUTER JOIN hea_checkup_org co
-            ON r.hea_checked_org_no = co.hea_checkup_org_no
+            ON r.hea_checkup_org_no = co.hea_checkup_org_no
           LEFT OUTER JOIN hea_checkup_result_diag rd
             ON r.hea_checkup_plan_no = rd.hea_checkup_plan_no
            AND r.user_id = rd.user_id
@@ -163,19 +152,8 @@
               ,case when u.com_sex_type_cd = '1' then '남' else '여' end as com_sex_type_nm
               ,o.hea_checkup_org_no
               ,o.hea_checkup_org_nm
-              ,r.notify_plan_yn
-              ,r.notify_plan_ymd
-              ,r.special_checkup_ym
-              ,r.consent_yn
-              ,r.consent_ymd
-              ,r.reserve_ymd
-              ,r.reserve_batch_yn
-              ,r.hea_checked_org_no
               ,co.hea_checkup_org_nm as hea_checked_org_nm
               ,r.hea_checked_ymd
-              ,r.diagnosed_ymd
-              ,r.notify_result_yn
-              ,r.notify_result_ymd
               ,r.hea_follow_up_cd
               ,fc.code_nm as hea_follow_up_nm
               ,r.hea_follow_up_remark
@@ -213,7 +191,7 @@
          INNER JOIN hea_checkup_org o
             ON r.hea_checkup_org_no = o.hea_checkup_org_no
           LEFT OUTER JOIN  hea_checkup_org co
-            ON r.hea_checked_org_no = co.hea_checkup_org_no
+            ON r.hea_checkup_org_no = co.hea_checkup_org_no
           LEFT OUTER JOIN com_code_master fc
             ON fc.code_group_cd = 'HEA_FOLLOW_UP'
            AND r.hea_follow_up_cd = fc.code
@@ -242,7 +220,6 @@
               ,h.hazard_cd
               ,h.hazard_nm_ko
               ,h.hazard_nm_en
-              ,rd.gen_yn
               ,rd.create_user_id
               ,cu.user_nm as create_user_nm
               ,rd.create_dt
@@ -365,7 +342,6 @@
                    SET dept_cd = #{deptCd}
                       ,hea_checked_ymd = #{heaCheckedYmd}
                       ,hea_checkup_org_no = #{heaCheckupOrgNo}
-                      ,notify_plan_yn = 'N'
                       ,update_user_id = #{createUserId}
                       ,update_dt = getdate()
               WHEN NOT MATCHED THEN
@@ -374,7 +350,6 @@
                        ,dept_cd
                        ,hea_checked_ymd
                        ,hea_checkup_org_no
-                       ,notify_plan_yn
                        ,create_user_id
                        ,create_dt
                        )
@@ -383,7 +358,6 @@
                        ,#{deptCd}
                        ,#{heaCheckedYmd}
                        ,#{heaCheckupOrgNo}
-                       ,'N'
                        ,#{createUserId}
                        ,getdate()
                        );
@@ -419,7 +393,6 @@
             ,hea_disease_cd
             ,hazard_cd
             ,hea_diagnose_cd
-            ,gen_yn
             ,create_user_id
             ,create_dt)
         VALUES
@@ -428,7 +401,6 @@
             ,#{heaDiseaseCd}
             ,#{hazardCd}
             ,#{heaDiagnoseCd}
-            ,'N'
             ,#{createUserId}
             ,getdate())
     </insert>
@@ -482,7 +454,7 @@
               ,r.user_id -- 건강검진대상자 ID
               ,u.user_nm -- 건강검진대상자 명
               ,r.hea_checked_ymd -- 건강검진일
-              ,r.hea_checked_org_no -- 검진 받은 기관 번호
+              ,r.hea_checkup_org_no -- 검진 받은 기관 번호
               ,co.hea_checkup_org_nm -- 검진 받은 기관 명칭
           FROM hea_checkup_plan p
          INNER JOIN com_code_master che
@@ -493,7 +465,7 @@
          INNER JOIN com_user u
             ON r.user_id = u.user_id
          INNER JOIN  hea_checkup_org co
-            ON r.hea_checked_org_no = co.hea_checkup_org_no
+            ON r.hea_checkup_org_no = co.hea_checkup_org_no
          WHERE 1=1
            AND r.user_id = #{userId}
            AND p.hea_checkup_plan_no = #{heaCheckupPlanNo}
@@ -521,10 +493,6 @@
 		INSERT (hea_checkup_plan_no
 	            ,user_id
 	            ,dept_cd
-	            ,notify_plan_yn
-	            ,consent_yn
-	            ,reserve_batch_yn
-	            ,notify_result_yn
 	            ,create_user_id
 	            ,create_dt
 	            ,out_checkup_yn
@@ -535,10 +503,6 @@
 	        	#{heaCheckupPlanNo}
 	            ,#{userId}
 	            ,(select dept_cd from com_user i where i.user_id = #{userId})
-	            ,'N'
-	            ,'N'
-	            ,'N'
-	            ,'N'
 	            ,#{createUserId}
 	            ,getdate()
 	            ,#{outCheckupYn}

@@ -11,18 +11,11 @@
               ,p.plant_cd
               ,p.start_ymd
               ,p.end_ymd
-              ,p.finish_ymd
               ,p.start_ymd + '~' + p.end_ymd as hea_checkup_plan_period
               ,(SELECT count(user_id)
                   FROM hea_checkup_result
                  WHERE p.hea_checkup_plan_no = hea_checkup_plan_no
                ) as checkup_user_count
-              ,p.required_opt_yn
-              ,(case when p.required_opt_yn = 'Y' then '필수'
-                else '선택가능'
-                end
-               ) as required_opt_yn_nm
-              ,p.select_opt_count, pl.code_nm as plant_nm
               ,(SELECT count(*)
                   FROM hea_checkup_result r
                  WHERE r.hea_checkup_plan_no = p.hea_checkup_plan_no
@@ -74,14 +67,11 @@
               ,p.plant_cd
               ,p.start_ymd
               ,p.end_ymd
-              ,p.finish_ymd
               ,p.start_ymd + '~' + p.end_ymd as hea_checkup_plan_period
               ,(SELECT count(user_id)
                   FROM hea_checkup_result
                   WHERE p.hea_checkup_plan_no = hea_checkup_plan_no
                ) as checkup_user_count
-              ,p.required_opt_yn
-              ,p.select_opt_count
               ,p.create_user_id
               ,cu.user_nm as create_user_nm
               ,p.create_dt
@@ -111,9 +101,6 @@
             ,plant_cd
             ,start_ymd
             ,end_ymd
-            ,required_opt_yn
-            ,select_opt_count
-            ,finish_ymd
             ,create_user_id
             ,create_dt)
         VALUES
@@ -123,9 +110,6 @@
             ,#{plantCd}
             ,#{startYmd}
             ,#{endYmd}
-            ,#{requiredOptYn}
-            ,#{selectOptCount}
-            ,#{finishYmd}
             ,#{createUserId}
             ,getdate())
     </insert>
@@ -137,9 +121,6 @@
             ,hea_checkup_org_no
             ,start_ymd
             ,end_ymd
-            ,weekday_max
-            ,weekend_max
-            ,deadline_dt
             ,create_user_id
             ,create_dt)
         VALUES
@@ -147,9 +128,6 @@
             ,#{heaCheckupOrgNo}
             ,#{startYmd}
             ,#{endYmd}
-            ,#{weekdayMax}
-            ,#{weekendMax}
-            ,#{deadlineDt}
             ,#{createUserId}
             ,getdate())
     </insert>
@@ -162,9 +140,6 @@
               ,plant_cd = #{plantCd}
               ,start_ymd = #{startYmd}
               ,end_ymd = #{endYmd}
-              ,finish_ymd = #{finishYmd}
-              ,required_opt_yn = #{requiredOptYn}
-              ,select_opt_count = #{selectOptCount}
               ,update_user_id = #{updateUserId}
               ,update_dt = getdate()
          WHERE hea_checkup_plan_no = #{heaCheckupPlanNo}
@@ -191,20 +166,12 @@
             (hea_checkup_plan_no
             ,user_id
             ,dept_cd
-            ,notify_plan_yn
-            ,consent_yn
-            ,reserve_batch_yn
-            ,notify_result_yn
             ,create_user_id
             ,create_dt)
         VALUES
             (#{heaCheckupPlanNo}
             ,#{userId}
             ,#{deptCd}
-            ,'N'
-            ,'N'
-            ,'N'
-            ,'N'
             ,#{createUserId}
             ,getdate())
     </insert>
@@ -223,10 +190,7 @@
               ,hco.hea_checkup_org_nm
               ,hcpo.start_ymd
               ,hcpo.end_ymd
-              ,hcpo.weekday_max
-              ,hcpo.weekend_max
               ,hcpo.start_ymd + '~' + hcpo.end_ymd as hea_checkup_plan_org_period
-              ,hcpo.deadline_dt
               ,hcpo.create_user_id
               ,hcpo.create_dt
               ,hcpo.update_user_id
@@ -294,11 +258,10 @@
              <!-- 부서 유해인자(물리) 표시 끝 !-->
               
             , d.dept_cd, d.dept_nm, u.user_id, u.user_nm, u.entry_ymd, u.phone_no, u.office_tel, u.email
-            , r.notify_plan_yn, r.notify_plan_ymd, r.reserve_ymd, case when isnull(r.reserve_ymd, '') = '' then 'N' else 'Y' end reserve_yn
             , r.hea_checkup_org_no    -- 예약 건강검진 기관 번호
             , o.hea_checkup_org_nm    -- 예약 건강검진 기관명
             , r.hea_checked_ymd        -- 건강검진 일자
-            , r.hea_checked_org_no    -- 건강검진받은 기관 번호
+            , r.hea_checkup_org_no    -- 건강검진받은 기관 번호
             , co.hea_checkup_org_nm    as hea_checked_org_nm    -- 건강검진받은 기관명
             , case when isnull(r.hea_checked_ymd, '') = '' then '미수검' else '수검' end status_yn    -- 수검여부
             , cs.code_nm as com_sex_type_nm 
@@ -315,7 +278,7 @@
         left outer join hea_checkup_org o 
         on r.hea_checkup_org_no = o.hea_checkup_org_no
         left outer join hea_checkup_org co 
-        on r.hea_checked_org_no = co.hea_checkup_org_no
+        on r.hea_checkup_org_no = co.hea_checkup_org_no
         inner join com_code_master cs 
         on cs.code_group_cd = 'COM_SEX_TYPE'  
         and u.com_sex_type_cd = cs.code
@@ -548,6 +511,8 @@
                     ) != '0' , '등록', '미등록'
                 ) AS checkUpResult            
               ,count(*) over() as total_cnt
+              , case when hcr.out_checkup_yn = 'Y'  then '예' else '아니오' end as out_checkup_yn
+              , hcr.remark
           FROM com_user cu
          INNER JOIN com_dept cd
             ON cu.dept_cd = cd.dept_cd
@@ -560,6 +525,9 @@
            AND sex.code_group_cd = 'COM_SEX_TYPE'
          INNER JOIN hea_checkup_plan p
             ON p.hea_checkup_plan_no = #{heaCheckupPlanNo}
+         inner join hea_checkup_result hcr
+	        on hcr.hea_checkup_plan_no = p.hea_checkup_plan_no
+	        and hcr.user_id = cu.user_id
          WHERE 1=1
            AND exists (SELECT 1
                          FROM hea_checkup_result
@@ -718,6 +686,8 @@
                          AND b.use_yn = 'Y'
                        WHERE a.process_cd = chem.process_cd)
                          FOR xml PATH('')),1,1,'') as chem_nm_krs
+              , case when hcr.out_checkup_yn = 'Y'  then '예' else '아니오' end as out_checkup_yn
+              , hcr.remark
           FROM com_user cu
          INNER JOIN com_dept cd
             ON cu.dept_cd = cd.dept_cd
@@ -730,6 +700,9 @@
            AND sex.code_group_cd = 'COM_SEX_TYPE'
          INNER JOIN hea_checkup_plan p
             ON p.hea_checkup_plan_no = #{heaCheckupPlanNo}
+         inner join hea_checkup_result hcr
+	        on hcr.hea_checkup_plan_no = p.hea_checkup_plan_no
+	        and hcr.user_id = cu.user_id
          WHERE 1=1
            AND not exists (SELECT 1
           FROM hea_checkup_result
@@ -873,6 +846,8 @@
                                      WHERE a.process_cd = chem.process_cd)
                                        FOR xml PATH('')),1,1,'') as chem_nm_krs
               ,count(*) over() as total_cnt
+              , case when hcr.out_checkup_yn = 'Y'  then '예' else '아니오' end as out_checkup_yn
+              , hcr.remark
           FROM com_user cu
          INNER JOIN com_dept cd
             ON cu.dept_cd = cd.dept_cd
@@ -885,6 +860,9 @@
            AND sex.code_group_cd = 'COM_SEX_TYPE'
          INNER JOIN hea_checkup_plan p
             ON p.hea_checkup_plan_no = #{heaCheckupPlanNo}
+         inner join hea_checkup_result hcr
+	        on hcr.hea_checkup_plan_no = p.hea_checkup_plan_no
+	        and hcr.user_id = cu.user_id
          WHERE 1=1
            AND not exists (SELECT 1
                              FROM hea_checkup_result
