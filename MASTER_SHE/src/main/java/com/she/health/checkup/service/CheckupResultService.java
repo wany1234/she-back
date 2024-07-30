@@ -45,6 +45,7 @@ import com.she.health.model.CheckupPlanOrg;
 import com.she.health.model.CheckupResult;
 import com.she.health.model.CheckupResultDiag;
 import com.she.health.model.CheckupSituation;
+import com.she.health.model.CheckupSituationDetail;
 import com.she.health.model.CheckupUser;
 import com.she.health.model.Disease;
 import com.she.health.model.TestItem;
@@ -909,5 +910,17 @@ public class CheckupResultService {
      */
     public List<CheckupSituation> getCheckupSituation(String year, String plantCd, String deptCd, String heaCheckupClassCd, DefaultParam defaultParam) throws Exception {
     	return checkupResultMapper.getCheckupSituation(year, plantCd, deptCd, heaCheckupClassCd, defaultParam);
+    }
+    
+    /**
+     * 판정대상자 목록
+     * @param year
+     * @param plantCd
+     * @param heaDiagnoseCd
+     * @return
+     * @throws Exception
+     */
+    public List<CheckupSituationDetail> getCheckupSituationDetail(String year, String plantCd, String heaDiagnoseCd, DefaultParam defaultParam) throws Exception {
+    	return checkupResultMapper.getCheckupSituationDetail(year, plantCd, heaDiagnoseCd, defaultParam);
     }
 }

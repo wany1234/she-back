@@ -46,6 +46,7 @@ import com.she.health.checkup.service.CheckupResultService;
 import com.she.health.model.CheckupResult;
 import com.she.health.model.CheckupResultDiag;
 import com.she.health.model.CheckupSituation;
+import com.she.health.model.CheckupSituationDetail;
 import com.she.health.model.TestItemResult;
 import com.she.manage.mapper.CodeMasterMapper;
 import com.she.manage.model.CodeMaster;
@@ -456,7 +457,7 @@ public class CheckupResultController {
      * @return
      * @throws Exception
      */
-    @GetMapping("/checkupSituation")
+    @GetMapping("/checkupsituation")
     public ResponseEntity<List<CheckupSituation>> getCheckupSituation(@RequestParam HashMap<String, Object> parameter,  @ModelAttribute DefaultParam defaultParam) throws Exception {
     	HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
     	
@@ -467,5 +468,23 @@ public class CheckupResultController {
     	
     	return ResponseEntity.ok().body(checkupResultService.getCheckupSituation(year, plantCd, deptCd, heaCheckupClassCd, defaultParam));
     	
+    }
+    
+    /**
+     * 판정대상자 목록
+     * @param parameter
+     * @param defaultParam
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/checkupsituationdetail")
+    public ResponseEntity<List<CheckupSituationDetail>> getCheckupSituationDetail(@RequestParam HashMap<String, Object> parameter,  @ModelAttribute DefaultParam defaultParam) throws Exception {
+    	HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
+    	
+    	String year = map.containsKey("year") ? map.get("year").toString() : "";
+    	String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
+    	String heaDiagnoseCd = map.containsKey("heaDiagnoseCd") ? map.get("heaDiagnoseCd").toString() : "";
+    	
+    	return ResponseEntity.ok().body(checkupResultService.getCheckupSituationDetail(year, plantCd, heaDiagnoseCd, defaultParam));
     }
 }

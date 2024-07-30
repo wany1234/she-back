@@ -602,4 +602,37 @@
 		group by a.hea_checkup_plan_no, a.year, a.plant_cd, a.plant_nm, a.sort_order
 		ORDER by a.sort_order
     </select>
+    
+    <select id="getCheckupSituationDetail" resultType="com.she.health.model.CheckupSituationDetail">
+		SELECT hcp.hea_checkup_plan_no 
+			, hcr.user_id 
+			, convert(varchar(4), hcp.start_ymd) as year
+			, hcp.plant_cd  
+			, plant.code_nm as plant_nm
+			, hcr.dept_cd 
+			, cd.dept_nm
+			, hcp.hea_checkup_plan_nm 
+			, cu.user_nm
+			, hcrd.hea_diagnose_cd 
+			, class.code_nm as hea_checkup_class_nm
+			, hcr.hea_checked_ymd 
+		from hea_checkup_plan hcp 
+		left outer join hea_checkup_result_diag hcrd 
+		on hcp.hea_checkup_plan_no = hcrd.hea_checkup_plan_no
+		left outer join hea_checkup_result hcr 
+		on hcp.hea_checkup_plan_no = hcr.hea_checkup_plan_no
+		and hcr.user_id = hcrd.user_id
+		inner join com_dept cd
+		on hcr.dept_cd = cd.dept_cd
+		inner join com_user cu 
+		on cu.user_id = hcr.user_id 
+		inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+		on hcp.plant_cd = plant.code
+		inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'HEA_CHECKUP_CLASS') class
+		on hcp.hea_checkup_class_cd = class.code
+		where 1 = 1 
+		and convert(varchar(4), hcp.start_ymd) = #{year}
+		and hcp.plant_cd = #{plantCd}
+		and hcrd.hea_diagnose_cd = #{heaDiagnoseCd}    
+    </select>
 </mapper>

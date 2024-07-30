@@ -21,6 +21,7 @@ import com.she.common.model.DefaultParam;
 import com.she.health.model.CheckupResult;
 import com.she.health.model.CheckupResultDiag;
 import com.she.health.model.CheckupSituation;
+import com.she.health.model.CheckupSituationDetail;
 import com.she.health.model.CheckupUser;
 import com.she.health.model.TestItemResult;
 
@@ -214,4 +215,14 @@ public interface CheckupResultMapper {
      */
     public List<CheckupSituation> getCheckupSituation(@Param("year") String year, @Param("plantCd") String plantCd, @Param("deptCd") String deptCd,
     		@Param("heaCheckupClassCd") String heaCheckupClassCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+    
+    /**
+     * 판정대상자 목록
+     * @param year
+     * @param plantCd
+     * @param heaDiagnoseCd
+     * @return
+     * @throws Exception
+     */
+    public List<CheckupSituationDetail> getCheckupSituationDetail(@Param("year") String year, @Param("plantCd") String plantCd, @Param("heaDiagnoseCd") String heaDiagnoseCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 }
