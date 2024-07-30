@@ -17,8 +17,10 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
+import com.she.common.model.DefaultParam;
 import com.she.health.model.CheckupResult;
 import com.she.health.model.CheckupResultDiag;
+import com.she.health.model.CheckupSituation;
 import com.she.health.model.CheckupUser;
 import com.she.health.model.TestItemResult;
 
@@ -199,4 +201,17 @@ public interface CheckupResultMapper {
      */
     public int excelUploadCheckupUser(CheckupUser checkupUser) throws Exception; 
     public int getExistsUser(@Param("userId") String userId)throws Exception; 
+    
+    /**
+     * 검진현황 목록
+     * @param year
+     * @param plantCd
+     * @param deptCd
+     * @param heaCheckupClassCd
+     * @param defaultParam
+     * @return
+     * @throws Exception
+     */
+    public List<CheckupSituation> getCheckupSituation(@Param("year") String year, @Param("plantCd") String plantCd, @Param("deptCd") String deptCd,
+    		@Param("heaCheckupClassCd") String heaCheckupClassCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 }

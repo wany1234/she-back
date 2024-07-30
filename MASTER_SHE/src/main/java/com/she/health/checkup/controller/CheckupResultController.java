@@ -30,6 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -40,9 +41,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.she.common.model.DefaultParam;
 import com.she.health.checkup.service.CheckupResultService;
 import com.she.health.model.CheckupResult;
 import com.she.health.model.CheckupResultDiag;
+import com.she.health.model.CheckupSituation;
 import com.she.health.model.TestItemResult;
 import com.she.manage.mapper.CodeMasterMapper;
 import com.she.manage.model.CodeMaster;
@@ -444,5 +447,25 @@ public class CheckupResultController {
     @PostMapping("/excelUpload/checkupUesr")
     public ResponseEntity<Map<String, Object>> getUploadExcelData(@RequestParam("createUserId") String createUserId, @RequestParam("heaCheckupPlanNo") int heaCheckupPlanNo, @RequestParam("files") MultipartFile[] files) throws Exception {
         return ResponseEntity.ok().body(this.checkupResultService.checkupUserUploadExcel(heaCheckupPlanNo, createUserId, files));
+    }
+    
+    /**
+     * 검진현황 목록
+     * @param parameter
+     * @param defaultParam
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/checkupSituation")
+    public ResponseEntity<List<CheckupSituation>> getCheckupSituation(@RequestParam HashMap<String, Object> parameter,  @ModelAttribute DefaultParam defaultParam) throws Exception {
+    	HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
+    	
+    	String year = map.containsKey("year") ? map.get("year").toString() : "";
+    	String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
+    	String deptCd = map.containsKey("deptCd") ? map.get("deptCd").toString() : "";
+    	String heaCheckupClassCd = map.containsKey("heaCheckupClassCd") ? map.get("heaCheckupClassCd").toString() : "";
+    	
+    	return ResponseEntity.ok().body(checkupResultService.getCheckupSituation(year, plantCd, deptCd, heaCheckupClassCd, defaultParam));
+    	
     }
 }

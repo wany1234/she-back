@@ -545,4 +545,61 @@
 	            ,#{remark}
 	        	);
     </insert>
+    
+    <select id="getCheckupSituation" resultType="com.she.health.model.CheckupSituation">
+    SELECT a.hea_checkup_plan_no, a.year, a.plant_cd, a.plant_nm
+		, max(diagnose_cd1) as classA
+		, max(diagnose_cd2) as classB
+		, max(diagnose_cd3) as classC1
+		, max(diagnose_cd4) as classC2
+		, max(diagnose_cd5) as classCN
+		, max(diagnose_cd6) as classD1
+		, max(diagnose_cd7) as classD2
+		, max(diagnose_cd8) as classDN
+		, max(diagnose_cd9) as classR
+		, max(diagnose_cd10) as classU
+		, SUM(diagnose_cd1) + SUM(diagnose_cd2) + SUM(diagnose_cd3) + SUM(diagnose_cd4) + SUM(diagnose_cd5)
+		+ SUM(diagnose_cd6) + SUM(diagnose_cd7) + SUM(diagnose_cd8) + SUM(diagnose_cd9) + SUM(diagnose_cd10) as class_sum
+		from(
+		SELECT hcp.hea_checkup_plan_no
+		, convert(varchar(4), hcp.start_ymd) as year
+		, hcp.plant_cd 
+		, plant.code_nm as plant_nm
+		, plant.sort_order
+		, isnull(case when hcrd.hea_diagnose_cd = 'A' then count(*)  end,0) as diagnose_cd1
+		, isnull(case when hcrd.hea_diagnose_cd = 'B' then count(*)  end,0) as diagnose_cd2
+		, isnull(case when hcrd.hea_diagnose_cd = 'C1' then count(*)  end,0) as diagnose_cd3
+		, isnull(case when hcrd.hea_diagnose_cd = 'C2' then count(*)  end,0) as diagnose_cd4
+		, isnull(case when hcrd.hea_diagnose_cd = 'CN' then count(*)  end,0) as diagnose_cd5
+		, isnull(case when hcrd.hea_diagnose_cd = 'D1' then count(*)  end,0) as diagnose_cd6
+		, isnull(case when hcrd.hea_diagnose_cd = 'D2' then count(*)  end,0) as diagnose_cd7
+		, isnull(case when hcrd.hea_diagnose_cd = 'DN' then count(*)  end,0) as diagnose_cd8
+		, isnull(case when hcrd.hea_diagnose_cd = 'R' then count(*)  end,0) as diagnose_cd9
+		, isnull(case when hcrd.hea_diagnose_cd = 'U' then count(*)  end,0) as diagnose_cd10
+		from hea_checkup_plan hcp 
+		left outer join hea_checkup_result_diag hcrd 
+		on hcp.hea_checkup_plan_no = hcrd.hea_checkup_plan_no
+		left outer join hea_checkup_result hcr 
+		on hcp.hea_checkup_plan_no = hcr.hea_checkup_plan_no
+		and hcr.user_id = hcrd.user_id
+		inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
+		on hcp.plant_cd = plant.code
+		where 1 = 1 
+		<if test= "year != null and !year.equals('')">
+		and convert(varchar(4), hcp.start_ymd) = #{year}
+		</if>
+		<if test= "plantCd != null and !plantCd.equals('')">
+		and hcp.plant_cd = #{plantCd}
+		</if>
+		<if test= "deptCd != null and !deptCd.equals('')">
+		and hcr.dept_cd = #{deptCd}
+		</if>
+		<if test= "heaCheckupClassCd != null and !heaCheckupClassCd.equals('')">
+		and hcp.hea_checkup_class_cd = #{heaCheckupClassCd}
+		</if>
+		group by hcp.hea_checkup_plan_no, convert(varchar(4), hcp.start_ymd), hcp.plant_cd, plant.code_nm, hea_diagnose_cd, plant.sort_order
+		) a 
+		group by a.hea_checkup_plan_no, a.year, a.plant_cd, a.plant_nm, a.sort_order
+		ORDER by a.sort_order
+    </select>
 </mapper>

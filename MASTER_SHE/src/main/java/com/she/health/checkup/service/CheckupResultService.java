@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,7 @@ import com.she.health.model.CheckupPlan;
 import com.she.health.model.CheckupPlanOrg;
 import com.she.health.model.CheckupResult;
 import com.she.health.model.CheckupResultDiag;
+import com.she.health.model.CheckupSituation;
 import com.she.health.model.CheckupUser;
 import com.she.health.model.Disease;
 import com.she.health.model.TestItem;
@@ -893,5 +895,19 @@ public class CheckupResultService {
             map.put("message", "업로드 도중 에러발생");
 		}
     	return map;
+    }
+    
+    /**
+     * 검진현황 목록
+     * @param year
+     * @param plantCd
+     * @param deptCd
+     * @param heaCheckupClassCd
+     * @param defaultParam
+     * @return
+     * @throws Exception
+     */
+    public List<CheckupSituation> getCheckupSituation(String year, String plantCd, String deptCd, String heaCheckupClassCd, DefaultParam defaultParam) throws Exception {
+    	return checkupResultMapper.getCheckupSituation(year, plantCd, deptCd, heaCheckupClassCd, defaultParam);
     }
 }
