@@ -123,5 +123,26 @@ public class Consult extends Suspect {
 
     @ApiModelProperty(value = "상담별 약품 지급 삭제 내역")
     private List<DrugSuply> deleteDrugSuplies;
+    
+    @ApiModelProperty(value = "키")
+    private String height;
+    @ApiModelProperty(value = "몸무게")
+    private String weight;
+    @ApiModelProperty(value = "흡연여부")
+    private String smokingYn;
+    @ApiModelProperty(value = "흡연량")
+    private String smokingAmount;
+    @ApiModelProperty(value = "음주여부")
+    private String drinkingYn;
+    @ApiModelProperty(value = "음주량")
+    private String drinkingAmount;
+    @ApiModelProperty(value = "과거질환여부")
+    private String pastDiseaseYn;
+    @ApiModelProperty(value = "과거질환 내용")
+    private String pastDiseaseContent;
+    @ApiModelProperty(value = "가족력여부")
+    private String familyHistoryYn;
+    @ApiModelProperty(value = "가족력내용")
+    private String familyHistoryContent;
 
 }

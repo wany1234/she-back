@@ -5,7 +5,7 @@
 
     <!-- 방문이력 조회 -->
     <select id= "getInfirmaryUsageHistorys" parameterType= "map" resultType= "com.she.health.model.InfirmaryUsage">
-
+	/* InfirmaryMapper.getInfirmaryUsageHistorys [Infirmary.xml] */
         SELECT  c.hea_consult_no
              , c.plant_cd
              , pl.code_nm as plant_nm
@@ -62,6 +62,7 @@
 
     <!-- 건강검진이력 조회 -->
     <select id= "getCheckupHistorys" parameterType= "map" resultType= "com.she.health.model.CheckupResult">
+    /* InfirmaryMapper.getCheckupHistorys [Infirmary.xml] */
         SELECT d.dept_nm                               -- 부서 이름
               ,u.user_id                                 -- 사용자 id
               ,u.user_nm                                 -- 사용자 이름
@@ -74,14 +75,10 @@
               ,hco.hea_checkup_org_nm                    -- 기관 명칭
               ,hcr.hea_follow_up_cd                      -- 사후관리 판정 코드
               ,cm3.code_nm as hea_follow_up_nm
-              ,hcr.hea_follow_up_gen_cd                  -- 사후관리 판정 코드(일반)
               ,hcr.hea_follow_up_remark                  -- 사후관리 조치 비고
-              ,hcr.hea_follow_up_gen_remark              -- 사후관리 조치 비고(일반)
               ,hcr.overall_opinion                       -- 종합의견
-              ,hcr.overall_opinion_gen                   -- 종합의견(일반)
               ,hcr.hea_workable_cd                       -- 업무수행적합 판정 코드
               ,cm2.code_nm as hea_workable_nm
-              ,hcr.hea_workable_gen_cd                   -- 업무수행적합 판정 코드(일반)
               ,pl.code_nm as plant_nm                    -- 사업장 명
               ,hcr.create_user_id
               ,hcr.create_dt
@@ -132,6 +129,7 @@
     <!-- 관리대상 유소견자 조회 -->
     <select id= "getSuspectUsers"
     resultType= "com.she.health.model.Suspect">
+    /* InfirmaryMapper.getSuspectUsers [Infirmary.xml] */
         select
             s.user_id                       -- 사용자id
             ,u.user_nm                      -- 사용자명
@@ -185,6 +183,7 @@
 
     <!-- 유소견자 지정 및 해제 요청 생성 -->
     <insert id="createSuspectRequest" parameterType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.createSuspectRequest [Infirmary.xml] */
         <selectKey keyProperty= "suspectReqNo" resultType= "int" order= "BEFORE">
             select next value for seq_hea_suspect_req
         </selectKey>
@@ -207,6 +206,7 @@
 
     <!-- 유소견자 지정 및 해제 요청 수정 -->
     <update id="updateSuspectRequest" parameterType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.updateSuspectRequest [Infirmary.xml] */
         UPDATE hea_suspect_req
            SET update_user_id = #{updateUserId}
              , update_dt = getdate()
@@ -215,6 +215,7 @@
 
     <!-- 유소견자 지정자 생성 -->
     <insert id="createSuspectActUser" parameterType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.createSuspectActUser [Infirmary.xml] */
         INSERT INTO hea_suspect_req_act (
             suspect_req_no
             , user_id
@@ -230,6 +231,7 @@
 
     <!-- 유소견자 해제자 생성 -->
     <insert id="createSuspectRelUser" parameterType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.createSuspectRelUser [Infirmary.xml] */
         INSERT INTO hea_suspect_req_rel (
             suspect_req_no
             , suspect_hst_no
@@ -243,6 +245,7 @@
 
     <!-- 관리대상 유소견자 상세조회 -->
     <select id= "getSuspectUser" resultType= "com.she.health.model.Suspect">
+    /* InfirmaryMapper.getSuspectUser [Infirmary.xml] */
         select
             s.user_id                -- 사용자id
             ,u.user_nm                -- 사용자명
@@ -261,18 +264,21 @@
 
     <!-- 유소견자 요청 지정자  삭제 -->
     <delete id="deleteSuspectActUser">
+    /* InfirmaryMapper.deleteSuspectActUser [Infirmary.xml] */
         DELETE FROM hea_suspect_req_act
          WHERE suspect_req_no = #{suspectReqNo}
     </delete>
 
     <!-- 유소견자 요청 지정자  삭제 -->
     <delete id="deleteSuspectRelUser">
+    /* InfirmaryMapper.deleteSuspectRelUser [Infirmary.xml] */
         DELETE FROM hea_suspect_req_rel
          WHERE suspect_req_no = #{suspectReqNo}
     </delete>
 
     <!-- 관리대상 유소견자 지정 -->
     <insert id= "createSuspectUser" parameterType= "com.she.health.model.Suspect">
+    /* InfirmaryMapper.createSuspectUser [Infirmary.xml] */
         <selectKey keyProperty= "suspectHstNo" resultType= "int" order= "BEFORE">
             select next value for seq_hea_suspect_hst
         </selectKey>
@@ -302,6 +308,7 @@
 
     <!-- 관리대상 유소견자 해제 -->
     <update id= "releaseSuspectUser" parameterType= "com.she.health.model.Suspect">
+    /* InfirmaryMapper.releaseSuspectUser [Infirmary.xml] */
         UPDATE hea_suspect_hst
            SET suspect_yn = 'N'
              , not_managed_ymd = convert(varchar(10),getdate(), 23)
@@ -314,6 +321,7 @@
 
     <!-- 관리대상 유소견자 수정 -->
     <update id= "updateSuspectUser" parameterType= "com.she.health.model.Suspect">
+    /* InfirmaryMapper.updateSuspectUser [Infirmary.xml] */
         update hea_suspect
         SET
             <choose>
@@ -335,6 +343,7 @@
 
     <!-- 유소견자 지정자 추가 팝업 조회 -->
     <select id="getSuspectAppointUsers" resultType="com.she.health.model.Suspect">
+        /* InfirmaryMapper.getSuspectAppointUsers [Infirmary.xml] */
         SELECT r.user_id
              , u.user_nm
              , d.dept_cd
@@ -418,6 +427,7 @@
 
     <!-- 유소견자 해제자 추가 팝업 조회 -->
     <select id="getSuspectReleaseUsers" resultType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.getSuspectReleaseUsers [Infirmary.xml] */
         SELECT hst.suspect_hst_no
              , hst.user_id
              , u.user_nm
@@ -453,6 +463,7 @@
 
     <!-- 유소견자 팝업 조회 -->
     <select id= "getSuspectUsersOfAll" resultType= "com.she.health.model.Suspect">
+    /* InfirmaryMapper.getSuspectUsersOfAll [Infirmary.xml] */
         SELECT sus.plant_cd
              , pl.code_nm as plant_nm
              , sus.suspect_req_no
@@ -506,6 +517,7 @@
 
     <!-- 유소견자 지정 및 해제 요청 조회 -->
     <select id="getSuspectRequest" resultType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.getSuspectRequest [Infirmary.xml] */
         SELECT req.suspect_req_no
              , req.plant_cd
              , req.rqst_dt
@@ -520,6 +532,7 @@
 
     <!-- 유소견자 지정 및 해제 진행단계 변경 -->
     <update id="updateSuspStepCd">
+    /* InfirmaryMapper.updateSuspStepCd [Infirmary.xml] */
         UPDATE hea_suspect_req
            SET susp_step_cd = #{suspStepCd}
          WHERE suspect_req_no = #{suspectReqNo}
@@ -527,6 +540,7 @@
 
     <!-- 유소견자 지정 및 해제 결재요청번호 변경 -->
     <update id="updateApprRqstNo">
+    /* InfirmaryMapper.updateApprRqstNo [Infirmary.xml] */
         UPDATE hea_suspect_req
            SET appr_rqst_no = #{apprRqstNo}
          WHERE suspect_req_no = #{suspectReqNo}
@@ -534,6 +548,7 @@
 
     <!-- 유소견자 결재팝업 관리대상 지정 목록 -->
     <select id="getSuspectUsersOfActTarget" resultType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.getSuspectUsersOfActTarget [Infirmary.xml] */
         SELECT pl.code_nm as plant_nm
              , req.plant_cd
              , u.dept_cd
@@ -584,6 +599,7 @@
 
     <!-- 유소견자 결재팝업 관리대상 해제 목록 -->
     <select id="getSuspectUsersOfRelTarget" resultType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.getSuspectUsersOfRelTarget [Infirmary.xml] */
         SELECT pl.code_nm as plant_nm
              , req.plant_cd
              , hst.user_id
@@ -610,6 +626,7 @@
 
     <!-- 유소견자 건강상담이력 조회 -->
     <select id= "getConsults" resultType= "com.she.health.model.Consult">
+    /* InfirmaryMapper.getConsults [Infirmary.xml] */
         select c.hea_consult_no             -- 건강상담 번호
              , pl.code_nm as plant_nm       -- 사업장 명
              , c.user_id                    -- 사용자id
@@ -693,6 +710,16 @@
             ,c.update_user_id        -- 수정자
             ,c.update_dt            -- 수정일
             ,c.counselor            -- 상담자
+            ,c.height
+			,c.weight
+			,c.smoking_yn
+			,c.smoking_amount
+			,c.drinking_yn
+			,c.drinking_amount
+			,c.past_disease_yn
+			,c.past_disease_content
+			,c.family_history_yn
+			,c.family_history_content
         from hea_consult c
         left outer join com_user u on c.user_id = u.user_id
         where 1=1
@@ -717,6 +744,7 @@
 
     <!-- 유소견자 건강상담이력 신규 등록 -->
     <insert id= "createConsult" parameterType= "com.she.health.model.Consult">
+    /* InfirmaryMapper.createConsult [Infirmary.xml] */
         <selectKey keyProperty= "heaConsultNo" resultType= "int" order= "BEFORE">
             select next value for seq_hea_consult
         </selectKey>
@@ -740,6 +768,16 @@
             ,cholesterol_val
             ,create_user_id
             ,create_dt
+            ,height
+			,weight
+			,smoking_yn
+			,smoking_amount
+			,drinking_yn
+			,drinking_amount
+			,past_disease_yn
+			,past_disease_content
+			,family_history_yn
+			,family_history_content
         )
         VALUES
         (
@@ -761,6 +799,16 @@
             ,round(#{cholesterolVal}, 1)
             ,#{createUserId}
             ,getDate()
+            ,#{height}
+			,#{weight}
+			,#{smokingYn}
+			,#{smokingAmount}
+			,#{drinkingYn}
+			,#{drinkingAmount}
+			,#{pastDiseaseYn}
+			,#{pastDiseaseContent}
+			,#{familyHistoryYn}
+			,#{familyHistoryContent}
         )
     </insert>
 
@@ -800,6 +848,7 @@
 
     <!-- 유소견자 건강상담이력 수정 -->
     <update id= "updateConsult" parameterType= "com.she.health.model.Consult">
+    /* InfirmaryMapper.updateConsult [Infirmary.xml] */
         update hea_consult
         SET user_id = #{userId}
             ,dept_cd = #{deptCd}
@@ -817,17 +866,29 @@
             ,cholesterol_val = round(#{cholesterolVal}, 1)
             ,update_user_id = #{updateUserId}
             ,update_dt = getDate()
+            ,height = #{height}                 
+			,weight = #{weight}                 
+			,smoking_yn = #{smokingYn}              
+			,smoking_amount = #{smokingAmount}          
+			,drinking_yn = #{drinkingYn}             
+			,drinking_amount = #{drinkingAmount}         
+			,past_disease_yn = #{pastDiseaseYn}          
+			,past_disease_content = #{pastDiseaseContent}     
+			,family_history_yn = #{familyHistoryYn}        
+			,family_history_content = #{familyHistoryContent}   
         where hea_consult_no = #{heaConsultNo}
     </update>
 
     <!-- 선택된 유소견자 건강상담 이력 삭제 -->
     <delete id= "deleteConsult">
+    /* InfirmaryMapper.deleteConsult [Infirmary.xml] */
         delete from hea_consult
         where hea_consult_no = #{heaConsultNo}
     </delete>
 
     <!-- 청력관리대상자 조회 -->
     <select id= "getHearingMgrs" resultType= "com.she.health.model.HearingMgr">
+    /* InfirmaryMapper.getHearingMgrs [Infirmary.xml] */
         SELECT h.hea_hearing_mgr_list_no
              , pl.code_nm as plant_nm
              , convert(char(10), convert(date, h.chk_dt), 23) as chk_dt
@@ -885,6 +946,7 @@
 
     <!-- 청력관리대상자 엑셀다운로드 조회 -->
     <select id= "getHearingMgrsForExcel" resultType= "java.util.LinkedHashMap">
+    /* InfirmaryMapper.getHearingMgrsForExcel [Infirmary.xml] */
         SELECT pl.code_nm as plant_nm
              , h.chk_dt
              , d.dept_nm
@@ -933,6 +995,7 @@
 
     <!-- 청력관리대상자 엑셀업로드 -->
     <update id="uploadExcelHearingMgr" parameterType="com.she.health.model.HearingMgr">
+    /* InfirmaryMapper.uploadExcelHearingMgr [Infirmary.xml] */
         <selectKey keyProperty= "heaHearingMgrListNo" resultType= "int" order= "BEFORE">
             select next value for seq_hea_hearing_mgr_list
         </selectKey>
@@ -1011,6 +1074,7 @@
 
     <!-- 청력관리대상자 조회 -->
     <select id= "getHearingMgr" resultType= "com.she.health.model.HearingMgr">
+    /* InfirmaryMapper.getHearingMgr [Infirmary.xml] */
         SELECT h.hea_hearing_mgr_list_no
                 , pl.code_nm as plant_nm
                 , pl.code as plant_cd
@@ -1048,6 +1112,7 @@
 
     <!-- 청력관리대상자 수정 -->
     <update id="updateHearingMgr" parameterType="com.she.health.model.HearingMgr">
+    /* InfirmaryMapper.updateHearingMgr [Infirmary.xml] */
         UPDATE hea_hearing_mgr_list
         SET
             dept_cd           = (select dept_cd from com_user where user_id = #{userId})
@@ -1074,6 +1139,7 @@
     </update>
 
     <delete id="deleteHearingMgr">
+    /* InfirmaryMapper.deleteHearingMgr [Infirmary.xml] */
         delete from hea_hearing_mgr_list
         where hea_hearing_mgr_list_no = #{heaHearingMgrListNo}
     </delete>

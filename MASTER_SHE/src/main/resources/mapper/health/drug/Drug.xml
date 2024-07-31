@@ -6,8 +6,6 @@
         select hea_drug_no            -- 의약품 번호
             ,hea_drug_nm            -- 의약품 명칭
             ,unit                    -- (측정)단위
-            ,amount_limit            -- 적정 재고량
-            ,amount_curr            -- 현재 재고량
             ,sort_order                -- 출력 순서
             ,use_yn                    -- 사용여부
             ,case
@@ -38,8 +36,6 @@
         select hea_drug_no            -- 의약품 번호
             ,hea_drug_nm             -- 의약품 명칭
             ,unit                    -- (측정)단위
-            ,amount_limit            -- 적정 재고량
-            ,amount_curr            -- 현재 재고량
             ,sort_order                -- 출력 순서
             ,use_yn                    -- 사용여부
             ,case
@@ -65,8 +61,6 @@
             hea_drug_no
             ,hea_drug_nm
             ,unit
-            ,amount_limit
-            ,amount_curr
             ,sort_order
             ,use_yn
             ,create_user_id
@@ -77,8 +71,6 @@
             #{heaDrugNo}
             ,#{heaDrugNm}
             ,#{unit}
-            ,#{amountLimit}
-            ,#{amountCurr}
             ,#{sortOrder}
             ,#{useYn}
             ,#{createUserId}
@@ -90,8 +82,6 @@
         update hea_drug
         SET hea_drug_nm = #{heaDrugNm}
             ,unit = #{unit}
-            ,amount_limit = #{amountLimit}
-            ,amount_curr = #{amountCurr}
             ,sort_order = #{sortOrder}
             ,use_yn = #{useYn}
             ,update_user_id = #{updateUserId}
