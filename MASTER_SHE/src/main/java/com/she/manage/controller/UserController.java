@@ -127,8 +127,9 @@ public class UserController {
         String useYn = map.containsKey("useYn") ? map.get("useYn").toString() : "";
         String deptSubYn = map.containsKey("deptSubYn") ? map.get("deptSubYn").toString() : "Y";
         String dutyCd = map.containsKey("dutyCd") ? map.get("dutyCd").toString() : "";
+        String[] plantCds = this.requestMapper.convertObjectListAsStringArray(map.get("plantCds"));
 
-        return ResponseEntity.ok().body(this.userService.getUsers(plantCd, processCd, deptCd, userId, userNm, useYn, deptSubYn, dutyCd, defaultParam));
+        return ResponseEntity.ok().body(this.userService.getUsers(plantCd, processCd, deptCd, userId, userNm, useYn, deptSubYn, dutyCd, plantCds, defaultParam));
     }
 
     /**

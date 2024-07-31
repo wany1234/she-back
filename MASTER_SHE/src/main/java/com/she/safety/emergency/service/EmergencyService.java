@@ -10,9 +10,10 @@
  */
 package com.she.safety.emergency.service;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import com.she.impr.service.ImprService;
 import com.she.safety.emergency.mapper.EmergencyMapper;
 import com.she.safety.model.Emergency;
 import com.she.safety.model.EmergencyDept;
+import com.she.safety.model.EmergencyPsn;
 import com.she.utils.ConstVal;
 
 @Service
@@ -40,8 +42,8 @@ public class EmergencyService {
      * @return 훈련계획 관리 목록 조회
      * @throws Exception
      */
-    public List<Emergency> getEmergencyLists(String plantCd, String startDt, String endDt, String trainTypeCd, String trainNm, String trainPlace, String deptCd, String deptSubYn, String procStepCd, String stateCd, DefaultParam defaultParam) throws Exception {
-        return emergencyMapper.getEmergencyLists(plantCd, startDt, endDt, trainTypeCd, trainNm, trainPlace, deptCd, deptSubYn, procStepCd, stateCd, defaultParam);
+    public List<Emergency> getEmergencyLists(String plantCd, String startDt, String endDt, String trainTypeCd, String trainNm, String trainPlace, String deptCd, String deptSubYn, String trainPlanState, String reTrainYn, String trainMethodCd, DefaultParam defaultParam) throws Exception {
+        return emergencyMapper.getEmergencyLists(plantCd, startDt, endDt, trainTypeCd, trainNm, trainPlace, deptCd, deptSubYn, trainPlanState, reTrainYn, trainMethodCd, defaultParam);
     }
 
     /**
@@ -54,22 +56,24 @@ public class EmergencyService {
     public Emergency getEmergencyInfo(int safTrainPlanNo, DefaultParam defaultParam) throws Exception {
         Emergency emergency = new Emergency();
         emergency = emergencyMapper.getEmergencyInfo(safTrainPlanNo, defaultParam);
-        emergency.setEmergencyDeptList(emergencyMapper.getEmergencyDeptLists(safTrainPlanNo, defaultParam));
+        emergency.setEmergencyPlantList(emergencyMapper.getEmergencyPlantList(safTrainPlanNo));
+        emergency.setEmergencyUserList(emergencyMapper.getEmergencyUserList(safTrainPlanNo, null, defaultParam));
         emergency.setEmergencyScenarioList(emergencyMapper.getEmergencyScenarioLists(safTrainPlanNo, defaultParam));
+        if (ConstVal.TRAIN_METHOD_VIDEO.equals(emergency.getTrainMethodCd())) {
+            emergency.setEmergencyVideo(emergencyMapper.getEmergencyVideo(safTrainPlanNo));
+        }
         return emergency;
     }
 
     /**
-     * 훈련계획 대상부서 목록
+     * 훈련계획 대상자 목록 조회
      *
      * @param parameter
-     * @return 훈련계획 대상부서 목록
+     * @return 훈련계획 대상자 목록 조회
      * @throws Exception
      */
-    public List<EmergencyDept> getEmergencyDeptList(int safTrainPlanNo, String apprFlag, DefaultParam defaultParam) throws Exception {
-        List<EmergencyDept> emergencyDeptList = new ArrayList<EmergencyDept>();
-        emergencyDeptList = emergencyMapper.getEmergencyDeptList(safTrainPlanNo, apprFlag, defaultParam);
-        return emergencyDeptList;
+    public List<EmergencyPsn> getEmergencyUserList(int safTrainPlanNo, String apprFlag, DefaultParam defaultParam) throws Exception {
+        return emergencyMapper.getEmergencyUserList(safTrainPlanNo, apprFlag, defaultParam);
     }
 
     /**
@@ -79,22 +83,26 @@ public class EmergencyService {
      * @return 훈련계획 관리 계획 조회
      * @throws Exception
      */
+    @Transactional
     public int createEmergency(Emergency emergency) throws Exception {
-        String sTime[] = emergency.getTrainSTime().split(":");
-        String eTime[] = emergency.getTrainETime().split(":");
-        emergency.setTrainSHour(sTime[0]);
-        emergency.setTrainSMin(sTime[1]);
-        emergency.setTrainEHour(eTime[0]);
-        emergency.setTrainEMin(eTime[1]);
-        emergency.setStateCd("PSREG");
+
+        emergency.setTrainSTime(emergency.getTrainSHour() + ":" + emergency.getTrainSMin());
+        emergency.setTrainETime(emergency.getTrainEHour() + ":" + emergency.getTrainEMin());
+        emergency.setTrainPlanState(ConstVal.TRAIN_PLAN_STATE_ING); // 계획(작성중)
         emergencyMapper.createEmergency(emergency);
         int primaryKet = emergency.getSafTrainPlanNo();
-        emergencyMapper.deleteEmergencyDept(primaryKet);
-        if (emergency.getEmergencyDeptList() != null && emergency.getEmergencyDeptList().size() > 0) {
 
-            for (int i = 0; i < emergency.getEmergencyDeptList().size(); i++) {
-                emergency.getEmergencyDeptList().get(i).setSafTrainPlanNo(primaryKet);
-                emergencyMapper.createEmergencyDept(emergency.getEmergencyDeptList().get(i));
+        if (emergency.getPlantCdList() != null && emergency.getPlantCdList().size() > 0) {
+            for (int i = 0; i < emergency.getPlantCdList().size(); i++) {
+                String plantCd = emergency.getPlantCdList().get(i);
+                emergencyMapper.createEmergencyPlant(primaryKet, plantCd);
+            }
+        }
+        if (emergency.getEmergencyUserList() != null && emergency.getEmergencyUserList().size() > 0) {
+
+            for (int i = 0; i < emergency.getEmergencyUserList().size(); i++) {
+                emergency.getEmergencyUserList().get(i).setSafTrainPlanNo(primaryKet);
+                emergencyMapper.createEmergencyUser(emergency.getEmergencyUserList().get(i));
             }
         }
         emergencyMapper.deleteEmergencyScenario(primaryKet);
@@ -105,6 +113,20 @@ public class EmergencyService {
                 emergencyMapper.createEmergencyScenario(emergency.getEmergencyScenarioList().get(i));
             }
         }
+
+        if (emergency.getEmergencyVideo() != null && emergency.getPlantCdList().size() > 0) {
+            for (int i = 0; i < emergency.getPlantCdList().size(); i++) {
+                String plantCd = emergency.getPlantCdList().get(i);
+                emergencyMapper.createEmergencyPlant(primaryKet, plantCd);
+            }
+        }
+
+        if (ConstVal.TRAIN_METHOD_VIDEO.equals(emergency.getTrainMethodCd())) {
+            emergency.getEmergencyVideo().setSafTrainPlanNo(primaryKet);
+            emergency.getEmergencyVideo().setCreateUserId(emergency.getCreateUserId());
+            emergencyMapper.createEmergencyVideo(emergency.getEmergencyVideo());
+        }
+
         return emergency.getSafTrainPlanNo();
     }
 
@@ -116,20 +138,24 @@ public class EmergencyService {
      * @throws Exception
      */
     public int updateEmergency(Emergency emergency) throws Exception {
-        String sTime[] = emergency.getTrainSTime().split(":");
-        String eTime[] = emergency.getTrainETime().split(":");
-        emergency.setTrainSHour(sTime[0]);
-        emergency.setTrainSMin(sTime[1]);
-        emergency.setTrainEHour(eTime[0]);
-        emergency.setTrainEMin(eTime[1]);
+        emergency.setTrainSTime(emergency.getTrainSHour() + ":" + emergency.getTrainSMin());
+        emergency.setTrainETime(emergency.getTrainEHour() + ":" + emergency.getTrainEMin());
         emergencyMapper.updateEmergency(emergency);
         int primaryKet = emergency.getSafTrainPlanNo();
-        emergencyMapper.deleteEmergencyDept(primaryKet);
-        if (emergency.getEmergencyDeptList() != null && emergency.getEmergencyDeptList().size() > 0) {
 
-            for (int i = 0; i < emergency.getEmergencyDeptList().size(); i++) {
-                emergency.getEmergencyDeptList().get(i).setSafTrainPlanNo(primaryKet);
-                emergencyMapper.createEmergencyDept(emergency.getEmergencyDeptList().get(i));
+        emergencyMapper.deleteEmergencyPlant(primaryKet);
+        if (emergency.getPlantCdList() != null && emergency.getPlantCdList().size() > 0) {
+            for (int i = 0; i < emergency.getPlantCdList().size(); i++) {
+                String plantCd = emergency.getPlantCdList().get(i);
+                emergencyMapper.createEmergencyPlant(primaryKet, plantCd);
+            }
+        }
+        emergencyMapper.deleteEmergencyUser(primaryKet);
+        if (emergency.getEmergencyUserList() != null && emergency.getEmergencyUserList().size() > 0) {
+
+            for (int i = 0; i < emergency.getEmergencyUserList().size(); i++) {
+                emergency.getEmergencyUserList().get(i).setSafTrainPlanNo(primaryKet);
+                emergencyMapper.createEmergencyUser(emergency.getEmergencyUserList().get(i));
             }
         }
         emergencyMapper.deleteEmergencyScenario(primaryKet);
@@ -140,6 +166,20 @@ public class EmergencyService {
                 emergencyMapper.createEmergencyScenario(emergency.getEmergencyScenarioList().get(i));
             }
         }
+
+        if (ConstVal.TRAIN_METHOD_VIDEO.equals(emergency.getTrainMethodCd())) {
+            if (emergency.getEmergencyVideo().getSafTrainPlanNo() == 0) {
+                emergency.getEmergencyVideo().setSafTrainPlanNo(primaryKet);
+                emergency.getEmergencyVideo().setCreateUserId(emergency.getCreateUserId());
+                emergencyMapper.createEmergencyVideo(emergency.getEmergencyVideo());
+            } else {
+                emergency.getEmergencyVideo().setUpdateUserId(emergency.getUpdateUserId());
+                emergencyMapper.createEmergencyVideo(emergency.getEmergencyVideo());
+            }
+        } else {
+            emergencyMapper.deleteEmergencyVideo(primaryKet);
+        }
+
         return emergency.getSafTrainPlanNo();
     }
 
@@ -224,22 +264,22 @@ public class EmergencyService {
         emergency.setTrainUserId(emergencyDept.getTrainUserId());
         emergency.setTrainDeptCd(emergencyDept.getTrainDeptCd());
         emergency.setTrainNm(emergencyDept.getTrainNm());
-        emergency.setTrainYmd(emergencyDept.getTrainYmd());
+        // emergency.setTrainYmd(emergencyDept.getTrainYmd());
         emergency.setTrainSTime(emergencyDept.getTrainSTime());
         emergency.setTrainETime(emergencyDept.getTrainETime());
         emergency.setTrainSHour(sTime[0]);
         emergency.setTrainSMin(sTime[1]);
         emergency.setTrainEHour(eTime[0]);
         emergency.setTrainEMin(eTime[1]);
-        emergency.setProcStepCd("STS01");
+        // emergency.setProcStepCd("STS01");
         emergency.setTrainPlace(emergencyDept.getTrainPlace());
         emergency.setTrainContent(emergencyDept.getTrainContent());
         emergency.setCreateUserId(emergencyDept.getCreateUserId());
-        emergency.setCreateDeptCd(emergencyDept.getCreateDeptCd());
-        emergency.setCreateDeptNm(emergencyDept.getCreateDeptNm());
-        emergency.setStateCd("PSEND");
-        emergency.setCreatePositionCd(emergencyDept.getCreatePositionCd());
-        emergency.setCreatePositionNm(emergencyDept.getCreatePositionNm());
+        // emergency.setCreateDeptCd(emergencyDept.getCreateDeptCd());
+        // emergency.setCreateDeptNm(emergencyDept.getCreateDeptNm());
+        // emergency.setStateCd("PSEND");
+        // emergency.setCreatePositionCd(emergencyDept.getCreatePositionCd());
+        // emergency.setCreatePositionNm(emergencyDept.getCreatePositionNm());
         emergency.setChngNum(emergencyDept.getChngNum());
         emergencyMapper.createEmergency(emergency);
         // 대상부서

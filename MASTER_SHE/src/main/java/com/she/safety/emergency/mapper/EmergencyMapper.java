@@ -21,7 +21,10 @@ import com.she.common.model.DefaultParam;
 import com.she.impr.model.ImprAct;
 import com.she.safety.model.Emergency;
 import com.she.safety.model.EmergencyDept;
+import com.she.safety.model.EmergencyPlant;
+import com.she.safety.model.EmergencyPsn;
 import com.she.safety.model.EmergencyScenario;
+import com.she.safety.model.EmergencyVideo;
 
 @Mapper
 @Repository("com.she.safety.emergency.mapper.EmergencyMapper")
@@ -35,7 +38,7 @@ public interface EmergencyMapper {
      * @throws Exception
      */
     public List<Emergency> getEmergencyLists(@Param("plantCd") String plantCd, @Param("startDt") String startDt, @Param("endDt") String endDt, @Param("trainTypeCd") String trainTypeCd, @Param("trainNm") String trainNm, @Param("trainPlace") String trainPlace, @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn,
-            @Param("procStepCd") String procStepCd, @Param("stateCd") String stateCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+            @Param("trainPlanState") String trainPlanState, @Param("reTrainYn") String reTrainYn, @Param("trainMethodCd") String trainMethodCd, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 훈련계획 관리 계획 조회
@@ -47,6 +50,15 @@ public interface EmergencyMapper {
     public Emergency getEmergencyInfo(@Param("safTrainPlanNo") int safTrainPlanNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
+     * 훈련계획 대상자 목록 조회
+     *
+     * @param parameter
+     * @return 훈련계획 대상자 목록 조회
+     * @throws Exception
+     */
+    public List<EmergencyPsn> getEmergencyUserList(@Param("safTrainPlanNo") int safTrainPlanNo, @Param("apprFlag") String apprFlag, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+
+    /**
      * 훈련계획 관리 계획 부서조회
      *
      * @param parameter
@@ -54,15 +66,6 @@ public interface EmergencyMapper {
      * @throws Exception
      */
     public List<EmergencyDept> getEmergencyDeptLists(@Param("safTrainPlanNo") int safTrainPlanNo, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
-
-    /**
-     * 훈련계획 대상부서 목록
-     *
-     * @param parameter
-     * @return 훈련계획 대상부서 목록
-     * @throws Exception
-     */
-    public List<EmergencyDept> getEmergencyDeptList(@Param("safTrainPlanNo") int safTrainPlanNo, @Param("apprFlag") String apprFlag, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 훈련계획 관리 계획 부서조회
@@ -92,6 +95,15 @@ public interface EmergencyMapper {
     public int updateEmergency(Emergency emergency) throws Exception;
 
     /**
+     * 훈련계획 관리 훈련 대상자 등록
+     *
+     * @param parameter
+     * @return 훈련계획 관리 훈련 대상자 등록
+     * @throws Exception
+     */
+    public int createEmergencyUser(EmergencyPsn emergencyPsn) throws Exception;
+
+    /**
      * 훈련계획 관리 계획 대상부서 등록
      *
      * @param parameter
@@ -117,6 +129,15 @@ public interface EmergencyMapper {
      * @throws Exception
      */
     public int deleteEmergency(@Param("safTrainPlanNo") int safTrainPlanNo) throws Exception;
+
+    /**
+     * 훈련계획 관리 훈련 대상자 삭제
+     *
+     * @param parameter
+     * @return 훈련계획 관리 훈련 대상자 삭제
+     * @throws Exception
+     */
+    public int deleteEmergencyUser(@Param("safTrainPlanNo") int safTrainPlanNo) throws Exception;
 
     /**
      * 훈련계획 관리 계획 대상부서 삭제
@@ -202,4 +223,68 @@ public interface EmergencyMapper {
     public List<HashMap<String, Object>> getResultstatusList(@Param("plantCd") String plantCd, @Param("year") String year, @Param("trainTypeCd") String trainTypeCd, @Param("totalFlag") String totalFlag) throws Exception;
 
     public List<ImprAct> getEmergencyImprList(@Param("plantCd") String plantCd, @Param("monFlag") int monFlag, @Param("trainTypeCd") String trainTypeCd, @Param("apprFlag") String apprFlag, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+
+    /**
+     * 훈련계획 관리 사업장 목록 조회
+     *
+     * @param parameter
+     * @return 훈련계획 관리 사업장 목록 조회
+     * @throws Exception
+     */
+    public List<EmergencyPlant> getEmergencyPlantList(@Param("safTrainPlanNo") int safTrainPlanNo) throws Exception;
+
+    /**
+     * 훈련계획 관리 사업장 등록
+     *
+     * @param parameter
+     * @return 훈련계획 관리 사업장 등록
+     * @throws Exception
+     */
+    public int createEmergencyPlant(@Param("safTrainPlanNo") int safTrainPlanNo, @Param("plantCd") String plantCd) throws Exception;
+
+    /**
+     * 훈련계획 관리 사업장 삭제
+     *
+     * @param parameter
+     * @return 훈련계획 관리 계획 대상부서 삭제
+     * @throws Exception
+     */
+    public int deleteEmergencyPlant(@Param("safTrainPlanNo") int safTrainPlanNo) throws Exception;
+
+    /**
+     * 훈련동영상 상세조회
+     *
+     * @param parameter
+     * @return 훈련동영상 상세조회
+     * @throws Exception
+     */
+    public EmergencyVideo getEmergencyVideo(@Param("safTrainPlanNo") int safTrainPlanNo) throws Exception;
+
+    /**
+     * 훈련동영상 신규등록
+     *
+     * @param parameter
+     * @return 훈련동영상 신규등록
+     * @throws Exception
+     */
+    public int createEmergencyVideo(EmergencyVideo emergencyVideo) throws Exception;
+
+    /**
+     * 훈련동영상 수정
+     *
+     * @param parameter
+     * @return 훈련동영상 수정
+     * @throws Exception
+     */
+    public int updateEmergencyVideo(EmergencyVideo emergencyVideo) throws Exception;
+
+    /**
+     * 훈련동영상 삭제
+     *
+     * @param parameter
+     * @return 훈련동영상 삭제
+     * @throws Exception
+     */
+    public int deleteEmergencyVideo(@Param("safTrainPlanNo") int safTrainPlanNo) throws Exception;
+
 }

@@ -91,8 +91,8 @@ public class UserService {
      * @return 사용자 목록
      * @throws Exception
      */
-    public List<User> getUsers(String plantCd, String processCd, String deptCd, String userId, String userNm, String useYn, String deptSubYn, String dutyCd, DefaultParam defaultParam) throws Exception {
-        return this.userMapper.getUsers(plantCd, processCd, deptCd, userId, userNm, useYn, deptSubYn, dutyCd, defaultParam);
+    public List<User> getUsers(String plantCd, String processCd, String deptCd, String userId, String userNm, String useYn, String deptSubYn, String dutyCd, String[] plantCds, DefaultParam defaultParam) throws Exception {
+        return this.userMapper.getUsers(plantCd, processCd, deptCd, userId, userNm, useYn, deptSubYn, dutyCd, plantCds, defaultParam);
     }
 
     /**

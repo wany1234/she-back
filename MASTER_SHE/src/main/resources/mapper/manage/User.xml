@@ -91,6 +91,12 @@
         <if test= "dutyCd != null and !dutyCd.equals('')">
             and u.duty_cd = #{dutyCd}
         </if>
+        <if test= "plantCds != null and plantCds.length > 0">
+            and u.plant_cd in
+            <foreach collection= "plantCds" item= "plantCd" separator= "," open= "(" close= ")" >
+                #{plantCd}
+            </foreach>
+        </if>
         order by plant.sort_order, depttree.dept_nm, u.user_nm
     </select>
 

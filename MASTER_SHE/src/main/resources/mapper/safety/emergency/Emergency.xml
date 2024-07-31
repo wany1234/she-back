@@ -6,17 +6,15 @@
         /* EmergencyMapper.getEmergencyLists [Emergency.xml] */
         select
               saf_train_plan_no      --          훈련계획번호
-             ,tp.plant_cd                --  사업장코드
-             ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
              ,tp.dept_cd                 --주관부서코드
              ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
-             ,dbo.GET_CODE_NM(tp.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(tp.state_cd, 'COM_PROCESS_STEP') + ')' as stateAnm
              ,tp.train_type_cd           --      훈련구분코드 SAF_TRA_COURSE_CLS
              ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
              ,tp.train_user_id           --      훈련교관ID
              ,tp.train_dept_cd           --      훈련교관소속부서코드
              ,tp.train_nm                --  훈련명
-             ,tp.train_ymd               --  훈련일
+             ,tp.train_start_ymd         --  훈련시작일
+             ,tp.train_end_ymd           --  훈련종료일
              ,tp.train_s_time            --      훈련시작시간
              ,tp.train_e_time            --      훈련종료시간
              ,tp.train_s_hour            --      훈련시작시
@@ -26,57 +24,46 @@
              ,tp.train_place             --  훈련장소
              ,tp.train_content           --      훈련내용요약
              ,tp.train_s_time + ' ~ ' + tp.train_e_time as trainTime
-             ,tp.proc_step_cd            --      단계 SAF_TRAIN_STEP
-             ,dbo.GET_CODE_NM(tp.proc_step_cd, 'SAF_TRAIN_STEP') as state_nm
              ,tp.create_user_id          --      등록자
              ,dbo.GET_USER_NM(tp.create_user_id) as create_user_nm
              ,convert(char(10), tp.create_dt, 23) as create_dt --  등록일
              ,tp.update_user_id          --      수정자
              ,tp.update_dt               --  수정일
-             ,tp.create_dept_nm          --      등록자부서명
-             ,tp.state_cd                --  상태 COM_PROCESS_STEP
-             ,dbo.GET_CODE_NM(tp.state_cd, 'COM_PROCESS_STEP') as state_nm
-             ,tp.create_dept_cd          --      등록자부서코드
-             ,tp.update_dept_nm          --      수정자부서명
-             ,tp.update_dept_cd          --      수정자부서코드
-             ,tp.create_position_nm      --          등록자직위명
-             ,tp.create_position_cd      --          등록자직위코드
-             ,tp.update_position_nm      --          수정자직위명
-             ,tp.update_position_cd      --          수정자직위코드
              ,(
                 select count(*)
                 from saf_train_dept_rslt tds
                 where tds.saf_train_plan_no = tp.saf_train_plan_no
              ) as subDeptCnt
-             ,format(isnull((
-                select sum(case when tds.train_user_cnt != 0 then tds.train_user_cnt else 0 end)
-                from saf_train_dept_rslt tds
-                where tds.saf_train_plan_no = tp.saf_train_plan_no
-             ), 0), '##,###') as userCnt
-             ,(select count(*) 
-              from saf_train_dept_rslt tds
-             where tds.saf_train_plan_no = tp.saf_train_plan_no
-               and tds.state_cd != 'PSEND'
+             ,format((
+                select count(*) 
+                from saf_train_dtl_psn 
+                where saf_train_plan_no = tp.saf_train_plan_no
+             ), '##,###') as userCnt
+             ,( select count(*) 
+                from saf_train_dtl_psn 
+                where saf_train_plan_no = tp.saf_train_plan_no
+                and complet_yn = 'N'
                ) as stateNCnt
-           ,(select count(*) 
-              from saf_train_dept_rslt tds
-             where tds.saf_train_plan_no = tp.saf_train_plan_no
-               and tds.state_cd != 'PSEND'
-               and  datediff(day, GETDATE() , tds.train_ymd) &lt; 0) as overDateCnt
-           ,(select count(*) 
-              from saf_train_dept_rslt tds
-             where tds.saf_train_plan_no = tp.saf_train_plan_no
-               and tds.state_cd = 'PSEND') as stateYCnt
+             ,( select count(*) 
+                from saf_train_dtl_psn 
+                where saf_train_plan_no = tp.saf_train_plan_no
+                and complet_yn = 'N'
+                and  datediff(minute, GETDATE() , tp.train_end_ymd + ' '+ tp.train_e_time) &lt; 0
+               ) as overDateCnt
+             ,(select count(*) 
+                  from saf_train_dtl_psn 
+                  where saf_train_plan_no = tp.saf_train_plan_no
+                  and complet_yn = 'Y'
+              ) as stateYCnt
              ,STUFF((
-                select ',' + dbo.GET_DEPT_NM(td.dept_cd) as dept_nm
-                from saf_train_dept_rslt td
-                where td.saf_train_plan_no = tp.saf_train_plan_no
-                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as sub_dept_nm
+                select ', ' + dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', tpp.plant_cd) as plant_nm
+                from saf_train_plan_plant tpp
+                where tp.saf_train_plan_no = tpp.saf_train_plan_no
+                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') as plant_nm
+             ,tp.train_plan_state
+             ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'TRAIN_PLAN_STATE', tp.train_plan_state) as train_plan_state_nm
           from saf_train_plan tp
          where 1=1
-         <if test="plantCd != null and !plantCd.equals('')">
-            and tp.plant_cd = #{plantCd}
-         </if>
          <if test="trainTypeCd != null and !trainTypeCd.equals('')">
             and tp.train_type_cd = #{trainTypeCd}
          </if>
@@ -86,14 +73,19 @@
          <if test="trainPlace != null and !trainPlace.equals('')">
             and tp.train_place like '%' +  #{trainPlace} + '%'
          </if>
-         <if test="procStepCd != null and !procStepCd.equals('')">
-            and tp.proc_step_cd = #{procStepCd}
+         <if test="trainPlanState != null and !trainPlanState.equals('')">
+            and tp.train_plan_state = #{trainPlanState}
          </if>
-         <if test="stateCd != null and !stateCd.equals('')">
-            and tp.state_cd = #{stateCd}
+         <if test="reTrainYn != null and !reTrainYn.equals('')">
+            and tp.re_train_yn = #{reTrainYn}
+         </if>
+         <if test="trainMethodCd != null and !trainMethodCd.equals('')">
+            and tp.train_method_cd = #{trainMethodCd}
          </if>
          <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
-             and convert(char(10), tp.train_ymd, 23) between #{startDt} and #{endDt}
+             and (convert(char(10), train_start_ymd, 23) &lt;= #{endDt}
+                    and convert(char(10), train_end_ymd, 23) &gt;= #{startDt}
+                 ) 
          </if>
          <if test= 'deptCd != null and !deptCd.equals("")'>
            <choose>
@@ -110,8 +102,7 @@
     <select id ="getEmergencyInfo" resultType="com.she.safety.model.Emergency">
         /* EmergencyMapper.getEmergencyInfo [Emergency.xml] */
         select
-              saf_train_plan_no      --          훈련계획번호
-             ,tp.plant_cd                --  사업장코드
+              tp.saf_train_plan_no      --          훈련계획번호
              ,tp.dept_cd                 --주관부서코드
              ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
              ,tp.train_type_cd           --      훈련구분코드 SAF_TRA_COURSE_CLS
@@ -121,7 +112,8 @@
              ,tp.train_dept_cd           --      훈련교관소속부서코드
              ,dbo.GET_DEPT_NM(tp.train_dept_cd) as train_dept_nm
              ,tp.train_nm                --  훈련명
-             ,tp.train_ymd               --  훈련일
+             ,tp.train_start_ymd         --  훈련시작일
+             ,tp.train_end_ymd           --  훈련종료일
              ,tp.train_s_time            --      훈련시작시간
              ,tp.train_e_time            --      훈련종료시간
              ,tp.train_s_hour            --      훈련시작시
@@ -131,26 +123,67 @@
              ,tp.train_place             --  훈련장소
              ,tp.train_content           --      훈련내용요약
              ,tp.chng_num
-             ,tp.proc_step_cd            --      단계 SAF_TRAIN_STEP
-             ,dbo.GET_CODE_NM(tp.proc_step_cd, 'SAF_TRAIN_STEP') as state_nm
              ,tp.create_user_id          --      등록자
              ,dbo.GET_USER_NM(tp.create_user_id) as create_user_nm
              ,convert(char(10), tp.create_dt, 23) as create_dt --  등록일
              ,tp.update_user_id          --      수정자
              ,tp.update_dt               --  수정일
-             ,tp.create_dept_nm          --      등록자부서명
-             ,tp.state_cd                --  상태 COM_PROCESS_STEP
-             ,dbo.GET_CODE_NM(tp.state_cd, 'COM_PROCESS_STEP') as state_nm
-             ,tp.create_dept_cd          --      등록자부서코드
-             ,tp.update_dept_nm          --      수정자부서명
-             ,tp.update_dept_cd          --      수정자부서코드
-             ,tp.create_position_nm      --          등록자직위명
-             ,tp.create_position_cd      --          등록자직위코드
-             ,tp.update_position_nm      --          수정자직위명
-             ,tp.update_position_cd      --          수정자직위코드
+             ,tp.train_method_cd         --  훈련방법코드
+             ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'TRAIN_METHOD_CD', tp.train_method_cd) as train_method_nm
+             ,tp.train_plan_state        --  훈련계획단계
+             ,tp.ori_saf_train_plan_no   --  원훈련계획번호
+             ,( select train_nm 
+                from saf_train_plan
+                where saf_train_plan_no = tp.ori_saf_train_plan_no
+               ) as ori_train_nm        --   원훈련명
+             ,rtp.saf_train_plan_no as re_saf_train_plan_no -- 재훈련계획번호 
+             ,rtp.train_nm as re_train_nm   --  재훈련명
+             ,tp.re_train_yn            --  재훈련여부
           from saf_train_plan tp
+          LEFT OUTER JOIN saf_train_plan rtp on tp.saf_train_plan_no = rtp.ori_saf_train_plan_no
          where tp.saf_train_plan_no = #{safTrainPlanNo}
     </select>
+    
+    <select id ="getEmergencyUserList" resultType="com.she.safety.model.EmergencyPsn">
+        /* EmergencyMapper.getEmergencyUserList [Emergency.xml] */
+        select 
+             cu.user_id
+            ,cu.user_nm
+            ,tdp.dept_cd
+            ,dbo.GET_DEPT_NM(tdp.dept_cd) as dept_nm
+            ,cu.plant_cd 
+            ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', cu.plant_cd) as plant_nm
+            ,cu.position_nm 
+            ,case when tdp.complet_yn = 'Y' then '참여' else '미참여' end as completYn  
+            ,tdp.remark
+        from com_user cu 
+        inner join saf_train_dtl_psn tdp on cu.user_id = tdp.user_id
+        inner join saf_train_plan tp on tp.saf_train_plan_no = tdp.saf_train_plan_no
+        where tdp.saf_train_plan_no = #{safTrainPlanNo}
+         <if test="apprFlag != null and !apprFlag.equals('')">
+            <choose>
+                <when test= "'userCnt'.equals(apprFlag)">
+                    -- 훈련대상자
+                </when>
+                <when test= "'stateNCnt'.equals(apprFlag)">
+                    -- 훈련미완료
+                    and tdp.complet_yn = 'N'
+                </when>
+                <when test= "'overDateCnt'.equals(apprFlag)">
+                    -- 훈련 기한초과
+                    and tdp.complet_yn = 'N'
+                    and datediff(minute, GETDATE() , tp.train_end_ymd + ' ' + tp.train_e_time) &lt; 0
+                </when>
+                <when test= "'stateYCnt'.equals(apprFlag)">
+                    -- 훈련완료
+                    and tdp.complet_yn = 'Y'
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    
     <select id ="getEmergencyDeptLists" resultType="com.she.safety.model.EmergencyDept">
         /* EmergencyMapper.getEmergencyDeptLists [Emergency.xml] */
         select
@@ -172,61 +205,8 @@
             ,convert(varchar(10), td.train_complete_dt, 23) as train_complete_dt
             ,td.create_user_id
             ,td.create_dt
-            ,td.create_dept_cd
-            ,td.create_dept_nm
-            ,td.create_position_cd
-            ,td.create_position_nm
          from saf_train_dept_rslt td
         where td.saf_train_plan_no = #{safTrainPlanNo}
-    </select>
-    <select id ="getEmergencyDeptList" resultType="com.she.safety.model.EmergencyDept">
-        /* EmergencyMapper.getEmergencyDeptList [Emergency.xml] */
-        select
-             td.dept_cd
-            ,dbo.GET_DEPT_NM(td.dept_cd) as dept_nm
-            ,td.saf_train_plan_no
-            ,td.saf_train_dept_rslt_no
-            ,td.train_desc
-            ,case when td.train_yn = 'Y' then '참여' else '미참여' end as train_yn
-            ,td.train_user_cnt
-            ,td.train_ymd
-            ,case when td.state_cd = 'PSEND' then '완료' else '미완료' end as trainCompleteYn
-            ,td.state_cd
-            ,td.proc_step_cd
-            ,td.train_s_time
-            ,td.train_e_time
-            ,td.train_impr_desc
-            ,td.train_eval_opin
-            ,td.create_user_id
-            ,td.create_dt
-            ,td.create_dept_cd
-            ,td.create_dept_nm
-            ,td.create_position_cd
-            ,td.create_position_nm
-         from saf_train_dept_rslt td
-        where td.saf_train_plan_no = #{safTrainPlanNo}
-         <if test="apprFlag != null and !apprFlag.equals('')">
-            <choose>
-                <when test= "'subDeptCnt'.equals(apprFlag)">
-                    -- 대상부서
-                </when>
-                <when test= "'stateNCnt'.equals(apprFlag)">
-                    -- 훈련미완료
-                    and td.state_cd != 'PSEND'
-                </when>
-                <when test= "'overDateCnt'.equals(apprFlag)">
-                    -- 훈련 기한초과
-                    and td.state_cd != 'PSEND'
-                    and datediff(day, GETDATE() , td.train_ymd) &lt; 0
-                </when>
-                <when test= "'stateYCnt'.equals(apprFlag)">
-                    -- 훈련완료
-                    and td.state_cd = 'PSEND'
-                </when>
-                <otherwise>
-                </otherwise>
-            </choose>
-        </if>
     </select>
     <select id ="getEmergencyScenarioLists" resultType="com.she.safety.model.EmergencyScenario">
         /* EmergencyMapper.getEmergencyScenarioLists [Emergency.xml] */
@@ -246,13 +226,13 @@
         insert into saf_train_plan
         (
             saf_train_plan_no
-           ,plant_cd
            ,dept_cd
            ,train_type_cd
            ,train_user_id
            ,train_dept_cd
            ,train_nm
-           ,train_ymd
+           ,train_start_ymd
+           ,train_end_ymd
            ,train_s_time
            ,train_e_time
            ,train_s_hour
@@ -261,26 +241,24 @@
            ,train_e_min
            ,train_place
            ,train_content
-           ,proc_step_cd
            ,create_user_id
            ,create_dt
-           ,create_dept_nm
-           ,state_cd
-           ,create_dept_cd
-           ,create_position_nm
-           ,create_position_cd
            ,chng_num
+           ,train_method_cd
+           ,train_plan_state
+           ,ori_saf_train_plan_no
+           ,re_train_yn
         )
         values
         (
             #{safTrainPlanNo}
-           ,#{plantCd}
            ,#{deptCd}
            ,#{trainTypeCd}
            ,#{trainUserId}
            ,#{trainDeptCd}
            ,#{trainNm}
-           ,#{trainYmd}
+           ,#{trainStartYmd}
+           ,#{trainEndYmd}
            ,#{trainSTime}
            ,#{trainETime}
            ,#{trainSHour}
@@ -289,15 +267,31 @@
            ,#{trainEMin}
            ,#{trainPlace}
            ,#{trainContent}
-           ,#{procStepCd}
            ,#{createUserId}
            ,getDate()
-           ,#{createDeptNm}
-           ,#{stateCd}
-           ,#{createDeptCd}
-           ,#{createPositionNm}
-           ,#{createPositionCd}
            ,#{chngNum}
+           ,#{trainMethodCd}           
+           ,#{trainPlanState}
+           ,#{oriSafTrainPlanNo}           
+           ,#{reTrainYn}
+           
+        )
+    </insert>
+    <insert id="createEmergencyUser" parameterType="com.she.safety.model.EmergencyPsn">
+        /* EmergencyMapper.createEmergencyUser [Emergency.xml] */
+        insert into saf_train_dtl_psn
+        (
+             saf_train_plan_no
+            ,user_id
+            ,dept_cd
+            ,complet_yn
+        )
+        values
+        (
+            #{safTrainPlanNo}
+           ,#{userId}
+           ,#{deptCd}
+           ,'N'
         )
     </insert>
     <insert id="createEmergencyDept" parameterType="com.she.safety.model.EmergencyDept">
@@ -313,11 +307,7 @@
            ,proc_step_cd
            ,create_user_id
            ,create_dt
-           ,create_dept_nm
            ,state_cd
-           ,create_dept_cd
-           ,create_position_nm
-           ,create_position_cd
            ,saf_train_plan_no
            ,train_user_cnt
            ,train_yn
@@ -335,11 +325,7 @@
            ,#{procStepCd}
            ,#{createUserId}
            ,getDate()
-           ,#{createDeptNm}
            ,#{stateCd}
-           ,#{createDeptCd}
-           ,#{createPositionNm}
-           ,#{createPositionCd}
            ,#{safTrainPlanNo}
            ,#{trainUserCnt}
            ,#{trainYn}
@@ -364,6 +350,11 @@
             ,#{safTrainMstNo}
             )
     </insert>
+    <delete id="deleteEmergencyUser">
+        /* EmergencyMapper.deleteEmergencyUser [Emergency.xml] */
+        delete saf_train_dtl_psn
+         where saf_train_plan_no = #{safTrainPlanNo}
+    </delete>
     <delete id="deleteEmergencyDept">
         /* EmergencyMapper.createEmergencyScenario [Emergency.xml] */
         delete saf_train_dept_rslt
@@ -377,13 +368,13 @@
     <update id="updateEmergency" parameterType="com.she.safety.model.Emergency">
         /* EmergencyMapper.updateEmergency [Emergency.xml] */
         update saf_train_plan
-           set plant_cd = #{plantCd}
-              ,dept_cd = #{deptCd}
+           set dept_cd = #{deptCd}
               ,train_type_cd = #{trainTypeCd}
               ,train_user_id = #{trainUserId}
               ,train_dept_cd = #{trainDeptCd}
               ,train_nm = #{trainNm}
-              ,train_ymd = #{trainYmd}
+              ,train_start_ymd = #{trainStartYmd}
+              ,train_end_ymd = #{trainEndYmd}
               ,train_s_time = #{trainSTime}
               ,train_e_time = #{trainETime}
               ,train_s_hour = #{trainSHour}
@@ -394,20 +385,22 @@
               ,train_content = #{trainContent}
               ,update_user_id = #{updateUserId}
               ,update_dt = getDate()
-              ,update_dept_nm = #{updateDeptNm}
-              ,update_dept_cd = #{updateDeptCd}
-              ,update_position_nm = #{updatePositionNm}
-              ,update_position_cd = #{updatePositionCd}
               ,chng_num = #{chngNum}
+              ,train_method_cd = #{trainMethodCd}
+              <!-- ,train_plan_state = #{trainPlanState} -->
          where saf_train_plan_no = #{safTrainPlanNo}
     </update>
     <delete id="deleteEmergency">
         /* EmergencyMapper.deleteEmergency [Emergency.xml] */
         delete saf_train_plan
          where saf_train_plan_no = #{safTrainPlanNo}
-        delete saf_train_dept_rslt
+        delete saf_train_dtl_psn
          where saf_train_plan_no = #{safTrainPlanNo}
         delete saf_train_mst_sce
+         where saf_train_mst_no = #{safTrainPlanNo}
+        delete saf_train_plan_plant
+         where saf_train_mst_no = #{safTrainPlanNo}
+        delete saf_train_plan_video
          where saf_train_mst_no = #{safTrainPlanNo}
     </delete>
     <delete id="deleteEachEmergencyDept">
@@ -417,7 +410,9 @@
     </delete>
     <update id="updateEmergencyComplete">
         /* EmergencyMapper.updateEmergencyComplete [Emergency.xml] */
-        update saf_train_plan set state_cd = 'PSEND' where saf_train_plan_no = #{safTrainPlanNo}
+        update saf_train_plan 
+        set train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_PLAN}'
+        where saf_train_plan_no = #{safTrainPlanNo}
     </update>
    
     <select id="getEmergencyResultLists" resultType="com.she.safety.model.EmergencyDept">
@@ -872,4 +867,85 @@
          <!-- 전체일 경우 합계 데이터 조회 -->
          order by g.plantCd, max(g.sort_order)
     </select>
+    
+    <select id= "getEmergencyPlantList" resultType= "com.she.safety.model.EmergencyPlant">
+        /* EmergencyMapper.getEmergencyPlantList [Emergency.xml] */
+        select saf_train_plan_no
+            ,plant_cd
+        from saf_train_plan_plant
+        where saf_train_plan_no = #{safTrainPlanNo}
+    </select>
+    
+    <insert id="createEmergencyPlant" parameterType="com.she.safety.model.EmergencyPlant">
+        /* EmergencyMapper.createEmergencyPlant [Emergency.xml] */
+        insert into saf_train_plan_plant
+        (
+             saf_train_plan_no
+            ,plant_cd
+        )
+        values
+        (
+            #{safTrainPlanNo}
+           ,#{plantCd}
+        )
+    </insert>
+    <delete id="deleteEmergencyPlant">
+        /* EmergencyMapper.deleteEmergencyPlant [Emergency.xml] */
+        delete saf_train_plan_plant
+         where saf_train_plan_no = #{safTrainPlanNo}
+    </delete>
+    <select id= "getEmergencyVideo" resultType= "com.she.safety.model.EmergencyVideo">
+        /* EmergencyMapper.getEmergencyVideo [Emergency.xml] */
+        select saf_train_plan_no        
+            ,video_url
+            ,video_total_time
+            ,video_comp_time
+            ,use_yn
+            ,create_user_id
+            ,create_dt
+            ,update_user_id
+            ,update_dt
+        FROM saf_train_plan_video
+        where 1=1
+            and saf_train_plan_no = #{safTrainPlanNo}
+    </select> 
+    <insert id= "createEmergencyVideo" parameterType= "com.she.safety.model.EmergencyVideo"> 
+        /* EmergencyMapper.createEmergencyVideo [Emergency.xml] */    
+        insert into saf_train_plan_video
+        ( 
+            saf_train_plan_no        
+            ,video_url
+            ,video_total_time
+            ,video_comp_time
+            ,use_yn
+            ,create_user_id
+            ,create_dt
+            
+        )
+        VALUES
+        ( 
+            #{safTrainPlanNo}
+            ,#{videoUrl}
+            ,#{videoTotalTime}
+            ,#{videoCompTime}
+            ,'Y'
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>
+    <update id= "updateEmergencyVideo" parameterType= "com.she.safety.model.EmergencyVideo">
+        /* EmergencyMapper.updateEmergencyVideo [Emergency.xml] */
+        update saf_train_plan_video
+        SET video_url = #{videoUrl}
+            ,video_total_time= #{videoTotalTime}
+            ,video_comp_time= #{videoCompTime}
+            , update_user_id = #{updateUserId}
+            , update_dt = getdate()
+        where saf_train_plan_no = #{safTrainPlanNo}
+    </update>
+    <delete id= "deleteEmergencyVideo">
+        /* EmergencyMapper.deleteEmergencyVideo [Emergency.xml] */
+        delete from saf_train_plan_video
+        where saf_train_plan_no = #{safTrainPlanNo}
+    </delete>     
 </mapper>

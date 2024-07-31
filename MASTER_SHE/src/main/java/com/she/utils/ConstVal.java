@@ -759,4 +759,19 @@ public class ConstVal {
      */
     public static String PLANT_CD_10 = "FD10";
 
+    /**
+     * 훈련방법코드 - 동영상
+     */
+    public static String TRAIN_METHOD_VIDEO = "TMC02";
+
+    /**
+     * 훈련계획단계 - 계획(작성중)
+     */
+    public static String TRAIN_PLAN_STATE_ING = "TPS01";
+
+    /**
+     * 훈련계획단계 - 계획확정
+     */
+    public static String TRAIN_PLAN_STATE_PLAN = "TPS02";
+
 }

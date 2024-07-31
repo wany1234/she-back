@@ -70,8 +70,8 @@ public interface UserMapper {
      * @return 사용자 목록
      * @throws Exception
      */
-    public List<User> getUsers(@Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("deptCd") String deptCd, @Param("userId") String userId, @Param("userNm") String userNm, @Param("useYn") String useYn, @Param("deptSubYn") String deptSubYn, @Param("dutyCd") String dutyCd, @Param("defaultParam") DefaultParam defaultParam)
-            throws Exception;
+    public List<User> getUsers(@Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("deptCd") String deptCd, @Param("userId") String userId, @Param("userNm") String userNm, @Param("useYn") String useYn, @Param("deptSubYn") String deptSubYn, @Param("dutyCd") String dutyCd, @Param("plantCds") String[] plantCds,
+            @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 사용자 상세 조회

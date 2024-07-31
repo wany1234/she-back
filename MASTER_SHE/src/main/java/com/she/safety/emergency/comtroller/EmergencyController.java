@@ -31,6 +31,7 @@ import com.she.impr.model.ImprAct;
 import com.she.safety.emergency.service.EmergencyService;
 import com.she.safety.model.Emergency;
 import com.she.safety.model.EmergencyDept;
+import com.she.safety.model.EmergencyPsn;
 import com.she.utils.RequestMapper;
 
 @RestController
@@ -76,10 +77,12 @@ public class EmergencyController {
         // 하위부서 여부
         String deptSubYn = map.containsKey("deptSubYn") ? map.get("deptSubYn").toString() : "";
         // 단계
-        String procStepCd = map.containsKey("procStepCd") ? map.get("procStepCd").toString() : "";
-        // 진행상태
-        String stateCd = map.containsKey("stateCd") ? map.get("stateCd").toString() : "";
-        return ResponseEntity.ok().body(emergencyService.getEmergencyLists(plantCd, startDt, endDt, trainTypeCd, trainNm, trainPlace, deptCd, deptSubYn, procStepCd, stateCd, defaultParam));
+        String trainPlanState = map.containsKey("trainPlanState") ? map.get("trainPlanState").toString() : "";
+        // 재교육여부
+        String reTrainYn = map.containsKey("reTrainYn") ? map.get("reTrainYn").toString() : "";
+        // 교육방법
+        String trainMethodCd = map.containsKey("trainMethodCd") ? map.get("trainMethodCd").toString() : "";
+        return ResponseEntity.ok().body(emergencyService.getEmergencyLists(plantCd, startDt, endDt, trainTypeCd, trainNm, trainPlace, deptCd, deptSubYn, trainPlanState, reTrainYn, trainMethodCd, defaultParam));
     }
 
     /**
@@ -96,16 +99,16 @@ public class EmergencyController {
     }
 
     /**
-     * 훈련계획 대상부서 목록
+     * 훈련계획 대상자 목록 조회
      *
      * @param parameter
-     * @return 훈련계획 대상부서 목록
+     * @return 훈련계획 대상자 목록 조회
      * @throws Exception
      */
-    @GetMapping("/emergencyDeptList/{safTrainPlanNo}/{apprFlag}")
-    public ResponseEntity<List<EmergencyDept>> getEmergencyDeptList(@PathVariable("safTrainPlanNo") int safTrainPlanNo, @PathVariable("apprFlag") String apprFlag, @ModelAttribute DefaultParam defaultParam) throws Exception {
+    @GetMapping("/emergencyuserlist/{safTrainPlanNo}/{apprFlag}")
+    public ResponseEntity<List<EmergencyPsn>> getEmergencyUserList(@PathVariable("safTrainPlanNo") int safTrainPlanNo, @PathVariable("apprFlag") String apprFlag, @ModelAttribute DefaultParam defaultParam) throws Exception {
 
-        return ResponseEntity.ok().body(emergencyService.getEmergencyDeptList(safTrainPlanNo, apprFlag, defaultParam));
+        return ResponseEntity.ok().body(emergencyService.getEmergencyUserList(safTrainPlanNo, apprFlag, defaultParam));
     }
 
     /**
