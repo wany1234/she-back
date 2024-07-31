@@ -2,8 +2,6 @@ package com.she.mgt.model;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Getter;
-import lombok.Setter;
 
 @ApiModel(description = "개선조치")
 public class MgtCommitteeAgendaImpr {
@@ -27,8 +25,6 @@ public class MgtCommitteeAgendaImpr {
     public String imprRqstYmd;
     @ApiModelProperty(value = "제목")
     public String imprTitle;
-    @ApiModelProperty(value = "업체개선요청여부")
-    public String subconnRqstYn;
 
     @ApiModelProperty(value = "개선요청업체코드")
     public String imprRqstVendorCd;
@@ -250,14 +246,6 @@ public class MgtCommitteeAgendaImpr {
 
     public void setImprTitle(String imprTitle) {
         this.imprTitle = imprTitle;
-    }
-
-    public String getSubconnRqstYn() {
-        return subconnRqstYn;
-    }
-
-    public void setSubconnRqstYn(String subconnRqstYn) {
-        this.subconnRqstYn = subconnRqstYn;
     }
 
     public String getImprRqstVendorCd() {

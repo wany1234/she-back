@@ -27,8 +27,6 @@ public class ImprAct {
     private String imprRqstYmd;
     @ApiModelProperty(value = "제목")
     private String imprTitle;
-    @ApiModelProperty(value = "업체개선요청여부")
-    private String subconnRqstYn;
     @ApiModelProperty(value = "삭제여부")
     private String delYn;
     @ApiModelProperty(value = "완료여부")

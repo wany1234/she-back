@@ -26,7 +26,6 @@
             ,sia.act_sch_ymd                    --조치예정일
             ,sia.act_confirm_ymd                --조치일자
             ,isnull(sia.act_limit_ymd, sia.act_confirm_ymd) as act_limit_ymd --조치기한
-
             ,sia.act_user_id                    --조치담당자ID
             ,actUser.user_nm as act_user_nm
             ,sia.act_dept_cd
@@ -40,14 +39,12 @@
             ,sia.act_dept_chng_contents
             ,sia.act_vendor_chng_contents
             ,sia.act_vendor_confirm_yn
-
             ,sia.act_result_contents            --조치결과내용
             ,sia.act_result_review              --조치결과검토
             ,sia.create_user_id                 --등록자ID
             ,sia.create_dt                      --등록일
             ,sia.update_user_id                 --최종수정자ID
             ,sia.update_dt                      --최종수정일
-            ,sia.subconn_rqst_yn                --업체개선요청여부
             ,sia.process_cd                     --공정코드
             ,cp.process_nm                      --공정
             ,sia.dtl_locat                      --세부위치
@@ -397,7 +394,6 @@
             ,convert(char(10), sia.create_dt, 23) as create_dt--등록일
             ,sia.update_user_id                 --최종수정자ID
             ,sia.update_dt                      --최종수정일
-            ,sia.subconn_rqst_yn                --업체개선요청여부
             ,sia.process_cd                     --공정코드
             ,cp.process_nm                      --공정
             ,sia.dtl_locat                      --세부위치
@@ -472,7 +468,6 @@
             ,act_user_id
             ,act_result_contents
             ,act_result_review
-            ,subconn_rqst_yn
             ,process_cd
             ,dtl_locat
             ,bef_freq
@@ -517,7 +512,6 @@
             ,#{actUserId}
             ,#{actResultContents}
             ,#{actResultReview}
-            ,#{subconnRqstYn}
             ,#{processCd}
             ,#{dtlLocat}
             ,#{befFreq}
@@ -571,7 +565,6 @@
                 ,act_user_id = #{actUserId}
                 ,act_result_contents = #{actResultContents}
                 ,act_result_review = #{actResultReview}
-                ,subconn_rqst_yn = #{subconnRqstYn}
                 ,process_cd = #{processCd}
                 ,dtl_locat = #{dtlLocat}
                 ,bef_freq = #{befFreq}
@@ -879,7 +872,6 @@
             ,act_user_id
             ,act_result_contents
             ,act_result_review
-            ,subconn_rqst_yn
             ,process_cd
             ,dtl_locat
             ,bef_freq
@@ -919,7 +911,6 @@
             ,#{actUserId}
             ,#{actResultContents}
             ,#{actResultReview}
-            ,#{subconnRqstYn}
             ,#{processCd}
             ,#{dtlLocat}
             ,#{befFreq}
@@ -981,7 +972,6 @@
             ,sia.create_dt                      --등록일
             ,sia.update_user_id                 --최종수정자ID
             ,sia.update_dt                      --최종수정일
-            ,sia.subconn_rqst_yn                --업체개선요청여부
             ,sia.process_cd                     --공정코드
             ,cp.process_nm                      --공정
             ,sia.dtl_locat                      --세부위치
