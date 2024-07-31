@@ -511,7 +511,7 @@
     </insert>
     
     <select id="getCheckupSituation" resultType="com.she.health.model.CheckupSituation">
-    SELECT a.hea_checkup_plan_no, a.year, a.plant_cd, a.plant_nm
+    SELECT a.year, a.plant_cd, a.plant_nm
 		, max(diagnose_cd1) as classA
 		, max(diagnose_cd2) as classB
 		, max(diagnose_cd3) as classC1
@@ -525,8 +525,7 @@
 		, SUM(diagnose_cd1) + SUM(diagnose_cd2) + SUM(diagnose_cd3) + SUM(diagnose_cd4) + SUM(diagnose_cd5)
 		+ SUM(diagnose_cd6) + SUM(diagnose_cd7) + SUM(diagnose_cd8) + SUM(diagnose_cd9) + SUM(diagnose_cd10) as class_sum
 		from(
-		SELECT hcp.hea_checkup_plan_no
-		, convert(varchar(4), hcp.start_ymd) as year
+		SELECT convert(varchar(4), hcp.start_ymd) as year
 		, hcp.plant_cd 
 		, plant.code_nm as plant_nm
 		, plant.sort_order
@@ -561,9 +560,9 @@
 		<if test= "heaCheckupClassCd != null and !heaCheckupClassCd.equals('')">
 		and hcp.hea_checkup_class_cd = #{heaCheckupClassCd}
 		</if>
-		group by hcp.hea_checkup_plan_no, convert(varchar(4), hcp.start_ymd), hcp.plant_cd, plant.code_nm, hea_diagnose_cd, plant.sort_order
+		group by convert(varchar(4), hcp.start_ymd), hcp.plant_cd, plant.code_nm, hea_diagnose_cd, plant.sort_order
 		) a 
-		group by a.hea_checkup_plan_no, a.year, a.plant_cd, a.plant_nm, a.sort_order
+		group by a.year, a.plant_cd, a.plant_nm, a.sort_order
 		ORDER by a.sort_order
     </select>
     

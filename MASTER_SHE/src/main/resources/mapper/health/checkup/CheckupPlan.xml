@@ -9,6 +9,7 @@
               ,p.hea_checkup_class_cd
               ,c.code_nm as hea_checkup_class_nm
               ,p.plant_cd
+              ,pl.code_nm as plant_nm
               ,p.start_ymd
               ,p.end_ymd
               ,p.start_ymd + '~' + p.end_ymd as hea_checkup_plan_period
