@@ -416,9 +416,25 @@
     </update>
    
     <select id="getEmergencyResultLists" resultType="com.she.safety.model.EmergencyDept">
-        /* EmergencyMapper.getEmergencyResultLists [Emergency.xml] */
+         /* EmergencyMapper.getEmergencyResultLists [Emergency.xml] */
         select
-            td.saf_train_dept_rslt_no
+                   tp.dept_cd
+           ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
+--           ,dbo.GET_DEPT_NM(td.dept_cd) as sub_dept_nm
+--           ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
+--           ,dbo.GET_CODE_NM(td.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(td.state_cd, 'COM_PROCESS_STEP2') + ')' as stateAnm
+           ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
+--           ,td.train_ymd               --  훈련일
+--           ,td.train_s_time + ' ~ ' + td.train_e_time as trainTime
+           ,tp.train_nm
+           ,tp.train_place
+--           ,format(isnull(td.train_user_cnt, 0), '##,###') as train_user_cnt
+--           ,dbo.GET_USER_NM(td.create_user_id) as create_user_nm
+--           ,convert(char(10), td.create_dt, 23) as create_dt
+        from 
+--        saf_train_dept_rslt td
+        saf_train_plan tp
+            <!-- td.saf_train_dept_rslt_no
            ,td.saf_train_plan_no
            ,(select count(*) from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
               and sia.impr_class_cd = 'ICL37' and del_yn = 'N') as requestCnt
@@ -451,7 +467,7 @@
            ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
            ,dbo.GET_CODE_NM(td.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(td.state_cd, 'COM_PROCESS_STEP2') + ')' as stateAnm
            ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
-           ,td.train_ymd               --  훈련일
+           ,td.train_ymd                 훈련일
            ,td.train_s_time + ' ~ ' + td.train_e_time as trainTime
            ,tp.train_nm
            ,tp.train_place
@@ -460,8 +476,8 @@
            ,convert(char(10), td.create_dt, 23) as create_dt
         from saf_train_dept_rslt td
         inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
-        where tp.state_cd = 'PSEND'
-        <if test="plantCd != null and !plantCd.equals('')">
+        where tp.state_cd = 'PSEND' -->
+ <!--        <if test="plantCd != null and !plantCd.equals('')">
             and tp.plant_cd = #{plantCd}
          </if>
          <if test="trainTypeCd != null and !trainTypeCd.equals('')">
@@ -525,8 +541,8 @@
              where sia.impr_class_cd = 'ICL37' 
                and sia.ref_table_id = td.saf_train_dept_rslt_no
                and datediff(day, GETDATE() , sia.act_limit_ymd) &lt; 0) != 0
-        </if>
-        order by td.saf_train_dept_rslt_no desc
+        </if> -->
+        <!-- order by td.saf_train_dept_rslt_no desc -->
     </select>
     <select id="getEmergencyResultInfo" resultType="com.she.safety.model.EmergencyDept">
         select
