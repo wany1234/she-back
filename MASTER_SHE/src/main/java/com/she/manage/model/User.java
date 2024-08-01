@@ -47,7 +47,7 @@ public class User {
     public String positionCd;
 
     public String positionNm;
-    
+
     public String jobCd;
 
     public String jobNm;
@@ -83,18 +83,15 @@ public class User {
     public String updateDt;
 
     public String signature;
-    
-    public String imageUrl;
-    
-	public String age;
 
-    @ApiModelProperty(value = "패스워드SALT")
-    public String salt;
+    public String imageUrl;
+
+    public String age;
 
     public Set<UserAuthGrp> userAuthGroups = new HashSet<UserAuthGrp>(0);
 
     public List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-    
+
     public String loginId;
 
     @ApiModelProperty(value = "인사부서코드")
@@ -384,14 +381,6 @@ public class User {
         this.signature = signature;
     }
 
-    public String getSalt() {
-        return salt;
-    }
-
-    public void setSalt(String salt) {
-        this.salt = salt;
-    }
-
     public Set<UserAuthGrp> getUserAuthGroups() {
         return userAuthGroups;
     }
@@ -556,21 +545,21 @@ public class User {
     public void setDeptNmHr(String deptNmHr) {
         this.deptNmHr = deptNmHr;
     }
-    
+
     public String getImageUrl() {
-		return imageUrl;
-	}
+        return imageUrl;
+    }
 
-	public void setImageUrl(String imageUrl) {
-		this.imageUrl = imageUrl;
-	}
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 
-	public String getAge() {
-		return age;
-	}
+    public String getAge() {
+        return age;
+    }
 
-	public void setAge(String age) {
-		this.age = age;
-	}
+    public void setAge(String age) {
+        this.age = age;
+    }
 
 }

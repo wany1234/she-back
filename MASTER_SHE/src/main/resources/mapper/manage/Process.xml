@@ -52,7 +52,7 @@
                  else dbo.GET_USER_NM(p.update_user_id) end as writer_user_nm
             , case when p.update_dt is null then convert(date, p.create_dt) else convert(date, p.update_dt) end   as writer_dt                     
         from com_process p
-        inner join com_user cu
+        left outer join com_user cu
          on p.create_user_id = cu.user_id
         left outer join com_user uu
          on p.update_user_id = uu.user_id

@@ -148,16 +148,6 @@ public class ConstVal {
     public static String FILE_NAME_JOB = "TFN04";
 
     /**
-     * 코드도메인 - 환경
-     */
-    public static String CODE_DOMAIN_CD_ENV = "ENV";
-
-    /**
-     * 코드도메인 - 환경>폐기물
-     */
-    public static String CODE_DOMAIN_CD_ENV_WASTE = "EWST";
-
-    /**
      * 코드그룹 - 결과진단코드(판정코드)명
      */
     public static String CODE_GROUP_HEA_DIAGNOSE_CD = "HEA_DIAGNOSE";
@@ -233,24 +223,6 @@ public class ConstVal {
      * 코드마스터 - 입법예고법규 검토 완료
      */
     public static String LAW_MAKING_COMPLETE = "LMCS4";
-
-    // 환경
-
-    /**
-     * 코드마스터 - 폐기물처리요청 상태(요청)
-     */
-    public static String ENV_WASTE_DISPOSAL_STATUS_REQUEST = "11";
-
-    /**
-     * 코드마스터 - 폐기물처리요청 상태(처리중)
-     */
-    public static String ENV_WASTE_DISPOSAL_STATUS_PROCESS = "31";
-
-    /**
-     * 코드마스터 - 폐기물처리요청 상태(완료)
-     */
-    public static String ENV_WASTE_DISPOSAL_STATUS_COMPLETE = "91";
-    // 환경
 
     // 안전
     /**
@@ -675,16 +647,6 @@ public class ConstVal {
      * 코드마스터 - PSM 결과결재완료
      */
     public static String CODE_MASTER_PSM_PROG_STATE_RESULT_APPR_COMPLETE = "PPS60";
-
-    /**
-     * 환경-환경영향평가-진행단계-계획
-     */
-    public static String SAF_ENV_EFFECT_EVAL_STEP_PLAN = "EEE01";
-
-    /**
-     * 환경-환경영향평가-진행단계-결과
-     */
-    public static String SAF_ENV_EFFECT_EVAL_STEP_RSLT = "EEE02";
 
     /**
      * 공통-상태코드-작성중

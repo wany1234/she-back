@@ -1,8 +1,6 @@
 package com.she.safety.education.service;
 
-import java.io.File;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -12,10 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.she.common.model.DefaultParam;
-import com.she.env.waste.disposal.mapper.DisposalRequestMapper;
-import com.she.env.waste.disposal.mapper.DisposalResultMapper;
-import com.she.env.waste.model.DisposalResult;
-import com.she.manage.mapper.CodeMasterMapper;
 import com.she.safety.education.mapper.EduMasterMapper;
 import com.she.safety.education.mapper.EduQuestionMapper;
 import com.she.safety.model.EduDetailPerson;
@@ -23,7 +17,6 @@ import com.she.safety.model.EduQuestion;
 import com.she.safety.model.EduQuestionAnswer;
 import com.she.safety.model.EduQuestionList;
 import com.she.safety.model.UserEduAnswer;
-import com.she.utils.ExcelReader;
 
 @Service
 public class EduQuestionService {
@@ -31,17 +24,6 @@ public class EduQuestionService {
     private EduQuestionMapper eduQuestionMapper;
     @Autowired
     private EduMasterMapper eduMasterMapper;
-
-    @Autowired
-    private DisposalRequestMapper disposalRequestMapper;
-
-    @Autowired
-    private CodeMasterMapper codeMasterMapper;
-
-    @Autowired
-    private DisposalResultMapper disposalResultMapper;
-
-    private String disposalResultExcelFileName = "폐기물_처리결과_양식_v1.0.xlsx";
 
     /**
      * 교육문제목록 조회
@@ -427,39 +409,6 @@ public class EduQuestionService {
      */
     public HashMap<String, Object> selectQuestionYmdChk(int safEduMstNo, DefaultParam defaultParam) throws Exception {
         return eduQuestionMapper.selectQuestionYmdChk(safEduMstNo, defaultParam);
-    }
-
-    public File createDisposalResultExcel(DefaultParam defaultParam) throws Exception {
-        File file = new File("dsad.xslx");
-
-        ExcelReader reader = new ExcelReader();
-        List<List<String>> appendRows = new ArrayList<List<String>>();
-        List<DisposalResult> disposalResults = this.disposalResultMapper.getDisposalResultsExcel(null, null, defaultParam);
-        for (DisposalResult disposalResult : disposalResults) {
-            List<String> appendRow = new ArrayList<String>();
-            appendRow.add(this.convertExcelCellData(disposalResult.getDispoDeptNm()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getEwstDispoResultNo()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getDispoYmd()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getEwstClassNm()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getEwstPhaseNm()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getEwstDivNm()));
-            appendRow.add(""); // 구분은?
-            appendRow.add(this.convertExcelCellData(disposalResult.getAmtGen()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getEnvUnitNm()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getEwstFreightCoNm()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getCarrier()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getEwstDispoCoNm()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getEwstDispoMtdNm()));
-            appendRow.add(this.convertExcelCellData(disposalResult.getDispoUserNm()));
-
-            appendRows.add(appendRow);
-        }
-
-        if (appendRows.size() > 0) {
-            reader.appendExcelRows(file, 0, appendRows);
-        }
-
-        return file;
     }
 
     private String convertExcelCellData(Object o) {

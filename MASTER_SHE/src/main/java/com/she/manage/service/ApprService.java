@@ -24,9 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.she.common.model.DefaultParam;
-import com.she.env.air.operationLog.service.OpLogService;
-import com.she.env.envEffectEval.service.EnvEffectEvalPlanService;
-import com.she.env.water.operationLog.service.OperationService;
 import com.she.health.infirmary.service.InfirmaryService;
 import com.she.health.workMeasure.service.WorkMeasurePlanService;
 import com.she.impr.service.ImprService;
@@ -50,9 +47,9 @@ import com.she.mgt.mgtTarget.service.MgtTargetService;
 import com.she.psm.PsmDocu.service.PsmDocuService;
 import com.she.rsa.assess.service.AssessPlanService;
 import com.she.rsa.planmgmt.service.PlanmgmtService;
-import com.she.rsa.workRiskEval.service.WorkRiskEvalPlanService;
 import com.she.rsa.workRiskEval.service.WorkRiskEval04Service;
 import com.she.rsa.workRiskEval.service.WorkRiskEval05Service;
+import com.she.rsa.workRiskEval.service.WorkRiskEvalPlanService;
 import com.she.safety.accident.service.AccidentService;
 import com.she.safety.accident.service.NearmissService;
 import com.she.safety.change.service.ChangeService;
@@ -94,16 +91,7 @@ public class ApprService {
     private CheckResultService checkResultService;
 
     @Autowired
-    private com.she.env.air.selfMeasurement.service.SelfMeasurementService airSelfMeasurementService;
-
-    @Autowired
     private AssessPlanService assessPlanService;
-
-    @Autowired
-    private OperationService wtOperationService;
-
-    @Autowired
-    private OpLogService opLogService;
 
     @Autowired
     private FacilityCheckResultService facilityCheckResultService;
@@ -148,9 +136,6 @@ public class ApprService {
     private PreOperCheckResultService preOperCheckResultService;
 
     @Autowired
-    private EnvEffectEvalPlanService envEffectEvalPlanService;
-
-    @Autowired
     private MgtTargetService mgtTargetService;
 
     @Autowired
@@ -176,13 +161,12 @@ public class ApprService {
 
     @Autowired
     private GovImplChkService govImplChkService;
-    
+
     @Autowired
     private WorkRiskEvalPlanService workRiskEvalPlanService;
-    
+
     @Autowired
     private WorkRiskEval04Service workRiskEval04Service;
-    
 
     @Autowired
     private WorkRiskEval05Service workRiskEval05Service;
@@ -942,15 +926,6 @@ public class ApprService {
         } else if (StringUtils.equals(appr.getApprBizCd(), "SA-NR-01")) {
             // 아차사고등록
             nearmissService.apprNearmiss(Integer.parseInt(requestParams.get("safNearmissNo")), apprRqstNo, bizApprStepCd);
-        } else if (StringUtils.equals(appr.getApprBizCd(), "EN-AR-02")) {
-            // 대기 자가 측정
-            airSelfMeasurementService.updateAppr(Integer.parseInt(requestParams.get("eairOpMeasNo")), bizApprStepCd, apprRqstNo);
-        } else if (StringUtils.equals(appr.getApprBizCd(), "EN-AR-01")) {
-            // 대기 운영일지
-            opLogService.updateAppr(requestParams.get("measureYmd"), requestParams.get("deptCd"), bizApprStepCd, apprRqstNo);
-        } else if (StringUtils.equals(appr.getApprBizCd(), "EN-WT-01") || StringUtils.equals(appr.getApprBizCd(), "EN-WT-03")) {
-            // 수질 운영일지
-            wtOperationService.updateAppr(requestParams.get("measureYmd"), Integer.parseInt(requestParams.get("ewtrCleanFacNo")), bizApprStepCd, apprRqstNo, requestParams.get("deptCd"));
         } else if (StringUtils.equals(appr.getApprBizCd(), "SA_FC-04")) {
             // 설비점검 마스터 추가 로직
             // 설비점검 마스터에 할당되어진 설비점검 일정의 정보들을 결재진행하는 것으로 하위의 일정들의 값들을 결재완료일
@@ -1036,12 +1011,6 @@ public class ApprService {
         } else if (StringUtils.equals(appr.getApprBizCd(), "SA-OP-02")) {
             // 가동전 점검 결과
             preOperCheckResultService.apprProcessPreOperChkResult(Integer.parseInt(requestParams.get("safFacilChkNo")), bizApprStepCd, apprRqstNo);
-        } else if (StringUtils.equals(appr.getApprBizCd(), "EN-AR-03")) {
-            // 대기 운영일지 (관리자)
-            opLogService.updateAdminAppr(requestParams.get("measureYmd"), requestParams.get("plantCd"), bizApprStepCd, apprRqstNo);
-        } else if (StringUtils.equals(appr.getApprBizCd(), "EN-EE-01") || StringUtils.equals(appr.getApprBizCd(), "EN-EE-02")) {
-            // 환경영향평가 계획 및 결과 결재
-            envEffectEvalPlanService.apprProcessEnvEffectEval(Integer.valueOf(requestParams.get("evalPlanNo")), appr.getApprBizCd(), bizApprStepCd, apprRqstNo);
         } else if (StringUtils.equals(appr.getApprBizCd(), "MG-MI-06")) {
             // SHE 목표 결재
             mgtTargetService.apprProcessMgtTarget(requestParams.get("mgtTargetGrpNo"), appr.getApprBizCd(), bizApprStepCd, apprRqstNo);
@@ -1086,7 +1055,7 @@ public class ApprService {
             inspectionSHService.resultUpdateAppr(Integer.parseInt(requestParams.get("implChkDeptNo")), bizApprStepCd, apprRqstNo);
         } else if (StringUtils.equals(appr.getApprBizCd(), "WK-EV-01")) {
             // 작업위험성평가 계획
-        	workRiskEvalPlanService.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), bizApprStepCd, apprRqstNo);
+            workRiskEvalPlanService.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), bizApprStepCd, apprRqstNo);
         } else if (StringUtils.equals(appr.getApprBizCd(), "WK-EV-02")) {
             // 작업 위험성평가 결과 결재요청
             workRiskEval04Service.updateAppr(requestParams.get("plantCd"), requestParams.get("evalYear"), requestParams.get("evalNo"), requestParams.get("deptCd"), bizApprStepCd, apprRqstNo);
