@@ -104,7 +104,7 @@
             on wmp.work_meas_state_cd = measState.code
            and measState.code_group_cd = 'WORK_MEAS_STATE_CD'
           left outer join com_appr_rqst car
-            on isnull(wmp.rslt_appr_rqst_no, wmp.plan_appr_rqst_no) = car.appr_rqst_no
+            on wmp.plan_appr_rqst_no = car.appr_rqst_no
           left outer join com_code_master bizAppr
             on car.biz_appr_step_cd = bizAppr.code
            and bizAppr.code_group_cd = 'COM_BIZ_APPR_STEP'
@@ -162,7 +162,7 @@
             on wmp.work_meas_state_cd = measState.code
            and measState.code_group_cd = 'work_meas_state_cd'
           left outer join com_appr_rqst as car
-            on isnull(wmp.rslt_appr_rqst_no, wmp.plan_appr_rqst_no) = car.appr_rqst_no
+            on wmp.plan_appr_rqst_no = car.appr_rqst_no
           left outer join com_code_master as bizAppr
             on car.biz_appr_step_cd = bizAppr.code
            and bizAppr.code_group_cd = 'COM_BIZ_APPR_STEP'

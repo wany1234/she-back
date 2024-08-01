@@ -319,7 +319,7 @@
                 SELECT 
                     wmp.work_meas_plan_no
                     , wmp.plant_cd          -- 사업부
-                    , wmp.meas_dt           -- 측정일
+                    , wmr.meas_dt           -- 측정일
                     , wmr.meas_start_time   -- 측정시작시간
                     , wmr.meas_end_time     -- 측정종료시간
                     , wmr.process_cd        -- 공정
@@ -344,9 +344,8 @@
                     SELECT z.* 
                     FROM work_meas_rslt z
                     INNER JOIN (
-                        SELECT work_meas_plan_no, MAX(work_meas_rslt_no) AS work_meas_rslt_no
+                        SELECT work_meas_plan_no, work_meas_rslt_no
                         FROM work_meas_rslt
-                        GROUP BY work_meas_plan_no
                     ) y ON y.work_meas_rslt_no = z.work_meas_rslt_no
                     WHERE 1 = 1
                     <if test="processCd != null and !processCd.equals('')">
