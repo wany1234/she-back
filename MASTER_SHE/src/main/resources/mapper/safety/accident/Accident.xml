@@ -36,24 +36,24 @@
             ,sa.rpt_user_nm
             ,sa.rpt_dept_cd
             ,sa.rpt_dept_nm
-            ,sa.rpt_office_tel
+            --,sa.rpt_office_tel
             ,sa.rpt_dt
             ,sa.contents
-            ,sa.detail_damage_desc
+            --,sa.detail_damage_desc
             ,sa.human_injury_cd
             ,sa.human_injury_desc
-            ,sa.mat_damage_desc
+            --,sa.mat_damage_desc
             ,sa.no_accident_yn
             ,sa.no_accident_dept_yn
             ,sa.first_act
             ,sa.invest_yn
             ,case sa.invest_yn when 'Y' then '해당' else '비해당' end as invest_yn_nm
-            ,sa.prov_reason
-            ,sa.cau_type_cd
-            ,sa.cau_type_etc
-            ,sa.bgn_meas
+            --,sa.prov_reason
+            --,sa.cau_type_cd
+            --,sa.cau_type_etc
+            --,sa.bgn_meas
             ,sa.dir_loss_amount
-            ,sa.indir_loss_amount
+            --,sa.indir_loss_amount
             ,sa.env_damage_desc
             ,sa.drain_leak
             ,sa.etc_leak
@@ -206,24 +206,24 @@
             ,sa.rpt_user_nm
             ,sa.rpt_dept_cd
             ,sa.rpt_dept_nm
-            ,sa.rpt_office_tel
+            --,sa.rpt_office_tel
             ,sa.rpt_dt
             ,sa.contents
-            ,sa.detail_damage_desc
+            --,sa.detail_damage_desc
             ,sa.human_injury_cd
             ,sa.human_injury_desc
-            ,sa.mat_damage_desc
+            --,sa.mat_damage_desc
             ,sa.no_accident_yn
             ,sa.no_accident_dept_yn
             ,sa.first_act
             ,sa.invest_yn
             ,case sa.invest_yn when 'Y' then '해당' else '비해당' end as invest_yn_nm
-            ,sa.prov_reason
-            ,sa.cau_type_cd
-            ,sa.cau_type_etc
-            ,sa.bgn_meas
+            --,sa.prov_reason
+            --,sa.cau_type_cd
+            --,sa.cau_type_etc
+            --,sa.bgn_meas
             ,sa.dir_loss_amount
-            ,sa.indir_loss_amount
+            --,sa.indir_loss_amount
             ,sa.env_damage_desc
             ,sa.drain_leak
             ,sa.etc_leak
@@ -424,24 +424,24 @@
             ,sa.rpt_user_nm
             ,sa.rpt_dept_cd
             ,sa.rpt_dept_nm
-            ,sa.rpt_office_tel
+            --,sa.rpt_office_tel
             ,sa.rpt_dt
             ,sa.contents
-            ,sa.detail_damage_desc
+            --,sa.detail_damage_desc
             ,sa.human_injury_cd
             ,sa.human_injury_desc
-            ,sa.mat_damage_desc
+            --,sa.mat_damage_desc
             ,sa.no_accident_yn
             ,sa.no_accident_dept_yn
             ,sa.first_act
             ,sa.invest_yn
             ,case sa.invest_yn when 'Y' then '해당' else '비해당' end as invest_yn_nm
-            ,sa.prov_reason
-            ,sa.cau_type_cd
-            ,sa.cau_type_etc
-            ,sa.bgn_meas
+            --,sa.prov_reason
+            --,sa.cau_type_cd
+            --,sa.cau_type_etc
+            --,sa.bgn_meas
             ,sa.dir_loss_amount
-            ,sa.indir_loss_amount
+            --,sa.indir_loss_amount
             ,sa.env_damage_desc
             ,sa.drain_leak
             ,sa.etc_leak
@@ -629,23 +629,23 @@
             ,sa.rpt_user_nm
             ,sa.rpt_dept_cd
             ,sa.rpt_dept_nm
-            ,sa.rpt_office_tel
+            --,sa.rpt_office_tel
             ,sa.rpt_dt
             ,sa.contents
-            ,sa.detail_damage_desc
+            --,sa.detail_damage_desc
             ,sa.human_injury_cd
             ,sa.human_injury_desc
-            ,sa.mat_damage_desc
+            --,sa.mat_damage_desc
             ,sa.no_accident_yn
             ,sa.no_accident_dept_yn
             ,sa.first_act
             ,sa.invest_yn
-            ,sa.prov_reason
-            ,sa.cau_type_cd
-            ,sa.cau_type_etc
-            ,sa.bgn_meas
+            --,sa.prov_reason
+            --,sa.cau_type_cd
+            --,sa.cau_type_etc
+            --,sa.bgn_meas
             ,sa.dir_loss_amount
-            ,sa.indir_loss_amount
+            --,sa.indir_loss_amount
             ,sa.env_damage_desc
             ,sa.drain_leak
             ,sa.etc_leak
@@ -752,23 +752,23 @@
             ,sa.rpt_user_nm
             ,sa.rpt_dept_cd
             ,sa.rpt_dept_nm
-            ,sa.rpt_office_tel
+            --,sa.rpt_office_tel
             ,sa.rpt_dt
             ,sa.contents
-            ,sa.detail_damage_desc
+            --,sa.detail_damage_desc
             ,sa.human_injury_cd
             ,sa.human_injury_desc
-            ,sa.mat_damage_desc
+            --,sa.mat_damage_desc
             ,sa.no_accident_yn
             ,sa.no_accident_dept_yn
             ,sa.first_act
             ,sa.invest_yn
-            ,sa.prov_reason
-            ,sa.cau_type_cd
-            ,sa.cau_type_etc
-            ,sa.bgn_meas
+            --,sa.prov_reason
+            --,sa.cau_type_cd
+            --,sa.cau_type_etc
+            --,sa.bgn_meas
             ,sa.dir_loss_amount
-            ,sa.indir_loss_amount
+            --,sa.indir_loss_amount
             ,sa.env_damage_desc
             ,sa.drain_leak
             ,sa.etc_leak
@@ -861,23 +861,23 @@
             ,sa.rpt_user_nm
             ,sa.rpt_dept_cd
             ,sa.rpt_dept_nm
-            ,sa.rpt_office_tel
+            --,sa.rpt_office_tel
             ,sa.rpt_dt
             ,sa.contents
-            ,sa.detail_damage_desc
+            --,sa.detail_damage_desc
             ,sa.human_injury_cd
             ,sa.human_injury_desc
-            ,sa.mat_damage_desc
+            --,sa.mat_damage_desc
             ,sa.no_accident_yn
             ,sa.no_accident_dept_yn
             ,sa.first_act
             ,sa.invest_yn
-            ,sa.prov_reason
-            ,sa.cau_type_cd
-            ,sa.cau_type_etc
-            ,sa.bgn_meas
+            --,sa.prov_reason
+            --,sa.cau_type_cd
+            --,sa.cau_type_etc
+            --,sa.bgn_meas
             ,sa.dir_loss_amount
-            ,sa.indir_loss_amount
+            --,sa.indir_loss_amount
             ,sa.env_damage_desc
             ,sa.drain_leak
             ,sa.etc_leak
@@ -990,10 +990,6 @@
 
             <!-- ,invest_yn -->
 
-            ,prov_reason
-            ,cau_type_cd
-            ,cau_type_etc
-            ,bgn_meas
             ,accident_att_cd
             ,accident_lvl_cd
             ,human_damage
@@ -1048,11 +1044,6 @@
 
             <!-- ,#{investYn} -->
 
-            ,#{provReason}
-            ,#{cauTypeCd}
-            ,#{cauTypeEtc}
-            ,#{bgnMeas}
-
             <!-- ,#{dirLossAmount}
             ,#{indirLossAmount}
             ,#{envDamageDesc}
@@ -1093,10 +1084,6 @@
             ,weather_cd = #{weatherCd}
             ,accident_type_etc = #{accidentTypeEtc}
             ,contents = #{contents}
-            ,prov_reason = #{provReason}
-            ,cau_type_cd = #{cauTypeCd}
-            ,cau_type_etc = #{cauTypeEtc}
-            ,bgn_meas = #{bgnMeas}
             ,accident_att_cd = #{accidentAttCd}
             ,accident_lvl_cd = #{accidentLvlCd}
 
@@ -1104,15 +1091,12 @@
             ,invest_yn = #{investYn}
             </if>
 
-            ,detail_damage_desc = #{detailDamageDesc}
             ,human_injury_cd = #{humanInjuryCd}
             ,human_injury_desc = #{humanInjuryDesc}
-            ,mat_damage_desc = #{matDamageDesc}
             ,no_accident_yn = #{noAccidentYn}
             ,no_accident_dept_yn = #{noAccidentDeptYn}
             ,first_act = #{firstAct}
             ,dir_loss_amount = #{dirLossAmount}
-            ,indir_loss_amount = #{indirLossAmount}
             ,env_damage_desc = #{envDamageDesc}
             ,drain_leak = #{drainLeak}
             ,etc_leak = #{etcLeak}
@@ -1258,10 +1242,10 @@
             ,sai.leader_user_nm
             ,sai.leader_dept_cd
             ,sai.leader_dept_nm
-            ,sai.leader_office_tel
-            ,sai.leader_hp
+            --,sai.leader_office_tel
+            --,sai.leader_hp
             ,sai.leader_sel_ymd
-            ,sai.rmrk
+            --,sai.rmrk
             ,sai.invest_method
             ,sai.invest_plan
             ,sai.invest_start_ymd

@@ -51,7 +51,7 @@
                , convert(char(10), a.update_dt, 23) as update_dt
                , isnull(g.user_nm,f.user_nm) as show_user_nm
                , isnull(i.dept_nm,h.dept_nm) as show_dept_nm
-               , a.cau_type_etc
+               --, a.cau_type_etc
                , (select stuff(
                                (select ',' + cm.code_nm
                                   from saf_nearmiss_occtype sno
@@ -188,8 +188,8 @@
                , a.prcs_state_cd
                , a.weth_cd
                , a.contents
-               , a.cau_type_cd
-               , a.cau_type_etc
+               --, a.cau_type_cd
+               --, a.cau_type_etc
                , a.bgn_meas
                , a.prov_reason
                , a.occ_ptn_cls_cd
@@ -285,10 +285,6 @@
                 , origin_mat_cd
                 , ass_mat_cd
                 , create_user_id
-                ,create_dept_cd
-                ,create_dept_nm
-                ,create_position_cd
-                ,create_position_nm
                 , create_dt
                )
                values
@@ -327,10 +323,6 @@
                 , #{originMatCd}
                 , #{assMatCd}
                 , #{createUserId}
-                ,(select dept_cd from com_user where user_id = #{createUserId})
-                ,(select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
-                ,(select position_cd from com_user where user_id = #{createUserId})
-                ,(select position_nm from com_user where user_id = #{createUserId})
                 , getDate()
                )
     </insert>
@@ -413,10 +405,6 @@
                , ass_mat_cd = #{assMatCd}
                , update_user_id = #{updateUserId}
                , update_dt = getdate()
-               , update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
-               , update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
-               , update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
-               , update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
          where saf_nearmiss_no= #{safNearmissNo}
      </update>
      
