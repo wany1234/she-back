@@ -1,0 +1,44 @@
+<table>
+    <tr>
+        <th>사업장</th>
+        <td>${model.plantNm!}</td>
+        <th>발의번호</th>
+        <td>${model.safChngNo!}</td>
+    </tr>
+    <tr>
+        <th>발의부서</th>
+        <td>${model.rqstDeptNm!}</td>
+        <th>발의담당자</th>
+        <td>${model.rqstUserNm!}</td>
+    </tr>
+    <tr>
+        <th>발의일자</th>
+        <td>${model.rqstDt!}</td>
+        <th>변경절차</th>
+        <td>${model.chngAttNm!}</td>
+    </tr>
+    <tr>
+        <th>변경등급(발의)</th>
+        <td>${model.rqstMocLvlNm!}</td>
+        <th>변경등급(검토)</th>
+        <td>${model.mocLvlNm!}</td>
+    </tr>
+    <tr>
+        <th>변경요소</th>
+        <td colspan="3">${model.chngElem!}</td>
+    </tr>
+    <tr>
+        <th>변경근거</th>
+        <td colspan="3">${model.chngBasisNm!}</td>
+    </tr>
+    <tr>
+        <th>접수부서/담당자</th>
+        <td>${model.recevDeptNm!}/${model.recevUserNm!}</td>
+        <th>접수일자</th>
+        <td>${model.recevDeptNm!}/${model.recevDt!}</td>
+    </tr>
+    <tr>
+        <th>변경개요</th>
+        <td colspan="3">${model.chngContents!?replace("\n", "<br/>")}</td>
+    </tr>
+</table>
