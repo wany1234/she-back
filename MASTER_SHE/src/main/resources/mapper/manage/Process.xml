@@ -32,14 +32,11 @@
                     ,'' as searchDeptCd
                 </otherwise>
             </choose>
-            , stuff((select ', ' + plant.code_nm
+            , stuff((select ', '
                      from com_process_dept a
                      inner join com_dept b
                       on a.dept_cd = b.dept_cd
-                     left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
-                     on plant.code = cu.plant_cd
                      where a.process_cd = p.process_cd
-                     group by plant.code_nm
                      for xml path('')),1,1,'') as plant_nms
             , stuff((select ', ' + b.dept_nm
                      from com_process_dept a
@@ -72,19 +69,6 @@
         and p.process_cd in (select process_cd
                             from com_process_dept
                             where dept_cd = #{deptCd})
-        </if>
-        <if test= "plantCd != null and !plantCd.equals('')">
-            <choose>
-                <when test="plantCd.equals('-1000')">
-                    and not exists (
-                        select null
-                        from com_process_dept cpd
-                        inner join com_dept cd
-                        on cpd.dept_cd = cd.dept_cd
-                        where p.process_cd = cpd.process_cd
-                    )
-                </when>
-            </choose>
         </if>
         order by writer_dt desc, p.sort_order
     </select>
