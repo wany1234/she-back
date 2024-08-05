@@ -328,19 +328,6 @@
         </if>
     </select>
 
-    <!-- 중복검사 -->
-    <!-- <select id= "checkMsds" resultType= "HashMap">
-        select count(*) as cnt
-        from chm_msds_rqst cmr
-        where cmr.chem_prod_nm_kr = #{chemProdNmKr}
-        and cmr.chem_prod_nm_en = #{chemProdNmEn}
-        and cmr.makecp_cd = #{makecpCd}
-        and cmr.vendor_cd = #{vendorCd}
-        <if test= "msdsRqstNo != null and msdsRqstNo > 0">
-        and msds_rqst_no not in (#{msdsRqstNo})
-        </if>
-    </select> -->
-
     <insert id= "createMatCheckRequest" parameterType= "com.she.chm.model.MatCheckRequest">
         <selectKey keyProperty= "matChkRqstNo" resultType= "int" order= "BEFORE">
             select next value for seq_mat_chk_rqst_no as mat_chk_rqst_no
