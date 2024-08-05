@@ -52,7 +52,7 @@
         and ep.half_type_cd = #{halfTypeCd}
         </if>
         <if test="plantCd != null and !plantCd.equals('')">
-        and md.plant_cd = #{plantCd}
+        and mu.plant_cd = #{plantCd}
         </if>
         <if test="safElectTitlNo != null and safElectTitlNo > 0">
         and ep.saf_elect_titl_no = #{safElectTitlNo}
@@ -285,7 +285,7 @@
         /* ElectEvalPlanMapper.getElectEvalUpRslts [ElectEvalRslt.xml] */
         select	ep.eval_plan_no -- 법정선임자 평가계획번호
                 ,eu.eval_user_no -- 법정선임자 평가대상자 번호
-                ,md.plant_cd -- 사업장코드
+                ,mu.plant_cd -- 사업장코드
                 ,eu.plant_nm -- 사업장
                 ,year -- 대상년도
                 ,half_type_cd -- 구분코드(상반기/하반기)
@@ -330,7 +330,7 @@
         and ep.half_type_cd = #{halfTypeCd}
         </if>
         <if test="plantCd != null and !plantCd.equals('')">
-        and md.plant_cd = #{plantCd}
+        and mu.plant_cd = #{plantCd}
         </if>
         <if test="safElectTitlNo != null and safElectTitlNo > 0">
         and ep.saf_elect_titl_no = #{safElectTitlNo}
@@ -368,7 +368,7 @@
         <if test="evalPlanNo != null and evalPlanNo != 0">
         and ep.eval_plan_no = #{evalPlanNo}
         </if>
-        order by ep.year, md.plant_cd, ep.half_type_cd, md.dept_cd
+        order by ep.year, mu.plant_cd, ep.half_type_cd, md.dept_cd
     </select>
 
     <!-- 상위평가결과 항목 목록 조회 -->
