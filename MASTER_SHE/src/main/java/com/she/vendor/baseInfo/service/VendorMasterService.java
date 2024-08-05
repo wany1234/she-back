@@ -128,16 +128,19 @@ public class VendorMasterService {
         this.chemicalVendorMasterMapper.deleteChemicalVendorMasterWorkers(vendorCd);
 
         Map<String, String> plants = new HashMap<String, String>();
+
         for (int i = 0; i < chemicalVendorMaster.getPlantCds().size(); i++) {
             plants.clear();
             plants.put("vendorCd", chemicalVendorMaster.getVendorCd());
             plants.put("plantCd", chemicalVendorMaster.getPlantCds().get(i));
             this.chemicalVendorMasterMapper.createChemicalVendorMasterPlants(plants);
         }
-        for (int i = 0; i < chemicalVendorMaster.getWorkers().size(); i++) {
-            VendorWorker worker = chemicalVendorMaster.getWorkers().get(i);
-            worker.setVendorCd(chemicalVendorMaster.getVendorCd());
-            this.chemicalVendorMasterMapper.createChemicalVendorMasterWorkers(worker);
+        if (chemicalVendorMaster.getWorkers() != null) {
+            for (int i = 0; i < chemicalVendorMaster.getWorkers().size(); i++) {
+                VendorWorker worker = chemicalVendorMaster.getWorkers().get(i);
+                worker.setVendorCd(chemicalVendorMaster.getVendorCd());
+                this.chemicalVendorMasterMapper.createChemicalVendorMasterWorkers(worker);
+            }
         }
 
         return this.chemicalVendorMasterMapper.updateChemicalVendorMaster(chemicalVendorMaster);
