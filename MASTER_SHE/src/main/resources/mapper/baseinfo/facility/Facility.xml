@@ -5,6 +5,7 @@
 
     <!-- 안전설비마스터 목록 조회 -->
     <select id= "getFacilityMsts" resultType= "com.she.baseInfo.model.FacilityMst">
+    /* FacilityMapper.getFacilityMsts[Facility.xml] */
         select sfm.saf_facility_cd
             ,sfm.plant_cd
             ,plant.code_nm as plant_nm
