@@ -4,6 +4,7 @@
 <mapper namespace= "com.she.vendor.baseInfo.mapper.VendorMasterMapper">
 
     <select id= "getChemicalVendorMasters" resultType= "com.she.vendor.model.ChemicalVendorMaster">
+    /* VendorMasterMapper.getChemicalVendorMasters [VenderMaster.xml]*/
         select cvm.vendor_cd
             ,STUFF((
             select ',' + ccm.code_nm
@@ -82,6 +83,12 @@
         </if>
         <if test= "useYn != null and !useYn.equals('')">
         and cvm.use_yn = #{useYn}
+        </if>
+        <if test= 'authYn.equals("N")'>
+        and (cvm.auth_number IS NULL or cvm.auth_number = '')
+        </if>
+        <if test= 'addYn.equals("N")'>
+        and (cvm.vendor_type_cd IS NULL or cvm.vendor_type_cd = '' or cvm.vendor_att_cd IS NULL or cvm.vendor_att_cd = '')
         </if>
         <choose>
             <when test= 'orderByExpression != null and orderByExpression.equals("plant_nms asc") '>

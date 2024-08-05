@@ -99,4 +99,8 @@ public class ChemicalVendorMaster {
     private String writerUserNm;
 
     private String writerDt;
+
+    private String authYn;
+
+    private String addYn;
 }

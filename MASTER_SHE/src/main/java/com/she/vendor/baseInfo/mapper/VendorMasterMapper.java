@@ -41,7 +41,7 @@ public interface VendorMasterMapper {
      * @throws Exception
      */
     public List<ChemicalVendorMaster> getChemicalVendorMasters(@Param("plantCd") String plantCd, @Param("vendorNm") String vendorNm, @Param("vendorTypeCd") String vendorTypeCd, @Param("vendorAttCd") String vendorAttCd, @Param("useYn") String useYn, @Param("pageNumber") Integer pageNumber, @Param("pageSize") Integer pageSize,
-            @Param("orderByExpression") String orderByExpression, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+            @Param("orderByExpression") String orderByExpression, @Param("authYn") String authYn, @Param("addYn") String addYn, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 업체 상세 조회

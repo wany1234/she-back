@@ -46,8 +46,8 @@ public class VendorMasterService {
      * @return 업체 목록
      * @throws Exception
      */
-    public List<ChemicalVendorMaster> getChemicalVendorMasters(String plantCd, String vendorNm, String vendorTypeCd, String vendorAttCd, String useYn, Integer pageNumber, Integer pageSize, String orderByExpression, DefaultParam defaultParam) throws Exception {
-        return chemicalVendorMasterMapper.getChemicalVendorMasters(plantCd, vendorNm, vendorTypeCd, vendorAttCd, useYn, pageNumber, pageSize, orderByExpression, defaultParam);
+    public List<ChemicalVendorMaster> getChemicalVendorMasters(String plantCd, String vendorNm, String vendorTypeCd, String vendorAttCd, String useYn, Integer pageNumber, Integer pageSize, String orderByExpression, String authYn, String addYn, DefaultParam defaultParam) throws Exception {
+        return chemicalVendorMasterMapper.getChemicalVendorMasters(plantCd, vendorNm, vendorTypeCd, vendorAttCd, useYn, pageNumber, pageSize, orderByExpression, authYn, addYn, defaultParam);
     }
 
     /**

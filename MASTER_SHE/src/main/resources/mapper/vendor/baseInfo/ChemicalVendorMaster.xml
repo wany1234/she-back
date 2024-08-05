@@ -4,6 +4,7 @@
 <mapper namespace= "com.she.vendor.baseInfo.mapper.ChemicalVendorMasterMapper">
 
     <select id= "getChemicalVendorMasters" resultType= "com.she.vendor.model.ChemicalVendorMaster">
+    /* ChemicalVendorMasterMapper.getChemicalVendorMasters [ChemicalVendorMaster.xml] */
         select cvm.vendor_cd
             ,cvm.origin_cd
             ,co.origin_nm_kr

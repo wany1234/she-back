@@ -65,6 +65,10 @@ public class VendorMasterController {
         String vendorAttCd = map.containsKey("vendorAttCd") ? map.get("vendorAttCd").toString() : "";
         // 업체명
         String vendorNm = map.containsKey("vendorNm") ? map.get("vendorNm").toString() : "";
+        // 인증요청 발송여부
+        String authYn = map.containsKey("authYn") ? map.get("authYn").toString() : "";
+        // 추가정보 등록여부
+        String addYn = map.containsKey("addYn") ? map.get("addYn").toString() : "";
 
         Integer pageNumber = map.containsKey("pageNumber") ? Integer.parseInt(map.get("pageNumber").toString()) : 1;
         Integer pageSize = map.containsKey("pageSize") ? Integer.parseInt(map.get("pageSize").toString()) : 10000;
@@ -72,7 +76,7 @@ public class VendorMasterController {
         String orderByExpression = map.containsKey("orderByExpression") ? map.get("orderByExpression").toString() : "";
 
         Map<String, Object> returnMap = new HashMap<String, Object>();
-        List<ChemicalVendorMaster> body = vendorMasterService.getChemicalVendorMasters(plantCd, vendorNm, vendorTypeCd, vendorAttCd, useYn, pageNumber, pageSize, orderByExpression, defaultParam);
+        List<ChemicalVendorMaster> body = vendorMasterService.getChemicalVendorMasters(plantCd, vendorNm, vendorTypeCd, vendorAttCd, useYn, pageNumber, pageSize, orderByExpression, authYn, addYn, defaultParam);
         Integer totalCount = CollectionUtils.isNotEmpty(body) ? Integer.parseInt(String.valueOf(body.get(0).getTotalCnt())) : 0;
         returnMap.put("items", body);
         returnMap.put("count", totalCount);
