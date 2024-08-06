@@ -303,7 +303,6 @@ public class VendorMasterService {
         mail.setSenderEmail(email);
 
         String contents = "";
-        /* contents += rst + "<br/><br/><br/>"; */
         contents += "<div style='display: flex; justify-content: center'>";
         contents += "   <div style='border: 1px solid #48BAE4; height: 100px; width: 100px; font-size: 5.0em; text-align: center;'>" + strNumber[0] + "</div>";
         contents += "   <div style='border: 1px solid #48BAE4; height: 100px; width: 100px; font-size: 5.0em; text-align: center;'>" + strNumber[1] + "</div>";
