@@ -114,8 +114,8 @@
             ,u.user_nm
             ,d.dept_cd
             ,d.dept_nm
-            ,d.plant_cd
-            ,dbo.GET_CODE_NM_LANG('kr','COM_PLANT_CD',d.plant_cd) as plant_nm
+            ,u.plant_cd
+            ,dbo.GET_CODE_NM_LANG('kr','COM_PLANT_CD',u.plant_cd) as plant_nm
         from saf_edu_grp_user m 
         inner join com_user u on m.user_id = u.user_id  
         inner join com_dept d on u.dept_cd = d.dept_cd
