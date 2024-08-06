@@ -103,4 +103,6 @@ public class ChemicalVendorMaster {
     private String authYn;
 
     private String addYn;
+
+    private String authNumber;
 }

@@ -258,4 +258,26 @@ public class VendorMasterController {
 
         return ResponseEntity.ok().body(vendorMasterService.getCheckBizNum(bizNum));
     }
+
+    /**
+     * 협력사 가입요청
+     *
+     * @param parameter
+     *            업체코드
+     * @return 체크값
+     * @throws Exception
+     */
+    @GetMapping("/joinRequest")
+    public ResponseEntity<String> getJoinRequest(@RequestParam HashMap<String, Object> parameter) throws Exception {
+
+        HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
+
+        // 업체코드
+        String vendorCd = map.containsKey("vendorCd") ? map.get("vendorCd").toString() : "";
+        // 담당자 이메일
+        String email = map.containsKey("email") ? map.get("email").toString() : "";
+
+        return ResponseEntity.ok().body(vendorMasterService.getJoinRequest(vendorCd, email));
+    }
+
 }

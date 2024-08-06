@@ -193,16 +193,6 @@
                 when cvm.use_yn = 'Y' then '사용'
                 else '미사용'
             end as use_yn_nm
-            <!-- ,cvm.supply_yn -->
-            <!-- ,case
-                when cvm.supply_yn = 'Y' then '공급O'
-                else '공급X'
-            end as supply_yn_nm -->
-            <!-- ,cvm.seller_yn
-            ,case
-                when cvm.seller_yn = 'Y' then '판매O'
-                else '판매X'
-            end as seller_yn_nm -->
             ,cvm.sort_order
             ,convert(varchar(10), cvm.reg_dt, 120) as reg_dt
             ,cvm.create_user_id
@@ -258,10 +248,8 @@
             ,sexType.code_nm as gender_nm
             ,cvw.worker_job
             ,cvw.spe_commts
-<!--             , cvm.vendor_type_cd 업체분류코드  -->
-            , c1.code_nm as vendor_type_nm
- <!--            , cvm.vendor_att_cd , 업체유형코드 -->
-            , c2.code_nm as vendor_att_nm
+            ,c1.code_nm as vendor_type_nm
+            ,c2.code_nm as vendor_att_nm
         from com_vendor_worker cvw
         inner join com_vendor_mst cvm
         on cvw.vendor_cd = cvm.vendor_cd
@@ -317,8 +305,6 @@
             ,portal_id
             ,portal_pwd
             ,use_yn
-            <!-- ,supply_yn -->
-            <!-- ,seller_yn -->
             ,sort_order
             ,reg_dt
             ,create_user_id
@@ -348,8 +334,6 @@
             ,#{portalId}
             ,#{portalPwd}
             ,#{useYn}
-            <!-- ,#{supplyYn} -->
-            <!-- ,#{sellerYn} -->
             ,#{sortOrder}
             ,#{regDt}
             ,#{createUserId}
@@ -410,8 +394,6 @@
             ,vendor_type_cd = #{vendorTypeCd}
             ,vendor_att_cd = #{vendorAttCd}
             ,portal_use_yn = #{portalUseYn}
-            <!-- ,supply_yn = #{supplyYn} -->
-            <!-- ,seller_yn = #{sellerYn} -->
             ,sort_order = #{sortOrder}
             ,use_yn = #{useYn}
             ,reg_dt = #{regDt}
@@ -419,11 +401,13 @@
             ,update_dt = convert(char(10), getDate(), 23)
         where vendor_cd = #{vendorCd}
     </update>
+
     <update id= "updateChemicalVendorMasterPwdReset" parameterType= "com.she.vendor.model.ChemicalVendorMaster">
         update com_vendor_mst
         set portal_pwd = #{portalPwd}
         where vendor_cd = #{vendorCd}
     </update>
+
     <select id= "getCheckChemicalVendorMaster" resultType= "HashMap">
         select count(*) as cnt
             ,'vendorCd' as gubun
@@ -460,4 +444,18 @@
         where 1=1
           and biz_num = #{bizNum}
     </select>
+    
+    <select id="getAuthNumber" resultType="String">
+        select
+            count(*)
+        from com_vendor_mst
+        where auth_number = #{authNumber}
+    </select>
+
+    <update id= "updateAuthNumber" parameterType= "com.she.vendor.model.ChemicalVendorMaster">
+        update com_vendor_mst
+        set auth_number = #{authNumber}
+        where vendor_cd = #{vendorCd}
+    </update>
+
 </mapper>

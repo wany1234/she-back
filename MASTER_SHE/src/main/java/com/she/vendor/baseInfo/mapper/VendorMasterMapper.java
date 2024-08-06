@@ -179,4 +179,24 @@ public interface VendorMasterMapper {
      * @throws Exception
      */
     public Integer getCheckBizNum(@Param("bizNum") String bizNum) throws Exception;
+
+    /**
+     * 인증번호 중복 체크
+     *
+     * @param authNumber
+     *            인증번호
+     * @return 체크 값
+     * @throws Exception
+     */
+    public String getAuthNumber(@Param("authNumber") String authNumber) throws Exception;
+
+    /**
+     * 인증번호 업데이트
+     * 
+     * @param chemicalVendorMaster
+     *            업체
+     * @return 수정 행 수
+     * @throws Exception
+     */
+    public int updateAuthNumber(ChemicalVendorMaster chemicalVendorMaster) throws Exception;
 }

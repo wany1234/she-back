@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -23,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.she.common.model.DefaultParam;
+import com.she.utils.SendMailUtil;
+import com.she.utils.model.MailVo;
 import com.she.vendor.baseInfo.mapper.VendorMasterMapper;
 import com.she.vendor.model.ChemicalVendorMaster;
 import com.she.vendor.model.VendorWorker;
@@ -244,4 +247,76 @@ public class VendorMasterService {
     public Integer getCheckBizNum(String bizNum) throws Exception {
         return chemicalVendorMasterMapper.getCheckBizNum(bizNum);
     }
+
+    /**
+     * 협력사 가입요청
+     * 
+     * @param chemicalVendorMaster
+     *            업체
+     * @return 업체번호
+     * @throws Exception
+     */
+    @Transactional
+    public String getJoinRequest(String vendorCd, String email) throws Exception {
+
+        Random random = new Random(); // 랜덤 객체 생성
+        String rst = "";
+        String[] strNumber = new String[6];
+
+        // 반복문을 사용 6개의 난수 생성
+        for (int i = 0; i < 6; i++) {
+            int temp;
+            temp = random.nextInt(9) + 1;
+            strNumber[i] = Integer.toString(temp);
+            rst += temp;
+        }
+
+        String cnt = chemicalVendorMasterMapper.getAuthNumber(rst);
+        while (!cnt.equals("0")) {
+            int temp;
+            rst = "";
+            // 반복문을 사용 6개의 난수 생성
+            for (int i = 0; i < 6; i++) {
+                temp = random.nextInt(9) + 1;
+                strNumber[i] = Integer.toString(temp);
+                rst += temp;
+            }
+            cnt = chemicalVendorMasterMapper.getAuthNumber(rst);
+            if (cnt.equals("0")) {
+                break;
+            }
+        }
+
+        if ("0".equals(cnt)) {
+            ChemicalVendorMaster chemicalVendorMaster = new ChemicalVendorMaster();
+            chemicalVendorMaster.setVendorCd(vendorCd);
+            chemicalVendorMaster.setAuthNumber(rst);
+            chemicalVendorMasterMapper.updateAuthNumber(chemicalVendorMaster);
+        }
+
+        MailVo mail = new MailVo();
+        String[] recipients = new String[1];
+        recipients[0] = email;
+        mail.setTitle("협력업체 가입요청 인증번호");
+        mail.setMailTitle("가입요청 인증번호");
+        mail.setRecipientsEmailAddress(recipients);
+        mail.setSenderEmail(email);
+
+        String contents = "";
+        /* contents += rst + "<br/><br/><br/>"; */
+        contents += "<div style='display: flex; justify-content: center'>";
+        contents += "   <div style='border: 1px solid #48BAE4; height: 100px; width: 100px; font-size: 5.0em; text-align: center;'>" + strNumber[0] + "</div>";
+        contents += "   <div style='border: 1px solid #48BAE4; height: 100px; width: 100px; font-size: 5.0em; text-align: center;'>" + strNumber[1] + "</div>";
+        contents += "   <div style='border: 1px solid #48BAE4; height: 100px; width: 100px; font-size: 5.0em; text-align: center;'>" + strNumber[2] + "</div>";
+        contents += "   <div style='border: 1px solid #48BAE4; height: 100px; width: 100px; font-size: 5.0em; text-align: center;'>" + strNumber[3] + "</div>";
+        contents += "   <div style='border: 1px solid #48BAE4; height: 100px; width: 100px; font-size: 5.0em; text-align: center;'>" + strNumber[4] + "</div>";
+        contents += "   <div style='border: 1px solid #48BAE4; height: 100px; width: 100px; font-size: 5.0em; text-align: center;'>" + strNumber[5] + "</div>";
+        contents += "</div>";
+
+        mail.setContents(contents);
+        SendMailUtil.sendMail(mail);
+
+        return rst;
+    }
+
 }

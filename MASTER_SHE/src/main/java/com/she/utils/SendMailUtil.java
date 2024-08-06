@@ -29,19 +29,20 @@ public class SendMailUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(SendMailUtil.class);
 
-//    private static final String SMTP_HOST_NAME = "smtp.gmail.com";
-//    private static final String SMTP_PORT = "465";
-//    private static final String SMTP_HOST_ID = "bosswany";
-//    private static final String SMTP_HOST_PASSWORD = "iyrqgrjwhceeryjn";
-//    private static final String SMTP_ENCODING = "UTF-8";
-    
-    private static final String SMTP_HOST_NAME = "smtp.naver.com";
-    private static final String SMTP_PORT = "587";
-    private static final String SMTP_HOST_ID = "tog1124";
-    private static final String SMTP_HOST_PASSWORD = "akzmxnq!2";
+    private static final String SMTP_HOST_NAME = "smtp.gmail.com";
+    private static final String SMTP_PORT = "465";
+    private static final String SMTP_HOST_ID = "bosswany";
+    private static final String SMTP_HOST_PASSWORD = "iyrqgrjwhceeryjn";
     private static final String SMTP_ENCODING = "UTF-8";
-    private final static String systemName = "[안전보건 관리시스템]";
-    
+
+    /*
+     * private static final String SMTP_HOST_NAME = "smtp.naver.com"; private
+     * static final String SMTP_PORT = "587"; private static final String
+     * SMTP_HOST_ID = "tog1124"; private static final String SMTP_HOST_PASSWORD
+     * = "akzmxnq!2"; private static final String SMTP_ENCODING = "UTF-8";
+     */
+    private final static String systemName = "[안전보건 통합시스템]";
+
     /**
      * 파일내용가져오기
      *
@@ -88,9 +89,17 @@ public class SendMailUtil {
         properties.load(reader);
         String frontendUrl = properties.getProperty("frontend.url");
 
-        String content = getFileContent("common.html");
+        String content = "";
+
+        if (link != null && !"".equals(link)) {
+            content = getFileContent("common.html");
+        } else {
+            content = getFileContent("nolink.html");
+        }
+
         String imgLink = frontendUrl + "/src/assets/images/she.png";
         String mailLink = frontendUrl + link;
+
         logger.error("## html content : " + content);
 
         if (content != null && !content.isEmpty()) {
@@ -130,21 +139,21 @@ public class SendMailUtil {
             } else {
                 try {
                     Properties props = new Properties();
-//        			props.put("mail.transport.protocol", "smtp");
-//        			props.put("mail.smtp.host", SMTP_HOST_NAME);
-//        			props.put("mail.smtp.port", SMTP_PORT);
-//        			props.put("mail.smtp.starttls.enable", "true");
-//        			props.put("mail.smtp.ssl.trust", SMTP_HOST_NAME);
-//        			props.put("mail.smtp.auth", "true");
-                    
+                    // props.put("mail.transport.protocol", "smtp");
+                    // props.put("mail.smtp.host", SMTP_HOST_NAME);
+                    // props.put("mail.smtp.port", SMTP_PORT);
+                    // props.put("mail.smtp.starttls.enable", "true");
+                    // props.put("mail.smtp.ssl.trust", SMTP_HOST_NAME);
+                    // props.put("mail.smtp.auth", "true");
+
                     props.put("mail.use", "true");
                     props.put("mail.smtp.host", SMTP_HOST_NAME);
                     props.put("mail.smtp.port", SMTP_PORT);
-//                    props.put("mail.host.auth.flag", "true");
+                    // props.put("mail.host.auth.flag", "true");
                     props.put("mail.smtp.socketFactory.port", "465");
                     props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
                     props.put("mail.smtp.auth", "true");
-//                    props.put("mail.host.auth", "true");
+                    // props.put("mail.host.auth", "true");
                     props.put("mail.smtp.encoding", SMTP_ENCODING);
                     Session session = Session.getInstance(props, new javax.mail.Authenticator() {
                         protected PasswordAuthentication getPasswordAuthentication() {
@@ -173,12 +182,11 @@ public class SendMailUtil {
 
                     try {
                         Transport.send(msg);
-
                         result.setResultCd("SUCCESS"); // 결과코드
                         result.setResultMsg("메일이 성공적으로 발송되었습니다."); // 결과메세지
                     } catch (Exception e) {
-                    	System.out.println("-----------e1----------");
-                    	e.printStackTrace();
+                        System.out.println("-----------e1----------");
+                        e.printStackTrace();
                         result.setResultCd("FAILURE"); // 결과코드
                         result.setResultMsg("메일이 발송중 오류가 발생했습니다. message: " + e.getMessage()); // 결과메세지
                     } finally {
@@ -186,15 +194,15 @@ public class SendMailUtil {
                         transport.close();
                     }
                 } catch (Exception e) {
-                	System.out.println("-----------e2----------");
-                	e.printStackTrace();
+                    System.out.println("-----------e2----------");
+                    e.printStackTrace();
                     result.setResultCd("FAILURE"); // 결과코드
                     result.setResultMsg("메일이 발송중 오류가 발생했습니다. message: " + e.getMessage()); // 결과메세지
                 }
             }
         } catch (Exception e) {
-        	System.out.println("-----------e3----------");
-        	e.printStackTrace();
+            System.out.println("-----------e3----------");
+            e.printStackTrace();
             result.setResultCd("FAILURE"); // 결과코드
             result.setResultMsg("메일이 발송중 오류가 발생했습니다. message: " + e.getMessage()); // 결과메세지
         }
