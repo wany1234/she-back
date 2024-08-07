@@ -269,8 +269,7 @@
         and a.use_yn='Y'
         and a.close_yn='N'
         where plant.code_group_cd = 'COM_PLANT_CD'
-        and plant.code not in ('0000')
-        -- 기존코드 and plant.code not in ('0000', '1000')
+        and plant.code not in ('FD00','FD10')
         order by plant.code
     </select>
 
