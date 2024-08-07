@@ -84,12 +84,22 @@
         <if test= "useYn != null and !useYn.equals('')">
         and cvm.use_yn = #{useYn}
         </if>
-        <if test= 'authYn.equals("N")'>
-        and (cvm.auth_number IS NULL or cvm.auth_number = '')
-        </if>
-        <if test= 'addYn.equals("N")'>
-        and (cvm.vendor_type_cd IS NULL or cvm.vendor_type_cd = '' or cvm.vendor_att_cd IS NULL or cvm.vendor_att_cd = '')
-        </if>
+        <choose>
+	        <when test= 'authYn.equals("N")'>
+	        	and (cvm.auth_number IS NULL or cvm.auth_number = '')
+	        </when>
+	        <when test= 'authYn.equals("Y")'>
+	        	and (cvm.auth_number IS NOT NULL or cvm.auth_number != '')
+	        </when>
+	    </choose>
+	    <choose>
+	        <when test= 'addYn.equals("N")'>
+	        	and (cvm.vendor_type_cd IS NULL or cvm.vendor_type_cd = '' or cvm.vendor_att_cd IS NULL or cvm.vendor_att_cd = '')
+	        </when>
+	        <when test= 'addYn.equals("Y")'>
+	        	and (cvm.vendor_type_cd IS NOT NULL or cvm.vendor_type_cd != '' AND cvm.vendor_att_cd IS NOT NULL or cvm.vendor_att_cd != '')
+	        </when>
+        </choose>
         <choose>
             <when test= 'orderByExpression != null and orderByExpression.equals("plant_nms asc") '>
                 ORDER BY plant_nms asc
