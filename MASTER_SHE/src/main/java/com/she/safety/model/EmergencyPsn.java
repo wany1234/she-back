@@ -28,6 +28,10 @@ public class EmergencyPsn {
     private String reCompletYn;
     @ApiModelProperty(value = "재교육비고(불참사유)")
     private String reRemark;
+    @ApiModelProperty(value = "이수일")
+    private String completYmd;
+    @ApiModelProperty(value = "동영상시청시간")
+    private int videoWatchTime;
     @ApiModelProperty(value = "사업자코드")
     private String plantCd;
     @ApiModelProperty(value = "사업자명")

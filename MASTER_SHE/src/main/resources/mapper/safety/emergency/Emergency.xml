@@ -38,7 +38,7 @@
                 select count(*) 
                 from saf_train_dtl_psn 
                 where saf_train_plan_no = tp.saf_train_plan_no
-             ), '##,###') as userCnt
+             ), '##,##0') as userCnt
              ,( select count(*) 
                 from saf_train_dtl_psn 
                 where saf_train_plan_no = tp.saf_train_plan_no
@@ -64,6 +64,14 @@
              ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'TRAIN_PLAN_STATE', tp.train_plan_state) as train_plan_state_nm
           from saf_train_plan tp
          where 1=1
+         <if test="plantCd != null and !plantCd.equals('')">
+            and (
+                 select count(*) 
+                 from saf_train_plan_plant tpp
+                 where tpp.saf_train_plan_no = tp.saf_train_plan_no
+                     and tpp.plant_cd = #{plantCd}
+                ) != 0 
+         </if>
          <if test="trainTypeCd != null and !trainTypeCd.equals('')">
             and tp.train_type_cd = #{trainTypeCd}
          </if>
@@ -73,9 +81,14 @@
          <if test="trainPlace != null and !trainPlace.equals('')">
             and tp.train_place like '%' +  #{trainPlace} + '%'
          </if>
-         <if test="trainPlanState != null and !trainPlanState.equals('')">
-            and tp.train_plan_state = #{trainPlanState}
-         </if>
+         <choose>
+             <when test='trainPlanState != null and trainPlanState.equals("Y")'>
+                 and tp.train_plan_state = #{trainPlanState}
+             </when>
+             <otherwise>
+                 and ( tp.train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_ING}' OR tp.train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_PLAN}')
+             </otherwise>
+         </choose>
          <if test="reTrainYn != null and !reTrainYn.equals('')">
             and tp.re_train_yn = #{reTrainYn}
          </if>
@@ -138,6 +151,7 @@
                ) as ori_train_nm        --   원훈련명
              ,rtp.saf_train_plan_no as re_saf_train_plan_no -- 재훈련계획번호 
              ,rtp.train_nm as re_train_nm   --  재훈련명
+             ,rtp.train_plan_state as re_train_plan_state --재훈련계획단계
              ,tp.re_train_yn            --  재훈련여부
           from saf_train_plan tp
           LEFT OUTER JOIN saf_train_plan rtp on tp.saf_train_plan_no = rtp.ori_saf_train_plan_no
@@ -154,8 +168,12 @@
             ,cu.plant_cd 
             ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', cu.plant_cd) as plant_nm
             ,cu.position_nm 
-            ,case when tdp.complet_yn = 'Y' then '참여' else '미참여' end as completYn  
             ,tdp.remark
+            ,tdp.complet_yn
+            ,tdp.re_train_not_yn
+            ,tdp.complet_ymd
+            ,tdp.video_watch_time
+            ,tdp.re_complet_yn
         from com_user cu 
         inner join saf_train_dtl_psn tdp on cu.user_id = tdp.user_id
         inner join saf_train_plan tp on tp.saf_train_plan_no = tdp.saf_train_plan_no
@@ -415,70 +433,76 @@
         where saf_train_plan_no = #{safTrainPlanNo}
     </update>
    
-    <select id="getEmergencyResultLists" resultType="com.she.safety.model.EmergencyDept">
+    <select id="getEmergencyResultLists" resultType="com.she.safety.model.Emergency">
          /* EmergencyMapper.getEmergencyResultLists [Emergency.xml] */
-        select
-                   tp.dept_cd
-           ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
---           ,dbo.GET_DEPT_NM(td.dept_cd) as sub_dept_nm
---           ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
---           ,dbo.GET_CODE_NM(td.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(td.state_cd, 'COM_PROCESS_STEP2') + ')' as stateAnm
-           ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
---           ,td.train_ymd               --  훈련일
---           ,td.train_s_time + ' ~ ' + td.train_e_time as trainTime
-           ,tp.train_nm
-           ,tp.train_place
---           ,format(isnull(td.train_user_cnt, 0), '##,###') as train_user_cnt
---           ,dbo.GET_USER_NM(td.create_user_id) as create_user_nm
---           ,convert(char(10), td.create_dt, 23) as create_dt
-        from 
---        saf_train_dept_rslt td
-        saf_train_plan tp
-            <!-- td.saf_train_dept_rslt_no
-           ,td.saf_train_plan_no
-           ,(select count(*) from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
+       select
+              saf_train_plan_no      --          훈련계획번호
+             ,tp.dept_cd                 --주관부서코드
+             ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
+             ,tp.train_type_cd           --      훈련구분코드 SAF_TRA_COURSE_CLS
+             ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
+             ,tp.train_user_id           --      훈련교관ID
+             ,tp.train_dept_cd           --      훈련교관소속부서코드
+             ,tp.train_nm                --  훈련명
+             ,tp.train_start_ymd         --  훈련시작일
+             ,tp.train_end_ymd           --  훈련종료일
+             ,tp.train_s_time            --      훈련시작시간
+             ,tp.train_e_time            --      훈련종료시간
+             ,tp.train_s_hour            --      훈련시작시
+             ,tp.train_s_min             --  훈련시작분
+             ,tp.train_e_hour            --      훈련종료시
+             ,tp.train_e_min             --  훈련종료분
+             ,tp.train_place             --  훈련장소
+             ,tp.train_content           --      훈련내용요약
+             ,tp.train_s_time + ' ~ ' + tp.train_e_time as trainTime
+             ,tp.create_user_id          --      등록자
+             ,dbo.GET_USER_NM(tp.create_user_id) as create_user_nm
+             ,convert(char(10), tp.create_dt, 23) as create_dt --  등록일
+             ,tp.update_user_id          --      수정자
+             ,tp.update_dt               --  수정일
+             ,format((
+                select count(*) 
+                from saf_train_dtl_psn 
+                where saf_train_plan_no = tp.saf_train_plan_no
+             ), '##,##0') as userCnt
+             ,(select count(*) from saf_impr_act sia where sia.ref_table_id = tp.saf_train_plan_no
               and sia.impr_class_cd = 'ICL37' and del_yn = 'N') as requestCnt
            ,(select count(*)
-              from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
+              from saf_impr_act sia where sia.ref_table_id = tp.saf_train_plan_no
               and sia.impr_class_cd = 'ICL37'
               and sia.impr_step_cd != 'IMST5'
               and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
               and del_yn = 'N'
               ) as incompletCnt
            ,(select count(*)
-              from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
+              from saf_impr_act sia where sia.ref_table_id = tp.saf_train_plan_no
               and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
               and sia.act_class_cd = 'ACL02'
               and sia.impr_class_cd = 'ICL37'
               and sia.impr_step_cd != 'IMST5'
-              and del_yn = 'N'
+              and sia.del_yn = 'N'
               ) as overdueCnt
-           ,(select count(*) from saf_impr_act sia where sia.ref_table_id = td.saf_train_dept_rslt_no
+           ,(select count(*) from saf_impr_act sia where sia.ref_table_id = tp.saf_train_plan_no
               and sia.impr_class_cd = 'ICL37'
               and sia.impr_step_cd = 'IMST5'
-              and del_yn = 'N'
+              and sia.del_yn = 'N'
               ) as completCnt
-           ,td.state_cd
-           ,tp.plant_cd 
-           ,td.dept_cd as sub_dept_cd
-           ,tp.dept_cd
-           ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
-           ,dbo.GET_DEPT_NM(td.dept_cd) as sub_dept_nm
-           ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
-           ,dbo.GET_CODE_NM(td.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(td.state_cd, 'COM_PROCESS_STEP2') + ')' as stateAnm
-           ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
-           ,td.train_ymd                 훈련일
-           ,td.train_s_time + ' ~ ' + td.train_e_time as trainTime
-           ,tp.train_nm
-           ,tp.train_place
-           ,format(isnull(td.train_user_cnt, 0), '##,###') as train_user_cnt
-           ,dbo.GET_USER_NM(td.create_user_id) as create_user_nm
-           ,convert(char(10), td.create_dt, 23) as create_dt
-        from saf_train_dept_rslt td
-        inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
-        where tp.state_cd = 'PSEND' -->
- <!--        <if test="plantCd != null and !plantCd.equals('')">
-            and tp.plant_cd = #{plantCd}
+             ,STUFF((
+                select ', ' + dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', tpp.plant_cd) as plant_nm
+                from saf_train_plan_plant tpp
+                where tp.saf_train_plan_no = tpp.saf_train_plan_no
+                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') as plant_nm
+             ,tp.train_plan_state
+             ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'TRAIN_PLAN_STATE', tp.train_plan_state) as train_plan_state_nm
+          from saf_train_plan tp
+         where 1=1 
+         <if test="plantCd != null and !plantCd.equals('')">
+            and (
+                 select count(*) 
+                 from saf_train_plan_plant tpp
+                 where tpp.saf_train_plan_no = tp.saf_train_plan_no
+                     and tpp.plant_cd = #{plantCd}
+                ) != 0 
          </if>
          <if test="trainTypeCd != null and !trainTypeCd.equals('')">
             and tp.train_type_cd = #{trainTypeCd}
@@ -489,14 +513,18 @@
          <if test="trainPlace != null and !trainPlace.equals('')">
             and tp.train_place like '%' +  #{trainPlace} + '%'
          </if>
-         <if test="procStepCd != null and !procStepCd.equals('')">
-            and td.proc_step_cd = #{procStepCd}
-         </if>
-         <if test="stateCd != null and !stateCd.equals('')">
-            and td.state_cd = #{stateCd}
-         </if>
+         <choose>
+             <when test='trainPlanState != null and trainPlanState.equals("Y")'>
+                 and tp.train_plan_state = #{trainPlanState}
+             </when>
+             <otherwise>
+                 and ( tp.train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_PLAN}' OR tp.train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_RESULT}')
+             </otherwise>
+         </choose>
          <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
-             and convert(char(10), td.train_ymd, 23) between #{startDt} and #{endDt}
+             and (convert(char(10), train_start_ymd, 23) &lt;= #{endDt}
+                    and convert(char(10), train_end_ymd, 23) &gt;= #{startDt}
+                 ) 
          </if>
          <if test= 'deptCd != null and !deptCd.equals("")'>
            <choose>
@@ -508,29 +536,29 @@
                </otherwise>
            </choose>
         </if>
-        <if test="year != null and !year.equals('')">            
+         <if test="year != null and !year.equals('')">            
             <if test= "monFlag != null and monFlag > 0  and monFlag == 200">
-                and convert(char(4), td.train_ymd, 23) &lt; #{year}
+                and convert(char(4), tp.train_end_ymd, 23) &lt; #{year}
             </if>
             <if test= "monFlag != null and monFlag > 0  and monFlag == 300">
-                and convert(char(4), td.train_ymd, 23) &lt;= #{year}
+                and convert(char(4), tp.train_end_ymd, 23) &lt;= #{year}
             </if>
             <if test= "monFlag != null and monFlag > 0  and monFlag != 200 and monFlag != 300">
-                and convert(char(4), td.train_ymd, 23) = #{year}
+                and convert(char(4), tp.train_end_ymd, 23) = #{year}
             </if>          
         </if>
         <if test= "monFlag != null and monFlag > 0  and monFlag != 100 and monFlag != 200 and monFlag != 300">
-          and substring(convert(char(10), td.train_ymd, 23), 6, 2) = #{monFlag}
+          and substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = #{monFlag}
         </if>
         <if test= "gubun != null and !gubun.equals('')">
           <choose>
               <when test= "'계획(조직수)'.equals(gubun)">
+               and tp.train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_PLAN}'
               </when>
               <when test= "'실시(조직수)'.equals(gubun)">
-                and td.state_cd = 'PSEND'
+                and tp.train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_RESULT}'
               </when>
               <otherwise>
-                and td.state_cd = 'PSEND'
               </otherwise>
           </choose>
         </if>
@@ -541,66 +569,65 @@
              where sia.impr_class_cd = 'ICL37' 
                and sia.ref_table_id = td.saf_train_dept_rslt_no
                and datediff(day, GETDATE() , sia.act_limit_ymd) &lt; 0) != 0
-        </if> -->
-        <!-- order by td.saf_train_dept_rslt_no desc -->
+        </if>
+        order by tp.saf_train_plan_no desc
     </select>
-    <select id="getEmergencyResultInfo" resultType="com.she.safety.model.EmergencyDept">
+    <select id="getEmergencyResultInfo" resultType="com.she.safety.model.Emergency">
+        /* EmergencyMapper.getEmergencyResultInfo [Emergency.xml] */
         select
-            td.saf_train_dept_rslt_no
-           ,td.saf_train_plan_no
-           ,tp.dept_cd
-           ,td.dept_cd as sub_dept_cd
-           ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
-           ,dbo.GET_DEPT_NM(td.dept_cd) as sub_dept_nm
-           ,tp.plant_cd
-           ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
-           ,dbo.GET_CODE_NM(td.proc_step_cd, 'SAF_TRAIN_STEP') + '(' + dbo.GET_CODE_NM(td.state_cd, 'COM_PROCESS_STEP2') + ')' as stateAnm
-           ,tp.train_type_cd
-           ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
-           ,tp.train_ymd               --  훈련일
-           ,tp.train_s_time
-           ,tp.train_e_time
-           ,tp.train_user_id
-           ,dbo.GET_USER_NM(tp.train_user_id) as train_user_nm
-           ,tp.train_dept_cd
-           ,dbo.GET_DEPT_NM(tp.train_dept_cd) as train_dept_nm
-           ,tp.train_s_time + ' ~ ' + tp.train_e_time as trainTime
-           ,tp.train_nm
-           ,tp.train_place
-           ,tp.chng_num
-           ,tp.train_content
-           ,td.train_s_time as sub_train_s_time
-           ,td.train_e_time as sub_train_e_time
-           ,td.train_ymd as sub_train_ymd
-           ,isnull(td.train_yn, 'N') as train_yn
-           ,isnull(td.train_user_cnt, 0) as train_user_cnt
-           ,td.train_desc
-           ,td.train_impr_desc
-           ,td.train_eval_opin
-           ,dbo.GET_USER_NM(td.create_user_id) as create_user_nm
-           ,convert(char(10), td.create_dt, 23) as create_dt
-           ,td.state_cd
-        from saf_train_dept_rslt td
-        inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
-        where td.saf_train_dept_rslt_no = #{safTrainDeptRsltNo}
+              tp.saf_train_plan_no      --          훈련계획번호
+             ,tp.dept_cd                 --주관부서코드
+             ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
+             ,tp.train_type_cd           --      훈련구분코드 SAF_TRA_COURSE_CLS
+             ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
+             ,tp.train_user_id           --      훈련교관ID
+             ,dbo.GET_USER_NM(tp.train_user_id) as train_user_nm
+             ,tp.train_dept_cd           --      훈련교관소속부서코드
+             ,dbo.GET_DEPT_NM(tp.train_dept_cd) as train_dept_nm
+             ,tp.train_nm                --  훈련명
+             ,tp.train_start_ymd         --  훈련시작일
+             ,tp.train_end_ymd           --  훈련종료일
+             ,tp.train_s_time            --      훈련시작시간
+             ,tp.train_e_time            --      훈련종료시간
+             ,tp.train_s_hour            --      훈련시작시
+             ,tp.train_s_min             --  훈련시작분
+             ,tp.train_e_hour            --      훈련종료시
+             ,tp.train_e_min             --  훈련종료분
+             ,tp.train_place             --  훈련장소
+             ,tp.train_content           --      훈련내용요약
+             ,tp.chng_num
+             ,tp.create_user_id          --      등록자
+             ,dbo.GET_USER_NM(tp.create_user_id) as create_user_nm
+             ,convert(char(10), tp.create_dt, 23) as create_dt --  등록일
+             ,tp.update_user_id          --      수정자
+             ,tp.update_dt               --  수정일
+             ,tp.train_method_cd         --  훈련방법코드
+             ,dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'TRAIN_METHOD_CD', tp.train_method_cd) as train_method_nm
+             ,tp.train_plan_state        --  훈련계획단계
+             ,tp.ori_saf_train_plan_no   --  원훈련계획번호
+             ,( select train_nm 
+                from saf_train_plan
+                where saf_train_plan_no = tp.ori_saf_train_plan_no
+               ) as ori_train_nm        --   원훈련명
+             ,rtp.saf_train_plan_no as re_saf_train_plan_no -- 재훈련계획번호 
+             ,rtp.train_nm as re_train_nm   --  재훈련명
+             ,rtp.train_plan_state as re_train_plan_state --재훈련계획단계
+             ,tp.re_train_yn                --  재훈련여부
+             ,tr.train_ymd                                     --  훈련일
+             ,tr.train_s_time as sub_train_s_time              --  훈련결과-훈련시작시간
+             ,tr.train_e_time as sub_train_e_time              --  훈련결과-훈련종료시간
+             ,tr.train_desc                                    --  비고
+             ,isnull(tr.train_yn, 'N') as train_yn              --  참여인원수
+             ,isnull(tr.train_user_cnt, 0) as train_user_cnt    --  참여여부
+          from saf_train_plan tp
+          LEFT OUTER JOIN saf_train_plan rtp on tp.saf_train_plan_no = rtp.ori_saf_train_plan_no
+          LEFT OUTER JOIN saf_train_rslt tr on tp.saf_train_plan_no = tr.saf_train_plan_no
+         where tp.saf_train_plan_no = #{safTrainPlanNo}
     </select>
-    <update id="updateEmergencyResult" parameterType="com.she.safety.model.EmergencyDept">
-        update saf_train_dept_rslt
-           set train_user_cnt = #{trainUserCnt}
-              ,train_yn = #{trainYn}
-              ,train_ymd = #{subTrainYmd}
-              ,train_s_time = #{subTrainSTime}
-              ,train_e_time = #{subTrainETime}
-              ,train_desc = #{trainDesc}
-              ,train_impr_desc = #{trainImprDesc}
-              ,train_eval_opin = #{trainEvalOpin}
-              ,state_cd = 'PSREG'
-         where saf_train_dept_rslt_no = #{safTrainDeptRsltNo}
-    </update>
     <update id="updateEmergencyResultComplete">
-        update saf_train_dept_rslt set state_cd = 'PSEND'
-               ,train_complete_dt = getDate() 
-        where saf_train_dept_rslt_no = #{safTrainDeptRsltNo}
+        update saf_train_plan 
+        set train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_RESULT}'
+        where saf_train_plan_no = #{safTrainPlanNo}
     </update>
     <select id ="getResultstatusList" resultType="hashMap">
         with plant as (
@@ -883,7 +910,6 @@
          <!-- 전체일 경우 합계 데이터 조회 -->
          order by g.plantCd, max(g.sort_order)
     </select>
-    
     <select id= "getEmergencyPlantList" resultType= "com.she.safety.model.EmergencyPlant">
         /* EmergencyMapper.getEmergencyPlantList [Emergency.xml] */
         select saf_train_plan_no
@@ -891,7 +917,6 @@
         from saf_train_plan_plant
         where saf_train_plan_no = #{safTrainPlanNo}
     </select>
-    
     <insert id="createEmergencyPlant" parameterType="com.she.safety.model.EmergencyPlant">
         /* EmergencyMapper.createEmergencyPlant [Emergency.xml] */
         insert into saf_train_plan_plant
@@ -963,5 +988,137 @@
         /* EmergencyMapper.deleteEmergencyVideo [Emergency.xml] */
         delete from saf_train_plan_video
         where saf_train_plan_no = #{safTrainPlanNo}
-    </delete>     
+    </delete>    
+    <select id= "getEmergencyOutSideUsers" resultType= "com.she.safety.model.EmergencyOutsidePsn">
+        /* EmergencyMapper.getEmergencyOutSideUsers [Emergency.xml] */
+        select 
+             tdsp.subconn_psn_no
+            ,tdsp.saf_train_plan_no
+            ,cvm.vendor_nm
+            ,tdsp.vendor_cd
+            ,tdsp.worker_nm
+            ,tdsp.birth_ymd
+            ,tdsp.gender_cd
+            ,m.code_nm as gender_nm
+            ,tdsp.vendor_worker_no
+            ,tdsp.complet_ymd
+            ,tdsp.remark
+        from saf_train_dtl_subconn_psn tdsp
+        left outer join com_vendor_mst cvm 
+        on tdsp.vendor_cd = cvm.vendor_cd
+        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_SEX_TYPE') m
+        on m.code = tdsp.gender_cd
+        where tdsp.saf_train_plan_no = #{safTrainPlanNo}        
+    </select> 
+    <insert id= "createEmergencyOutSideUser" parameterType= "com.she.safety.model.EmergencyOutsidePsn">
+        /* EmergencyMapper.createEmergencyOutSideUser [Emergency.xml] */
+        <selectKey keyProperty= "subconnPsnNo" resultType= "int" order= "BEFORE">
+             SELECT ISNULL(MAX(subconn_psn_no),0)+1 AS subconn_psn_no
+             FROM saf_train_dtl_subconn_psn
+        </selectKey> 
+        insert into saf_train_dtl_subconn_psn( 
+            saf_train_plan_no
+            ,subconn_psn_no
+            ,vendor_nm
+            ,vendor_cd
+            ,worker_nm
+            ,birth_ymd
+            ,gender_cd
+            ,vendor_worker_no            
+            ,complet_ymd
+            ,remark
+        ) values (
+             #{safTrainPlanNo}
+            ,#{subconnPsnNo}
+            ,#{vendorNm}
+            ,#{vendorCd}
+            ,#{workerNm}
+            ,#{birthYmd}
+            ,#{genderCd}
+            ,#{vendorWorkerNo}
+            ,#{completYmd}
+            ,#{remark}
+        )
+    </insert> 
+    <delete id= "deleteEmergencyOutSideUser">
+        /* EmergencyMapper.deleteEmergencyOutSideUser [Emergency.xml] */
+        delete from saf_train_dtl_subconn_psn 
+        where saf_train_plan_no = #{safTrainPlanNo}
+    </delete>   
+    <select id="checkEmergencyResult" resultType="int">
+        /* EmergencyMapper.checkEmergencyResult [EmergencyMapper.xml] */
+        select count(*) as cnt
+          from saf_train_rslt
+         where saf_train_plan_no = #{safTrainPlanNo}
+    </select>
+    <insert id="createEmergencyResultUser" parameterType="com.she.safety.model.EmergencyPsn">
+        /* EmergencyMapper.createEmergencyResultUser [Emergency.xml] */
+        insert into saf_train_dtl_psn
+        (
+             saf_train_plan_no
+            ,user_id
+            ,dept_cd
+            ,complet_yn
+            ,re_train_not_yn
+            ,remark
+            ,re_complet_yn
+            ,re_remark
+            ,complet_ymd
+            ,video_watch_time
+        )
+        values
+        (
+            #{safTrainPlanNo}
+           ,#{userId}
+           ,#{deptCd}
+           ,#{completYn}
+           ,#{reTrainNotYn}
+           ,#{remark}
+           ,#{reCompletYn}
+           ,#{reRemark}
+           ,#{completYmd}
+           ,#{videoWatchTime}
+        )
+    </insert>
+    
+    <insert id= "createEmergencyResult" parameterType= "com.she.safety.model.Emergency"> 
+        /* EmergencyMapper.createEmergencyResult [Emergency.xml] */    
+        insert into saf_train_rslt
+        ( 
+            saf_train_plan_no        
+            ,train_user_cnt
+            ,train_yn
+            ,train_ymd
+            ,train_s_time
+            ,train_e_time
+            ,train_desc
+            ,create_user_id
+            ,create_dt
+        )
+        VALUES
+        ( 
+            #{safTrainPlanNo}
+            ,#{trainUserCnt}
+            ,#{trainYn}
+            ,#{trainYmd}
+            ,#{subTrainSTime}
+            ,#{subTrainETime}
+            ,#{trainDesc}
+            ,#{createUserId}
+            ,getDate()
+        )
+    </insert>
+    <update id= "updateEmergencyResult" parameterType= "com.she.safety.model.Emergency">
+        /* EmergencyMapper.updateEmergencyResult [Emergency.xml] */
+        update saf_train_rslt
+        SET train_user_cnt = #{trainUserCnt}
+           ,train_yn = #{trainYn}
+           ,train_ymd = #{trainYmd}
+           ,train_s_time = #{subTrainSTime}
+           ,train_e_time = #{subTrainETime}
+           ,train_desc = #{trainDesc}
+           ,update_user_id = #{updateUserId}
+           ,update_dt = getdate()
+        where saf_train_plan_no = #{safTrainPlanNo}
+    </update>
 </mapper>

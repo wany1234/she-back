@@ -736,4 +736,9 @@ public class ConstVal {
      */
     public static String TRAIN_PLAN_STATE_PLAN = "TPS02";
 
+    /**
+     * 훈련계획단계 - 걸과확정
+     */
+    public static String TRAIN_PLAN_STATE_RESULT = "TPS03";
+
 }

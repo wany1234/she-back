@@ -31,6 +31,7 @@ import com.she.impr.model.ImprAct;
 import com.she.safety.emergency.service.EmergencyService;
 import com.she.safety.model.Emergency;
 import com.she.safety.model.EmergencyDept;
+import com.she.safety.model.EmergencyOutsidePsn;
 import com.she.safety.model.EmergencyPsn;
 import com.she.utils.RequestMapper;
 
@@ -207,14 +208,13 @@ public class EmergencyController {
         // 하위부서 여부
         String deptSubYn = map.containsKey("deptSubYn") ? map.get("deptSubYn").toString() : "";
         // 단계
-        String procStepCd = map.containsKey("procStepCd") ? map.get("procStepCd").toString() : "";
-        // 진행상태
-        String stateCd = map.containsKey("stateCd") ? map.get("stateCd").toString() : "";
+        String trainPlanState = map.containsKey("trainPlanState") ? map.get("trainPlanState").toString() : "";
+
         int monFlag = parameter.containsKey("monFlag") ? Integer.parseInt(parameter.get("monFlag").toString()) : 0;
         String year = map.containsKey("year") ? map.get("year").toString() : "";
         String gubun = map.containsKey("gubun") ? map.get("gubun").toString() : "";
         String imprChk = map.containsKey("imprChk") ? map.get("imprChk").toString() : "";
-        return ResponseEntity.ok().body(emergencyService.getEmergencyResultLists(plantCd, startDt, endDt, trainTypeCd, trainNm, trainPlace, deptCd, deptSubYn, procStepCd, stateCd, monFlag, year, gubun, imprChk, defaultParam));
+        return ResponseEntity.ok().body(emergencyService.getEmergencyResultLists(plantCd, startDt, endDt, trainTypeCd, trainNm, trainPlace, deptCd, deptSubYn, trainPlanState, monFlag, year, gubun, imprChk, defaultParam));
     }
 
     /**
@@ -224,10 +224,10 @@ public class EmergencyController {
      * @return 훈련결과 관리 계획 조회
      * @throws Exception
      */
-    @GetMapping("/emergencyresultinfo/{safTrainDeptRsltNo}")
-    public ResponseEntity<EmergencyDept> getEmergencyResultInfo(@PathVariable("safTrainDeptRsltNo") int safTrainDeptRsltNo, @ModelAttribute DefaultParam defaultParam) throws Exception {
+    @GetMapping("/emergencyresultinfo/{safTrainPlanNo}")
+    public ResponseEntity<Emergency> getEmergencyResultInfo(@PathVariable("safTrainPlanNo") int safTrainPlanNo, @ModelAttribute DefaultParam defaultParam) throws Exception {
 
-        return ResponseEntity.ok().body(emergencyService.getEmergencyResultInfo(safTrainDeptRsltNo, defaultParam));
+        return ResponseEntity.ok().body(emergencyService.getEmergencyResultInfo(safTrainPlanNo, defaultParam));
     }
 
     /**
@@ -238,8 +238,8 @@ public class EmergencyController {
      * @throws Exception
      */
     @PostMapping("/emergencyResult")
-    public ResponseEntity<Integer> createEmergencyResult(@RequestBody EmergencyDept emergencyDept) throws Exception {
-        return ResponseEntity.ok().body(emergencyService.createEmergencyResult(emergencyDept));
+    public ResponseEntity<Integer> createEmergencyResult(@RequestBody Emergency emergency) throws Exception {
+        return ResponseEntity.ok().body(emergencyService.createEmergencyResult(emergency));
     }
 
     /**
@@ -250,8 +250,8 @@ public class EmergencyController {
      * @throws Exception
      */
     @PutMapping("/emergencyResult")
-    public ResponseEntity<Integer> updateEmergencyResult(@RequestBody EmergencyDept emergencyDept) throws Exception {
-        return ResponseEntity.ok().body(emergencyService.updateEmergencyResult(emergencyDept));
+    public ResponseEntity<Integer> updateEmergencyResult(@RequestBody Emergency emergency) throws Exception {
+        return ResponseEntity.ok().body(emergencyService.updateEmergencyResult(emergency));
     }
 
     /**
@@ -261,9 +261,9 @@ public class EmergencyController {
      * @return 훈련결과 관리 완료처리
      * @throws Exception
      */
-    @PutMapping("/emergencyResultComplete/{safTrainDeptRsltNo}")
-    public ResponseEntity<Integer> updateEmergencyResultComplete(@PathVariable("safTrainDeptRsltNo") int safTrainDeptRsltNo) throws Exception {
-        return ResponseEntity.ok().body(emergencyService.updateEmergencyResultComplete(safTrainDeptRsltNo));
+    @PutMapping("/emergencyResultComplete/{safTrainPlanNo}")
+    public ResponseEntity<Integer> updateEmergencyResultComplete(@PathVariable("safTrainPlanNo") int safTrainPlanNo) throws Exception {
+        return ResponseEntity.ok().body(emergencyService.updateEmergencyResultComplete(safTrainPlanNo));
     }
 
     /**
@@ -305,5 +305,22 @@ public class EmergencyController {
         String apprFlag = map.containsKey("apprFlag") ? map.get("apprFlag").toString() : "";
 
         return ResponseEntity.ok().body(emergencyService.getEmergencyImprList(plantCd, monFlag, trainTypeCd, apprFlag, defaultParam));
+    }
+
+    /**
+     * 훈련이수자 조회 (외부)
+     *
+     * @param safTrainPlanNo
+     *            훈련계획번호
+     * @return 훈련이수자 목록
+     * @throws Exception
+     *             예외
+     */
+    @GetMapping("/emergencyresultoutsidepersons")
+    public ResponseEntity<List<EmergencyOutsidePsn>> getEmergencyOutSideUsers(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
+        int safTrainPlanNo = map.containsKey("safTrainPlanNo") ? Integer.parseInt(map.get("safTrainPlanNo").toString()) : 0;
+
+        return ResponseEntity.ok().body(emergencyService.getEmergencyOutSideUsers(safTrainPlanNo, defaultParam));
     }
 }

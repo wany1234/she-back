@@ -96,8 +96,32 @@ public class Emergency {
     private String reSafTrainPlanNo;
     @ApiModelProperty(value = "재훈련명")
     private String reTrainNm;
+    @ApiModelProperty(value = "재훈련계획단계")
+    private String reTrainPlanState;
+
     @ApiModelProperty(value = "재훈련여부")
     private String reTrainYn;
+
+    @ApiModelProperty(value = "훈련일")
+    private String trainYmd;
+    @ApiModelProperty(value = "훈련결과_훈련시작시간")
+    private String subTrainSTime;
+    @ApiModelProperty(value = "훈련결과_훈련종료시간")
+    private String subTrainETime;
+    @ApiModelProperty(value = "비고")
+    private String trainDesc;
+    @ApiModelProperty(value = "참여인원수")
+    private String trainUserCnt;
+    @ApiModelProperty(value = "참여여부")
+    private String trainYn;
+    @ApiModelProperty(value = "개선요청")
+    private String requestCnt;
+    @ApiModelProperty(value = "조치미완료")
+    private String incompletCnt;
+    @ApiModelProperty(value = "조치기한초과")
+    private String overdueCnt;
+    @ApiModelProperty(value = "조치완료")
+    private String completCnt;
 
     @ApiModelProperty(value = "훈련계획관리t사업장목록")
     private List<EmergencyPlant> emergencyPlantList;
@@ -109,6 +133,9 @@ public class Emergency {
     private List<EmergencyDept> emergencyDeptList;
     @ApiModelProperty(value = "훈련계획관리시나리오목록")
     private List<EmergencyScenario> emergencyScenarioList;
+    @ApiModelProperty(value = "훈련이수자(외부)목록")
+    private List<EmergencyOutsidePsn> emergencyOutSideUserList;
     @ApiModelProperty(value = "훈련계획별동영상")
     private EmergencyVideo emergencyVideo;
+
 }
