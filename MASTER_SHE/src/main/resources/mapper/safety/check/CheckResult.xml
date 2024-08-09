@@ -68,7 +68,7 @@
                          inner join saf_check_kind sck
                             on scm.saf_check_kind_no = sck.saf_check_kind_no
                            and sck.subcon_use_yn = 'N'
-                         inner join com_user cu
+                          left outer join com_user cu
                             on scm.create_user_id = cu.user_id
                           left outer join com_appr_rqst ar
                             on ar.appr_rqst_no = scm.appr_rqst_no
