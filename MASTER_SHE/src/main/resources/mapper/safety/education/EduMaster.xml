@@ -36,8 +36,6 @@
               ,m.plant_cd
               ,co.is_type_cd as is_type_cd
               ,cc4.code_nm as is_type_nm 
-              ,cm.code as p_biz_appr_step_cd
-              ,cmr.code as r_biz_appr_step_cd
               ,co.edu_type_cd as edu_class_cd
               ,cc2.code_nm as edu_class_nm
               ,plant.code_nm as plant_nm 
@@ -60,8 +58,6 @@
               ,m.edu_s_ymd
               ,m.edu_e_ymd
               ,m.edu_time
-              ,m.p_appr_rqst_no
-              ,m.r_appr_rqst_no
               ,m.edu_time_plan
               ,m.edu_place
               ,m.edu_teacher
@@ -108,10 +104,6 @@
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_TYPE') c2 on m.edu_type_cd = c2.code
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_STEP') c3 on m.process_step_cd = c3.code
-          LEFT OUTER JOIN com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
-          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm on cm.code = ar.biz_appr_step_cd
-          LEFT OUTER JOIN com_appr_rqst arr on arr.appr_rqst_no = m.r_appr_rqst_no
-          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cmr on cmr.code = arr.biz_appr_step_cd
           LEFT OUTER JOIN com_dept d on m.main_dept_cd = d.dept_cd
           LEFT OUTER JOIN com_dept d2 on m.target_dept_cd = d2.dept_cd
           LEFT OUTER JOIN com_dept d3 on m.exec_dept_cd = d3.dept_cd
@@ -162,9 +154,6 @@
             ,create_user_id
             ,create_dt
             ,chng_num
-            ,p_step_cd
-            ,p_proc_step_cd
-            ,p_state_cd
             ,edu_method_cd
             ,re_edu_yn
             ,ori_saf_edu_mst_no 
@@ -197,14 +186,6 @@
             ,#{createUserId}
             ,getDate()
             ,#{chngNum}
-            ,'BAPSB'
-            ,'CS001'
-            <if test="pStateNm != null and !pStateNm.equals('')">
-            ,#{pStateNm}  
-            </if>     
-            <if test="pStateNm == null or pStateNm.equals('')">
-            ,'STATE2'  
-            </if>  
             ,#{eduMethodCd}
             ,#{reEduYn}
             ,#{oriSafEduMstNo}
@@ -216,7 +197,6 @@
         update saf_edu_mst
         SET saf_edu_course_no = #{safEduCourseNo}
             ,year= #{year}
-            ,r_state_cd= 'STATE2'
             ,plant_cd = #{plantCd}           
             ,edu_time = #{eduTime}
             ,edu_type_cd = #{eduTypeCd}
@@ -325,6 +305,7 @@
             ,p.re_remark
             ,p.re_edu_time
             ,p.re_edu_not_yn
+            ,p.video_watch_time
         from saf_edu_dtl_psn p
         left outer join com_dept d on p.dept_cd = d.dept_cd
         left outer join com_user u on p.user_id = u.user_id
@@ -384,42 +365,7 @@
     <delete id = "deletePlanData">
             delete from saf_edu_mst_mat
         where saf_edu_mst_no = #{safEduMstNo}
-    </delete>
-    
-    <update id="updateAppr" >
-        UPDATE saf_edu_mst
-        SET  p_appr_rqst_no = #{apprRqstNo}       
-        <if test="apprStepCd!=null and !apprStepCd.equals('')"> 
-        ,p_step_cd = #{apprStepCd}
-        </if>
-        <if test='apprStepCd.equals("BAPSA")'>
-        ,p_state_cd = 'STATE3'
-        </if>
-        <if test='apprStepCd.equals("BAPSG")'>
-        ,p_state_cd = 'STATE4'
-        ,r_proc_step_cd='CS002'
-        ,r_state_cd='STATE1'
-        ,r_step_cd='BAPSB'
-        </if> 
-        where saf_edu_mst_no = #{safEduMstNo}
-    </update>    
-    
-    
-    <update id="updateApprResult" >
-        UPDATE saf_edu_mst
-        SET  r_appr_rqst_no = #{apprRqstNo}
-        <if test="apprStepCd!=null and !apprStepCd.equals('')">
-        ,r_step_cd = #{apprStepCd}
-        </if>
-        <if test='apprStepCd.equals("BAPSA")'>
-        ,r_state_cd = 'STATE3' 
-        </if>       
-        <if test='apprStepCd.equals("BAPSG")'>
-        ,r_state_cd = 'STATE4'
-        </if>                
-        where saf_edu_mst_no = #{safEduMstNo}
-    </update>    
-        
+    </delete>  
         
       <!-- 외부 이수자 crud -->
     <select id= "getEduOutSideUsers" resultType= "com.she.safety.model.EduOutsideUser">

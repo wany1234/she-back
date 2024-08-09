@@ -7,11 +7,6 @@
     /* EduStatusMapper.getEduStatuss [EduStatus.xml] */
          select 
              m.year
-             ,m.p_proc_step_cd
-             ,m.p_state_cd
-             ,m.p_step_cd
-             ,m.r_step_cd
-             ,concat(dbo.GET_CODE_NM(m.p_proc_step_cd, 'COM_STEP'),' (', case when m.p_step_cd = 'BAPSD' then cm.code_nm else dbo.GET_CODE_NM(m.p_state_cd, 'COM_STATE') end , ')') as p_state_nm
             ,m.process_step_cd 
             ,m.main_dept_cd as main_dept_cd
             ,cd1.dept_nm as main_dept_nm
@@ -33,8 +28,6 @@
             ,m.edu_type_cd
             ,c2.code_nm as edu_type_nm
             ,m.edu_nm
-            ,m.p_proc_step_cd
-            ,c3.code_nm as p_proc_step_nm
             ,m.edu_s_ymd
             ,m.edu_e_ymd
             ,m.edu_s_ymd +' ~ '+ m.edu_e_ymd as eduYmd
@@ -64,9 +57,7 @@
             -- 20200602 김봉석 부장님 요청으로 무조건 '보기' 보이도록 설정
             , '보기' as qr_code
             ,cu.user_nm as create_user_nm
-            ,uu.user_nm as update_user_nm        
-            ,case when m.process_step_cd = 'SES01' then ar.biz_appr_step_cd else arr.biz_appr_step_cd end as biz_appr_step_cd
-            ,case when m.process_step_cd = 'SES01' then isnull(cm.code_nm, '결재요청전') else isnull(cmr.code_nm, '결재요청전') end as biz_appr_step_nm
+            ,uu.user_nm as update_user_nm          
             ,m.edu_place
             ,a.user_nm
             ,c5.dept_nm
@@ -89,9 +80,6 @@
             on a.saf_edu_mst_no = b.saf_edu_mst_no
             where a.saf_edu_mst_no = m.saf_edu_mst_no
             and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduPerson
-
-
-
             ,case when process_step_cd = 'SES03' then (select isnull(sum(case when b.re_complet_yn != 'Y'  then 1 else 0 end),0)
             from saf_edu_mst a
             left outer join saf_edu_dtl_psn b
@@ -102,7 +90,6 @@
             -- , sum(case when p.complet_yn='Y' then 1 else 0 end ) as passUserNum
             -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='N' then 1 else 0 end ) as failUserNum
             -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='Y' then 1 else 0 end ) as exceptUserNum
-            ,ar.appr_rqst_no as rapprRqstNo
             ,m.re_edu_yn
             ,m.edu_method_cd
             ,c8.code_nm as edu_method_nm
@@ -116,17 +103,11 @@
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc2 on co.edu_type_cd = cc2.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_TYPE') c2 on m.edu_type_cd = c2.code
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_STEP') c3 on m.p_proc_step_cd = c3.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c4 on m.plant_cd = c4.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') c6 on co.is_type_cd = c6.code
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP')c7 on m.process_step_cd=c7.code  
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD')c8 on m.edu_method_cd=c8.code 
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'EDU_PLAN_STATE')c9 on m.edu_plan_state=c9.code 
         left outer join com_dept c5 on c5.dept_cd = m.dept_cd
-        left outer join com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm on cm.code = ar.biz_appr_step_cd
-        left outer join com_appr_rqst arr on arr.appr_rqst_no = m.r_appr_rqst_no
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cmr on cmr.code = arr.biz_appr_step_cd     
         left outer join com_user a  on a.user_id = m.user_id
         left outer join com_user cu on m.create_user_id = cu.user_id
         left outer join com_user uu on m.update_user_id = uu.user_id
@@ -188,9 +169,6 @@
         <if test='plantCd != null and plantCd != ""'>
         and m.plant_cd = #{plantCd}
         </if>
-        <if test='pProcStepNm != "Y" and pProcStepNm != ""'>
-        and c3.code = #{pProcStepNm}
-        </if>
         <if test='pYear != null and pYear != ""'>
         and year(m.edu_s_ymd ) =  #{pYear}
         </if>        
@@ -226,10 +204,6 @@
     /* EduStatusMapper.getEduResults [EduStatus.xml] */
          select 
              m.year
-             ,m.r_proc_step_cd
-             ,m.p_step_cd
-             ,m.r_step_cd
-             ,concat(dbo.GET_CODE_NM(m.r_proc_step_cd, 'COM_STEP'),' (', case when m.r_step_cd = 'BAPSD' then cmr.code_nm else dbo.GET_CODE_NM(m.r_state_cd, 'COM_STATE') end , ')') as r_state_nm
             ,m.main_dept_cd as main_dept_cd
             ,cd1.dept_nm as main_dept_nm
             ,m.target_dept_cd as target_dept_cd
@@ -270,18 +244,10 @@
                  when dbo.GET_USER_NM(m.update_user_id) = '' then dbo.GET_USER_NM(m.create_user_id)
                  else dbo.GET_USER_NM(m.update_user_id) end    as writer_user_nm
             , case when m.update_dt is null then convert(date, m.create_dt) else convert(date, m.update_dt) end   as writer_dt
-            <!-- 
-            ,case when m.process_step_cd != 'SES01' 
-                  then case when (select count(*) from saf_edu_mst_question where saf_edu_mst_no = m.saf_edu_mst_no) > 0 then '보기'
-                            else null
-                        end
-                  else null end as qr_code -->
             -- 20200602 김봉석 부장님 요청으로 무조건 '보기' 보이도록 설정
             , '보기' as qr_code
             ,cu.user_nm as create_user_nm
             ,uu.user_nm as update_user_nm        
-            ,case when m.process_step_cd = 'SES01' then ar.biz_appr_step_cd else arr.biz_appr_step_cd end as biz_appr_step_cd
-            ,case when m.process_step_cd = 'SES01' then isnull(cm.code_nm, '결재요청전') else isnull(cmr.code_nm, '결재요청전') end as biz_appr_step_nm
             ,m.edu_place
             ,a.user_nm
             ,c5.dept_nm
@@ -304,9 +270,6 @@
             on a.saf_edu_mst_no = b.saf_edu_mst_no
             where a.saf_edu_mst_no = m.saf_edu_mst_no
             and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduPerson
-
-
-
             ,case when process_step_cd = 'SES03' then (select isnull(sum(case when b.re_complet_yn != 'Y'  then 1 else 0 end),0)
             from saf_edu_mst a
             left outer join saf_edu_dtl_psn b
@@ -317,8 +280,6 @@
             -- , sum(case when p.complet_yn='Y' then 1 else 0 end ) as passUserNum
             -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='N' then 1 else 0 end ) as failUserNum
             -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='Y' then 1 else 0 end ) as exceptUserNum
-            ,ar.appr_rqst_no as papprRqstNo
-            ,arr.appr_rqst_no as rapprRqstNo
             ,m.re_edu_yn
             ,m.edu_method_cd
             ,c7.code_nm as edu_method_nm
@@ -337,10 +298,6 @@
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'MGT_LAW_CLASS') c6 on co.is_type_cd = c6.code
             left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD')c7 on m.edu_method_cd=c7.code  
             left outer join com_dept c5 on c5.dept_cd = m.dept_cd
-            left outer join com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
-            left outer join com_appr_rqst arr on arr.appr_rqst_no = m.r_appr_rqst_no
-            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm on cm.code = ar.biz_appr_step_cd
-            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cmr on cmr.code = arr.biz_appr_step_cd     
             left outer join com_user a  on a.user_id = m.user_id
             left outer join com_user cu on m.create_user_id = cu.user_id
             left outer join com_user uu on m.update_user_id = uu.user_id
@@ -401,10 +358,7 @@
         </if>
         <if test='plantCd != null and plantCd != ""'>
         and m.plant_cd = #{plantCd}
-        </if>
-        <if test='rProcStepNm != "Y" and rProcStepNm != ""'>
-        and c3.code = #{rProcStepNm}
-        </if>
+        </if>   
         <if test='pYear != null and pYear != ""'>
         and year(m.edu_s_ymd ) =  #{pYear}
         </if>        
@@ -469,17 +423,13 @@
             ,m.update_dt
             ,case when m.process_step_cd != 'SES01' then '보기' else null end as qr_code
             ,cu.user_nm as create_user_nm
-            ,uu.user_nm as update_user_nm        
-            ,ar.biz_appr_step_cd                 
-            ,isnull(cm.code_nm, '결재요청전' ) as biz_appr_step_nm                  
+            ,uu.user_nm as update_user_nm                                       
         from saf_edu_mst m
         left outer join saf_edu_course co on m.saf_edu_course_no = co.saf_edu_course_no
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_TYPE') c2 on m.edu_type_cd = c2.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_STEP') c3 on m.process_step_cd = c3.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c4 on m.plant_cd = c4.code
-        left outer join com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
-        left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm on cm.code = ar.biz_appr_step_cd            
         left outer join com_user cu on m.create_user_id = cu.user_id
         left outer join com_user uu on m.update_user_id = uu.user_id
         left outer join saf_edu_dtl_psn psn on psn.saf_edu_mst_no = m.saf_edu_mst_no
@@ -613,7 +563,6 @@
              ,cc2.code as edu_class_cd
              ,co.edu_course_nm -- 교육 과정 
              ,co.saf_edu_course_no
-
             ,sum(case when year(m.edu_s_ymd) = #{year} and month(m.edu_s_ymd)='1' and m.process_step_cd ='SES03'  then 1 else 0 end) as month_1_num
             ,sum(case when year(m.edu_s_ymd) = #{year} and month(m.edu_s_ymd)='2' and m.process_step_cd ='SES03'  then 1 else 0 end) as month_2_num
             ,sum(case when year(m.edu_s_ymd) = #{year} and month(m.edu_s_ymd)='3' and m.process_step_cd ='SES03'  then 1 else 0 end) as month_3_num
@@ -799,6 +748,7 @@
            ,isnull(psn.edu_eval_pnt_sec, '0') as edu_eval_pnt_sec
            , psn.user_id as sub_ject_id
            , dbo.GET_USER_NM(psn.user_id) as sub_ject_nm
+           , psn.complet_yn
            , m.edu_method_cd
            , sev.video_url
            , sev.video_comp_time
@@ -809,9 +759,7 @@
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_TYPE') c2 on m.edu_type_cd = c2.code
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_STEP') c3 on m.process_step_cd = c3.code
-           left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c4 on m.plant_cd = c4.code
-           left outer join com_appr_rqst ar on ar.appr_rqst_no = m.p_appr_rqst_no
-           left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm on cm.code = ar.biz_appr_step_cd            
+           left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c4 on m.plant_cd = c4.code    
            left outer join com_dept c5 on c5.dept_cd = m.dept_cd
            left outer join com_user a  on a.user_id = m.user_id
            left outer join saf_edu_dtl_psn psn on psn.saf_edu_mst_no = m.saf_edu_mst_no

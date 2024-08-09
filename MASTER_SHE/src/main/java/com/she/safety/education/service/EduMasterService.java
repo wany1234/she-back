@@ -357,41 +357,6 @@ public class EduMasterService {
         return eduMasterMapper.getEduOutSideUsers(safEduMstNo, defaultParam);
     }
 
-    @Transactional
-    public int updateAppr(int safEduMstNo, String apprStepCd, int apprRqstNo) {
-
-        int resultNo = 0;
-
-        if (ConstVal.COM_BIZ_APPR_STEP_REJECT.equals(apprStepCd)) {
-            // 반려 - 결재 요청
-            resultNo += eduMasterMapper.updateAppr(safEduMstNo, apprRqstNo, ConstVal.COM_BIZ_APPR_STEP_REJECT);
-        } else if (ConstVal.COM_BIZ_APPR_STEP_ING.equals(apprStepCd)) {
-            // 결재중
-            resultNo += eduMasterMapper.updateAppr(safEduMstNo, apprRqstNo, ConstVal.COM_BIZ_APPR_STEP_ING);
-        } else if (ConstVal.COM_BIZ_APPR_STEP_COMPLETE.equals(apprStepCd)) {
-            // 결재 완료
-            resultNo += eduMasterMapper.updateAppr(safEduMstNo, apprRqstNo, ConstVal.COM_BIZ_APPR_STEP_COMPLETE);
-        }
-        return resultNo;
-    }
-
-    public int updateApprResult(int safEduMstNo, String apprStepCd, int apprRqstNo) throws Exception {
-
-        int resultNo = 0;
-        if (ConstVal.COM_BIZ_APPR_STEP_REJECT.equals(apprStepCd)) {
-            // 반려 - 결재 요청 PSREG(작성중) 으로 세팅
-            resultNo += eduMasterMapper.updateApprResult(safEduMstNo, apprRqstNo, ConstVal.COM_BIZ_APPR_STEP_REJECT);
-        } else if (ConstVal.COM_BIZ_APPR_STEP_ING.equals(apprStepCd)) {
-            // 결재 중 - 결재 요청 PSREG(작성중) 으로 세팅
-            resultNo += eduMasterMapper.updateApprResult(safEduMstNo, apprRqstNo, ConstVal.COM_BIZ_APPR_STEP_ING);
-        } else if (ConstVal.COM_BIZ_APPR_STEP_COMPLETE.equals(apprStepCd)) {
-            // 결재 완료 - 결재 요청 PSEND(완료) 으로 세팅
-            resultNo += eduMasterMapper.updateApprResult(safEduMstNo, apprRqstNo, ConstVal.COM_BIZ_APPR_STEP_COMPLETE);
-        }
-
-        return resultNo;
-    }
-
     public String downloadExcelCheckupResult(String type, int safEduMstNo, DefaultParam defaultParam) throws Exception {
         POIUtil excel = null;
 

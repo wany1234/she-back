@@ -56,7 +56,6 @@ import com.she.safety.change.service.ChangeService;
 import com.she.safety.check.service.CheckResultService;
 import com.she.safety.consol.service.ConsolidationService;
 import com.she.safety.constSafe.service.ConstService;
-import com.she.safety.education.service.EduMasterService;
 import com.she.safety.facilityCheck.service.FacilityCheckResultService;
 import com.she.safety.facilityInspection.service.FacilityInspectionService;
 import com.she.safety.govImplChk.service.GovImplChkService;
@@ -107,9 +106,6 @@ public class ApprService {
 
     @Autowired
     private ImprService imprService;
-
-    @Autowired
-    private EduMasterService eduMasterService;
 
     @Autowired
     private InfirmaryService infirmaryService;
@@ -973,11 +969,6 @@ public class ApprService {
         } else if (StringUtils.equals(appr.getApprBizCd(), "CR_IM-02")) {
             // 개선
             imprService.apprProcessImpr(Integer.parseInt(requestParams.get("safImprActNo")), bizApprStepCd, apprRqstNo);
-        } else if (StringUtils.equals(appr.getApprBizCd(), "EU-ED-01")) {
-            eduMasterService.updateAppr(Integer.parseInt(requestParams.get("safEduMstNo")), bizApprStepCd, apprRqstNo);
-        } else if (StringUtils.equals(appr.getApprBizCd(), "EU-ED-02")) {
-            // 교육 결과
-            eduMasterService.updateApprResult(Integer.parseInt(requestParams.get("safEduMstNo")), bizApprStepCd, apprRqstNo);
         } else if (StringUtils.equals(appr.getApprBizCd(), "HE-PS-01")) {
             // 유소견자 지정/해제
             infirmaryService.apprSuspectRequest(Integer.parseInt(requestParams.get("suspectReqNo")), bizApprStepCd, apprRqstNo);

@@ -50,14 +50,6 @@ public class EduMaster {
 
     private String deptNm;
 
-    private String pbizApprStepCd;
-
-    private String pbizApprStepNm;
-
-    private String rbizApprStepCd;
-
-    private String rbizApprStepNm;
-
     private String plantCd;
 
     private String plantNm;
@@ -92,42 +84,12 @@ public class EduMaster {
 
     private String eduResultSummary;
 
-    private String pApprRqstNo;
-
-    private String pApprRqstNm;
-
-    private String rApprRqstNo;
-
     private String eduEvalOpin;
 
     // 단계 (결과/계획) (지워야함)
     private String processStepCd;
 
     private String processStepNm;
-
-    private String pprocStepCd; // (대체)
-
-    private String pprocStepNm;
-
-    private String rprocStepCd;
-
-    private String rprocStepNm;
-
-    // 상태 (미작성/작성중/결재중/결재완료)
-    private String pStateCd;
-
-    private String pStateNm;
-
-    private String rStateCd;
-
-    private String rStateNm;
-
-    //
-    private String pStepCd;
-    private String pStepNm;
-
-    private String rStepCd;
-    private String rStepNm;
 
     // 주관
     private String mainDeptCd;
