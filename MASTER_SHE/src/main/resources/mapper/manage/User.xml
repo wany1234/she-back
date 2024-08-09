@@ -38,6 +38,7 @@
             , u.duty_cd, duty.duty_nm
             , u.position_cd, position.position_nm
             , u.signature
+            , u.cost_center_nm
         from com_user u
         inner join depttree
         on u.dept_cd = depttree.dept_cd

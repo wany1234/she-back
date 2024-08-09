@@ -1143,4 +1143,105 @@
         delete from hea_hearing_mgr_list
         where hea_hearing_mgr_list_no = #{heaHearingMgrListNo}
     </delete>
+    
+    <insert id="insertConsult" parameterType="com.she.health.model.Consult">
+    	<selectKey keyProperty= "heaConsultNo" resultType= "int" order= "BEFORE">
+            select next value for seq_hea_consult
+        </selectKey>
+    MERGE hea_consult hc
+        USING ( SELECT #{userId} as user_id, convert(varchar(10),#{visitYmd}, 23) as visit_ymd ) as a
+           ON hc.user_id = a.user_id
+           AND hc.visit_ymd = a.visit_ymd
+         WHEN MATCHED THEN
+               UPDATE SET user_id = #{userId}
+            ,dept_cd = (select dept_cd from com_user i where i.user_id = #{userId})
+            ,visit_ymd = convert(varchar(10),#{visitYmd}, 23)
+            ,counsel_type_cd = #{counselTypeCd}
+            ,disease_past = #{diseasePast}
+            ,disease_curr = #{diseaseCurr}
+            ,symptom = #{symptom}
+            ,consult = #{consult}
+            ,remark = #{remark}
+            ,counselor = #{counselor}
+            ,bld_sug_val = round(#{bldSugVal}, 1)
+            ,bld_press_cont_val = round(#{bldPressContVal}, 1)
+            ,bld_press_rele_val = round(#{bldPressReleVal}, 1)
+            ,cholesterol_val = round(#{cholesterolVal}, 1)
+            ,update_user_id = #{updateUserId}
+            ,update_dt = getDate()
+            ,height = #{height}                 
+			,weight = #{weight}                 
+			,smoking_yn = #{smokingYn}              
+			,smoking_amount = #{smokingAmount}          
+			,drinking_yn = #{drinkingYn}             
+			,drinking_amount = #{drinkingAmount}         
+			,past_disease_yn = #{pastDiseaseYn}          
+			,past_disease_content = #{pastDiseaseContent}     
+			,family_history_yn = #{familyHistoryYn}        
+			,family_history_content = #{familyHistoryContent}
+         WHEN NOT MATCHED THEN
+	insert
+        (
+            hea_consult_no
+            ,plant_cd
+            ,user_id
+            ,dept_cd
+            ,visit_ymd
+            ,counsel_type_cd
+            ,disease_past
+            ,disease_curr
+            ,symptom
+            ,consult
+            ,remark
+            ,counselor
+            ,bld_sug_val
+            ,bld_press_cont_val
+            ,bld_press_rele_val
+            ,cholesterol_val
+            ,create_user_id
+            ,create_dt
+            ,height
+			,weight
+			,smoking_yn
+			,smoking_amount
+			,drinking_yn
+			,drinking_amount
+			,past_disease_yn
+			,past_disease_content
+			,family_history_yn
+			,family_history_content
+        )
+        VALUES
+        (
+            #{heaConsultNo}
+            ,#{plantCd}
+            ,#{userId}
+            ,(select dept_cd from com_user i where i.user_id = #{userId})
+            ,convert(varchar(10),#{visitYmd}, 23)
+            ,#{counselTypeCd}
+            ,#{diseasePast}
+            ,#{diseaseCurr}
+            ,#{symptom}
+            ,#{consult}
+            ,#{remark}
+            ,#{counselor}
+            ,round(#{bldSugVal}, 1)
+            ,round(#{bldPressContVal}, 1)
+            ,round(#{bldPressReleVal}, 1)
+            ,round(#{cholesterolVal}, 1)
+            ,#{createUserId}
+            ,getDate()
+            ,#{height}
+			,#{weight}
+			,#{smokingYn}
+			,#{smokingAmount}
+			,#{drinkingYn}
+			,#{drinkingAmount}
+			,#{pastDiseaseYn}
+			,#{pastDiseaseContent}
+			,#{familyHistoryYn}
+			,#{familyHistoryContent}
+        );
+    </insert>
+    
 </mapper>

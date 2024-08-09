@@ -93,8 +93,10 @@ public class User {
     public List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
 
     public String loginId;
-
-    @ApiModelProperty(value = "인사부서코드")
+    
+    public String costCenterNm;
+    
+	@ApiModelProperty(value = "인사부서코드")
     private String deptCdHr;
 
     @ApiModelProperty(value = "인사부서")
@@ -561,5 +563,13 @@ public class User {
     public void setAge(String age) {
         this.age = age;
     }
+    
+    public String getCostCenterNm() {
+		return costCenterNm;
+	}
+
+	public void setCostCenterNm(String costCenterNm) {
+		this.costCenterNm = costCenterNm;
+	}
 
 }

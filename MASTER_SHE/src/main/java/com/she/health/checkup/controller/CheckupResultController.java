@@ -441,7 +441,7 @@ public class CheckupResultController {
 	}
 
     /**
-     * 개선사항 엑셀 업로드
+     * 검진대상 엑셀 업로드
      *
      * @throws Exception
      */

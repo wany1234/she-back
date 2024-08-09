@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,17 +16,21 @@ import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.ss.usermodel.Font;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.she.common.mapper.AttachFileMapper;
 import com.she.common.model.AttachFile;
 import com.she.common.model.DefaultParam;
 import com.she.health.infirmary.mapper.InfirmaryMapper;
 import com.she.health.model.CheckupResult;
+import com.she.health.model.CheckupUser;
 import com.she.health.model.Consult;
 import com.she.health.model.DrugSuply;
 import com.she.health.model.HearingMgr;
@@ -34,6 +39,7 @@ import com.she.health.model.Suspect;
 import com.she.health.model.SuspectHist;
 import com.she.manage.model.CodeMaster;
 import com.she.manage.service.CodeMasterService;
+import com.she.security.util.StringUtil;
 import com.she.utils.ConstVal;
 import com.she.utils.ExcelReader;
 import com.she.utils.POIUtil;
@@ -865,4 +871,182 @@ public class InfirmaryService {
     public int deleteHearingMgr(int heaHearingMgrListNo) throws Exception {
         return infirmaryMapper.deleteHearingMgr(heaHearingMgrListNo);
     }
+    
+    /**
+     * 상담이력 엑셀 없로드
+     * @param createUserId
+     * @param files
+     * @return
+     * @throws Exception
+     */
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    public Map<String, Object> consultUploadExcel(String createUserId, MultipartFile[] files) throws Exception {
+    	Map<String, Object> map = new HashMap<String, Object>();
+        map.put("success", true);
+        map.put("message", "");
+        
+        List<Map<String, Object>> failList = new ArrayList<Map<String, Object>>(); 
+        int totalCount = 0;
+        int successCount = 0;
+        int failCount = 0;
+        try {
+        	 InputStream stream = files[0].getInputStream();
+             File tempFile = File.createTempFile(String.valueOf(stream.hashCode()), ".xlsx");
+             tempFile.deleteOnExit();
+             FileUtils.copyInputStreamToFile(stream, tempFile);
+             
+             ExcelReader reader = new ExcelReader();
+             List<String[][]> sheets = reader.read(tempFile);
+             
+             if (sheets != null && sheets.size() > 0) {
+                 String[][] sheet = sheets.get(0); // 상담이력 시트
+                 String[][] sheet2 = sheets.get(1); // 투약 시트
+                 
+                 for (int row = 1; row < sheet.length; row++) {
+                	 Map<String, Object> failmap = new HashMap<String, Object>();
+                	 Consult consult = new Consult();
+                	 
+                	 // 비어있는행 패스
+                	 if(StringUtil.isEmpty(sheet[row][0]) && StringUtil.isEmpty(sheet[row][1]) && StringUtil.isEmpty(sheet[row][2])) {
+                		 continue;
+                	 }
+                	 totalCount++;
+                	 
+                	 // 사업장코드 없음
+                	 if(StringUtil.isEmpty(sheet[row][0])) {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "사업장코드 없음");
+                		 failCount++;
+                		 failList.add(failmap);
+                		 continue;
+                	 } 
+                	 // 상담일자 없음
+                	 if(StringUtil.isEmpty(sheet[row][1])) {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "상담일자 없음");
+                		 failCount++;
+                		 failList.add(failmap);
+                		 continue;
+                	 }
+                	 // 방문자ID 없음
+                	 if(StringUtil.isEmpty(sheet[row][2])) {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "방문자ID 없음");
+                		 failCount++;
+                		 failList.add(failmap);
+                		 continue;
+                	 }
+                	 
+                	 consult.setPlantCd(sheet[row][0]); // 사업장 코드
+                	 consult.setVisitYmd(sheet[row][1]); // 상담일자
+                	 String userIdTemp = sheet[row][2].trim();
+                     if (StringUtil.isNotEmpty(userIdTemp) && userIdTemp.indexOf(".") > -1) {
+                         userIdTemp = userIdTemp.substring(0, userIdTemp.indexOf("."));
+                     }
+                     String userId = userIdTemp;
+                     consult.setUserId(userId); // 방문자ID
+                	 
+                	 consult.setCounselTypeCd(sheet[row][3]); // 상담구분코드
+                	 //sheet[row][4] 상담구분이름
+                	 consult.setCounselor(sheet[row][5]); // 상담자
+                	 consult.setDiseasePast(sheet[row][6]); // 과거력
+                	 consult.setDiseaseCurr(sheet[row][7]); // 현병력
+                	 
+                	 consult.setSymptom(sheet[row][8]); // 증상
+                	 consult.setConsult(sheet[row][9]); // 상담내용
+                	 consult.setRemark(sheet[row][10]); // 상담결과 및 특이사항
+                	 
+                	 if(sheet[row][11] != null && StringUtil.isNotEmpty(sheet[row][11])) {
+                		 consult.setBldSugVal(Float.parseFloat(sheet[row][11])); // 혈당
+                	 }
+                	 if(sheet[row][12] != null && StringUtil.isNotEmpty(sheet[row][12])) {
+                	 consult.setCholesterolVal(Float.parseFloat(sheet[row][12])); // 콜레스테롤
+                	 }
+                	 if(sheet[row][13] != null && StringUtil.isNotEmpty(sheet[row][13])) {
+                	 consult.setBldPressContVal(Float.parseFloat(sheet[row][13])); // 혈압-수축기
+                	 }
+                	 if(sheet[row][14] != null && StringUtil.isNotEmpty(sheet[row][14])) {
+                	 consult.setBldPressReleVal(Float.parseFloat(sheet[row][14])); // 혈압-이완기
+                	 }
+                	 
+                	 String heightTemp = sheet[row][15].trim();
+                     if (StringUtil.isNotEmpty(heightTemp) && heightTemp.indexOf(".") > -1) {
+                    	 heightTemp = heightTemp.substring(0, heightTemp.indexOf("."));
+                     }
+                     String height = heightTemp;
+                	 consult.setHeight(height); // 키
+                	 
+                	 String weightTemp = sheet[row][16].trim();
+                     if (StringUtil.isNotEmpty(weightTemp) && weightTemp.indexOf(".") > -1) {
+                    	 weightTemp = weightTemp.substring(0, weightTemp.indexOf("."));
+                     }
+                     String weight = weightTemp;
+                	 consult.setWeight(weight); // 몸무게
+                	 
+                	 consult.setSmokingYn(sheet[row][17]); // 흡연여부
+                	 consult.setSmokingAmount(sheet[row][18]); // 흡연량
+                	 consult.setDrinkingYn(sheet[row][19]); // 음주여부
+                	 consult.setDrinkingAmount(sheet[row][20]); // 음주량
+                	 
+                	 consult.setPastDiseaseYn(sheet[row][21]); // 과거질환여부
+                	 consult.setPastDiseaseContent(sheet[row][22]); // 과거질환내용
+                	 consult.setFamilyHistoryYn(sheet[row][23]); // 가족력여부
+                	 consult.setFamilyHistoryContent(sheet[row][24]); // 가족력 내용
+
+                	 consult.setCreateUserId(createUserId); // 등록자ID
+                	 
+                	 // 상담번호
+                	 this.infirmaryMapper.insertConsult(consult);
+                	 
+                	 List<DrugSuply> drugSuplyList = new ArrayList<DrugSuply>();
+                	 // 투약 약품
+                	 for(int r = 1; r < sheet2.length; r++) {
+                		 if(sheet2[r][0] == null || sheet2[r][1] == null) {
+                			 continue;
+                		 }
+                		 if(sheet[row][1].equals(sheet2[r][0]) && sheet[row][2].equals(sheet2[r][1])) { // 상담일자와 방문자ID 가 같을경우
+                			 if(StringUtil.isNotEmpty(sheet2[r][2]) && StringUtil.isNotEmpty(sheet2[r][4])) {
+                				 DrugSuply drugSuply = new DrugSuply();
+                				 drugSuply.setHeaConsultNo(consult.getHeaConsultNo());
+                				 drugSuply.setCreateUserId(createUserId);
+                				 
+                				 String noTemp = sheet2[r][2].trim();
+                                 if (StringUtil.isNotEmpty(noTemp) && noTemp.indexOf(".") > -1) {
+                                	 noTemp = noTemp.substring(0, noTemp.indexOf("."));
+                                 }
+                				 drugSuply.setHeaDrugNo(Integer.parseInt(noTemp)); // 약품번호
+                				 
+                				 String amountTemp = sheet2[r][4].trim();
+                                 if (StringUtil.isNotEmpty(amountTemp) && amountTemp.indexOf(".") > -1) {
+                                	 amountTemp = amountTemp.substring(0, amountTemp.indexOf("."));
+                                 }
+                				 drugSuply.setAmount(Integer.parseInt(amountTemp)); // 투약량
+                				 drugSuplyList.add(drugSuply);
+                			 }
+                		 } 
+                	 }
+                	 
+                	 // 투약정보 등록
+                	 if(drugSuplyList.size() > 0) {
+                		 for(DrugSuply drug : drugSuplyList) {
+                			 infirmaryMapper.createDrugSuply(drug);
+                		 }
+                	 }
+                	 
+                	 successCount++;
+                 }
+                 map.put("failResult", failList);// 실패정보
+                 map.put("totalCount", totalCount);// 총 로우수
+                 map.put("successCount", successCount);// 성공한 로우수
+                 map.put("failCount", failCount); // 실패한 로우수 
+             }
+             
+		} catch (Exception e) {
+			e.printStackTrace();
+			map.put("success", false);
+            map.put("message", "업로드 도중 에러발생");
+		}
+    	return map;
+    }
+    
 }

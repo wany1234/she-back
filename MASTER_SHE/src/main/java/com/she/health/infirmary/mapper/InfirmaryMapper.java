@@ -476,4 +476,12 @@ public interface InfirmaryMapper {
      *             예외
      */
     public int deleteHearingMgr(@Param("heaHearingMgrListNo") int heaHearingMgrListNo) throws Exception;
+    
+    /**
+     * 상담이력 등록
+     * @param consult
+     * @return
+     * @throws Exception
+     */
+    public int insertConsult(Consult consult)throws Exception;
 }
