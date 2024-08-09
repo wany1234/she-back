@@ -151,10 +151,6 @@
           ,pv.vendor_desc          -- 비고
           ,pv.update_user_id       -- 수정자ID
           ,pv.update_dt            -- 수정일
-          ,pv.update_dept_nm       -- 수정자부서명
-          ,pv.update_dept_cd       -- 수정자부서코드
-          ,pv.update_position_nm   -- 수정자직위명
-          ,pv.update_position_cd   -- 수정자직위코드
           ,case when isnull(pv.eval_finish_yn, 'N') = 'N' then '미완료'
                  else '완료' end as showEvalFinishYn  -- 평가완료 여부 
           ,convert(char(10), pv.eval_finish_dt, 23) as eval_finish_dt
@@ -252,11 +248,7 @@
          eval_desc = #{evalDesc},
          state_cd = 'STATE2',
          update_user_id = #{updateUserId},
-         update_dt = convert(char(10), getDate(), 23),
-         update_dept_nm = #{updateDeptNm},
-         update_dept_cd = #{updateDeptCd},
-         update_position_nm = #{updatePositionNm},
-         update_position_cd = #{updatePositionCd}
+         update_dt = convert(char(10), getDate(), 23)
        where vendor_eval_plan_no = #{vendorEvalPlanNo}
     </update>
     <insert id= "createAssmnSfhlcVendor" parameterType= "com.she.vendor.model.AssmnSfhlcVendorList">
@@ -280,10 +272,6 @@
            ,vendor_desc
            ,update_user_id
            ,update_dt
-           ,update_dept_nm
-           ,update_dept_cd
-           ,update_position_nm
-           ,update_position_cd
            ,proc_step_cd
            ,state_cd
            ,step_cd
@@ -306,10 +294,6 @@
            ,#{vendorDesc}
            ,#{updateUserId}
            ,convert(char(10), getDate(), 23)
-           ,#{updateDeptNm}
-           ,#{updateDeptCd}
-           ,#{updatePositionNm}
-           ,#{updatePositionCd}
            ,'RWRS2'
            ,'STATE1'
            ,'BAPSB'
@@ -477,10 +461,6 @@
                ,pv.update_user_id  -- 수정자ID
                ,dbo.GET_USER_NM(pv.update_user_id) as update_user_nm -- 수정자명
                ,convert(char(10), pv.update_dt, 23) as update_dt --수정일
-               ,pv.update_dept_nm --수정자부서명
-               ,pv.update_dept_cd --수정자부서코드
-               ,pv.update_position_nm --수정자직위명
-               ,pv.update_position_cd --수정자직위코드
                ,isnull(pv.eval_sum_pnt, 0) as eval_sum_pnt -- 평점
                ,isnull(pv.eval_all_pnt, 0) as eval_all_pnt-- 총점
              from saf_vendor_eval_plan_vendor pv
