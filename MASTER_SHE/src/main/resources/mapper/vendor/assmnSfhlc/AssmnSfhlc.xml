@@ -29,14 +29,6 @@
            ,convert(char(10), pl.create_dt, 23) as create_dt -- 등록일
            ,pl.update_user_id      -- 수정자ID
            ,pl.update_dt           -- 수정일
-           ,pl.create_dept_nm      -- 등록자부서명
-           ,pl.create_dept_cd      -- 등록자부서코드
-           ,pl.update_dept_nm      -- 수정자부서명
-           ,pl.update_dept_cd      -- 수정자부서코드
-           ,pl.create_position_nm  -- 등록자직위명
-           ,pl.create_position_cd  -- 등록자직위코드
-           ,pl.update_position_nm  -- 수정자직위명
-           ,pl.update_position_cd  -- 수정자직위코드
            ,STUFF((
             select ',' + dbo.GET_DEPT_NM(pv.dept_cd) as dept_nm
             from saf_vendor_eval_plan_vendor pv
@@ -133,14 +125,6 @@
            ,pl.create_dt           -- 등록일
            ,pl.update_user_id      -- 수정자ID
            ,pl.update_dt           -- 수정일
-           ,pl.create_dept_nm      -- 등록자부서명
-           ,pl.create_dept_cd      -- 등록자부서코드
-           ,pl.update_dept_nm      -- 수정자부서명
-           ,pl.update_dept_cd      -- 수정자부서코드
-           ,pl.create_position_nm  -- 등록자직위명
-           ,pl.create_position_cd  -- 등록자직위코드
-           ,pl.update_position_nm  -- 수정자직위명
-           ,pl.update_position_cd  -- 수정자직위코드
          from saf_vendor_eval_plan pl
          where 1=1
          <if test="vendorEvalPlanNo != null and !vendorEvalPlanNo.equals('')">
@@ -236,10 +220,6 @@
            ,step_cd
            ,create_user_id
            ,create_dt
-           ,create_dept_nm
-           ,create_dept_cd
-           ,create_position_nm
-           ,create_position_cd
         )
         values
         (
@@ -257,10 +237,6 @@
             ,#{stepCd}
             ,#{createUserId}
             ,convert(char(10), getDate(), 23)
-            ,#{createDeptNm}
-            ,#{createDeptCd}
-            ,#{createPositionNm}
-            ,#{createPositionCd}
         )
     </insert>
     <update id= "updateAssmnSfhlc" parameterType= "com.she.vendor.model.AssmnSfhlc">
