@@ -838,7 +838,6 @@
         select isnull(dept_cd, '') as dept_cd
           from com_dept
          where dept_nm = #{deptNm}
-           and plant_cd = #{plantCd}
     </select>
     <select id="checkUserMaster" resultType= "String">
         /* ImprMapper.checkUserMaster [Impr.xml] */

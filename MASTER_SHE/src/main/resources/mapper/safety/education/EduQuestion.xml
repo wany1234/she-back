@@ -453,7 +453,7 @@
         set video_watch_time = #{videoWatchTime}
         ,complet_yn = #{completYn}
         ,re_edu_not_yn = #{completYn}
-        ,edu_eval_time = getDate()
+        ,complet_ymd = getDate()
         where saf_edu_mst_no = #{safEduMstNo}
         and user_id = #{userId}
     </update>       

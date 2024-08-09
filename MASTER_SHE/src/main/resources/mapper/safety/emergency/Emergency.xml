@@ -634,7 +634,8 @@
              select code as plantCd
              from com_code_master
              where code_group_cd = 'COM_PLANT_CD'
-             and code != '0000'
+             and code != '${@com.she.utils.ConstVal@PLANT_CD_00}'
+             and code != '${@com.she.utils.ConstVal@PLANT_CD_10}'
          ),
          gubunList as (
              select p.plantCd
@@ -678,32 +679,32 @@
          ),
          riskList as (
              select
-                     tp.plant_cd as plantCd
-                     ,dbo.GET_CODE_NM(tp.plant_cd, 'COM_PLANT_CD') as plant_nm
-                     ,iif(td.state_cd = 'PSEND', '실시(조직수)', '계획(조직수)') AS gubun
-                     ,convert(numeric(10),sum(case when left(td.train_ymd, 4) &lt; #{year} then 1 else 0 end)) as oldCnt
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 1 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon1
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 2 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon2
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 3 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon3
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 4 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon4
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 5 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon5
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 6 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon6
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 7 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon7
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 8 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon8
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 9 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon9
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 10 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon10
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 11 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon11
-                     ,convert(numeric(10),sum(case when substring(convert(char(10), td.train_ymd, 23), 6, 2) = 12 and left(td.train_ymd, 4) = #{year}  then 1 else 0 end)) as mon12
-                     ,convert(numeric(10),sum(case when left(td.train_ymd, 4) = #{year} then 1 else 0 end)) as total
-                     ,convert(numeric(10),sum(case when left(td.train_ymd, 4) &lt;= #{year} then 1 else 0 end)) as allCnt  
-             from saf_train_dept_rslt td
-             inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
+                     tpp.plant_cd as plantCd
+                     ,dbo.GET_CODE_NM(tpp.plant_cd, 'COM_PLANT_CD') as plant_nm
+                     ,iif(tp.train_plan_state = 'TPS03', '실시(조직수)', '계획(조직수)') AS gubun
+                     ,convert(numeric(10),sum(case when left(tp.train_end_ymd, 4) &lt; #{year} then 1 else 0 end)) as oldCnt
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 1 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon1
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 2 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon2
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 3 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon3
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 4 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon4
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 5 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon5
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 6 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon6
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 7 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon7
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 8 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon8
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 9 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon9
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 10 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon10
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 11 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon11
+                     ,convert(numeric(10),sum(case when substring(convert(char(10), tp.train_end_ymd, 23), 6, 2) = 12 and left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as mon12
+                     ,convert(numeric(10),sum(case when left(tp.train_end_ymd, 4) = #{year} then 1 else 0 end)) as total
+                     ,convert(numeric(10),sum(case when left(tp.train_end_ymd, 4) &lt;=  #{year}  then 1 else 0 end)) as allCnt  
+             from saf_train_plan tp
+             inner join saf_train_plan_plant tpp on tp.saf_train_plan_no = tpp.saf_train_plan_no
              where 1=1
-                and tp.state_cd = 'PSEND'
+                and tp.train_plan_state in ('TPS02','TPS03')
              <if test= "trainTypeCd != null and !trainTypeCd.equals('')">
                 and tp.train_type_cd = #{trainTypeCd}
              </if>
-             group by tp.plant_cd, iif(td.state_cd = 'PSEND', '실시(조직수)', '계획(조직수)')
+             group by tpp.plant_cd, iif(tp.train_plan_state = 'TPS03', '실시(조직수)', '계획(조직수)')
          ),
          impr as (
              select
@@ -725,9 +726,8 @@
                      ,convert(numeric(10),sum(case when substring(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23), 6, 2) = 12 and left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year}  then 1 else 0 end)) as mon12
                      ,convert(numeric(10),sum(case when left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) = #{year} then 1 else 0 end)) as total
                      ,convert(numeric(10),sum(case when left(convert(char(10), iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 23),4) &lt;= #{year} then 1 else 0 end)) as allCnt
-             from saf_train_dept_rslt td
-             inner join saf_train_plan tp on td.saf_train_plan_no = tp.saf_train_plan_no
-             inner join saf_impr_act sia on sia.ref_table_id = td.saf_train_dept_rslt_no and sia.impr_class_cd = 'ICL37'
+             from saf_train_plan tp
+             inner join saf_impr_act sia on sia.ref_table_id = tp.saf_train_plan_no and sia.impr_class_cd = 'ICL37'
              where sia.del_yn != 'Y'
                 <if test= "trainTypeCd != null and !trainTypeCd.equals('')">
                     and tp.train_type_cd = #{trainTypeCd}
@@ -738,36 +738,36 @@
                  ,dbo.GET_CODE_NM_LANG('kr', 'COM_PLANT_CD', g.plantCd) as plant_nm
                  ,'훈련현황' as rsa_result
                  ,g.gubun
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.oldCnt else iif(g.gubun = r.gubun, r.oldCnt, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.oldCnt, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon1 else iif(g.gubun = r.gubun, r.mon1, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon1, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon2 else iif(g.gubun = r.gubun, r.mon2, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon2, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon3 else iif(g.gubun = r.gubun, r.mon3, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon3, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon4 else iif(g.gubun = r.gubun, r.mon4, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon4, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon5 else iif(g.gubun = r.gubun, r.mon5, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon5, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon6 else iif(g.gubun = r.gubun, r.mon6, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon6, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon7 else iif(g.gubun = r.gubun, r.mon7, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon7, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon8 else iif(g.gubun = r.gubun, r.mon8, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon8, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon9 else iif(g.gubun = r.gubun, r.mon9, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon9, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon10 else iif(g.gubun = r.gubun, r.mon10, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon10, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon11 else iif(g.gubun = r.gubun, r.mon11, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon11, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon12 else iif(g.gubun = r.gubun, r.mon12, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon12, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.total else iif(g.gubun = r.gubun, r.total, 0) end), 0))
-                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.allCnt else iif(g.gubun = r.gubun, r.allCnt, 0) end), 0))
-                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.total, 0)), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total    
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.allCnt, 0)), 0))
+                     else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt             
                  ,max(g.sort_order)
          from gubunList g
          left outer join riskList r on r.plantCd = g.plantCd
@@ -828,35 +828,35 @@
                  ,'합계'
                  ,'훈련현황' as rsa_result
                  ,g.gubun
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.oldCnt else iif(g.gubun = r.gubun, r.oldCnt, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.oldCnt, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.oldCnt, 0)), sum(r.oldCnt)) * 100, 2), '0.00')) end as oldCnt
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon1 else iif(g.gubun = r.gubun, r.mon1, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon1, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon1, 0)), sum(r.mon1)) * 100, 2), '0.00')) end as mon1
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon2 else iif(g.gubun = r.gubun, r.mon2, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon2, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon2, 0)), sum(r.mon2)) * 100, 2), '0.00')) end as mon2
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon3 else iif(g.gubun = r.gubun, r.mon3, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon3, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon3, 0)), sum(r.mon3)) * 100, 2), '0.00')) end as mon3
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon4 else iif(g.gubun = r.gubun, r.mon4, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon4, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon4, 0)), sum(r.mon4)) * 100, 2), '0.00')) end as mon4
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon5 else iif(g.gubun = r.gubun, r.mon5, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon5, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon5, 0)), sum(r.mon5)) * 100, 2), '0.00')) end as mon5
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon6 else iif(g.gubun = r.gubun, r.mon6, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon6, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon6, 0)), sum(r.mon6)) * 100, 2), '0.00')) end as mon6
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon7 else iif(g.gubun = r.gubun, r.mon7, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon7, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon7, 0)), sum(r.mon7)) * 100, 2), '0.00')) end as mon7
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon8 else iif(g.gubun = r.gubun, r.mon8, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon8, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon8, 0)), sum(r.mon8)) * 100, 2), '0.00')) end as mon8
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon9 else iif(g.gubun = r.gubun, r.mon9, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon9, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon9, 0)), sum(r.mon9)) * 100, 2), '0.00')) end as mon9
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon10 else iif(g.gubun = r.gubun, r.mon10, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon10, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon10, 0)), sum(r.mon10)) * 100, 2), '0.00')) end as mon10
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon11 else iif(g.gubun = r.gubun, r.mon11, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon11, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon11, 0)), sum(r.mon11)) * 100, 2), '0.00')) end as mon11
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.mon12 else iif(g.gubun = r.gubun, r.mon12, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.mon12, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.mon12, 0)), sum(r.mon12)) * 100, 2), '0.00')) end as mon12
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.total else iif(g.gubun = r.gubun, r.total, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.total, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.total, 0)), sum(r.total)) * 100, 2), '0.00')) end as total
-                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(case when g.gubun = '계획(조직수)' then r.allCnt else iif(g.gubun = r.gubun, r.allCnt, 0) end), 0))
+                 ,case when g.gubun != '훈련 실시율(%)' then convert(varchar, isnull(sum(iif(g.gubun = r.gubun, r.allCnt, 0)), 0))
                      else convert(varchar, format(round(dbo.GET_DIVIDE(sum(iif(r.gubun = '실시(조직수)', r.allCnt, 0)), sum(r.allCnt)) * 100, 2), '0.00')) end as allCnt
                  ,max(g.sort_order)
          from gubunList g
@@ -1120,5 +1120,5 @@
            ,update_user_id = #{updateUserId}
            ,update_dt = getdate()
         where saf_train_plan_no = #{safTrainPlanNo}
-    </update>
+    </update>  
 </mapper>

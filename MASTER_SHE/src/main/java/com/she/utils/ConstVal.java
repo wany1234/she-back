@@ -709,6 +709,10 @@ public class ConstVal {
     public static String EDU_METHOD_VIDEO = "EDM03";
 
     /**
+     * 사업장코드 - 사업장공통
+     */
+    public static String PLANT_CD_00 = "FD00";
+    /**
      * 사업장코드 - 외주동(잉크테크)
      */
     public static String PLANT_CD_05 = "FD05";
