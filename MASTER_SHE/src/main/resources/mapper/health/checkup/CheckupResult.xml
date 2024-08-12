@@ -32,11 +32,10 @@
               ,di.hea_disease_class_cd
               ,dis.code_nm as hea_disease_class_nm
               ,di.hea_disease_cd, di.hea_disease_nm
-              ,(SELECT case when count(*) > 0 then 'Y' else 'N' end
-                  FROM hea_suspect
+              ,isnull((SELECT suspect_yn
+                  FROM hea_suspect_hst
                  WHERE user_id = r.user_id
-                   AND convert(datetime, r.hea_checked_ymd) between be_managed_ymd and not_managed_ymd
-               ) as suspect_yn
+               ),'N') as suspect_yn
               ,r.create_user_id
               ,cu.user_nm as create_user_nm
               ,r.create_dt
@@ -160,11 +159,10 @@
               ,r.hea_workable_cd
               ,wc.code_nm as hea_workable_nm
               ,r.overall_opinion
-              ,(SELECT case when count(*) > 0 then 'Y' else 'N' end
-                  FROM hea_suspect
+              ,isnull((SELECT suspect_yn
+                  FROM hea_suspect_hst
                  WHERE user_id = r.user_id
-                   AND convert(datetime, r.hea_checked_ymd) between be_managed_ymd and not_managed_ymd
-               ) as suspect_yn
+               ),'N') as suspect_yn
               ,pl.code_nm as plant_nm
               ,r.ref_hazard_desc
               ,r.create_user_id

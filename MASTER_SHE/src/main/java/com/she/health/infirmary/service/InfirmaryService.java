@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.she.common.mapper.AttachFileMapper;
@@ -825,6 +826,7 @@ public class InfirmaryService {
                     }
                 }
             }
+            resultNo = infirmaryMapper.updateApprRqstNo(suspectReqNo, apprRqstNo);
         } else if (ConstVal.COM_BIZ_APPR_STEP_ING.equals(bizApprStepCd)) {
             resultNo = infirmaryMapper.updateApprRqstNo(suspectReqNo, apprRqstNo);
         }
@@ -1042,11 +1044,90 @@ public class InfirmaryService {
              }
              
 		} catch (Exception e) {
-			e.printStackTrace();
 			map.put("success", false);
             map.put("message", "업로드 도중 에러발생");
 		}
     	return map;
     }
     
+    
+    public Map<String, Object> excelUploadSuspect(String heaCheckedYear, String heaCheckupPlanNo, MultipartFile[] files) throws Exception {
+    	Map<String, Object> map = new HashMap<String, Object>();
+        map.put("success", true);
+        map.put("message", "");
+        
+        List<Map<String, Object>> failList = new ArrayList<Map<String, Object>>(); 
+        int totalCount = 0;
+        int successCount = 0;
+        int failCount = 0;
+        try {
+        	 InputStream stream = files[0].getInputStream();
+             File tempFile = File.createTempFile(String.valueOf(stream.hashCode()), ".xlsx");
+             tempFile.deleteOnExit();
+             FileUtils.copyInputStreamToFile(stream, tempFile);
+             
+             ExcelReader reader = new ExcelReader();
+             List<String[][]> sheets = reader.read(tempFile);
+             
+             List<Suspect> suspectList = new ArrayList<Suspect>();
+             
+             if (sheets != null && sheets.size() > 0) {
+                 String[][] sheet = sheets.get(0); // 유소견자 시트
+                 
+                 for (int row = 1; row < sheet.length; row++) {
+                	 Map<String, Object> failmap = new HashMap<String, Object>();
+                	 Suspect suspect = new Suspect();
+                	 
+                	 // 비어있는행 패스
+                	 if(StringUtil.isEmpty(sheet[row][0]) && StringUtil.isEmpty(sheet[row][1])) {
+                		 continue;
+                	 }
+                	 totalCount++;
+                	 
+                	 // 사업장코드 없음
+                	 if(StringUtil.isEmpty(sheet[row][0])) {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "사업장코드 없음");
+                		 failCount++;
+                		 failList.add(failmap);
+                		 continue;
+                	 } 
+                	 // 사번 없음
+                	 if(StringUtil.isEmpty(sheet[row][1])) {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "사번 없음");
+                		 failCount++;
+                		 failList.add(failmap);
+                		 continue;
+                	 }
+                	 
+                	 String plantCd = sheet[row][0];
+                	 String userId = sheet[row][1];
+                	 
+                	 suspect = infirmaryMapper.getSuspectExcel(heaCheckedYear, heaCheckupPlanNo, plantCd, userId);
+                	 
+                	 if(!ObjectUtils.isEmpty(suspect)) {
+                		 suspectList.add(suspect);
+                		 successCount++;
+                	 } else {
+                		 failmap.put("failRowNo", row);
+                		 failmap.put("message", "유소견자 등록 대상자가 아님");
+                		 failCount++;
+                		 failList.add(failmap);
+                	 }
+                	 
+                 }
+                 map.put("failResult", failList);// 실패정보
+                 map.put("totalCount", totalCount);// 총 로우수
+                 map.put("successCount", successCount);// 성공한 로우수
+                 map.put("failCount", failCount); // 실패한 로우수
+                 map.put("suspectList",suspectList);
+             }
+             
+		} catch (Exception e) {
+			map.put("success", false);
+            map.put("message", "업로드 도중 에러발생");
+		}
+    	return map;
+    }
 }

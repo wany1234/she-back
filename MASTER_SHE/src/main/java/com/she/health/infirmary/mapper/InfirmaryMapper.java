@@ -484,4 +484,17 @@ public interface InfirmaryMapper {
      * @throws Exception
      */
     public int insertConsult(Consult consult)throws Exception;
+    
+    /**
+     * 유소견자 등록가능 여부 조회
+     * @param heaCheckedYear
+     * @param heaCheckupPlanNo
+     * @param plantCd
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    public Suspect getSuspectExcel(@Param("heaCheckedYear") String heaCheckedYear, @Param("heaCheckupPlanNo") String heaCheckupPlanNo
+    		, @Param("plantCd") String plantCd, @Param("userId") String userId) throws Exception;
+    
 }

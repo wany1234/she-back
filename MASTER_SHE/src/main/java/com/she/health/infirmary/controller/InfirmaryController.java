@@ -60,6 +60,7 @@ public class InfirmaryController {
 
     private String excelDownloadFileName = "청력관리대상자.xlsx";
     private String excelDownloadFileConsult = "상담이력업로드_양식.xlsx";
+    private String excelDownloadFileSuspect = "유소견자업로드_양식.xlsx";
 
     /**
      * 건강관리실 방문이력 조회
@@ -536,5 +537,43 @@ public class InfirmaryController {
     @PostMapping("/excelupload/consult")
     public ResponseEntity<Map<String, Object>> excelUploadConsult(@RequestParam("createUserId") String createUserId, @RequestParam("files") MultipartFile[] files) throws Exception {
         return ResponseEntity.ok().body(this.infirmaryService.consultUploadExcel(createUserId, files));
+    }
+    
+    /**
+     * 유소견자 엑셀 양식 다운로드
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/excel/suspectdownload")
+    public @ResponseBody byte[] downloadExcelSuspect() throws Exception {
+        CodeMaster filePath = this.codeMasterMapper.getCodeMaster(ConstVal.CODE_GROUP_FILE_PATH, ConstVal.CODE_FILE_PATH_FORM, "Y");
+
+        ClassPathResource classPathResource = new ClassPathResource("templates" + filePath.getCodeNm() + excelDownloadFileSuspect);
+        File file = classPathResource.getFile();
+        InputStream inputStream = null;
+        try {
+            inputStream = new BufferedInputStream(new FileInputStream(file));
+            byte[] encoded = Base64.encodeBase64(IOUtils.toByteArray(inputStream));
+            String encodedString = new String(encoded);
+            return encodedString.getBytes("UTF-8");
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        } finally {
+            inputStream.close();
+        }
+        return null;
+    }
+    
+    /**
+     * 유소견자 엑셀 업로드
+     *
+     * @throws Exception
+     */
+    @PostMapping("/excelupload/suspect")
+    public ResponseEntity<Map<String, Object>> excelUploadSuspect(@RequestParam("heaCheckedYear") String heaCheckedYear, @RequestParam("heaCheckupPlanNo") String heaCheckupPlanNo, @RequestParam("files") MultipartFile[] files) throws Exception {
+        return ResponseEntity.ok().body(this.infirmaryService.excelUploadSuspect(heaCheckedYear, heaCheckupPlanNo, files));
     }
 }

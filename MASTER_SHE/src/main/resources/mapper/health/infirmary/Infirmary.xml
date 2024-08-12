@@ -1244,4 +1244,75 @@
         );
     </insert>
     
+    <select id="getSuspectExcel" resultType="com.she.health.model.Suspect">
+    /* InfirmaryMapper.getSuspectExcel [Infirmary.xml] */
+    SELECT r.user_id
+             , u.user_nm
+             , d.dept_cd
+             , d.dept_nm
+             , p.hea_checkup_plan_no
+             , p.hea_checkup_plan_nm
+             , r.hea_checked_ymd
+            , STUFF((
+                SELECT ', ' + srd.hea_diagnose_cd
+                    FROM hea_checkup_result_diag srd
+                    LEFT OUTER JOIN hea_disease shd
+                            ON srd.hea_disease_cd = shd.hea_disease_cd
+                            AND shd.use_yn = 'Y'
+                    WHERE srd.user_id = r.user_id
+                        AND srd.hea_checkup_plan_no = r.hea_checkup_plan_no
+                        AND (srd.hea_diagnose_cd LIKE 'C%' OR srd.hea_diagnose_cd LIKE 'D%')
+                    order by shd.hea_disease_cd
+                    FOR XML PATH('')
+                ), 1, 1, '') as heaDiagnoseCd
+             , pl.code_nm as plant_nm
+             , STUFF((
+                SELECT ', ' + shd.hea_disease_nm
+                  FROM hea_checkup_result_diag srd
+                  LEFT OUTER JOIN hea_disease shd
+                          ON srd.hea_disease_cd = shd.hea_disease_cd
+                         AND shd.use_yn = 'Y'
+                 WHERE srd.user_id = r.user_id
+                   AND srd.hea_checkup_plan_no = r.hea_checkup_plan_no
+                    AND (srd.hea_diagnose_cd LIKE 'C%' OR srd.hea_diagnose_cd LIKE 'D%')
+                    order by shd.hea_disease_cd
+                   FOR XML PATH('')
+             ), 1, 1, '') as heaDiseaseNms
+          FROM hea_checkup_result r
+               INNER JOIN hea_checkup_plan p
+                       ON r.hea_checkup_plan_no = p.hea_checkup_plan_no
+               INNER JOIN com_user u
+                       ON r.user_id = u.user_id
+               INNER JOIN com_dept d
+                       ON u.dept_cd = d.dept_cd
+               INNER JOIN com_code_master pl
+                       ON pl.code_group_cd = 'COM_PLANT_CD'
+                      AND u.plant_cd = pl.code
+         WHERE 1=1
+          -- 요청X
+          AND NOT EXISTS (SELECT 1
+                            FROM hea_suspect_req ssr
+                                 LEFT OUTER JOIN hea_suspect_req_act sra
+                                         ON ssr.suspect_req_no = sra.suspect_req_no
+                           WHERE ssr.susp_step_cd = 'STEP1'
+                             AND u.user_id = sra.user_id
+                            AND p.hea_checkup_plan_no = sra.hea_checkup_plan_no)
+          -- 유소견자로 지정X
+          AND NOT EXISTS (SELECT 1
+                            FROM hea_suspect_hst ssh
+                           WHERE ssh.suspect_yn = 'Y'
+                             AND u.user_id = ssh.user_id
+                            AND p.hea_checkup_plan_no = ssh.hea_checkup_plan_no)
+        -- C, D 판정
+        AND EXISTS (SELECT 1
+                    FROM hea_checkup_result_diag rd
+                    WHERE r.hea_checkup_plan_no = rd.hea_checkup_plan_no
+                    AND r.user_id = rd.user_id
+                    and (rd.hea_diagnose_cd LIKE 'C%' OR rd.hea_diagnose_cd LIKE 'D%'))
+          AND r.hea_checked_ymd like #{heaCheckedYear} + '%'
+          AND p.hea_checkup_plan_no = #{heaCheckupPlanNo}
+          AND u.user_id = #{userId}
+          AND u.plant_cd = #{plantCd}
+    </select>
+    
 </mapper>
