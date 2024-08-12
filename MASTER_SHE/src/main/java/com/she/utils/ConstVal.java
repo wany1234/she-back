@@ -704,6 +704,10 @@ public class ConstVal {
     public static String MGT_TGT_D_STEP_REG = "PSREG";
 
     /**
+     * 교육방법코드 - 전달
+     */
+    public static String EDU_METHOD_DEL = "EDM02";
+    /**
      * 교육방법코드 - 동영상
      */
     public static String EDU_METHOD_VIDEO = "EDM03";

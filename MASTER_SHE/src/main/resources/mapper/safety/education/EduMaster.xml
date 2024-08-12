@@ -306,7 +306,9 @@
             ,p.re_edu_time
             ,p.re_edu_not_yn
             ,p.video_watch_time
+            ,m.edu_method_cd
         from saf_edu_dtl_psn p
+        inner join saf_edu_mst m on p.saf_edu_mst_no = m.saf_edu_mst_no
         left outer join com_dept d on p.dept_cd = d.dept_cd
         left outer join com_user u on p.user_id = u.user_id
         where 1=1
@@ -331,6 +333,7 @@
             ,edu_eval_contents = #{eduEvalContents}
             ,re_edu_not_yn = #{reEduNotYn}
             ,edu_eval_pnt_sec = #{eduEvalPntSec}
+            ,video_watch_time = #{videoWatchTime}
         where saf_edu_mst_no = #{safEduMstNo}
         and user_id = #{userId}
     </update>

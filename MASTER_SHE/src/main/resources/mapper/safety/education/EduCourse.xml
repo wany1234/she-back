@@ -110,11 +110,6 @@
             ,c.update_dt
             ,cu.user_nm as create_user_nm
             ,uu.user_nm as update_user_nm
-            ,(select count(*)
-                from saf_edu_mst sem
-                inner join com_appr_rqst car on car.appr_rqst_no = sem.p_appr_rqst_no
-                where sem.saf_edu_course_no = c.saf_edu_course_no
-                and car.biz_appr_step_cd != 'BAPSD') as plan_cnt -- 교육계획 결재 카운트 (결재중/결재완료 건만 카운트)
         from saf_edu_course c
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') cc1 on c.edu_att_cd = cc1.code
         left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_CYCLE') cc2 on c.law_perd_cd = cc2.code

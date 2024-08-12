@@ -765,6 +765,7 @@
            left outer join saf_edu_dtl_psn psn on psn.saf_edu_mst_no = m.saf_edu_mst_no
            left outer join saf_edu_video sev on m.saf_edu_mst_no = sev.saf_edu_mst_no and m.saf_edu_course_no = sev.saf_edu_course_no
         where 1 = 1
+        and m.edu_method_cd = '${@com.she.utils.ConstVal@EDU_METHOD_DEL}' or  m.edu_method_cd = '${@com.she.utils.ConstVal@EDU_METHOD_VIDEO}'
         <if test='fromYmd != null and fromYmd != "" and toYmd != null and toYmd != ""'>
         and  m.edu_e_ymd <![CDATA[>=]]>  #{fromYmd} 
         and  m.edu_s_ymd <![CDATA[<=]]> #{toYmd}
