@@ -58,11 +58,7 @@
            , dashboard_yn
            , use_yn
            , create_user_id
-           , create_dt
-           , create_dept_nm
-           , create_dept_cd
-           , create_position_nm
-           , create_position_cd)
+           , create_dt)
        values (
            #{bizFieldItemNo}
            , #{bizFieldCd}
@@ -73,10 +69,6 @@
            , #{useYn}
            , #{createUserId}
            , getdate()
-           , (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{createUserId})
-           , (select dept_cd from com_user where user_id = #{createUserId})
-           , (select position_nm from com_user where user_id = #{createUserId})
-           , (select position_cd from com_user where user_id = #{createUserId})
        )
     </insert>
 
@@ -91,10 +83,6 @@
             , use_yn = #{useYn}
             , update_user_id = #{updateUserId}
             , update_dt = getdate()
-            , update_dept_nm = (select dbo.GET_DEPT_NM(dept_cd) from com_user where user_id = #{updateUserId})
-            , update_dept_cd = (select dept_cd from com_user where user_id = #{updateUserId})
-            , update_position_nm = (select position_nm from com_user where user_id = #{updateUserId})
-            , update_position_cd = (select position_cd from com_user where user_id = #{updateUserId})
         where biz_field_item_no = #{bizFieldItemNo}
     </insert>
 

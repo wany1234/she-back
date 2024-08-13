@@ -437,12 +437,13 @@
         /* WorkMeasureResultMapper.getDeptWorkTempleteInfos [WorkMeasureResult.xml] */
         SELECT d.dept_cd
               ,d.dept_nm
-              ,d.plant_cd
+              ,plant.code
               ,plant.code_nm as plant_nm
           FROM com_dept d
          INNER JOIN com_code_master plant
-            ON d.plant_cd = plant.code
-           AND plant.code_group_cd = 'COM_PLANT_CD'
+           on plant.code_group_cd = 'COM_PLANT_CD'
+           and plant.use_yn = 'Y'
+           and plant.code != 'FD10'
          WHERE 1=1
            AND d.use_yn = 'Y'
          ORDER BY plant.sort_order, d.dept_nm
