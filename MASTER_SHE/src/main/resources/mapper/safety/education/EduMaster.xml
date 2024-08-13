@@ -103,7 +103,6 @@
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc2 on co.edu_type_cd = cc2.code
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
           LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_TYPE') c2 on m.edu_type_cd = c2.code
-          LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_STEP') c3 on m.process_step_cd = c3.code
           LEFT OUTER JOIN com_dept d on m.main_dept_cd = d.dept_cd
           LEFT OUTER JOIN com_dept d2 on m.target_dept_cd = d2.dept_cd
           LEFT OUTER JOIN com_dept d3 on m.exec_dept_cd = d3.dept_cd

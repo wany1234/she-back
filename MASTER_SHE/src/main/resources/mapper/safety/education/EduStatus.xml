@@ -7,7 +7,6 @@
     /* EduStatusMapper.getEduStatuss [EduStatus.xml] */
          select 
              m.year
-            ,m.process_step_cd 
             ,m.main_dept_cd as main_dept_cd
             ,cd1.dept_nm as main_dept_nm
             ,m.target_dept_cd as target_dept_cd
@@ -73,19 +72,19 @@
             -- 이수인원 (총합)
             ,(select  count(*) from saf_edu_dtl_psn p where p.saf_edu_mst_no = m.saf_edu_mst_no and p.complet_yn = 'Y' ) + 
              (select count(*) from saf_edu_dtl_subconn_psn a where a.saf_edu_mst_no = m.saf_edu_mst_no) as totPassUserNum
-             ,isnull(edu_time,0) as edu_time
-            ,case when process_step_cd = 'SES03' then (select isnull(sum(case when b.re_complet_yn = 'Y'  then 1 else 0 end),0) 
-            from saf_edu_mst a
-            left outer join saf_edu_dtl_psn b
-            on a.saf_edu_mst_no = b.saf_edu_mst_no
-            where a.saf_edu_mst_no = m.saf_edu_mst_no
-            and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduPerson
-            ,case when process_step_cd = 'SES03' then (select isnull(sum(case when b.re_complet_yn != 'Y'  then 1 else 0 end),0)
-            from saf_edu_mst a
-            left outer join saf_edu_dtl_psn b
-            on a.saf_edu_mst_no = b.saf_edu_mst_no
-            where a.saf_edu_mst_no = m.saf_edu_mst_no
-            and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduAbsentPerson
+            ,isnull(edu_time,0) as edu_time
+            ,case when edu_plan_state = 'EPS03' then (select isnull(sum(case when b.complet_yn = 'Y'  then 1 else 0 end),0) 
+                   from saf_edu_mst a
+                   left outer join saf_edu_dtl_psn b
+                   on a.saf_edu_mst_no = b.saf_edu_mst_no
+                   where a.ori_saf_edu_mst_no = m.saf_edu_mst_no
+            ) else 0 end as reEduPerson
+            ,case when edu_plan_state = 'EPS03' then (select isnull(sum(case when b.complet_yn != 'Y'  then 1 else 0 end),0)
+                   from saf_edu_mst a
+                   left outer join saf_edu_dtl_psn b
+                   on a.saf_edu_mst_no = b.saf_edu_mst_no
+                   where a.ori_saf_edu_mst_no = m.saf_edu_mst_no
+            ) else 0 end as reEduAbsentPerson
            --  , count(*) as totalUserNum
             -- , sum(case when p.complet_yn='Y' then 1 else 0 end ) as passUserNum
             -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='N' then 1 else 0 end ) as failUserNum
@@ -263,19 +262,19 @@
             -- 이수인원 (총합)
             ,(select  count(*) from saf_edu_dtl_psn p where p.saf_edu_mst_no = m.saf_edu_mst_no and p.complet_yn = 'Y' ) + 
              (select count(*) from saf_edu_dtl_subconn_psn a where a.saf_edu_mst_no = m.saf_edu_mst_no) as totPassUserNum
-             ,isnull(edu_time,0) as edu_time
-            ,case when process_step_cd = 'SES03' then (select isnull(sum(case when b.re_complet_yn = 'Y'  then 1 else 0 end),0) 
-            from saf_edu_mst a
-            left outer join saf_edu_dtl_psn b
-            on a.saf_edu_mst_no = b.saf_edu_mst_no
-            where a.saf_edu_mst_no = m.saf_edu_mst_no
-            and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduPerson
-            ,case when process_step_cd = 'SES03' then (select isnull(sum(case when b.re_complet_yn != 'Y'  then 1 else 0 end),0)
-            from saf_edu_mst a
-            left outer join saf_edu_dtl_psn b
-            on a.saf_edu_mst_no = b.saf_edu_mst_no
-            where a.saf_edu_mst_no = m.saf_edu_mst_no
-            and a.re_edu_exc_yn = 'Y' ) else 0 end as reEduAbsentPerson
+            ,isnull(edu_time,0) as edu_time
+            ,case when edu_plan_state = 'EPS03' then (select isnull(sum(case when b.complet_yn = 'Y'  then 1 else 0 end),0) 
+                   from saf_edu_mst a
+                   left outer join saf_edu_dtl_psn b
+                   on a.saf_edu_mst_no = b.saf_edu_mst_no
+                   where a.ori_saf_edu_mst_no = m.saf_edu_mst_no
+            ) else 0 end as reEduPerson
+            ,case when edu_plan_state = 'EPS03' then (select isnull(sum(case when b.complet_yn != 'Y'  then 1 else 0 end),0)
+                   from saf_edu_mst a
+                   left outer join saf_edu_dtl_psn b
+                   on a.saf_edu_mst_no = b.saf_edu_mst_no
+                   where a.ori_saf_edu_mst_no = m.saf_edu_mst_no
+            ) else 0 end as reEduAbsentPerson
            --  , count(*) as totalUserNum
             -- , sum(case when p.complet_yn='Y' then 1 else 0 end ) as passUserNum
             -- , sum(case when isnull(p.complet_yn,'N')='N' and isnull(p.re_edu_exc_yn,'N')='N' then 1 else 0 end ) as failUserNum
@@ -665,7 +664,7 @@
                 from saf_edu_mst m
                 inner join saf_edu_dtl_psn p
                 on m.saf_edu_mst_no = p.saf_edu_mst_no
-                where m.process_step_cd = 'SES03'
+                where m.edu_plan_state = 'EPS03'
                 and (p.complet_yn = 'Y' or p.re_complet_yn = 'Y')
             ) m
             on t.saf_edu_course_no = m.saf_edu_course_no
@@ -676,7 +675,7 @@
                 from saf_edu_mst m
                 inner join saf_edu_dtl_psn p
                 on m.saf_edu_mst_no = p.saf_edu_mst_no
-                where m.process_step_cd = 'SES03'
+                where m.edu_plan_state = 'EPS03'
                 and (p.complet_yn = 'Y' or p.re_complet_yn = 'Y')
             ) pm
             on cg.pre_edu_cd = pm.saf_edu_course_no
@@ -758,7 +757,6 @@
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') cc2 on co.edu_type_cd = cc2.code
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c1 on co.edu_att_cd = c1.code
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_TYPE') c2 on m.edu_type_cd = c2.code
-           left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_STEP') c3 on m.process_step_cd = c3.code
            left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') c4 on m.plant_cd = c4.code    
            left outer join com_dept c5 on c5.dept_cd = m.dept_cd
            left outer join com_user a  on a.user_id = m.user_id
