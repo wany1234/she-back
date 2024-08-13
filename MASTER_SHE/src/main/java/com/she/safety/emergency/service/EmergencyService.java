@@ -378,4 +378,30 @@ public class EmergencyService {
     public List<EmergencyOutsidePsn> getEmergencyOutSideUsers(int safTrainPlanNo, DefaultParam defaultParam) throws Exception {
         return emergencyMapper.getEmergencyOutSideUsers(safTrainPlanNo, defaultParam);
     }
+
+    /**
+     * 훈련동영상 시청 대상 이수자 목록
+     * 
+     * @param parameter
+     *            검색조건
+     * @return 훈련동영상 시청 대상 이수자 목록
+     * @throws Exception
+     */
+    public List<Emergency> getEmergencyVideoUserList(String plantCd, String startDt, String endDt, String trainTypeCd, String trainNm, String deptCd, String deptSubYn, DefaultParam defaultParam) throws Exception {
+        return emergencyMapper.getEmergencyVideoUserList(plantCd, startDt, endDt, trainTypeCd, trainNm, deptCd, deptSubYn, defaultParam);
+    }
+
+    /**
+     * 훈련이수자 교육동영상 시청 등록/수정
+     * 
+     * @param EmergencyPsn
+     *            훈련이수자
+     *
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+    public int updateEmergencyViewUserVideo(EmergencyPsn emergencyPsn, DefaultParam defaultParam) throws Exception {
+        return emergencyMapper.updateEmergencyViewUserVideo(emergencyPsn);
+    }
 }

@@ -122,6 +122,16 @@ public class Emergency {
     private String overdueCnt;
     @ApiModelProperty(value = "조치완료")
     private String completCnt;
+    @ApiModelProperty(value = "이수자ID")
+    private String userId;
+    @ApiModelProperty(value = "이수자명")
+    private String userNm;
+    @ApiModelProperty(value = "훈련이수여부")
+    private String completYn;
+    @ApiModelProperty(value = "동영상주소")
+    private String videoUrl;
+    @ApiModelProperty(value = "이수처리시간")
+    private String videoCompTime;
 
     @ApiModelProperty(value = "훈련계획관리t사업장목록")
     private List<EmergencyPlant> emergencyPlantList;

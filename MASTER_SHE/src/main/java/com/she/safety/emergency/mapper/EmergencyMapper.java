@@ -352,4 +352,28 @@ public interface EmergencyMapper {
      * @throws Exception
      */
     public int updateEmergencyResult(Emergency emergency) throws Exception;
+
+    /**
+     * 훈련동영상 시청 대상 이수자 목록
+     * 
+     * @param parameter
+     *            검색조건
+     * @return 훈련동영상 시청 대상 이수자 목록
+     * @throws Exception
+     */
+    public List<Emergency> getEmergencyVideoUserList(@Param("plantCd") String plantCd, @Param("startDt") String startDt, @Param("endDt") String endDt, @Param("trainTypeCd") String trainTypeCd, @Param("trainNm") String trainNm, @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn, @Param("defaultParam") DefaultParam defaultParam)
+            throws Exception;
+
+    /**
+     * 훈련이수자 교육동영상 시청 등록/수정
+     * 
+     * @param EmergencyPsn
+     *            훈련이수자
+     *
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+    public int updateEmergencyViewUserVideo(EmergencyPsn emergencyPsn) throws Exception;
+
 }

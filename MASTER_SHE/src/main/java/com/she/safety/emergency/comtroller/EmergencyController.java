@@ -323,4 +323,53 @@ public class EmergencyController {
 
         return ResponseEntity.ok().body(emergencyService.getEmergencyOutSideUsers(safTrainPlanNo, defaultParam));
     }
+
+    /**
+     * 훈련동영상 시청 대상 이수자 목록
+     * 
+     * @param parameter
+     *            검색조건
+     * @return 훈련동영상 시청 대상 이수자 목록
+     * @throws Exception
+     */
+    @GetMapping("/emergencyvideouserlist")
+    public ResponseEntity<List<Emergency>> getEmergencyVideoUserList(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
+        // 사업장
+        String plantCd = map.containsKey("plantCd") ? map.get("plantCd").toString() : "";
+        // 훈련기간
+        String[] trainDt = this.requestMapper.convertObjectListAsStringArray(map.get("trainDt"));
+        String startDt = "";
+        String endDt = "";
+
+        if (trainDt != null && trainDt.length == 2) {
+            startDt = trainDt[0];
+            endDt = trainDt[1];
+        }
+        // 훈련구분
+        String trainTypeCd = map.containsKey("trainTypeCd") ? map.get("trainTypeCd").toString() : "";
+        // 훈련명
+        String trainNm = map.containsKey("trainNm") ? map.get("trainNm").toString() : "";
+        // 주관부서
+        String deptCd = map.containsKey("deptCd") ? map.get("deptCd").toString() : "";
+        // 하위부서 여부
+        String deptSubYn = map.containsKey("deptSubYn") ? map.get("deptSubYn").toString() : "";
+        return ResponseEntity.ok().body(emergencyService.getEmergencyVideoUserList(plantCd, startDt, endDt, trainTypeCd, trainNm, deptCd, deptSubYn, defaultParam));
+    }
+
+    /**
+     * 훈련이수자 교육동영상 시청 등록/수정
+     * 
+     * @param EmergencyPsn
+     *            훈련이수자
+     *
+     * @return 결과
+     * @throws Exception
+     *             예외
+     */
+    @PutMapping("/emergencyviewuservideo")
+    public ResponseEntity<Integer> updateEmergencyViewUserVideo(@RequestBody EmergencyPsn emergencyPsn, @ModelAttribute DefaultParam defaultParam) throws Exception {
+        return ResponseEntity.ok().body(emergencyService.updateEmergencyViewUserVideo(emergencyPsn, defaultParam));
+    }
+
 }

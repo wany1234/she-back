@@ -1120,5 +1120,76 @@
            ,update_user_id = #{updateUserId}
            ,update_dt = getdate()
         where saf_train_plan_no = #{safTrainPlanNo}
-    </update>  
+    </update>
+    <select id= "getEmergencyVideoUserList" resultType= "com.she.safety.model.Emergency">
+        /* EmergencyMapper.getEmergencyVideoUserList [Emergency.xml] */
+        select 
+             tp.saf_train_plan_no
+           ,tp.train_type_cd            --      훈련구분코드 SAF_TRA_COURSE_CLS    
+           ,dbo.GET_CODE_NM(tp.train_type_cd, 'SAF_TRA_COURSE_CLS') as train_type_nm
+           ,tp.train_start_ymd
+           ,tp.train_end_ymd
+           ,tp.create_user_id
+           ,tp.train_nm
+           ,tp.dept_cd                 --주관부서코드
+           ,dbo.GET_DEPT_NM(tp.dept_cd) as dept_nm
+           ,case
+               when dbo.GET_USER_NM(tp.update_user_id) = '' then dbo.GET_USER_NM(tp.create_user_id)
+               else dbo.GET_USER_NM(tp.update_user_id) end    as create_user_nm
+           ,case when tp.update_dt is null then convert(date, tp.create_dt) else convert(date, tp.update_dt) end   as create_dt
+           ,tdp.user_id
+           ,dbo.GET_USER_NM(tdp.user_id) as user_nm
+           ,tdp.complet_yn
+           ,STUFF((
+             select ', ' + dbo.GET_CODE_NM_LANG(#{defaultParam.lang}, 'COM_PLANT_CD', tpp.plant_cd)
+             from saf_train_plan_plant tpp
+             where tp.saf_train_plan_no = tpp.saf_train_plan_no
+             FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') as plant_nm
+           ,tpv.video_url
+           ,tpv.video_comp_time
+        from saf_train_plan tp
+        inner join saf_train_dtl_psn tdp on tp.saf_train_plan_no = tdp.saf_train_plan_no
+        inner join saf_train_plan_video tpv on tp.saf_train_plan_no = tpv.saf_train_plan_no
+        where 1 = 1 
+            and tp.train_method_cd = '${@com.she.utils.ConstVal@TRAIN_METHOD_VIDEO}'
+            and tpv.use_yn = 'Y'
+            -- and tp.train_plan_state = '${@com.she.utils.ConstVal@TRAIN_PLAN_STATE_PLAN}'
+         <if test="plantCd != null and !plantCd.equals('')">
+            and (
+                 select count(*) 
+                 from saf_train_plan_plant tpp
+                 where tpp.saf_train_plan_no = tp.saf_train_plan_no
+                     and tpp.plant_cd = #{plantCd}
+                ) != 0 
+         </if>
+         <if test="trainTypeCd != null and !trainTypeCd.equals('')">
+            and tp.train_type_cd = #{trainTypeCd}
+         </if>
+         <if test="trainNm != null and !trainNm.equals('')">
+            and tp.train_nm like '%' +  #{trainNm} + '%'
+         </if>
+         <if test="startDt != null and !startDt.equals('') and endDt != null and !endDt.equals('')">
+             and (convert(char(10), train_start_ymd, 23) &lt;= #{endDt}
+                    and convert(char(10), train_end_ymd, 23) &gt;= #{startDt}
+                 ) 
+         </if>
+         <if test= 'deptCd != null and !deptCd.equals("")'>
+           <choose>
+               <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                   and tp.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+               </when>
+               <otherwise>
+                   and tp.dept_cd = #{deptCd}
+               </otherwise>
+           </choose>
+        </if>
+    </select>   
+    <update id= "updateEmergencyViewUserVideo" parameterType= "com.she.safety.model.EmergencyPsn"> 
+        update saf_train_dtl_psn
+        set video_watch_time = #{videoWatchTime}
+        ,complet_yn = #{completYn}
+        ,re_train_not_yn = #{completYn}
+        where saf_train_plan_no = #{safTrainPlanNo}
+        and user_id = #{userId}
+    </update>   
 </mapper>
