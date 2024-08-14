@@ -49,7 +49,7 @@ public interface CheckResultMapper {
      * @throws Exception
      */
     public List<CheckMaster> getCheckScheduleList(@Param("startDate") String startDate, @Param("endDate") String endDate, @Param("tgtDeptCd") String tgtDeptCd, @Param("tgtDeptSubYn") String tgtDeptSubYn, @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn, @Param("pfmDeptCd") String pfmDeptCd, @Param("pfmDeptSubYn") String pfmDeptSubYn, @Param("safCheckKindNo") int safCheckKindNo,
-            @Param("plantCd") String plantCd, @Param("stepStatus") String stepStatus, @Param("keyword") String keyword, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+            @Param("plantCd") String plantCd, @Param("stepStatus") String stepStatus, @Param("keyword") String keyword, @Param("defaultParam") DefaultParam defaultParam, @Param("chngKind") String chngKind, @Param("vendorCd") String vendorCd) throws Exception;
 
     /**
      * 안전점검 마스터 등록

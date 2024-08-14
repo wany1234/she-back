@@ -63,8 +63,8 @@ public class CheckResultService {
      * @return 안전점검결과 목록
      * @throws Exception
      */
-    public List<CheckMaster> getCheckScheduleList(String startDate, String endDate, String tgtDeptCd, String tgtDeptSubYn, String deptCd, String deptSubYn, String pfmDeptCd, String pfmDeptSubYn, int safCheckKindNo, String plantCd, String stepStatus, String keyword, DefaultParam defaultParam) throws Exception {
-        return checkResultMapper.getCheckScheduleList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, deptCd, deptSubYn, pfmDeptCd, pfmDeptSubYn,safCheckKindNo, plantCd, stepStatus, keyword, defaultParam);
+    public List<CheckMaster> getCheckScheduleList(String startDate, String endDate, String tgtDeptCd, String tgtDeptSubYn, String deptCd, String deptSubYn, String pfmDeptCd, String pfmDeptSubYn, int safCheckKindNo, String plantCd, String stepStatus, String keyword, DefaultParam defaultParam, String chngKind, String vendorCd) throws Exception {
+        return checkResultMapper.getCheckScheduleList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, deptCd, deptSubYn, pfmDeptCd, pfmDeptSubYn,safCheckKindNo, plantCd, stepStatus, keyword, defaultParam, chngKind, vendorCd);
     }
 
     /**

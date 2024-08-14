@@ -141,6 +141,12 @@
                                         </choose>
                                       )
         </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(vendorCd)">
+        					and exists (SELECT saf_check_no from saf_check_master_vendor where vendor_cd = #{vendorCd})
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(chngKind)">
+        					and sck.chng_kind = #{chngKind}
+        </if>
                         ) a
                ) a
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(stepStatus)">

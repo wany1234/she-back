@@ -92,8 +92,12 @@ public class CheckResultController {
         String stepStatus = map.containsKey("stepStatus") ? map.get("stepStatus").toString() : "";
         // 점검(일정)명
         String keyword = map.containsKey("keyword") ? map.get("keyword").toString() : "";
+        // 점검종류코드 포함여부
+        String chngKind = map.containsKey("chngKind") ? map.get("chngKind").toString() : "Y";
+        // 협력업체코드 포함여부
+        String vendorCd = map.containsKey("vendorCd") ? map.get("vendorCd").toString() : "Y";
 
-        List<CheckMaster> checkResults = checkResultService.getCheckScheduleList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, deptCd, deptSubYn, pfmDeptCd, pfmDeptSubYn,safCheckKindNo, plantCd, stepStatus, keyword, defaultParam);
+        List<CheckMaster> checkResults = checkResultService.getCheckScheduleList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, deptCd, deptSubYn, pfmDeptCd, pfmDeptSubYn,safCheckKindNo, plantCd, stepStatus, keyword, defaultParam, chngKind, vendorCd);
         return ResponseEntity.ok().body(checkResults);
     }
 
