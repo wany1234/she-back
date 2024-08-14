@@ -92,6 +92,8 @@ public class CheckMaster {
     private String[] arrayCheckTitle;
 
     private List<CheckSchedule> checkScheduleList;
+    
+    private List<CheckVendor> vendorList;
 
     private String stepStatus;
 
@@ -99,4 +101,6 @@ public class CheckMaster {
 
     @ApiModelProperty(value = "무일정여부")
     private String noSchYn;
+    
+    private String chngKind;
 }

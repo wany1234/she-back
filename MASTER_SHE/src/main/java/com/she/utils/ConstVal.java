@@ -748,5 +748,15 @@ public class ConstVal {
      * 훈련계획단계 - 걸과확정
      */
     public static String TRAIN_PLAN_STATE_RESULT = "TPS03";
+    
+    /**
+     * 점검종류 코드 - 안전점검
+     */
+    public static String CHNG_KIND_SAFETY  = "CKC01";
+    
+    /**
+     * 점검종류 코드 - 순회점검
+     */
+    public static String CHNG_KIND_CIRCUIT = "CKC02";
 
 }

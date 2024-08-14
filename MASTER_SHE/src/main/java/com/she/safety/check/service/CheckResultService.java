@@ -27,6 +27,7 @@ import com.she.safety.model.CheckInspector;
 import com.she.safety.model.CheckItemResult;
 import com.she.safety.model.CheckMaster;
 import com.she.safety.model.CheckSchedule;
+import com.she.safety.model.CheckVendor;
 import com.she.utils.ConstVal;
 
 /**
@@ -94,6 +95,14 @@ public class CheckResultService {
                         checkResultMapper.createCheckSchedule(checkSchedule);
                     }
                 }
+                
+                // 순회점검일때 협력업체 등록
+                if (ConstVal.CHNG_KIND_CIRCUIT.equals(checkMaster.getChngKind()) && CollectionUtils.isNotEmpty(checkMaster.getVendorList())) {
+                	for (CheckVendor checkVendor : checkMaster.getVendorList()) {
+                		checkVendor.setSafCheckNo(checkMaster.getSafCheckNo()); // 안전점검일련번호
+                		checkResultMapper.insertCheckVendor(checkVendor);
+                	}
+                }
                 return checkMaster.getSafCheckNo();
             }
         }
@@ -116,6 +125,8 @@ public class CheckResultService {
             } else {
                 // 안전점검 일정 목록 조회
                 checkMaster.setCheckScheduleList(checkResultMapper.getCheckSchedule(safCheckNo, defaultParam));
+                // 아전점검 협력업체 조회
+                checkMaster.setVendorList(checkResultMapper.getCheckVendor(safCheckNo));
                 return checkMaster;
             }
         } else {
@@ -153,6 +164,17 @@ public class CheckResultService {
                         checkResultMapper.createCheckSchedule(checkSchedule);
                     }
                 }
+                
+                // 기등록된 협력업체 삭제
+                checkResultMapper.deleteCheckVendor(checkMaster.getSafCheckNo());
+                // 순회점검일때 협력업체 등록
+                if (ConstVal.CHNG_KIND_CIRCUIT.equals(checkMaster.getChngKind()) && CollectionUtils.isNotEmpty(checkMaster.getVendorList())) {
+                	for (CheckVendor checkVendor : checkMaster.getVendorList()) {
+                		checkVendor.setSafCheckNo(checkMaster.getSafCheckNo()); // 안전점검일련번호
+                		checkResultMapper.insertCheckVendor(checkVendor);
+                	}
+                }
+                
                 return checkMaster.getSafCheckNo();
             }
         }
@@ -257,6 +279,8 @@ public class CheckResultService {
         if (safCheckNo > 0) {
             // 안전점검 일정 목록 삭제
             result = checkResultMapper.deleteCheckSchedule(safCheckNo, 0);
+            //안전점검 협력업체 삭제
+            result += checkResultMapper.deleteCheckVendor(safCheckNo);
             // 안전점검 마스터 삭제
             result += checkResultMapper.deleteCheckMaster(safCheckNo);
         }

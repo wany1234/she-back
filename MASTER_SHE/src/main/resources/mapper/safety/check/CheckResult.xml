@@ -257,6 +257,7 @@
                , scm.appr_rqst_no
                , cbas.code as biz_appr_step_cd               
                ,isnull(cbas.code_nm, '결재요청전' ) as biz_appr_step_nm
+               , sck.chng_kind 
            from saf_check_master scm
           inner join saf_check_kind sck
              on scm.saf_check_kind_no = sck.saf_check_kind_no
@@ -1107,6 +1108,35 @@
         on a.tgt_dept_cd = tgtDept.dept_cd
         INNER JOIN dbo.LANG_CODE_MASTER('kr', 'COM_PLANT_CD') pl
         ON a.plant_cd = pl.code
+    </select>
+    
+    <insert id="insertCheckVendor" parameterType="com.she.safety.model.CheckVendor">
+    	INSERT into saf_check_master_vendor
+          (
+	        saf_check_no
+			,seq_no
+			,vendor_cd
+			,vendor_nm
+          ) select
+          #{safCheckNo}
+          ,ISNULL(MAX(seq_no) + 1, 1) 
+          ,#{vendorCd}
+          ,#{vendorNm}
+          from saf_check_master_vendor
+    </insert>
+    
+    <delete id="deleteCheckVendor">
+    	DELETE FROM saf_check_master_vendor
+		where saf_check_no = #{safCheckNo}
+    </delete>
+    
+    <select id="getCheckVendor" resultType="com.she.safety.model.CheckVendor">
+    	SELECT saf_check_no
+			,seq_no
+			,vendor_cd
+			,vendor_nm
+		from saf_check_master_vendor  
+		where saf_check_no = #{safCheckNo}
     </select>
 
 </mapper>
