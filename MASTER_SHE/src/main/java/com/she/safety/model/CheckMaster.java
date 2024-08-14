@@ -103,4 +103,5 @@ public class CheckMaster {
     private String noSchYn;
     
     private String chngKind;
+    private String chngKindNm;
 }

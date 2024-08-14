@@ -62,6 +62,7 @@
                                ,isnull(cm.code_nm, '결재요청전' ) as biz_appr_step_nm
                                , isnull(scm.no_sch_yn, 'N') as no_sch_yn
                                , scm.appr_rqst_no
+                               , cm3.code_nm as chng_kind_nm
                           from saf_check_master scm
                          inner join com_dept dept
                             on scm.dept_cd = dept.dept_cd
@@ -76,6 +77,8 @@
                             on cm.code = ar.biz_appr_step_cd
                          inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') cm2
                             on cm2.code = scm.plant_cd
+                         inner join dbo.LANG_CODE_MASTER('kr', 'CHECK_KIND_CD') cm3
+                         	on cm3.code = sck.chng_kind
                          where 1=1
                            and isnull(scm.no_sch_yn, 'N') ='N'
 						   and exists (
