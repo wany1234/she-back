@@ -422,6 +422,8 @@
                     else dbo.GET_USER_NM(scm.update_user_id) end    as writer_user_nm
                , case when scm.update_dt is null then convert(date, scm.create_dt) else convert(date, scm.update_dt) end   as writer_dt
                , cm2.code_nm as chng_kind_nm
+               , scs.tgt_vendor_cd
+               , cvm.vendor_nm as tgt_vendor_nm
           from saf_check_schedule scs
          inner join saf_check_master scm
             on scs.saf_check_no = scm.saf_check_no
@@ -434,10 +436,12 @@
            and sck.subcon_use_yn = 'N'
          inner join com_dept dept
             on scm.dept_cd = dept.dept_cd
-         inner join com_dept tgtdept
+         left join com_dept tgtdept
             on scs.tgt_dept_cd = tgtdept.dept_cd
          left join com_dept pfmdept
             on scs.pfm_dept_cd = pfmdept.dept_cd
+         left join com_vendor_mst cvm 
+         	on scs.tgt_vendor_cd = cvm.vendor_cd
          inner join com_user cu
             on scm.create_user_id = cu.user_id
           left outer join com_appr_rqst ar
@@ -498,7 +502,7 @@
            and scs.check_title like '%' + #{keyword} + '%'
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(vendorCd)">
-        					and exists (SELECT saf_check_no from saf_check_master_vendor where vendor_cd = #{vendorCd})
+           and scs.tgt_vendor_cd = #{vendorCd}
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(chngKind)">
         					and sck.chng_kind = #{chngKind}
@@ -538,6 +542,9 @@
                , scs.p_appr_rqst_no
                , scs.r_appr_rqst_no
                , scm.appr_rqst_no
+               , sck.chng_kind
+               , scs.tgt_vendor_cd
+               , cvm.vendor_nm as tgt_vendor_nm
           from saf_check_schedule scs
          inner join saf_check_master scm
             on scs.saf_check_no = scm.saf_check_no
@@ -549,8 +556,10 @@
             on scm.saf_check_kind_no = sck.saf_check_kind_no
          inner join com_dept dept
             on scm.dept_cd = dept.dept_cd
-         inner join com_dept tgtdept
+         left join com_dept tgtdept
             on scs.tgt_dept_cd = tgtdept.dept_cd
+         left join com_vendor_mst cvm 
+         	on scs.tgt_vendor_cd = cvm.vendor_cd
          left join com_dept pdept
             on scs.pfm_dept_cd = pdept.dept_cd
          inner join com_user cu

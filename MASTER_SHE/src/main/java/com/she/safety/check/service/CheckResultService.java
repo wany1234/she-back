@@ -308,7 +308,18 @@ public class CheckResultService {
      * @throws Exception
      */
     public List<CheckSchedule> getCheckPlanList(String startDate, String endDate, String tgtDeptCd, String tgtDeptSubYn, String pfmDeptCd, String pfmDeptSubYn, String deptCd, String deptSubYn, int safCheckKindNo, String plantCd, String checkStepCd, String keyword, DefaultParam defaultParam, String chngKind, String vendorCd) throws Exception {
-        return checkResultMapper.getCheckPlanList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam, chngKind, vendorCd);
+    	List<CheckSchedule> result = checkResultMapper.getCheckPlanList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam, chngKind, vendorCd);
+    	for(CheckSchedule schedule : result) {
+    		if (schedule.getTgtDeptCd() != null
+                    && (schedule.getTgtVendorCd() == null || schedule.getTgtVendorCd().equals(""))) {
+            	schedule.setTgtNm(schedule.getTgtDeptNm());
+            } else if (schedule.getTgtVendorCd() != null
+                    && (schedule.getTgtDeptCd() == null || schedule.getTgtDeptCd().equals(""))) {
+            	schedule.setTgtNm(schedule.getTgtVendorNm());
+            }
+    	}
+    	
+        return result;
     }
 
     /**
