@@ -93,9 +93,9 @@ public class CheckResultController {
         // 점검(일정)명
         String keyword = map.containsKey("keyword") ? map.get("keyword").toString() : "";
         // 점검종류코드 포함여부
-        String chngKind = map.containsKey("chngKind") ? map.get("chngKind").toString() : "Y";
+        String chngKind = map.containsKey("chngKind") ? map.get("chngKind").toString() : "";
         // 협력업체코드 포함여부
-        String vendorCd = map.containsKey("vendorCd") ? map.get("vendorCd").toString() : "Y";
+        String vendorCd = map.containsKey("vendorCd") ? map.get("vendorCd").toString() : "";
 
         List<CheckMaster> checkResults = checkResultService.getCheckScheduleList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, deptCd, deptSubYn, pfmDeptCd, pfmDeptSubYn,safCheckKindNo, plantCd, stepStatus, keyword, defaultParam, chngKind, vendorCd);
         return ResponseEntity.ok().body(checkResults);
@@ -199,8 +199,12 @@ public class CheckResultController {
         String checkStepCd = map.containsKey("checkStepCd") ? map.get("checkStepCd").toString() : "";
         // 검색어
         String keyword = map.containsKey("keyword") ? map.get("keyword").toString() : "";
+        // 점검종류코드 포함여부
+        String chngKind = map.containsKey("chngKind") ? map.get("chngKind").toString() : "";
+        // 협력업체코드 포함여부
+        String vendorCd = map.containsKey("vendorCd") ? map.get("vendorCd").toString() : "";
 
-        return ResponseEntity.ok().body(checkResultService.getCheckPlanList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam));
+        return ResponseEntity.ok().body(checkResultService.getCheckPlanList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam, chngKind, vendorCd));
     }
 
     /**

@@ -59,7 +59,10 @@ public class CheckSchedule {
     private String subconnRegYn;
 
     @ApiModelProperty(value = "대상업체코드")
-    private String vendorCd;
+    private String tgtVendorCd;
+    
+    @ApiModelProperty(value = "대상업체이름")
+    private String tgtVendorNm;
 
     @ApiModelProperty(value = "계획결재요청번호")
     private int pApprRqstNo;
@@ -122,5 +125,12 @@ public class CheckSchedule {
 
     @ApiModelProperty(value = "작성일")
     private String writerDt;
+    
+    private String chngKind;
+    private String chngKindNm;
+    
+    private String isDept;
+    private String tgtCd;
+    private String tgtNm;
 
 }

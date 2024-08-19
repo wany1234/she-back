@@ -93,8 +93,6 @@ public class CheckMaster {
 
     private List<CheckSchedule> checkScheduleList;
     
-    private List<CheckVendor> vendorList;
-
     private String stepStatus;
 
     private String stepStatusNm;

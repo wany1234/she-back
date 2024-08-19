@@ -41,12 +41,14 @@
                                     else dbo.GET_USER_NM(scm.update_user_id) end    as writer_user_nm
                                , case when scm.update_dt is null then convert(date, scm.create_dt) else convert(date, scm.update_dt) end   as writer_dt
                                , convert(char(10), scm.create_dt, 23) as create_dt
-                               , (select stuff((select ',' + b.dept_nm
+                               , (select stuff((select ',' + isnull(b.dept_nm, cvm.vendor_nm)
                                                   from saf_check_schedule a
-                                                 inner join com_dept b
+                                                 left outer join com_dept b
                                                     on a.tgt_dept_cd = b.dept_cd
+                                                 left outer join com_vendor_mst cvm 
+                                                 	on a.tgt_vendor_cd = cvm.vendor_cd
                                                  where a.saf_check_no = scm.saf_check_no
-                                                 group by b.dept_nm
+                                                 group by b.dept_nm, cvm.vendor_nm
                                                    for xml path('')
                                                ), 1, 1, '')
                                  ) as tgt_dept_nm
@@ -142,7 +144,12 @@
                                       )
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(vendorCd)">
-        					and exists (SELECT saf_check_no from saf_check_master_vendor where vendor_cd = #{vendorCd})
+        					and exists (
+                                       select 1
+                                         from saf_check_schedule a
+                                        where a.saf_check_no = scm.saf_check_no
+                                        and a.tgt_vendor_cd = #{vendorCd}
+                                      )
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(chngKind)">
         					and sck.chng_kind = #{chngKind}
@@ -215,7 +222,7 @@
                  , check_step_cd
                  , appr_step_cd
                  , subconn_reg_yn
-                 , vendor_cd
+                 , tgt_vendor_cd
                  <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(noPlanYn)">
                  , no_plan_yn
                  </if>
@@ -236,7 +243,7 @@
                  , #{checkStepCd}
                  , #{apprStepCd}
                  , #{subconnRegYn}
-                 , #{vendorCd}
+                 , #{tgtVendorCd}
                  <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(noPlanYn)">
                  , #{noPlanYn}
                  </if>
@@ -297,22 +304,25 @@
                , checkstep.code_nm as check_step_nm
                , scs.appr_step_cd
                , scs.subconn_reg_yn
-               , scs.vendor_cd
+               , scs.tgt_vendor_cd
+               , cvm.vendor_nm as tgt_vendor_nm
                , isnull(scs.no_plan_yn, 'N') as no_plan_yn
                , scs.create_user_id
                , scs.create_dt
                , scs.update_user_id
                , scs.update_dt
           from saf_check_schedule scs
-         inner join com_dept dept
+         left join com_dept dept
             on scs.tgt_dept_cd = dept.dept_cd
          left join com_dept pfmDept
             on scs.pfm_dept_cd = pfmDept.dept_cd
+         left join com_vendor_mst cvm 
+         	on scs.tgt_vendor_cd = cvm.vendor_cd 
          inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_CHK_STEP') checkstep
             on scs.check_step_cd = checkstep.code
          where saf_check_no = #{safCheckNo}
            and isnull(scs.no_plan_yn, 'N') = 'N'
-         order by scs.check_sch_ymd, scs.tgt_dept_cd
+         order by scs.check_sch_ymd, scs.tgt_dept_cd, scs.tgt_vendor_cd 
     </select>
 
     <!-- 안전점검 마스터 수정 -->
@@ -411,6 +421,7 @@
                     when dbo.GET_USER_NM(scm.update_user_id) = '' then dbo.GET_USER_NM(scm.create_user_id)
                     else dbo.GET_USER_NM(scm.update_user_id) end    as writer_user_nm
                , case when scm.update_dt is null then convert(date, scm.create_dt) else convert(date, scm.update_dt) end   as writer_dt
+               , cm2.code_nm as chng_kind_nm
           from saf_check_schedule scs
          inner join saf_check_master scm
             on scs.saf_check_no = scm.saf_check_no
@@ -433,6 +444,8 @@
             on ar.appr_rqst_no = scs.p_appr_rqst_no
           left outer join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_BIZ_APPR_STEP') cm
             on cm.code = ar.biz_appr_step_cd
+          inner join dbo.LANG_CODE_MASTER('kr', 'CHECK_KIND_CD') cm2
+            on cm2.code = sck.chng_kind
          where 1=1
            and isnull(scs.no_plan_yn, 'N') = 'N'
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(startDate) and @org.apache.commons.lang3.StringUtils@isNotBlank(endDate)">
@@ -482,11 +495,13 @@
            and scs.check_step_cd in ('CHS01', 'CHS02')
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(keyword)">
-           and (
-                scm.check_master_title like '%' + #{keyword} + '%'
-                or
-                scs.check_title like '%' + #{keyword} + '%'
-               )
+           and scs.check_title like '%' + #{keyword} + '%'
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(vendorCd)">
+        					and exists (SELECT saf_check_no from saf_check_master_vendor where vendor_cd = #{vendorCd})
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(chngKind)">
+        					and sck.chng_kind = #{chngKind}
         </if>
          order by writer_dt desc, scs.check_sch_ymd asc
     </select>
@@ -666,8 +681,8 @@
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(subconnRegYn)">
                , subconn_reg_yn = #{subconnRegYn}
         </if>
-        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(vendorCd)">
-               , vendor_cd = #{vendorCd}
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)">
+               , tgt_vendor_cd = #{tgtVendorCd}
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(checkSchYmd)">
                , check_sch_ymd = #{checkSchYmd}
@@ -1119,33 +1134,5 @@
         ON a.plant_cd = pl.code
     </select>
     
-    <insert id="insertCheckVendor" parameterType="com.she.safety.model.CheckVendor">
-    	INSERT into saf_check_master_vendor
-          (
-	        saf_check_no
-			,seq_no
-			,vendor_cd
-			,vendor_nm
-          ) select
-          #{safCheckNo}
-          ,ISNULL(MAX(seq_no) + 1, 1) 
-          ,#{vendorCd}
-          ,#{vendorNm}
-          from saf_check_master_vendor
-    </insert>
-    
-    <delete id="deleteCheckVendor">
-    	DELETE FROM saf_check_master_vendor
-		where saf_check_no = #{safCheckNo}
-    </delete>
-    
-    <select id="getCheckVendor" resultType="com.she.safety.model.CheckVendor">
-    	SELECT saf_check_no
-			,seq_no
-			,vendor_cd
-			,vendor_nm
-		from saf_check_master_vendor  
-		where saf_check_no = #{safCheckNo}
-    </select>
 
 </mapper>

@@ -22,7 +22,6 @@ import com.she.safety.model.CheckInspector;
 import com.she.safety.model.CheckItemResult;
 import com.she.safety.model.CheckMaster;
 import com.she.safety.model.CheckSchedule;
-import com.she.safety.model.CheckVendor;
 
 @Mapper
 @Repository("com.she.safety.check.mapper.CheckResultMapper")
@@ -149,7 +148,7 @@ public interface CheckResultMapper {
      * @throws Exception
      */
     public List<CheckSchedule> getCheckPlanList(@Param("startDate") String startDate, @Param("endDate") String endDate, @Param("tgtDeptCd") String tgtDeptCd, @Param("tgtDeptSubYn") String tgtDeptSubYn, @Param("pfmDeptCd") String pfmDeptCd, @Param("pfmDeptSubYn") String pfmDeptSubYn, @Param("deptCd") String deptCd,
-            @Param("deptSubYn") String deptSubYn, @Param("safCheckKindNo") int safCheckKindNo, @Param("plantCd") String plantCd, @Param("checkStepCd") String checkStepCd, @Param("keyword") String keyword, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+            @Param("deptSubYn") String deptSubYn, @Param("safCheckKindNo") int safCheckKindNo, @Param("plantCd") String plantCd, @Param("checkStepCd") String checkStepCd, @Param("keyword") String keyword, @Param("defaultParam") DefaultParam defaultParam, @Param("chngKind") String chngKind, @Param("vendorCd") String vendorCd) throws Exception;
 
     /**
      * 안전점검 계획, 결과 상세 조회
@@ -301,26 +300,5 @@ public interface CheckResultMapper {
 
     public List<HashMap<String, Object>> getCheckResultStatusSub(@Param("plantCd") String plantCd, @Param("year") String year, @Param("safCheckKindNo") int safCheckKindNo, @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn, @Param("tgtDeptCd") String tgtDeptCd, @Param("tgtDeptSubYn") String tgtDeptSubYn) throws Exception;
     
-    /**
-     * 안전점검일정 협력업체 등록
-     * @return
-     * @throws Exception
-     */
-    public int insertCheckVendor(CheckVendor checkVendor) throws Exception;
-    
-    /**
-     * 안전점검일정 협력업체 삭제
-     * @return
-     * @throws Exception
-     */
-    public int deleteCheckVendor(@Param("safCheckNo") int safCheckNo) throws Exception;
-    
-    /**
-     * 안전점검일정 협력업체 조회
-     * @param safCheckNo
-     * @return
-     * @throws Exception
-     */
-    public List<CheckVendor> getCheckVendor(@Param("safCheckNo") int safCheckNo) throws Exception;
 
 }

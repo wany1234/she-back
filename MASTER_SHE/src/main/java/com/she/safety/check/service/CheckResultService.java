@@ -27,7 +27,6 @@ import com.she.safety.model.CheckInspector;
 import com.she.safety.model.CheckItemResult;
 import com.she.safety.model.CheckMaster;
 import com.she.safety.model.CheckSchedule;
-import com.she.safety.model.CheckVendor;
 import com.she.utils.ConstVal;
 
 /**
@@ -92,17 +91,17 @@ public class CheckResultService {
                         checkSchedule.setSafCheckNo(checkMaster.getSafCheckNo()); // 안전점검일련번호
                         checkSchedule.setCheckStepCd(ConstVal.SAF_CHK_STEP_SCHEDULE_CD); // 점검진행상태(일정)
                         checkSchedule.setCreateUserId(checkMaster.getCreateUserId()); // 등록자
+                        if (checkSchedule.getIsDept().equals("Y")) {
+                        	checkSchedule.setTgtDeptCd(checkSchedule.getTgtCd());
+                        	checkSchedule.setTgtDeptNm(checkSchedule.getTgtNm());
+                        } else {
+                        	checkSchedule.setTgtVendorCd(checkSchedule.getTgtCd());
+                        	checkSchedule.setTgtVendorNm(checkSchedule.getTgtNm());
+                        }
                         checkResultMapper.createCheckSchedule(checkSchedule);
                     }
                 }
                 
-                // 순회점검일때 협력업체 등록
-                if (ConstVal.CHNG_KIND_CIRCUIT.equals(checkMaster.getChngKind()) && CollectionUtils.isNotEmpty(checkMaster.getVendorList())) {
-                	for (CheckVendor checkVendor : checkMaster.getVendorList()) {
-                		checkVendor.setSafCheckNo(checkMaster.getSafCheckNo()); // 안전점검일련번호
-                		checkResultMapper.insertCheckVendor(checkVendor);
-                	}
-                }
                 return checkMaster.getSafCheckNo();
             }
         }
@@ -123,10 +122,23 @@ public class CheckResultService {
             if (checkMaster == null) {
                 return null;
             } else {
-                // 안전점검 일정 목록 조회
-                checkMaster.setCheckScheduleList(checkResultMapper.getCheckSchedule(safCheckNo, defaultParam));
-                // 아전점검 협력업체 조회
-                checkMaster.setVendorList(checkResultMapper.getCheckVendor(safCheckNo));
+            	// 안전점검 일정 목록 조회
+                List<CheckSchedule> list = checkResultMapper.getCheckSchedule(safCheckNo, defaultParam);
+                for (CheckSchedule schedule : list) {
+                    if (schedule.getTgtDeptCd() != null
+                            && (schedule.getTgtVendorCd() == null || schedule.getTgtVendorCd().equals(""))) {
+                    	schedule.setTgtCd(schedule.getTgtDeptCd());
+                    	schedule.setTgtNm(schedule.getTgtDeptNm());
+                    	schedule.setIsDept("Y");
+                    } else if (schedule.getTgtVendorCd() != null
+                            && (schedule.getTgtDeptCd() == null || schedule.getTgtDeptCd().equals(""))) {
+                    	schedule.setTgtCd(schedule.getTgtVendorCd());
+                    	schedule.setTgtNm(schedule.getTgtVendorNm());
+                    	schedule.setIsDept("N");
+                    }
+                }
+                checkMaster.setCheckScheduleList(list);
+            	
                 return checkMaster;
             }
         } else {
@@ -161,18 +173,15 @@ public class CheckResultService {
                         checkSchedule.setSafCheckNo(checkMaster.getSafCheckNo()); // 안전점검일련번호
                         checkSchedule.setCheckStepCd(ConstVal.SAF_CHK_STEP_SCHEDULE_CD); // 점검진행상태(일정)
                         checkSchedule.setCreateUserId(checkMaster.getCreateUserId()); // 등록자
+                        if (checkSchedule.getIsDept().equals("Y")) {
+                        	checkSchedule.setTgtDeptCd(checkSchedule.getTgtCd());
+                        	checkSchedule.setTgtDeptNm(checkSchedule.getTgtNm());
+                        } else {
+                        	checkSchedule.setTgtVendorCd(checkSchedule.getTgtCd());
+                        	checkSchedule.setTgtVendorNm(checkSchedule.getTgtNm());
+                        }
                         checkResultMapper.createCheckSchedule(checkSchedule);
                     }
-                }
-                
-                // 기등록된 협력업체 삭제
-                checkResultMapper.deleteCheckVendor(checkMaster.getSafCheckNo());
-                // 순회점검일때 협력업체 등록
-                if (ConstVal.CHNG_KIND_CIRCUIT.equals(checkMaster.getChngKind()) && CollectionUtils.isNotEmpty(checkMaster.getVendorList())) {
-                	for (CheckVendor checkVendor : checkMaster.getVendorList()) {
-                		checkVendor.setSafCheckNo(checkMaster.getSafCheckNo()); // 안전점검일련번호
-                		checkResultMapper.insertCheckVendor(checkVendor);
-                	}
                 }
                 
                 return checkMaster.getSafCheckNo();
@@ -279,8 +288,6 @@ public class CheckResultService {
         if (safCheckNo > 0) {
             // 안전점검 일정 목록 삭제
             result = checkResultMapper.deleteCheckSchedule(safCheckNo, 0);
-            //안전점검 협력업체 삭제
-            result += checkResultMapper.deleteCheckVendor(safCheckNo);
             // 안전점검 마스터 삭제
             result += checkResultMapper.deleteCheckMaster(safCheckNo);
         }
@@ -300,8 +307,8 @@ public class CheckResultService {
      * @return 안전점검결과 목록
      * @throws Exception
      */
-    public List<CheckSchedule> getCheckPlanList(String startDate, String endDate, String tgtDeptCd, String tgtDeptSubYn, String pfmDeptCd, String pfmDeptSubYn, String deptCd, String deptSubYn, int safCheckKindNo, String plantCd, String checkStepCd, String keyword, DefaultParam defaultParam) throws Exception {
-        return checkResultMapper.getCheckPlanList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam);
+    public List<CheckSchedule> getCheckPlanList(String startDate, String endDate, String tgtDeptCd, String tgtDeptSubYn, String pfmDeptCd, String pfmDeptSubYn, String deptCd, String deptSubYn, int safCheckKindNo, String plantCd, String checkStepCd, String keyword, DefaultParam defaultParam, String chngKind, String vendorCd) throws Exception {
+        return checkResultMapper.getCheckPlanList(startDate, endDate, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam, chngKind, vendorCd);
     }
 
     /**
