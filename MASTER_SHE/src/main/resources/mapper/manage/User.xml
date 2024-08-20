@@ -347,7 +347,7 @@
         inner join com_dept cd on u.dept_cd = cd.dept_cd
         where 1=1
         <if test= "plantCd != null and !plantCd.equals('')">
-        and cd.plant_cd = #{plantCd}
+        and u.plant_cd = #{plantCd}
         </if>
     </select>
 
@@ -435,7 +435,7 @@
                 , u.email
                 , u.use_yn
                 , u.login_id
-                , d.plant_cd
+                , u.plant_cd
                 , u.duty_cd
                 , u.position_cd
                 , u.dept_cd_hr
