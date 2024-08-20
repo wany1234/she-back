@@ -1,17 +1,18 @@
 package com.she.mgt.elect.service;
 
+import java.util.List;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.she.common.model.DefaultParam;
 import com.she.mgt.elect.mapper.ElectEvalRsltMapper;
 import com.she.mgt.model.ElectEvalRslt;
 import com.she.mgt.model.ElectEvalRsltItem;
 import com.she.mgt.model.ElectEvalRsltStatus;
 import com.she.utils.ConstVal;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class ElectEvalRsltService {
@@ -62,7 +63,9 @@ public class ElectEvalRsltService {
      */
     public ElectEvalRslt getElectEvalMeRslt(int evalUserNo, DefaultParam defaultParam) throws Exception {
         ElectEvalRslt electEvalRslt = electEvalRsltMapper.getElectEvalRslt(evalUserNo, defaultParam);
-        electEvalRslt.setElectEvalRsltItems(electEvalRsltMapper.getElectEvalMeRsltItems(evalUserNo));
+        if (electEvalRslt != null) {
+            electEvalRslt.setElectEvalRsltItems(electEvalRsltMapper.getElectEvalMeRsltItems(evalUserNo));
+        }
         return electEvalRslt;
     }
 

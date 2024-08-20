@@ -53,7 +53,7 @@ public interface ElectHisMapper {
      * @throws Exception
      */
 
-    public List<HashMap<String, Object>> getElectStatus(@Param("plantCd") String plantCd, @Param("safElectTitlNo") int safElectTitlNo) throws Exception;
+    public List<HashMap<String, Object>> getElectStatus(@Param("plantCd") String plantCd, @Param("safElectTitlNo") int safElectTitlNo, @Param("plantCds") List<String> plantCds, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     // getHrElectHises
 

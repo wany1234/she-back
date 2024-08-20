@@ -71,7 +71,7 @@ public interface UserMapper {
      * @throws Exception
      */
     public List<User> getUsers(@Param("plantCd") String plantCd, @Param("processCd") String processCd, @Param("deptCd") String deptCd, @Param("userId") String userId, @Param("userNm") String userNm, @Param("useYn") String useYn, @Param("deptSubYn") String deptSubYn, @Param("dutyCd") String dutyCd, @Param("plantCds") String[] plantCds,
-            @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+            @Param("retireYn") String retireYn, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
 
     /**
      * 사용자 상세 조회

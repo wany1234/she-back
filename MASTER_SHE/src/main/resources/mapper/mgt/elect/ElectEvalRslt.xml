@@ -99,14 +99,14 @@
                 ,eu.eval_user_no -- 평가대상자번호
                 ,ep.year -- 대상년도
                 ,ep.half_type_cd -- 구분코드(상반기/하반기)
-                ,md.plant_cd -- 사업장코드
+                ,mu.plant_cd -- 사업장코드
                 ,eu.plant_nm -- 사업장
                 ,ep.saf_elect_titl_no -- 법정선임자 번호
                 ,ep.dept_cd -- 주관부서코드
                 ,eu.plant_nm as me_plant_nm -- 평가대상자 사업장
                 ,eu.dept_nm as me_dept_nm -- 평가대상자 소속부서
                 ,mu.user_nm as me_user_nm -- 평가대상자명
-                ,dbo.GET_CODE_NM_LANG('kr', 'COM_PLANT_CD', ud.plant_cd) as up_plant_nm -- 평가자 사업장
+                ,dbo.GET_CODE_NM_LANG('kr', 'COM_PLANT_CD', uu.plant_cd) as up_plant_nm -- 평가자 사업장
                 ,ud.dept_nm as up_dept_nm -- 평가자 소속부서
                 ,uu.user_nm as up_user_nm -- 평가자명
                 ,ep.eval_nm -- 평가명
@@ -143,14 +143,6 @@
                 ,emr.create_dt -- 등록일
                 ,emr.update_user_id -- 수정자 ID
                 ,emr.update_dt -- 수정일
-                ,emr.create_dept_nm -- 등록자 부서
-                ,emr.create_dept_cd -- 등록자 부서코드
-                ,emr.update_dept_nm -- 수정자 부서
-                ,emr.update_dept_cd -- 수정자 부서코드
-                ,emr.create_position_nm -- 등록자 직위
-                ,emr.create_position_cd -- 등록자 직위코드
-                ,emr.update_position_nm -- 수정자 직위
-                ,emr.update_position_cd -- 수정자 직위코드
         from saf_elect_titl_eval_plan ep
         inner join saf_elect_titl_eval_user eu
         on eu.eval_plan_no = ep.eval_plan_no
@@ -197,14 +189,6 @@
                     ,#{evalPoint} as eval_point
                     ,#{createUserId} as create_user_id
                     ,#{updateUserId} as update_user_id
-                    ,#{createDeptNm} as create_dept_nm
-                    ,#{createDeptCd} as create_dept_cd
-                    ,#{updateDeptNm} as update_dept_nm
-                    ,#{updateDeptCd} as update_dept_cd
-                    ,#{createPositionNm} as create_position_nm
-                    ,#{createPositionCd} as create_position_cd
-                    ,#{updatePositionNm} as update_position_nm
-                    ,#{updatePositionCd} as update_position_cd
         ) S
         on S.eval_me_rslt_no = T.eval_me_rslt_no
         when not matched then
@@ -216,10 +200,6 @@
             ,eval_point
             ,create_user_id
             ,create_dt
-            ,create_dept_nm
-            ,create_dept_cd
-            ,create_position_nm
-            ,create_position_cd
         )
         values (
             S.eval_me_rslt_no
@@ -229,10 +209,6 @@
             ,S.eval_point
             ,S.create_user_id
             ,getDate()
-            ,S.create_dept_nm
-            ,S.create_dept_cd
-            ,S.create_position_nm
-            ,S.create_position_cd
         )
         when matched then
         update
@@ -242,11 +218,6 @@
             ,eval_point = #{evalPoint}
             ,update_user_id = #{updateUserId}
             ,update_dt = getDate()
-            ,update_dept_nm = #{updateDeptNm}
-            ,update_dept_cd = #{updateDeptCd}
-            ,update_position_nm = #{updatePositionNm}
-            ,update_position_cd = #{updatePositionCd}
-        ;
     </insert>
 
     <!-- 평가계획 상태 업데이트 -->
@@ -387,14 +358,6 @@
                 ,eur.create_dt -- 등록일
                 ,eur.update_user_id -- 수정자 ID
                 ,eur.update_dt -- 수정일
-                ,eur.create_dept_nm -- 등록자 부서
-                ,eur.create_dept_cd -- 등록자 부서코드
-                ,eur.update_dept_nm -- 수정자 부서
-                ,eur.update_dept_cd -- 수정자 부서코드
-                ,eur.create_position_nm -- 등록자 직위
-                ,eur.create_position_cd -- 등록자 직위코드
-                ,eur.update_position_nm -- 수정자 직위
-                ,eur.update_position_cd -- 수정자 직위코드
         from saf_elect_titl_eval_plan ep
         inner join saf_elect_titl_eval_user eu
         on eu.eval_plan_no = ep.eval_plan_no
@@ -436,15 +399,7 @@
                 ,#{remark} as remark
                 ,#{evalPoint} as eval_point
                 ,#{createUserId} as create_user_id
-                ,#{updateUserId} as update_user_id
-                ,#{createDeptNm} as create_dept_nm
-                ,#{createDeptCd} as create_dept_cd
-                ,#{updateDeptNm} as update_dept_nm
-                ,#{updateDeptCd} as update_dept_cd
-                ,#{createPositionNm} as create_position_nm
-                ,#{createPositionCd} as create_position_cd
-                ,#{updatePositionNm} as update_position_nm
-                ,#{updatePositionCd} as update_position_cd
+                ,#{updateUserId} as update_user_id 
         ) S
         on S.eval_up_rslt_no = T.eval_up_rslt_no
         when not matched then
@@ -456,10 +411,6 @@
             ,eval_point
             ,create_user_id
             ,create_dt
-            ,create_dept_nm
-            ,create_dept_cd
-            ,create_position_nm
-            ,create_position_cd
         )
         values (
             S.eval_up_rslt_no
@@ -469,10 +420,6 @@
             ,S.eval_point
             ,S.create_user_id
             ,getDate()
-            ,S.create_dept_nm
-            ,S.create_dept_cd
-            ,S.create_position_nm
-            ,S.create_position_cd
         )
         when matched then
         update
@@ -482,11 +429,6 @@
             ,eval_point = #{evalPoint}
             ,update_user_id = #{updateUserId}
             ,update_dt = getDate()
-            ,update_dept_nm = #{updateDeptNm}
-            ,update_dept_cd = #{updateDeptCd}
-            ,update_position_nm = #{updatePositionNm}
-            ,update_position_cd = #{updatePositionCd}
-        ;
     </insert>
 
     <!-- 평가결과 현황 목록 조회 -->

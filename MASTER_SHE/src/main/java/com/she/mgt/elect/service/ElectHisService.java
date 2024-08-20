@@ -10,6 +10,7 @@
  */
 package com.she.mgt.elect.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.she.common.model.DefaultParam;
+import com.she.manage.model.CodeMaster;
+import com.she.manage.service.CodeMasterService;
 import com.she.mgt.elect.mapper.ElectHisMapper;
 import com.she.mgt.model.ElectHis;
 import com.she.mgt.model.ElectTitlLcn;
@@ -26,6 +29,9 @@ import com.she.mgt.model.ElectTitlLcn;
 public class ElectHisService {
     @Autowired
     private ElectHisMapper electHisMapper;
+
+    @Autowired
+    private CodeMasterService codeMasterService;
 
     /**
      * 선해임 조회
@@ -49,8 +55,14 @@ public class ElectHisService {
 
     // 법정선임자 현황 통계 조회
 
-    public List<HashMap<String, Object>> getElectStatus(String plantCd, int safElectTitlNo) throws Exception {
-        return electHisMapper.getElectStatus(plantCd, safElectTitlNo);
+    public List<HashMap<String, Object>> getElectStatus(String plantCd, int safElectTitlNo, DefaultParam defaultParam) throws Exception {
+
+        List<CodeMaster> plantCdList = codeMasterService.getSelect("COM_PLANT_CD", "Y", defaultParam);
+        List<String> plantCds = new ArrayList<String>();
+        for (CodeMaster cm : plantCdList) {
+            plantCds.add(cm.getCode());
+        }
+        return electHisMapper.getElectStatus(plantCd, safElectTitlNo, plantCds, defaultParam);
     }
 
     /**

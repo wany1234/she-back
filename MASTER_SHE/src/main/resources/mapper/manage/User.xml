@@ -98,6 +98,9 @@
                 #{plantCd}
             </foreach>
         </if>
+        <if test= "retireYn != null and !retireYn.equals('N')">
+            and (u.retire_ymd is null or u.retire_ymd = '')
+        </if>
         order by plant.sort_order, depttree.dept_nm, u.user_nm
     </select>
 

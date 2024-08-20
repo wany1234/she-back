@@ -128,8 +128,9 @@ public class UserController {
         String deptSubYn = map.containsKey("deptSubYn") ? map.get("deptSubYn").toString() : "Y";
         String dutyCd = map.containsKey("dutyCd") ? map.get("dutyCd").toString() : "";
         String[] plantCds = this.requestMapper.convertObjectListAsStringArray(map.get("plantCds"));
+        String retireYn = map.containsKey("retireYn") ? map.get("retireYn").toString() : "";
 
-        return ResponseEntity.ok().body(this.userService.getUsers(plantCd, processCd, deptCd, userId, userNm, useYn, deptSubYn, dutyCd, plantCds, defaultParam));
+        return ResponseEntity.ok().body(this.userService.getUsers(plantCd, processCd, deptCd, userId, userNm, useYn, deptSubYn, dutyCd, plantCds, retireYn, defaultParam));
     }
 
     /**
@@ -387,9 +388,10 @@ public class UserController {
     public ResponseEntity<List<EhrHistory>> ehrHistory(@PathVariable String userId, @ModelAttribute DefaultParam defaultParam) throws Exception {
         return ResponseEntity.ok().body(userService.getEhrHistory(userId, defaultParam));
     }
-    
+
     /**
      * 교육이력 조회
+     * 
      * @param userId
      * @return
      * @throws Exception
@@ -398,9 +400,10 @@ public class UserController {
     public ResponseEntity<List<EduHistory>> eduHistory(@PathVariable String userId, @ModelAttribute DefaultParam defaultParam) throws Exception {
         return ResponseEntity.ok().body(userService.getEduHistory(userId, defaultParam));
     }
-    
+
     /**
      * 검진이력 조회
+     * 
      * @param userId
      * @return
      * @throws Exception
@@ -409,9 +412,10 @@ public class UserController {
     public ResponseEntity<List<HeaHistory>> heaHistory(@PathVariable String userId, @ModelAttribute DefaultParam defaultParam) throws Exception {
         return ResponseEntity.ok().body(userService.getHeaHistory(userId, defaultParam));
     }
-    
+
     /**
      * 사고이력 조회
+     * 
      * @param userId
      * @return
      * @throws Exception

@@ -211,16 +211,8 @@
                 ,appr_rqst_no
                 ,create_user_id
                 ,create_dt
-                ,create_dept_nm
-                ,create_dept_cd
-                ,create_position_nm
-                ,create_position_cd
                 ,update_user_id
                 ,update_dt
-                ,update_dept_nm
-                ,update_dept_cd
-                ,update_position_nm
-                ,update_position_cd
         from saf_elect_titl_eval_plan
         where eval_plan_no = #{evalPlanNo}
     </select>
@@ -245,10 +237,6 @@
             ,step_cd
             ,create_user_id
             ,create_dt
-            ,create_dept_nm
-            ,create_dept_cd
-            ,create_position_nm
-            ,create_position_cd
         )
         values (
             #{evalPlanNo}
@@ -264,10 +252,6 @@
             ,#{stepCd}
             ,#{createUserId}
             ,getDate()
-            ,#{createDeptNm}
-            ,#{createDeptCd}
-            ,#{createPositionNm}
-            ,#{createPositionCd}
         );
     </insert>
 

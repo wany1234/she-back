@@ -51,28 +51,4 @@ public class ElectEvalRsltItem {
 
     @ApiModelProperty(value = "수정일")
     private String updateDt;
-
-    @ApiModelProperty(value = "등록자 부서")
-    private String createDeptNm;
-
-    @ApiModelProperty(value = "등록자 부서코드")
-    private String createDeptCd;
-
-    @ApiModelProperty(value = "수정자 부서")
-    private String updateDeptNm;
-
-    @ApiModelProperty(value = "수정자 부서코드")
-    private String updateDeptCd;
-
-    @ApiModelProperty(value = "등록자 직위")
-    private String createPositionNm;
-
-    @ApiModelProperty(value = "등록자 직위코드")
-    private String createPositionCd;
-
-    @ApiModelProperty(value = "수정자 직위")
-    private String updatePositionNm;
-
-    @ApiModelProperty(value = "수정자 직위코드")
-    private String updatePositionCd;
 }

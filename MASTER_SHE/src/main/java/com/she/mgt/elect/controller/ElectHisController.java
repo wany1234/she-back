@@ -80,11 +80,11 @@ public class ElectHisController {
     // 법정선임자 현황 통계 조회
 
     @GetMapping("/electStatusLists")
-    public ResponseEntity<List<HashMap<String, Object>>> getElectStatus(@RequestParam HashMap<String, Object> parameter) throws Exception {
+    public ResponseEntity<List<HashMap<String, Object>>> getElectStatus(@RequestParam HashMap<String, Object> parameter, @ModelAttribute DefaultParam defaultParam) throws Exception {
         HashMap<String, Object> convertedParameter = requestMapper.convertAsParameter(parameter);
         String plantCd = convertedParameter.containsKey("plantCd") ? convertedParameter.get("plantCd").toString() : ""; // 사업장코드
         int safElectTitlNo = convertedParameter.containsKey("safElectTitlNo") ? Integer.parseInt("".equals(convertedParameter.get("safElectTitlNo").toString()) ? "0" : convertedParameter.get("safElectTitlNo").toString()) : 0;
-        return ResponseEntity.ok().body(electHisService.getElectStatus(plantCd, safElectTitlNo));
+        return ResponseEntity.ok().body(electHisService.getElectStatus(plantCd, safElectTitlNo, defaultParam));
     }
 
     /**

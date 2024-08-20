@@ -1,10 +1,10 @@
 package com.she.mgt.model;
 
+import java.util.List;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 @ApiModel(description = "법정선임자평가 계획")
@@ -77,30 +77,6 @@ public class ElectEvalPlan {
 
     @ApiModelProperty(value = "수정일시")
     private String updateDt;
-
-    @ApiModelProperty(value = "등록자부서명")
-    private String createDeptNm;
-
-    @ApiModelProperty(value = "등록자부서코드")
-    private String createDeptCd;
-
-    @ApiModelProperty(value = "수정자부서명")
-    private String updateDeptNm;
-
-    @ApiModelProperty(value = "수정자부서코드")
-    private String updateDeptCd;
-
-    @ApiModelProperty(value = "등록자직위명")
-    private String createPositionNm;
-
-    @ApiModelProperty(value = "등록자직위코드")
-    private String createPositionCd;
-
-    @ApiModelProperty(value = "수정자직위명")
-    private String updatePositionNm;
-
-    @ApiModelProperty(value = "수정자직위코드")
-    private String updatePositionCd;
 
     @ApiModelProperty(value = "작성자")
     private String writerNm;
