@@ -244,7 +244,8 @@ public interface CheckResultMapper {
      * @throws Exception
      */
     public List<CheckSchedule> getCheckResultList(@Param("startDate") String startDate, @Param("endDate") String endDate, @Param("checkResultCd") String checkResultCd, @Param("tgtDeptCd") String tgtDeptCd, @Param("tgtDeptSubYn") String tgtDeptSubYn, @Param("pfmDeptCd") String pfmDeptCd, @Param("pfmDeptSubYn") String pfmDeptSubYn,
-            @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn, @Param("safCheckKindNo") int safCheckKindNo, @Param("plantCd") String plantCd, @Param("checkStepCd") String checkStepCd, @Param("keyword") String keyword, @Param("defaultParam") DefaultParam defaultParam) throws Exception;
+            @Param("deptCd") String deptCd, @Param("deptSubYn") String deptSubYn, @Param("safCheckKindNo") int safCheckKindNo, @Param("plantCd") String plantCd, @Param("checkStepCd") String checkStepCd, @Param("keyword") String keyword, @Param("defaultParam") DefaultParam defaultParam,
+            @Param("chngKind") String chngKind, @Param("vendorCd") String vendorCd) throws Exception;
 
     /**
      * 안전점검_항목별점검결과 등록

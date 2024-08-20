@@ -259,8 +259,12 @@ public class CheckResultController {
         String checkResultCd = map.containsKey("checkResultCd") ? map.get("checkResultCd").toString() : "";
         // 검색어
         String keyword = map.containsKey("keyword") ? map.get("keyword").toString() : "";
+        // 점검종류코드 포함여부
+        String chngKind = map.containsKey("chngKind") ? map.get("chngKind").toString() : "";
+        // 협력업체코드 포함여부
+        String vendorCd = map.containsKey("vendorCd") ? map.get("vendorCd").toString() : "";
 
-        return ResponseEntity.ok().body(checkResultService.getCheckResultList(startDate, endDate, checkResultCd, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam));
+        return ResponseEntity.ok().body(checkResultService.getCheckResultList(startDate, endDate, checkResultCd, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam, chngKind, vendorCd));
     }
 
     /**

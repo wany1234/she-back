@@ -756,6 +756,9 @@
                     when dbo.GET_USER_NM(scm.update_user_id) = '' then dbo.GET_USER_NM(scm.create_user_id)
                     else dbo.GET_USER_NM(scm.update_user_id) end    as writer_user_nm
                , case when scm.update_dt is null then convert(date, scm.create_dt) else convert(date, scm.update_dt) end   as writer_dt
+               , scs.tgt_vendor_cd
+               , cvm.vendor_nm as tgt_vendor_nm
+               , cm3.code_nm as chng_kind_nm 
           from saf_check_schedule scs
          inner join saf_check_master scm
             on scs.saf_check_no = scm.saf_check_no
@@ -768,8 +771,10 @@
            and sck.subcon_use_yn = 'N'
          inner join com_dept dept
             on scm.dept_cd = dept.dept_cd
-         inner join com_dept tgtdept
+         left join com_dept tgtdept
             on scs.tgt_dept_cd = tgtdept.dept_cd
+         left join com_vendor_mst cvm 
+         	on scs.tgt_vendor_cd = cvm.vendor_cd
          left join com_dept pfmdept
             on scs.pfm_dept_cd = pfmdept.dept_cd
          inner join com_user cu
@@ -780,6 +785,8 @@
             on cm.code = ar.biz_appr_step_cd
           left join dbo.LANG_CODE_MASTER('kr', 'SAF_CHK_RSLT_CLS') result
 			on result.code = scs.check_result_cd
+		inner join dbo.LANG_CODE_MASTER('kr', 'CHECK_KIND_CD') cm3
+           	on cm3.code = sck.chng_kind
          where 1=1
 
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(plantCd)">
@@ -850,6 +857,12 @@
         		</if>
         	</otherwise>
         </choose>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(vendorCd)">
+           and scs.tgt_vendor_cd = #{vendorCd}
+        </if>
+        <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(chngKind)">
+        					and sck.chng_kind = #{chngKind}
+        </if>
 
          order by writer_dt desc, scm.create_dt desc
     </select>

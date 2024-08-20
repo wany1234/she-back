@@ -566,8 +566,19 @@ public class CheckResultService {
      * @return 안전점검결과 목록
      * @throws Exception
      */
-    public List<CheckSchedule> getCheckResultList(String startDate, String endDate, String checkResultCd, String tgtDeptCd, String tgtDeptSubYn, String pfmDeptCd, String pfmDeptSubYn, String deptCd, String deptSubYn, int safCheckKindNo, String plantCd, String checkStepCd, String keyword, DefaultParam defaultParam) throws Exception {
-        return checkResultMapper.getCheckResultList(startDate, endDate, checkResultCd, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam);
+    public List<CheckSchedule> getCheckResultList(String startDate, String endDate, String checkResultCd, String tgtDeptCd, String tgtDeptSubYn, String pfmDeptCd, String pfmDeptSubYn, String deptCd, String deptSubYn, int safCheckKindNo, String plantCd, String checkStepCd, String keyword, DefaultParam defaultParam, String chngKind, String vendorCd) throws Exception {
+    	List<CheckSchedule> result = checkResultMapper.getCheckResultList(startDate, endDate, checkResultCd, tgtDeptCd, tgtDeptSubYn, pfmDeptCd, pfmDeptSubYn, deptCd, deptSubYn, safCheckKindNo, plantCd, checkStepCd, keyword, defaultParam, chngKind, vendorCd);
+    	for(CheckSchedule schedule : result) {
+    		if (schedule.getTgtDeptCd() != null
+                    && (schedule.getTgtVendorCd() == null || schedule.getTgtVendorCd().equals(""))) {
+            	schedule.setTgtNm(schedule.getTgtDeptNm());
+            } else if (schedule.getTgtVendorCd() != null
+                    && (schedule.getTgtDeptCd() == null || schedule.getTgtDeptCd().equals(""))) {
+            	schedule.setTgtNm(schedule.getTgtVendorNm());
+            }
+    	}
+    	
+        return result;
     }
 
     /**
