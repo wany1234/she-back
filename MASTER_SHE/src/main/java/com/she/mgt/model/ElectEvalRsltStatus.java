@@ -4,8 +4,6 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 @ApiModel(description = "법정선임자평가 본인평가/상위평가")
 public class ElectEvalRsltStatus {
@@ -44,4 +42,10 @@ public class ElectEvalRsltStatus {
 
     @ApiModelProperty(value = "평가실시율(%)")
     private String evalRate;
+
+    @ApiModelProperty(value = "본인평가점수(평균)")
+    private float meEvalPointAvg;
+
+    @ApiModelProperty(value = "상위평가점수(평균)")
+    private float upEvalPointAvg;
 }

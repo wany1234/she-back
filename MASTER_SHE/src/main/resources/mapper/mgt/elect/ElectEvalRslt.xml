@@ -35,6 +35,8 @@
                 ,eu.up_user_id -- 상위평가자 사번
                 ,dbo.GET_USER_NM(eu.up_user_id) as up_user_nm -- 상위평가자
                 ,concat(dbo.GET_USER_NM(eu.up_user_id), '(', dbo.GET_CODE_NM_LANG('kr', 'COM_PROCESS_STEP2', eu.up_proc_step), ')') as up_proc_step_nm -- 상위평가
+                ,(select sum(eval_point) from saf_elect_tit_eval_me_rslt where eval_user_no = eu.eval_user_no ) as me_eval_point_avg
+                ,(select sum(eval_point) from saf_elect_titl_eval_up_rslt where eval_user_no = eu.eval_user_no ) as up_eval_point_avg
         from saf_elect_titl_eval_plan ep
         inner join saf_elect_titl e
         on e.saf_elect_titl_no = ep.saf_elect_titl_no
@@ -218,6 +220,7 @@
             ,eval_point = #{evalPoint}
             ,update_user_id = #{updateUserId}
             ,update_dt = getDate()
+        ;
     </insert>
 
     <!-- 평가계획 상태 업데이트 -->
@@ -284,6 +287,8 @@
                 ,eu.up_user_id -- 상위평가자 사번
                 ,dbo.GET_USER_NM(eu.up_user_id) as up_user_nm -- 상위평가자
                 ,concat(dbo.GET_USER_NM(eu.up_user_id), '(', dbo.GET_CODE_NM_LANG('kr', 'COM_PROCESS_STEP2', eu.up_proc_step), ')') as up_proc_step_nm -- 상위평가
+                ,(select sum(eval_point) from saf_elect_tit_eval_me_rslt where eval_user_no = eu.eval_user_no ) as me_eval_point_avg
+                ,(select sum(eval_point) from saf_elect_titl_eval_up_rslt where eval_user_no = eu.eval_user_no ) as up_eval_point_avg
         from saf_elect_titl_eval_plan ep
         inner join saf_elect_titl e
         on e.saf_elect_titl_no = ep.saf_elect_titl_no
@@ -429,6 +434,7 @@
             ,eval_point = #{evalPoint}
             ,update_user_id = #{updateUserId}
             ,update_dt = getDate()
+        ;
     </insert>
 
     <!-- 평가결과 현황 목록 조회 -->
@@ -465,7 +471,7 @@
                     ,ep.half_type_cd
                     ,ep.saf_elect_titl_no
                     ,count(eu.eval_user_no) as tgt_cnt
-                    ,count(case when eu.up_proc_step = 'PSEND' then eu.eval_user_no end) as complete_cnt
+                    ,count(case when eu.me_proc_step = 'PSEND' and eu.up_proc_step = 'PSEND' then eu.eval_user_no end) as complete_cnt
             from saf_elect_titl_eval_plan ep
             inner join saf_elect_titl_eval_user eu
             on eu.eval_plan_no = ep.eval_plan_no
@@ -474,6 +480,52 @@
             inner join com_dept md
             on md.dept_cd = mu.dept_cd
             where ep.step_cd = 'BAPSG'
+            group by ep.year
+                    ,mu.plant_cd
+                    ,ep.half_type_cd
+                    ,ep.saf_elect_titl_no
+        ),
+        meRsltList as (
+            select  ep.year
+                    ,mu.plant_cd
+                    ,ep.half_type_cd
+                    ,ep.saf_elect_titl_no
+                    ,sum(mr.eval_point) as me_eval_point_total
+            from saf_elect_titl_eval_plan ep
+            inner join saf_elect_titl_eval_user eu
+            on eu.eval_plan_no = ep.eval_plan_no
+            inner join com_user mu
+            on mu.user_id = eu.me_user_id
+            inner join com_dept md
+            on md.dept_cd = mu.dept_cd
+            left outer join saf_elect_tit_eval_me_rslt mr 
+            on mr.eval_user_no = eu.eval_user_no
+            where ep.step_cd = 'BAPSG'
+                and eu.me_proc_step = 'PSEND' 
+                and eu.up_proc_step = 'PSEND'
+            group by ep.year
+                    ,mu.plant_cd
+                    ,ep.half_type_cd
+                    ,ep.saf_elect_titl_no
+        ),
+        upRsltList as (
+            select  ep.year
+                    ,mu.plant_cd
+                    ,ep.half_type_cd
+                    ,ep.saf_elect_titl_no
+                    ,sum(ur.eval_point) as up_eval_point_total
+            from saf_elect_titl_eval_plan ep
+            inner join saf_elect_titl_eval_user eu
+            on eu.eval_plan_no = ep.eval_plan_no
+            inner join com_user mu
+            on mu.user_id = eu.me_user_id
+            inner join com_dept md
+            on md.dept_cd = mu.dept_cd
+            left outer join saf_elect_titl_eval_up_rslt ur 
+            on ur.eval_user_no = eu.eval_user_no
+            where ep.step_cd = 'BAPSG'
+                and eu.me_proc_step = 'PSEND' 
+                and eu.up_proc_step = 'PSEND'
             group by ep.year
                     ,mu.plant_cd
                     ,ep.half_type_cd
@@ -492,16 +544,27 @@
                 ,format(isnull(complete_cnt, 0), '##,##0') as complete_cnt_t
                 ,convert(varchar, format(round(isnull(dbo.GET_DIVIDE(complete_cnt, tgt_cnt) * 100, 0), 2),'0.00')) as eval_rate
                 ,convert(varchar, round(isnull(dbo.GET_DIVIDE(complete_cnt, tgt_cnt) * 100, 0), 2)) + '%' as eval_rate_t
-
+                ,isnull(ml.me_eval_point_total/complete_cnt ,0) as me_eval_point_avg
+                ,isnull(ul.up_eval_point_total/complete_cnt, 0) as up_eval_point_avg
         from years y
         inner join plants p on 1=1
         inner join halfTypes h on 1=1
         inner join electTitles et on 1=1
         left outer join evalList el
         on el.year = y.year
-        and el.plant_cd = p.plant_cd
-        and el.half_type_cd = h.half_type_cd
-        and el.saf_elect_titl_no = et.saf_elect_titl_no
+           and el.plant_cd = p.plant_cd
+           and el.half_type_cd = h.half_type_cd
+           and el.saf_elect_titl_no = et.saf_elect_titl_no
+        left outer join meRsltList ml
+        on ml.year = y.year
+           and ml.plant_cd = p.plant_cd
+           and ml.half_type_cd = h.half_type_cd
+           and ml.saf_elect_titl_no = et.saf_elect_titl_no
+        left outer join upRsltList ul
+        on ul.year = y.year
+           and ul.plant_cd = p.plant_cd
+           and ul.half_type_cd = h.half_type_cd
+           and ul.saf_elect_titl_no = et.saf_elect_titl_no  
         where 1=1
         <if test="plantCd != null and !plantCd.equals('')">
         and p.plant_cd = #{plantCd}
@@ -527,11 +590,23 @@
 
                 ,convert(varchar, format(round(isnull(dbo.GET_DIVIDE(sum(complete_cnt), sum(tgt_cnt)) * 100, 0), 2),'0.00')) as eval_rate
                 ,convert(varchar, round(isnull(dbo.GET_DIVIDE(sum(complete_cnt), sum(tgt_cnt)) * 100, 0), 2)) + '%' as eval_rate_t
-
+                ,(  select 
+                        isnull(sum(me_eval_point_total)/sum(complete_cnt), 0) 
+                    from meRsltList 
+                    where saf_elect_titl_no = et.saf_elect_titl_no 
+                        and year between #{startYear} and #{endYear}
+                 ) as me_eval_point_avg
+                ,(
+                    select 
+                        isnull(sum(up_eval_point_total)/sum(complete_cnt), 0) 
+                    from upRsltList 
+                    where saf_elect_titl_no = et.saf_elect_titl_no 
+                        and year between #{startYear} and #{endYear}
+                  ) as up_eval_point_avg
         from electTitles et
         left outer join evalList el
         on el.saf_elect_titl_no = et.saf_elect_titl_no
-        and el.year between #{startYear} and #{endYear}
+            and el.year between #{startYear} and #{endYear}
         where 1=1
         <if test="plantCd != null and !plantCd.equals('')">
         and el.plant_cd = #{plantCd}
@@ -542,7 +617,7 @@
         <if test="safElectTitlNo != null and safElectTitlNo > 0">
         and et.saf_elect_titl_no = #{safElectTitlNo}
         </if>
-        and year between #{startYear} and #{endYear}
+        and el.year between #{startYear} and #{endYear}
         group by et.saf_elect_titl_no
                 ,et.elect_titl_nm
         order by year, plant_nm, half_type_cd, saf_elect_titl_no

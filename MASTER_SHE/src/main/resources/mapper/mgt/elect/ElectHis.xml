@@ -46,15 +46,16 @@
                 ,updateUser.user_nm as update_user_nm
                 ,convert(char(10), seh.update_dt, 23) as update_dt
                 ,case
-                    when cu.retire_ymd is null then 'Y'
+                    when (cu.retire_ymd is null or cu.retire_ymd = '') then 'Y'
                     else 'N' end                        as employment_yn
                 ,(select code_nm 
                    from dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_WORK_CD') 
                    where code = (case
-                                    when cu.retire_ymd is null then 'Y'
+                                    when (cu.retire_ymd is null or cu.retire_ymd = '') then 'Y'
                                     else 'N' 
                                  end)
                  ) as employment_status
+                ,cu.retire_ymd
             from saf_elect_his seh
             inner join saf_elect_titl t
             on seh.saf_elect_titl_no = t.saf_elect_titl_no
@@ -92,10 +93,10 @@
              </if>
              <choose>
                  <when test='employmentYn == "Y"'>
-                     and cu.retire_ymd is null
+                     and (cu.retire_ymd is null or cu.retire_ymd = '')
                  </when>
                  <when test='employmentYn == "N"'>
-                     and cu.retire_ymd is not null
+                     and (cu.retire_ymd is not null and cu.retire_ymd != '')
                  </when>
              </choose>
          ) n where 1=1 
@@ -204,8 +205,9 @@
             ,updateUser.user_nm as update_user_nm
             ,convert(char(10), seh.update_dt, 23) as update_dt
             ,case
-                    when cu.retire_ymd is null then 'Y'
+                    when (cu.retire_ymd is null or cu.retire_ymd = '') then 'Y'
                     else 'N' end                        as employment_yn  
+            ,cu.retire_ymd        
         from saf_elect_his seh
         inner join saf_elect_titl t
         on seh.saf_elect_titl_no = t.saf_elect_titl_no
@@ -458,35 +460,74 @@
     
     <select id="getElectStatus" resultType= "HashMap">
     /* ElectHisMapper.getElectStatus[ElectHis.xml] */
-        select eh.saf_elect_titl_no, et.elect_titl_nm 
-           ,sum(case when  eh.plant_cd='1000' and isnull(eh.elect_end_dt,'') = ''  then 1 else 0 end) as '1000'
-           ,sum(case when  eh.plant_cd='1500' and isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) as '1500'
-           ,sum(case when  eh.plant_cd='3000' and isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) as '3000'
-           ,sum(case when  eh.plant_cd='4000' and isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) as '4000'
-           ,sum(case when  eh.plant_cd='5000' and isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) as '5000'
-           ,sum(case when  isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) elect_total
+     select *
+     from(
+        select 
+              eh.saf_elect_titl_no
+            , et.elect_titl_nm
+            , ( case   
+                     when grouping(eh.plant_cd) = 1 
+                     then 'elect_total' 
+                     else eh.plant_cd
+                 end ) as plant_cd
+             , sum( case 
+                        when isnull(eh.elect_end_dt,'') = ''  
+                        then 1 else 0 
+                   end) as cnt
         from saf_elect_his eh
-        inner join saf_elect_titl et on eh.saf_elect_titl_no = et.saf_elect_titl_no 
-        where eh.use_yn= 'Y'
-        
+        inner join saf_elect_titl et on eh.saf_elect_titl_no = et.saf_elect_titl_no
+        where eh.use_yn= 'Y' 
+            and (eh.elect_end_dt is null or eh.elect_end_dt='')
+          <if test= "safElectTitlNo != null and safElectTitlNo > 0">
+            and eh.saf_elect_titl_no = #{safElectTitlNo}
+          </if>
+        group by eh.saf_elect_titl_no, et.elect_titl_nm, ROLLUP (eh.plant_cd) 
+     ) as rst
+     pivot(
+        SUM(cnt)
+        for plant_cd in (
+            <foreach collection= "plantCds" item= "plant" separator= ","  >
+                ${plant}
+            </foreach>
+                , elect_total
+        )
+     ) as list  
+     union all
+     select *
+     from(
+        select 
+              '합계' as saf_elect_titl_no 
+            , '합계' as elect_titl_nm
+            , ( case 
+                    when grouping(eh.plant_cd) = 1 
+                    then 'elect_total' 
+                    else eh.plant_cd 
+                end ) as plant_cd
+             , sum(
+                case 
+                    when isnull(eh.elect_end_dt,'') = ''  
+                    then 1 
+                    else 0 
+                end) as cnt
+        from saf_elect_his eh
+        inner join saf_elect_titl et on eh.saf_elect_titl_no = et.saf_elect_titl_no
+        where eh.use_yn= 'Y' 
+            and (eh.elect_end_dt is null or eh.elect_end_dt='')
         <if test= "safElectTitlNo != null and safElectTitlNo > 0">
             and eh.saf_elect_titl_no = #{safElectTitlNo}
         </if>
-        group by 
-           eh.saf_elect_titl_no, et.elect_titl_nm
-           
-   union all
-           
-       select '합계','합계'
-       ,sum(case when  eh.plant_cd='1000' and isnull(eh.elect_end_dt,'') = ''  then 1 else 0 end) as '1000'
-              ,sum(case when  eh.plant_cd='1500' and isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) as '1500'
-              ,sum(case when  eh.plant_cd='3000' and isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) as '3000'
-              ,sum(case when  eh.plant_cd='4000' and isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) as '4000'
-              ,sum(case when  eh.plant_cd='5000' and isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) as '5000'
-              ,sum(case when  isnull(eh.elect_end_dt,'') = '' then 1 else 0 end) elect_total
-              from saf_elect_his eh
-              inner join saf_elect_titl et on eh.saf_elect_titl_no = et.saf_elect_titl_no
-              where (eh.elect_end_dt is null or eh.elect_end_dt='')
+        group by
+          ROLLUP (eh.plant_cd) 
+       ) as rst
+       pivot(
+          SUM(cnt)
+          for plant_cd in (
+            <foreach collection= "plantCds" item= "plant" separator= "," >
+                ${plant}
+            </foreach>
+                , elect_total
+          )
+       ) as list 
     </select>
     
 </mapper>

@@ -270,10 +270,6 @@
             ,state_cd = #{stateCd}
             ,update_user_id = #{updateUserId}
             ,update_dt = getDate()
-            ,update_dept_nm = #{updateDeptNm}
-            ,update_dept_cd = #{updateDeptCd}
-            ,update_position_nm = #{updatePositionNm}
-            ,update_position_cd = #{updatePositionCd}
         where eval_plan_no = #{evalPlanNo}
     </update>
 

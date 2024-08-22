@@ -1,10 +1,10 @@
 package com.she.mgt.model;
 
+import java.util.List;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 @ApiModel(description = "법정선임자평가 본인평가/상위평가")
@@ -113,6 +113,12 @@ public class ElectEvalRslt {
 
     @ApiModelProperty(value = "본인평가결과 전체 완료 여부")
     private String isMeComplete;
+
+    @ApiModelProperty(value = "본인평가점수(평균)")
+    private float meEvalPointAvg;
+
+    @ApiModelProperty(value = "상위평가점수(평균)")
+    private float upEvalPointAvg;
 
     @ApiModelProperty(value = "평가결과 목록")
     private List<ElectEvalRsltItem> electEvalRsltItems;
