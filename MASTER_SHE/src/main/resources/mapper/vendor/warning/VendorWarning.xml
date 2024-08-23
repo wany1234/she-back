@@ -6,61 +6,63 @@
     <!-- 경고 및 지적현황 목록 조회 -->
     <select id="getVendorWarningList" resultType="com.she.vendor.model.VendorWarning">
         /* VendorWarningMapper.getVendorWarningList [VendorWarning.xml] */
-        select   scr.saf_check_rslt_no
-               , scr.plant_cd
+        select    scs.saf_check_schedule_no
+               , scm.saf_check_no
+               , scm.plant_cd
                , cm1.code_nm as plant_nm
                , sck.saf_check_kind_no
                , sck.saf_check_kind_nm
-               , scr.check_ymd
-               , scr.check_title
-               , scr.dept_cd
+               , convert(char(10), scs.check_ymd, 23) as check_ymd
+               , scs.check_title
+               , scm.dept_cd
                , dept.dept_nm
-               , scr.tgt_vendor_cd
+               , scs.tgt_vendor_cd
                , cvm.vendor_nm as tgt_vendor_nm
-               , scr.check_result_cd
+               , scs.check_result
+               , scs.check_result_cd
                , cm2.code_nm as check_result_nm
-               , scr.check_result
-               , scr.create_user_id
+               , scm.create_user_id
                , cu.user_nm as create_user_nm
-               , convert(char(10), scr.create_dt, 23) as create_dt
+               , convert(char(10), scs.create_dt, 23) as create_dt
                , case
-                    when dbo.GET_USER_NM(scr.update_user_id) = '' then dbo.GET_USER_NM(scr.create_user_id)
-                    else dbo.GET_USER_NM(scr.update_user_id) end as writer_user_nm
-               , case when scr.update_dt is null then convert(date, scr.create_dt) else convert(date, scr.update_dt) end   as writer_dt
-          from saf_check_result scr
+                    when dbo.GET_USER_NM(scm.update_user_id) = '' then dbo.GET_USER_NM(scm.create_user_id)
+                    else dbo.GET_USER_NM(scm.update_user_id) end as writer_user_nm
+               , case when scm.update_dt is null then convert(date, scm.create_dt) else convert(date, scm.update_dt) end   as writer_dt
+         from saf_check_schedule scs
+         inner join saf_check_master scm
+            on scs.saf_check_no = scm.saf_check_no
          inner join saf_check_kind sck
-            on scr.saf_check_kind_no = sck.saf_check_kind_no
-           and sck.patrol_yn = 'Y'
+            on scm.saf_check_kind_no = sck.saf_check_kind_no
          inner join com_code_master cm1
-            on cm1.code = scr.plant_cd
+            on cm1.code = scm.plant_cd
            and cm1.code_group_cd = 'COM_PLANT_CD'
          inner join com_dept dept
-            on dept.dept_cd = scr.dept_cd
+            on dept.dept_cd = scm.dept_cd
          inner join com_vendor_mst cvm
-            on cvm.vendor_cd = scr.tgt_vendor_cd
+            on cvm.vendor_cd = scs.tgt_vendor_cd
          inner join com_code_master cm2
-            on cm2.code = scr.check_result_cd
-           and cm2.code_group_cd = 'SAF_PATROL_RSLT_CLS'
+            on cm2.code = scs.check_result_cd
+           and cm2.code_group_cd = 'SAF_CHK_RSLT_CLS'
           left outer join com_user cu
-            on cu.user_id = scr.create_user_id
-         where scr.check_result_cd != 'PRCS1'
-           and scr.tgt_cls_cd = 'ACTSC'
-           and scr.check_step_cd = 'CHS04'
+            on cu.user_id = scs.create_user_id
+         where 1 = 1
+           and scs.check_result_cd = 'SCRC3'
+           and scs.check_step_cd = 'CHS04'
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(plantCd)">
-           and scr.plant_cd = #{plantCd}
+           and scm.plant_cd = #{plantCd}
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(deptCd)">
-           and scr.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+           and scm.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(startDate) and @org.apache.commons.lang3.StringUtils@isNotBlank(endDate)">
-           and scr.check_ymd between #{startDate} and #{endDate}
+           and scs.check_ymd between #{startDate} and #{endDate}
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(tgtVendorCd)">
-           and scr.tgt_vendor_cd = #{tgtVendorCd}
+           and scs.tgt_vendor_cd = #{tgtVendorCd}
         </if>
         <if test= "@org.apache.commons.lang3.StringUtils@isNotBlank(checkTitle)">
-            and scr.check_title like '%' + #{checkTitle} + '%'
+            and scs.check_title like '%' + #{checkTitle} + '%'
         </if>
-           order by writer_dt desc
+           order by writer_dt desc, scm.create_dt desc
     </select>
 </mapper>
