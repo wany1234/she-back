@@ -669,10 +669,6 @@
                , convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
                 and sia.impr_step_cd = 'IMST5' 
                 then 1 else 0 end)) as completCnt
-               , convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
-                and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
-                and datediff(day, convert(char(10), GETDATE(), 23) , iif(sia.act_limit_ymd = '', sia.act_confirm_ymd, act_limit_ymd)) &lt; 0
-                then 1 else 0 end)) as targetCnt
                 FROM mgt_committee_conf mcc 
                 LEFT OUTER JOIN saf_impr_act sia
                 ON ((sia.impr_class_cd = 'ICL43' and sia.ref_table_id = mcc.committee_conf_no)
@@ -704,7 +700,7 @@
          , isnull(sum(convert(numeric,r.incompletCnt)), 0) as incompletCnt
          , isnull(sum(convert(numeric,r.overdueCnt)), 0) as overdueCnt
          , isnull(sum(convert(numeric,r.completCnt)), 0) as completCnt
-         , convert(varchar, format(round(dbo.GET_DIVIDE(isnull(sum(convert(numeric,r.completCnt)), 0), isnull(sum(convert(numeric,r.targetCnt)), 0)) * 100 ,2), '0.00')) as improvement
+         , convert(varchar, format(round(dbo.GET_DIVIDE(isnull(sum(convert(numeric,r.completCnt)), 0), isnull(sum(convert(numeric,r.requestCnt)), 0)) * 100 ,2), '0.00')) as improvement
         from gubunList g
                  left join statusList r on r.plant_cd = g.plantCd and  r.half_type_cd = g.gubun_type
                  where 1=1
@@ -755,9 +751,7 @@
                           convert(numeric, sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
                           and sia.impr_step_cd = 'IMST5' 
                           then 1 else 0 end)) ,
-                          convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}
-                          and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
-                          and datediff(day, convert(char(10), GETDATE(), 23) , iif(sia.act_limit_ymd = '', sia.act_confirm_ymd, act_limit_ymd)) &lt; 0
+                          convert(varchar(10), sum(case when left(iif(isnull(sia.act_limit_ymd, '') = '', sia.act_confirm_ymd, sia.act_limit_ymd), 4) = #{year}  
                           then 1 else 0 end))
                       ) * 100, 2), '0.00')
                  ) as improvement
@@ -881,54 +875,50 @@
               ,mcc.main_dept_cd
               ,dbo.GET_DEPT_NM(mcc.main_dept_cd) as mainDeptNm
               ,(
-              select count(*)
-                 FROM mgt_committee_conf mcz
-                INNER JOIN mgt_committee_agenda mca
-                    ON mca.committee_conf_no = mcz.committee_conf_no
-                INNER JOIN saf_impr_act sia
-                    ON sia.ref_table_id = mca.agenda_no
-                    AND sia.impr_class_cd = 'ICL13'
-                where 1=1
-                 and mcz.committee_conf_no = mcc.committee_conf_no
-              ) as requestCnt
-              ,(
                 select count(*)
-                  FROM mgt_committee_conf mcz
-                 INNER JOIN mgt_committee_agenda mca
-                    ON mca.committee_conf_no = mcz.committee_conf_no
-                 INNER JOIN saf_impr_act sia
-                    ON sia.ref_table_id = mca.agenda_no
-                   AND sia.impr_class_cd = 'ICL13'
-                 where 1=1
-                   and mcz.committee_conf_no = mcc.committee_conf_no
-                   and sia.impr_step_cd != 'IMST5'
-                   and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                  from saf_impr_act sia 
+                  where (sia.impr_class_cd = 'ICL43' and  ref_table_id = mcc.committee_conf_no)
+                  or (sia.impr_class_cd = 'ICL13' and  ref_table_id in (
+                      select agenda_no
+                      from mgt_committee_agenda a
+                      where a.committee_conf_no = mcc.committee_conf_no
+                  ))
+                ) as requestCnt
+              ,(
+                 select count(*)
+                from saf_impr_act sia 
+                where sia.impr_step_cd != 'IMST5'
+                      and (sia.act_class_cd = 'ACL01' or sia.act_class_cd = 'ACL02')
+                and ((sia.impr_class_cd = 'ICL43' and  ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' and  ref_table_id in (
+                    select agenda_no
+                    from mgt_committee_agenda
+                    where committee_conf_no = mcc.committee_conf_no
+                    )))
                  ) as incompletCnt
               ,(
                 select count(*)
-                  FROM mgt_committee_conf mcz
-                 INNER JOIN mgt_committee_agenda mca
-                    ON mca.committee_conf_no = mcz.committee_conf_no
-                 INNER JOIN saf_impr_act sia
-                    ON sia.ref_table_id = mca.agenda_no
-                 where 1=1
-                   and mcz.committee_conf_no = mcc.committee_conf_no
-                   and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
-                   and sia.act_class_cd = 'ACL02'
-                   and sia.impr_class_cd = 'ICL13'
-                   and sia.impr_step_cd != 'IMST5'
+                from saf_impr_act sia 
+                where sia.impr_step_cd != 'IMST5'
+                and sia.act_class_cd = 'ACL02'
+                and datediff(day, convert(char(10), GETDATE(), 23) , sia.act_limit_ymd) &lt; 0
+                and ((sia.impr_class_cd = 'ICL43' and  ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' and  ref_table_id in (
+                    select agenda_no
+                    from mgt_committee_agenda
+                    where committee_conf_no = mcc.committee_conf_no
+                    )))
                  ) as overdueCnt
               ,(
                 select count(*)
-                  FROM mgt_committee_conf mcz
-                 INNER JOIN mgt_committee_agenda mca
-                    ON mca.committee_conf_no = mcz.committee_conf_no
-                 INNER JOIN saf_impr_act sia
-                    ON sia.ref_table_id = mca.agenda_no
-                 where 1=1
-                   and mcz.committee_conf_no = mcc.committee_conf_no
-                   and sia.impr_class_cd = 'ICL13'
-                   and sia.impr_step_cd = 'IMST5'
+                from saf_impr_act sia 
+                where sia.impr_step_cd = 'IMST5'
+                and ((sia.impr_class_cd = 'ICL43' and  ref_table_id = mcc.committee_conf_no)
+                or (sia.impr_class_cd = 'ICL13' and  ref_table_id in (
+                    select agenda_no
+                    from mgt_committee_agenda
+                    where committee_conf_no = mcc.committee_conf_no
+                    )))
                  ) as completCnt
               ,mcc.conf_place
               ,mcc.progress_step_cd
