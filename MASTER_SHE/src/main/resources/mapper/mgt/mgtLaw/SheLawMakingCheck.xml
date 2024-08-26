@@ -150,7 +150,7 @@
             ,#{checkRqstDesc}
             ,#{summary}
             ,#{createUserId}
-            ,getdate())
+            ,convert(char(10), getDate(), 23))
     </insert>
     
     <update id= "updateLawMakingCheck" parameterType= "com.she.mgt.model.MgtLawMakingCheck">
@@ -172,17 +172,12 @@
     <select id="getLawMakingCheckDepts" resultType="com.she.mgt.model.MgtLawMakingCheckDept">
         /* SheLawMakingCheckMapper.getLawMakingCheckDepts [SheLawMakingCheck.xml] */
         SELECT lmcd.lmc_seq_no
-              ,cd.plant_cd
-              ,plant.code_nm as plant_nm
               ,lmcd.check_dept_cd
-              ,concat('[', plant.code_nm, '] ', cd.dept_nm) as check_dept_nm
+              ,cd.dept_nm as check_dept_nm
               ,lmcd.finish_yn
           FROM law_making_check_dept lmcd
          INNER JOIN com_dept cd
             ON lmcd.check_dept_cd = cd.dept_cd
-         INNER JOIN com_code_master plant
-            ON cd.plant_cd = plant.code
-           AND plant.code_group_cd = 'COM_PLANT_CD'
          WHERE lmcd.lmc_seq_no = #{lmcSeqNo}
     </select>
     
@@ -236,12 +231,11 @@
               ,c.check_user_id
               ,c.check_dt
               ,c.opinion
-              ,concat('[' + plant.code_nm, ']', d.dept_nm) as check_dept_nm
+              ,d.dept_nm as check_dept_nm
               ,u.user_nm as check_user_nm
               ,c.finish_yn
           FROM law_making_checker c
-         INNER JOIN com_dept d on c.check_dept_cd = d.dept_cd
-         INNER JOIN com_code_master plant on d.plant_cd = plant.code and plant.code_group_cd = 'COM_PLANT_CD'
+         INNER JOIN com_dept d on c.check_dept_cd = d.dept_cd 
          INNER JOIN com_user u on c.check_user_id = u.user_id
          WHERE c.lmc_seq_no = #{lmcSeqNo}
            AND c.check_dept_cd = #{checkDeptCd}
