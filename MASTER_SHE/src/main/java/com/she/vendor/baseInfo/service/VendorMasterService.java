@@ -19,6 +19,7 @@ import java.util.Random;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -317,5 +318,13 @@ public class VendorMasterService {
 
         return rst;
     }
+    
+    /**
+     * 인증번호 체크
+     * @param authNumber
+     * @return
+     * @throws Exception
+     */
+    public ChemicalVendorMaster getVendorAuth(String authNumber) throws Exception{ return chemicalVendorMasterMapper.getVendorAuth(authNumber);}
 
 }

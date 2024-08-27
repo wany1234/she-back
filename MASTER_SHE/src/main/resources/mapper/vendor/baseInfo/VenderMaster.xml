@@ -467,5 +467,12 @@
         set auth_number = #{authNumber}
         where vendor_cd = #{vendorCd}
     </update>
+    
+    <select id="getVendorAuth" resultType= "com.she.vendor.model.ChemicalVendorMaster">
+		SELECT vendor_cd 
+		, vendor_nm
+		from com_vendor_mst
+		where auth_number = #{authNumber}
+    </select>
 
 </mapper>

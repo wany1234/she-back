@@ -199,4 +199,12 @@ public interface VendorMasterMapper {
      * @throws Exception
      */
     public int updateAuthNumber(ChemicalVendorMaster chemicalVendorMaster) throws Exception;
+    
+    /**
+     * 인증번호 체크
+     * @param authNumber
+     * @return
+     * @throws Exception
+     */
+    public ChemicalVendorMaster getVendorAuth(@Param("authNumber") String authNumber) throws Exception;
 }

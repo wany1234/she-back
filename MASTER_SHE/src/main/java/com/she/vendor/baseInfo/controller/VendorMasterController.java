@@ -280,4 +280,19 @@ public class VendorMasterController {
         return ResponseEntity.ok().body(vendorMasterService.getJoinRequest(vendorCd, email));
     }
 
+    /**
+     * 인증번호 체크
+     * @param parameter
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/certification")
+    public ResponseEntity<ChemicalVendorMaster> vendorCertification(@RequestParam HashMap<String, Object> parameter) throws Exception {
+    	HashMap<String, Object> map = this.requestMapper.convertAsParameter(parameter);
+
+        // 인증번호
+        String authNumber = map.containsKey("authNumber") ? map.get("authNumber").toString() : "";
+    	
+    	return ResponseEntity.ok().body(vendorMasterService.getVendorAuth(authNumber));
+    }
 }

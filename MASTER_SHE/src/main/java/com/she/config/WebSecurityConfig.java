@@ -56,6 +56,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public static final String SWAGGER_API_DOCS_FILE = SWAGGER_PATH_PREFIX + "/v2/api-docs?group=file";
     public static final String SWAGGER_UI = SWAGGER_PATH_PREFIX + "/swagger-ui.html";
     public static final String GROUPWARE_API = SWAGGER_PATH_PREFIX + "/sheappr/**";
+    public static final String VENDOR_CERTIFY_POINT = SWAGGER_PATH_PREFIX + "/api/vendor/baseinfo/certification";
+    public static final String VENDOR_REGIST_POINT = SWAGGER_PATH_PREFIX + "/api/vendor/baseinfo/registidpwd";
 
     public static final String COMM_EXPORT_ENTRY_POINT = SWAGGER_PATH_PREFIX + "/api/common/export";
 
@@ -79,7 +81,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     protected JwtJoseTokenAuthenticationProcessingFilter buildJwtTokenAuthenticationProcessingFilter() throws Exception {
         List<String> pathsToSkip = Arrays.asList(TOKEN_REFRESH_ENTRY_POINT, FORM_SSO_LOGIN_ENTRY_POINT, LANG_ENTRY_POINT, FORM_BASED_LOGIN_ENTRY_POINT, FORM_VENDOR_LOGIN_ENTRY_POINT, SWAGGER_API_DOCS_ALL, SWAGGER_UI, SWAGGER_API_DOCS_MANAGE, SWAGGER_API_DOCS_MAIN, SWAGGER_API_DOCS_ENV, SWAGGER_API_DOCS_SAF, SWAGGER_API_DOCS_BASEINFO,
-                SWAGGER_API_DOCS_COMMON, SWAGGER_API_DOCS_RSA, SWAGGER_API_DOCS_CHM, SWAGGER_API_DOCS_MGT, SWAGGER_API_DOCS_PSM, SWAGGER_API_DOCS_ATTACHFILE, SWAGGER_API_DOCS_AUTH, SWAGGER_API_DOCS_FILE, GROUPWARE_API, COMM_EXPORT_ENTRY_POINT);
+                SWAGGER_API_DOCS_COMMON, SWAGGER_API_DOCS_RSA, SWAGGER_API_DOCS_CHM, SWAGGER_API_DOCS_MGT, SWAGGER_API_DOCS_PSM, SWAGGER_API_DOCS_ATTACHFILE, SWAGGER_API_DOCS_AUTH, SWAGGER_API_DOCS_FILE, GROUPWARE_API, COMM_EXPORT_ENTRY_POINT, 
+                VENDOR_CERTIFY_POINT, VENDOR_REGIST_POINT);
 
         SkipPathRequestMatcher matcher = new SkipPathRequestMatcher(pathsToSkip, TOKEN_BASED_AUTH_ENTRY_POINT);
         JwtJoseTokenAuthenticationProcessingFilter filter = new JwtJoseTokenAuthenticationProcessingFilter(failureHandler, tokenExtractor, jwtSettings, matcher);
@@ -112,6 +115,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // end-point
                 .antMatchers(SWAGGER_API_DOCS_ALL).permitAll() // Login
                                                                // end-point
+                .antMatchers(VENDOR_CERTIFY_POINT).permitAll().antMatchers(VENDOR_REGIST_POINT).permitAll()// 협력사 인증
                 .antMatchers(SWAGGER_UI).permitAll().antMatchers(SWAGGER_API_DOCS_MANAGE).permitAll().antMatchers(SWAGGER_API_DOCS_MAIN).permitAll().antMatchers(SWAGGER_API_DOCS_ENV).permitAll().antMatchers(SWAGGER_API_DOCS_SAF).permitAll().antMatchers(SWAGGER_API_DOCS_BASEINFO).permitAll().antMatchers(SWAGGER_API_DOCS_COMMON).permitAll()
                 .antMatchers(SWAGGER_API_DOCS_RSA).permitAll().antMatchers(SWAGGER_API_DOCS_CHM).permitAll().antMatchers(SWAGGER_API_DOCS_MGT).permitAll().antMatchers(SWAGGER_API_DOCS_PSM).permitAll().antMatchers(SWAGGER_API_DOCS_ATTACHFILE).permitAll().antMatchers(SWAGGER_API_DOCS_AUTH).permitAll().antMatchers(SWAGGER_API_DOCS_FILE).permitAll()
                 .antMatchers("/console").permitAll() // H2 Console Dash-board -
