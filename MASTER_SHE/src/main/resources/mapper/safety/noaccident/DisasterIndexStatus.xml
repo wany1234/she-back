@@ -4,6 +4,11 @@
 <mapper namespace= "com.she.safety.noaccident.mapper.DisasterIndexStatusMapper">
 
 	<select id="getDisasterIndexStatusList" resultType="com.she.safety.model.DisasterIndexStatus">
+	/* DisasterIndexStatusMapper.getDisasterIndexStatusList [DisasterIndexStatus.xml] */
+	SET ANSI_WARNINGS OFF;
+	SET ARITHIGNORE ON;
+	SET ARITHABORT OFF;
+	
 		SELECT snai.year
 			, snai.plant_cd
 			, plant.code_nm as plant_nm
@@ -14,15 +19,15 @@
 			, ROUND(cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12),0) as total_working_hours
 			, COUNT(sa.saf_accident_no) as accident_cnt
 			, isnull(SUM(sa.work_lost_day),0) as work_lost_day
-			, ROUND(((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)),2) as freq_rate
-			, ROUND(isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3), 3) as intens_rate
-			, ROUND((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3)),4) as frxin
+			, isnull(ROUND(((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)),2),0) as freq_rate
+			, isnull(ROUND(isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3), 3),0) as intens_rate
+			, isnull(ROUND((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3)),4),0) as frxin
 			, snai.comp_disa_index 
-			, ROUND(SQRT((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3))),2) as comp_perform_rate
-			, CONCAT(ROUND(ROUND(SQRT((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3))),2) / snai.comp_disa_index, 2) * 100, '%') as comp_disa_ratio
+			, isnull(ROUND(SQRT((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3))),2),0) as comp_perform_rate
+			, CONCAT(isnull(ROUND(ROUND(SQRT((((COUNT(sa.saf_accident_no) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12))) * POWER(10,6)) * isnull(SUM(sa.work_lost_day),0) / (cmu.offi_count * (snai.working_hours_offi/12) + cmu.manu_count * (snai.working_hours_manu/12)) * POWER(10,3))),2) / snai.comp_disa_index, 2) * 100,0), '%') as comp_disa_ratio
 			, snai.acci_rate_target 
 			, ROUND((COUNT(sa.saf_accident_no) / cmu.total_count) * 100,2) as acci_perfom_rate
-			, CONCAT(convert(int,ROUND(ROUND((COUNT(sa.saf_accident_no) / cmu.total_count) * 100,2) / snai.acci_rate_target, 2) * 100),'%') as acci_ratio
+			, CONCAT(isnull(convert(int,ROUND(ROUND((COUNT(sa.saf_accident_no) / cmu.total_count) * 100,2) / snai.acci_rate_target, 2) * 100),0),'%') as acci_ratio
 		from saf_no_accident_info snai 
 		inner join com_mon_user cmu 
 		on snai.year = cmu.year and snai.plant_cd = cmu.plant_cd 
@@ -45,6 +50,7 @@
 	</select>
 	
 	<select id="getAccidentList" resultType="com.she.safety.model.DisasterIndexAccident">
+	/* DisasterIndexStatusMapper.getAccidentList [DisasterIndexStatus.xml] */
 		SELECT sa.saf_accident_no 
 			, sa.plant_cd 
 			, plant.code_nm as plant_nm
