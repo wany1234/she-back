@@ -206,6 +206,7 @@ public class VendorMasterService {
             return 0;
         } else {
             int result = 0;
+            result += this.chemicalVendorMasterMapper.updateVendorMasterInfo(chemicalVendorMaster);
             if (StringUtils.isNotBlank(chemicalVendorMaster.getPortalPwd())) {
                 // 비밀번호 변경 처리
                 String portalPwd = DigestUtils.sha256Hex(chemicalVendorMaster.getPortalPwd()); // 암호화

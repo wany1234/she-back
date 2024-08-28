@@ -216,4 +216,12 @@ public interface VendorMasterMapper {
      */
     public int updateVendorMasterIdPwd(ChemicalVendorMaster chemicalVendorMaster) throws Exception;
     
+    /**
+     * 협력사 정보 수정
+     * @param chemicalVendorMaster
+     * @return
+     * @throws Exception
+     */
+    public int updateVendorMasterInfo(ChemicalVendorMaster chemicalVendorMaster) throws Exception;
+    
 }

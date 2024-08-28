@@ -483,4 +483,21 @@
         where vendor_cd = #{vendorCd}
     </update>
     
+    <update id="updateVendorMasterInfo" parameterType= "com.she.vendor.model.ChemicalVendorMaster">
+    	update com_vendor_mst
+        set chief_nm = #{chiefNm}
+			,vendor_tel = #{vendorTel}
+			,vendor_fax = #{vendorFax}
+			,charger_nm = #{chargerNm}
+			,charger_dept = #{chargerDept}
+			,charger_tel = #{chargerTel}
+			,email = #{email}
+			,portal_id = #{portalId} 	
+			,vendor_addr = #{vendorAddr}
+			,factory_addr = #{factoryAddr}
+            ,update_user_id = #{updateUserId}
+            ,update_dt = convert(char(10), getDate(), 23)
+        where vendor_cd = #{vendorCd}
+    </update>
+    
 </mapper>
