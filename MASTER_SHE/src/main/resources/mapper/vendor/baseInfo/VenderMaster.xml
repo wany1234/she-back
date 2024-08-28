@@ -492,7 +492,6 @@
 			,charger_dept = #{chargerDept}
 			,charger_tel = #{chargerTel}
 			,email = #{email}
-			,portal_id = #{portalId} 	
 			,vendor_addr = #{vendorAddr}
 			,factory_addr = #{factoryAddr}
             ,update_user_id = #{updateUserId}
