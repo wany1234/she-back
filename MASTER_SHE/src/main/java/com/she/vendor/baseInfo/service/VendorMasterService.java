@@ -326,5 +326,30 @@ public class VendorMasterService {
      * @throws Exception
      */
     public ChemicalVendorMaster getVendorAuth(String authNumber) throws Exception{ return chemicalVendorMasterMapper.getVendorAuth(authNumber);}
-
+    
+    /**
+     * 협력사 ID/PWD 등록
+     * @param chemicalVendorMaster
+     * @return
+     * @throws Exception
+     */
+    public int updateVendorMasterIdPwd(ChemicalVendorMaster chemicalVendorMaster) throws Exception{
+    	if (chemicalVendorMaster == null) {
+            return 0;
+        } else {
+        	int result = 0;
+        	if (StringUtils.isNotBlank(chemicalVendorMaster.getPortalPwd())) {
+                String portalPwd = DigestUtils.sha256Hex(chemicalVendorMaster.getPortalPwd()); // 암호화
+                chemicalVendorMaster.setPortalPwd(portalPwd);
+                result += this.chemicalVendorMasterMapper.updateVendorMasterIdPwd(chemicalVendorMaster);
+                
+                if(result > 0) {
+                	// ID/PWD등록후 인증번호 지우기
+                	chemicalVendorMaster.setAuthNumber("");
+                	result += chemicalVendorMasterMapper.updateAuthNumber(chemicalVendorMaster);
+                }
+            }
+        	return result; 
+        }
+    }
 }

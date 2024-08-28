@@ -295,4 +295,15 @@ public class VendorMasterController {
     	
     	return ResponseEntity.ok().body(vendorMasterService.getVendorAuth(authNumber));
     }
+    
+    /**
+     * 협력사 ID/PWD 등록
+     * @param chemicalVendorMaster
+     * @return
+     * @throws Exception
+     */
+    @PostMapping("/registidpwd")
+    public ResponseEntity<Integer> updateVendorMasterIdPwd(@RequestBody ChemicalVendorMaster chemicalVendorMaster) throws Exception {
+        return ResponseEntity.ok().body(vendorMasterService.updateVendorMasterIdPwd(chemicalVendorMaster));
+    }
 }

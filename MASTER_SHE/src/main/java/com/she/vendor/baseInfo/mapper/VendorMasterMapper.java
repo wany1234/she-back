@@ -207,4 +207,13 @@ public interface VendorMasterMapper {
      * @throws Exception
      */
     public ChemicalVendorMaster getVendorAuth(@Param("authNumber") String authNumber) throws Exception;
+    
+    /**
+     * 협력사 ID/PWD 등록
+     * @param chemicalVendorMaster
+     * @return
+     * @throws Exception
+     */
+    public int updateVendorMasterIdPwd(ChemicalVendorMaster chemicalVendorMaster) throws Exception;
+    
 }

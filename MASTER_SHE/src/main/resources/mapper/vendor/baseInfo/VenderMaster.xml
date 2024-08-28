@@ -474,5 +474,13 @@
 		from com_vendor_mst
 		where auth_number = #{authNumber}
     </select>
-
+    
+    <update id= "updateVendorMasterIdPwd" parameterType= "com.she.vendor.model.ChemicalVendorMaster">
+        update com_vendor_mst
+        set portal_id = #{portalId} 
+        ,portal_pwd = #{portalPwd}
+        ,reg_dt = getDate()
+        where vendor_cd = #{vendorCd}
+    </update>
+    
 </mapper>
