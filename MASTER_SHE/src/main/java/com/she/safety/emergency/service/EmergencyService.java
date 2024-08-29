@@ -110,7 +110,7 @@ public class EmergencyService {
         if (emergency.getEmergencyScenarioList() != null & emergency.getEmergencyScenarioList().size() > 0) {
 
             for (int i = 0; i < emergency.getEmergencyScenarioList().size(); i++) {
-                emergency.getEmergencyScenarioList().get(i).setSafTrainMstNo(primaryKey);
+                emergency.getEmergencyScenarioList().get(i).setSafTrainPlanNo(primaryKey);
                 emergencyMapper.createEmergencyScenario(emergency.getEmergencyScenarioList().get(i));
             }
         }
@@ -157,7 +157,7 @@ public class EmergencyService {
         if (emergency.getEmergencyScenarioList() != null & emergency.getEmergencyScenarioList().size() > 0) {
 
             for (int i = 0; i < emergency.getEmergencyScenarioList().size(); i++) {
-                emergency.getEmergencyScenarioList().get(i).setSafTrainMstNo(primaryKey);
+                emergency.getEmergencyScenarioList().get(i).setSafTrainPlanNo(primaryKey);
                 emergencyMapper.createEmergencyScenario(emergency.getEmergencyScenarioList().get(i));
             }
         }
@@ -282,7 +282,7 @@ public class EmergencyService {
         if (emergency.getEmergencyScenarioList() != null & emergency.getEmergencyScenarioList().size() > 0) {
 
             for (int i = 0; i < emergency.getEmergencyScenarioList().size(); i++) {
-                emergency.getEmergencyScenarioList().get(i).setSafTrainMstNo(primaryKey);
+                emergency.getEmergencyScenarioList().get(i).setSafTrainPlanNo(primaryKey);
                 emergencyMapper.createEmergencyScenario(emergency.getEmergencyScenarioList().get(i));
             }
         }

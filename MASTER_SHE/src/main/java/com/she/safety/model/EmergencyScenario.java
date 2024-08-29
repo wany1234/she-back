@@ -12,8 +12,6 @@ public class EmergencyScenario {
     private int trainSceNo;
     @ApiModelProperty(value = "훈련계획번호")
     private int safTrainPlanNo;
-    @ApiModelProperty(value = "훈련계획번호")
-    private int safTrainMstNo;
     @ApiModelProperty(value = "제목")
     private String title;
 }

@@ -71,7 +71,7 @@ public class TrainingScenario {
     private String updateDt;
 
     @ApiModelProperty(value = "훈련마스터 번호")
-    private int safTrainMstNo;
+    private int safTrainPlanNo;
 
     @ApiModelProperty(value = "작성자")
     private String writerUserNm;

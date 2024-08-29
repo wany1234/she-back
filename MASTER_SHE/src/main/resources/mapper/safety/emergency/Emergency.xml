@@ -229,12 +229,12 @@
     <select id ="getEmergencyScenarioLists" resultType="com.she.safety.model.EmergencyScenario">
         /* EmergencyMapper.getEmergencyScenarioLists [Emergency.xml] */
         select
-            stps.saf_train_mst_no
+            stps.saf_train_plan_no
            ,stps.train_sce_no
            ,sts.title
         from saf_train_plan_sce stps
         inner join saf_train_sce sts on sts.train_sce_no = stps.train_sce_no
-        where stps.saf_train_mst_no = #{safTrainPlanNo}
+        where stps.saf_train_plan_no = #{safTrainPlanNo}
     </select>
     <insert id="createEmergency" parameterType="com.she.safety.model.Emergency">
         /* EmergencyMapper.createEmergency [Emergency.xml] */
@@ -360,12 +360,12 @@
             insert into saf_train_plan_sce
             (
             train_sce_no
-            ,saf_train_mst_no
+            ,saf_train_plan_no
             )
             values
             (
             #{trainSceNo}
-            ,#{safTrainMstNo}
+            ,#{safTrainPlanNo}
             )
     </insert>
     <delete id="deleteEmergencyUser">
@@ -381,7 +381,7 @@
     <delete id="deleteEmergencyScenario">
         /* EmergencyMapper.deleteEmergencyScenario [Emergency.xml] */
         delete saf_train_plan_sce
-         where saf_train_mst_no = #{safTrainPlanNo}
+         where saf_train_plan_no = #{safTrainPlanNo}
     </delete>
     <update id="updateEmergency" parameterType="com.she.safety.model.Emergency">
         /* EmergencyMapper.updateEmergency [Emergency.xml] */
@@ -415,11 +415,11 @@
         delete saf_train_dtl_psn
          where saf_train_plan_no = #{safTrainPlanNo}
         delete saf_train_plan_sce
-         where saf_train_mst_no = #{safTrainPlanNo}
+         where saf_train_plan_no = #{safTrainPlanNo}
         delete saf_train_plan_plant
-         where saf_train_mst_no = #{safTrainPlanNo}
+         where saf_train_plan_no = #{safTrainPlanNo}
         delete saf_train_plan_video
-         where saf_train_mst_no = #{safTrainPlanNo}
+         where saf_train_plan_no = #{safTrainPlanNo}
     </delete>
     <delete id="deleteEachEmergencyDept">
         /* EmergencyMapper.deleteEachEmergencyDept [Emergency.xml] */
