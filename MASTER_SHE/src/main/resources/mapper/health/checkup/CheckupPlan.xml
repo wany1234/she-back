@@ -701,7 +701,7 @@
            AND sex.code_group_cd = 'COM_SEX_TYPE'
          INNER JOIN hea_checkup_plan p
             ON p.hea_checkup_plan_no = #{heaCheckupPlanNo}
-         inner join hea_checkup_result hcr
+         left join hea_checkup_result hcr
 	        on hcr.hea_checkup_plan_no = p.hea_checkup_plan_no
 	        and hcr.user_id = cu.user_id
          WHERE 1=1
@@ -861,7 +861,7 @@
            AND sex.code_group_cd = 'COM_SEX_TYPE'
          INNER JOIN hea_checkup_plan p
             ON p.hea_checkup_plan_no = #{heaCheckupPlanNo}
-         inner join hea_checkup_result hcr
+         left join hea_checkup_result hcr
 	        on hcr.hea_checkup_plan_no = p.hea_checkup_plan_no
 	        and hcr.user_id = cu.user_id
          WHERE 1=1
