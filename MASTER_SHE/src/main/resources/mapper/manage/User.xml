@@ -490,7 +490,9 @@
 		      , sem.edu_e_ymd 
 		      , CONCAT(sem.edu_s_ymd,' ~ ',sem.edu_e_ymd ) as prd 
 		      , sedp.complet_ymd 
-		      , sedp.complet_yn 
+		      , sedp.complet_yn
+              , saea.code_nm as edu_att_nm
+              , saem.code_nm as edu_method_nm
 	      from saf_edu_mst sem 
 	      inner join saf_edu_dtl_psn sedp 
 	      on sem.saf_edu_mst_no = sedp.saf_edu_mst_no 
@@ -500,6 +502,10 @@
 	      on sem.edu_type_cd  = saet.code  
 	      inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') saec
 	      on sec.edu_type_cd  = saec.code 
+          inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') saea 
+          on sec.edu_att_cd = saea.code
+          inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD') saem 
+          on sem.edu_method_cd = saem.code 
 	      where sedp.user_id = #{userId}
 	      order by sem.edu_s_ymd desc
     </select>

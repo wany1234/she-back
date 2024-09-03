@@ -1,0 +1,256 @@
+<?xml version= "1.0" encoding= "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace= "com.she.safety.education.mapper.NewHireMapper">
+    <select id= "getNewHires" resultType= "com.she.safety.model.NewHire">
+        /* NewHireMapper.getNewHires [NewHire.xml] */
+        select  
+              cu.entry_ymd 
+            , datediff(day, convert(char(10), GETDATE(), 23) , cu.entry_ymd)
+            , cu.plant_cd
+            , p.code_nm as plant_nm
+            , cu.dept_cd
+            , d.dept_nm
+            , cu.user_id
+            , cu.user_nm
+            , case
+                   when (cu.retire_ymd is null or cu.retire_ymd = '') then 'Y'
+                   else 'N' end                        as employment_yn
+            , ( select code_nm 
+                   from dbo.LANG_CODE_MASTER('kr', 'COM_WORK_CD') 
+                   where code = (case
+                                    when (cu.retire_ymd is null or cu.retire_ymd = '') then 'Y'
+                                    else 'N' 
+                                 end)
+              ) as employment_status
+            , case when ( SELECT count(*) as cnt
+                          FROM saf_edu_dtl_psn edp
+                          INNER JOIN saf_edu_mst m on m.saf_edu_mst_no = edp.saf_edu_mst_no
+                          INNER JOIN saf_edu_course ec on m.saf_edu_course_no = ec.saf_edu_course_no
+                          WHERE ec.edu_type_cd = '${@com.she.utils.ConstVal@EDU_TYPE_03}'
+                              and edp.complet_yn = 'Y'
+                              and edp.user_id = cu.user_id
+                          ) > 0 
+                    then 'Y' else 'N' 
+              end  as eduCompletYn
+            ,( SELECT edp.complet_ymd 
+                       FROM saf_edu_dtl_psn edp
+                       INNER JOIN saf_edu_mst m on m.saf_edu_mst_no = edp.saf_edu_mst_no
+                       INNER JOIN saf_edu_course ec on m.saf_edu_course_no = ec.saf_edu_course_no
+                       WHERE ec.edu_type_cd = '${@com.she.utils.ConstVal@EDU_TYPE_03}'
+                           and edp.complet_yn = 'Y'
+                           and edp.user_id = cu.user_id
+              ) as eduCompletYmd
+            , case when ( SELECT count(*) as cnt
+                          FROM hea_checkup_result hcr
+                          INNER JOIN hea_checkup_plan hcp on hcp.hea_checkup_plan_no = hcr.hea_checkup_plan_no
+                          WHERE hcp.hea_checkup_class_cd = '${@com.she.utils.ConstVal@CODE_MASTER_HEA_CHECKUP_CLASS_PLACEMENT}'
+                              and hcr.user_id = cu.user_id
+                          ) > 0   
+                   then 'Y' else 'N' 
+              end as checkupCompletYn
+            ,( SELECT hcr.hea_checked_ymd
+               FROM hea_checkup_result hcr
+               INNER JOIN hea_checkup_plan hcp on hcp.hea_checkup_plan_no = hcr.hea_checkup_plan_no
+               WHERE hcp.hea_checkup_class_cd = '${@com.she.utils.ConstVal@CODE_MASTER_HEA_CHECKUP_CLASS_PLACEMENT}'
+                   and hcr.user_id = cu.user_id
+              ) as checkupCompletYmd  
+          from com_user cu
+          inner join com_dept d on cu.dept_cd=d.dept_cd and d.use_yn='Y'
+          inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') p on p.code =cu.plant_cd     
+        where 1=1
+        <if test= 'deptCd != null and !deptCd.equals("")'>
+           <choose>
+               <when test='deptSubYn != null and deptSubYn.equals("Y")'>
+                   and cu.dept_cd in (select dept_cd from dbo.GET_UNDER_DEPTS(#{deptCd}))
+               </when>
+               <otherwise>
+                   and cu.dept_cd = #{deptCd}
+               </otherwise>
+           </choose>
+        </if>
+        <if test='userNm != null and userNm != ""'>
+        and cu.user_nm like '%' +  #{userNm} + '%'
+        </if>
+        <if test='plantCd != null and plantCd !=""'>
+        and cu.plant_cd = #{plantCd}
+        </if>
+        <if test='employmentYn != null and employmentYn !=""'>
+          <choose>
+              <when test='employmentYn == "Y"'>
+                  and (cu.retire_ymd is null or cu.retire_ymd = '')
+              </when>
+              <when test='employmentYn == "N"'>
+                  and (cu.retire_ymd is not null and cu.retire_ymd != '')
+              </when>
+          </choose>
+        </if>
+        <if test='eduCompletYn != null and eduCompletYn !=""'>
+          <choose>
+              <when test='eduCompletYn == "Y"'>
+                  and exists ( SELECT 1
+                               FROM saf_edu_dtl_psn edp
+                               INNER JOIN saf_edu_mst m on m.saf_edu_mst_no = edp.saf_edu_mst_no
+                               INNER JOIN saf_edu_course ec on m.saf_edu_course_no = ec.saf_edu_course_no
+                               WHERE ec.edu_type_cd = '${@com.she.utils.ConstVal@EDU_TYPE_03}'
+                                   and edp.complet_yn = 'Y'
+                                   and edp.user_id = cu.user_id )
+              </when>
+              <when test='eduCompletYn == "N"'>
+                  and not exists ( SELECT 1
+                               FROM saf_edu_dtl_psn edp
+                               INNER JOIN saf_edu_mst m on m.saf_edu_mst_no = edp.saf_edu_mst_no
+                               INNER JOIN saf_edu_course ec on m.saf_edu_course_no = ec.saf_edu_course_no
+                               WHERE ec.edu_type_cd = '${@com.she.utils.ConstVal@EDU_TYPE_03}'
+                                   and edp.complet_yn = 'Y'
+                                   and edp.user_id = cu.user_id )
+              </when>
+          </choose>
+        </if>
+        <if test='checkupCompletYn != null and checkupCompletYn != ""'>
+          <choose>
+              <when test='checkupCompletYn == "Y"'>
+                  and exists  (
+                                SELECT 1
+                                FROM hea_checkup_result hcr
+                                INNER JOIN hea_checkup_plan hcp on hcp.hea_checkup_plan_no = hcr.hea_checkup_plan_no
+                                WHERE hcp.hea_checkup_class_cd = '${@com.she.utils.ConstVal@CODE_MASTER_HEA_CHECKUP_CLASS_PLACEMENT}'
+                                    and hcr.user_id = cu.user_id
+                               )
+              </when>
+              <when test='checkupCompletYn == "N"'>
+                  and not exists  (
+                                SELECT 1
+                                FROM hea_checkup_result hcr
+                                INNER JOIN hea_checkup_plan hcp on hcp.hea_checkup_plan_no = hcr.hea_checkup_plan_no
+                                WHERE hcp.hea_checkup_class_cd = '${@com.she.utils.ConstVal@CODE_MASTER_HEA_CHECKUP_CLASS_PLACEMENT}'
+                                    and hcr.user_id = cu.user_id
+                               )
+              </when>
+          </choose>
+        </if>
+        <if test="startYmd != null and !startYmd.equals('') and endYmd != null and !endYmd.equals('')">
+             and cu.entry_ymd between convert(date, #{startYmd}) and convert(date, #{endYmd})
+         </if>        
+    </select>
+    <select id= "getNewHire" resultType= "com.she.safety.model.NewHire">
+        /* NewHireMapper.getNewHire [NewHire.xml] */
+        select u.user_id
+            , u.user_nm
+            , d.dept_cd
+            , d.dept_nm
+            , substring(u.entry_ymd,1,4) +'-'+substring(u.entry_ymd,5,2) +'-'+substring(u.entry_ymd,7,2) as entry_ymd 
+            , u.plant_cd 
+            , plant.code_nm as plant_nm
+            , u.position_cd, position.position_nm
+            , FLOOR(CAST(DATEDIFF(day,u.birth_ymd,getdate()) AS integer)/365.2422) as age
+            , case when ( SELECT count(*) as cnt
+                          FROM saf_edu_dtl_psn edp
+                          INNER JOIN saf_edu_mst m on m.saf_edu_mst_no = edp.saf_edu_mst_no
+                          INNER JOIN saf_edu_course ec on m.saf_edu_course_no = ec.saf_edu_course_no
+                          WHERE ec.edu_type_cd = '${@com.she.utils.ConstVal@EDU_TYPE_03}'
+                              and edp.complet_yn = 'Y'
+                              and edp.user_id = #{userId}
+                          ) > 0 
+                    then 'Y' else 'N' 
+              end  as eduCompletYn
+            , case when ( SELECT count(*) as cnt
+                          FROM hea_checkup_result hcr
+                          INNER JOIN hea_checkup_plan hcp on hcp.hea_checkup_plan_no = hcr.hea_checkup_plan_no
+                          WHERE hcp.hea_checkup_class_cd = '${@com.she.utils.ConstVal@CODE_MASTER_HEA_CHECKUP_CLASS_PLACEMENT}'
+                              and hcr.user_id = #{userId}
+                          ) > 0 
+                   then 'Y' else 'N' 
+              end as checkupCompletYn
+        from com_user u
+        inner join com_dept d
+        on u.dept_cd = d.dept_cd
+        left outer join com_code_master plant
+        on u.plant_cd = plant.code
+        and plant.code_group_cd = 'COM_PLANT_CD'
+        left outer join com_hr_position position
+        on u.position_cd = position.position_cd
+        where 1 = 1
+        and u.user_id = #{userId}
+        and u.use_yn = 'Y'
+    </select>
+    <select id= "getNewHireEduList" resultType= "com.she.safety.model.EduMaster">
+        /* NewHireMapper.getNewHireEduList [NewHire.xml] */
+        SELECT m.saf_edu_mst_no
+              ,m.year 
+              ,m.plant_cd
+              ,plant.code_nm as plant_nm 
+              ,ec.edu_type_cd
+              ,c1.code_nm as edu_type_nm
+              ,ec.edu_att_cd
+              ,c2.code_nm as edu_att_nm
+              ,m.edu_nm
+              ,m.edu_method_cd
+              ,c3.code_nm as edu_method_nm
+              ,m.edu_s_ymd
+              ,m.edu_e_ymd
+              ,m.edu_s_ymd + ' ~ ' + m.edu_e_ymd as eduYmd
+        FROM saf_edu_mst m
+        INNER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant on m.plant_cd = plant.code
+        LEFT OUTER JOIN saf_edu_course ec on m.saf_edu_course_no = ec.saf_edu_course_no
+        LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_COURSE') c1 on ec.edu_type_cd = c1.code
+        LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_ATT') c2 on ec.edu_att_cd = c2.code
+        LEFT OUTER JOIN dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_EDU_METHOD') c3 on m.edu_method_cd = c3.code
+        WHERE 1=1
+        AND ec.edu_type_cd = '${@com.she.utils.ConstVal@EDU_TYPE_03}' 
+        AND m.year = year(GETDATE())
+    </select>
+    <select id="getCheckEduComplete" resultType="int">
+        /* NewHireMapper.getCheckEduComplete [NewHire.xml] */
+        SELECT count(*) as cnt
+        FROM saf_edu_dtl_psn
+        WHERE saf_edu_mst_no = #{safEduMstNo}
+            AND user_id = #{userId}
+            AND complet_yn = 'Y' 
+    </select> 
+    <select id="getCheckNewHireEduComplete" resultType="int">
+        /* NewHireMapper.getCheckNewHireEduComplete [NewHire.xml] */
+        SELECT count(*) as cnt
+        FROM saf_edu_dtl_psn edp
+        INNER JOIN saf_edu_mst m on m.saf_edu_mst_no = edp.saf_edu_mst_no
+        INNER JOIN saf_edu_course ec on m.saf_edu_course_no = ec.saf_edu_course_no
+        WHERE ec.edu_type_cd = '${@com.she.utils.ConstVal@EDU_TYPE_03}'
+            and edp.complet_yn = 'Y'
+            and edp.user_id =#{userId}
+    </select>     
+    
+    <insert id = "createNewHireEduUser" parameterType= "com.she.safety.model.NewHire">
+        /* NewHireMapper.createNewHireEduUser [NewHire.xml] */
+        Insert Into saf_edu_dtl_psn 
+        (
+             saf_edu_mst_no
+            ,user_id
+            ,dept_cd
+            ,complet_yn
+            ,complet_ymd 
+        )
+        VALUES
+        ( 
+            #{safEduMstNo}
+            ,#{userId}
+            ,#{deptCd}
+            ,'Y'
+            ,#{completYmd}
+        )
+    </insert>    
+    <select id="getChkCheckupUser" resultType="int">
+        /* NewHireMapper.getChkCheckupUser [NewHire.xml] */
+        SELECT count(*) as cnt
+        FROM hea_checkup_result
+        WHERE hea_checkup_plan_no = #{heaCheckupPlanNo}
+            AND user_id = #{userId}
+    </select> 
+    <select id="getChkNewHireCheckupUser" resultType="int">
+        /* NewHireMapper.getChkNewHireCheckupUser [NewHire.xml] */
+        SELECT count(*) as cnt
+        FROM hea_checkup_result hcr
+        INNER JOIN hea_checkup_plan hcp on hcp.hea_checkup_plan_no = hcr.hea_checkup_plan_no
+        WHERE hcp.hea_checkup_class_cd = '${@com.she.utils.ConstVal@CODE_MASTER_HEA_CHECKUP_CLASS_PLACEMENT}'
+            and hcr.user_id =#{userId}
+    </select>     
+</mapper>

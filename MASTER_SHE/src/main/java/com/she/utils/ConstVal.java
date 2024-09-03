@@ -168,6 +168,11 @@ public class ConstVal {
     public static String CODE_MASTER_HEA_RESULT_TYPE_NUNBER = "N";
 
     /**
+     * 코드마스터 - 채용배치전검진 코드명
+     */
+    public static String CODE_MASTER_HEA_CHECKUP_CLASS_PLACEMENT = "B0";
+
+    /**
      * 코드마스터 - 특수검진 코드명
      */
     public static String CODE_MASTER_HEA_CHECKUP_CLASS_SPECIAL = "B1";
@@ -711,6 +716,11 @@ public class ConstVal {
      * 교육방법코드 - 동영상
      */
     public static String EDU_METHOD_VIDEO = "EDM03";
+
+    /**
+     * 교육분류코드 - 채용 시
+     */
+    public static String EDU_TYPE_03 = "EDU03";
 
     /**
      * 사업장코드 - 사업장공통
