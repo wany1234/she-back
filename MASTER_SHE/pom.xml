@@ -348,7 +348,14 @@
 			<artifactId>icu4j</artifactId>
 			<version>57.1</version>
 		</dependency>
+
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.0</version>
+        </dependency>
     </dependencies>
+
     <repositories>
         <repository>
             <id>in-project-jenkins</id>

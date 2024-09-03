@@ -7,7 +7,14 @@
     <property name="LOG_DIR" value="/sheBackEnd/logs" />
     <property name="LOG_PATH_NAME" value="${LOG_DIR}" />
     <property name="FILE_NAME" value="sheBackEndServer" />
+    <!--  imsi test for mac, windows  -->
+    <property name="LOG_PATH" value="../logs" />
+
     <property name="CONSOLE_PATTERN" value="[%d{yyyy-MM-dd HH:mm:ss.SSS}]%green([%level]) %cyan(%logger{35}) %magenta([%M] [%L line]) - %msg %n" />
+    <property name="ROLLING_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %logger{5} - %msg %n" />
+    <property name="MAX_FILE_SIZE" value="30MB" />
+    <property name="TOTAL_SIZE" value="100MB" />
+    <property name="MAX_HISTORY" value="7" />
 
     <!-- #########################  console로 log 남기기  #########################  -->
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
@@ -17,6 +24,21 @@
     </appender>
 
     <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+
+    <!-- Rolling File appender 설정 -->
+    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>${ROLLING_PATTERN}</pattern>
+        </encoder>
+        <file>${LOG_PATH}/${FILE_NAME}.log</file>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${FILE_NAME}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <totalSizeCap>${TOTAL_SIZE}</totalSizeCap>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+    </appender>
 
     <!-- TRACE > DEBUG > INFO > WARN > ERROR, 대소문자 구분 안함 -->
     <!-- profile 을 읽어서 appender 을 설정할수 있다.(phase별 파일을 안만들어도 되는 좋은 기능) -->
@@ -134,11 +156,14 @@
             <appender-ref ref="console"/>
         </logger>
 
-        <root level="info">
+        <root level="DEBUG">
             <appender-ref ref="console" />
             <!-- <appender-ref ref="devmssqldb" /> -->
             <!-- <appender-ref ref="file" /> -->
         </root>
     </springProfile>
+
+    <!-- CONDITIONS EVALUATION REPORT log 막음 -->
+    <logger name="org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener" level="OFF" />
 
 </configuration>
