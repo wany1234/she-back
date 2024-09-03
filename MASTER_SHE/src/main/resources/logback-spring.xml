@@ -7,13 +7,12 @@
     <property name="LOG_DIR" value="/sheBackEnd/logs" />
     <property name="LOG_PATH_NAME" value="${LOG_DIR}" />
     <property name="FILE_NAME" value="sheBackEndServer" />
+    <property name="CONSOLE_PATTERN" value="[%d{yyyy-MM-dd HH:mm:ss.SSS}]%green([%level]) %cyan(%logger{35}) %magenta([%M] [%L line]) - %msg %n" />
 
     <!-- #########################  console로 log 남기기  #########################  -->
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>
-                    ▶ %-5level %d{HH:mm:ss.SSS} [%thread] %logger[%method:%line] - %msg%n
-            </pattern>
+            <pattern>${CONSOLE_PATTERN}</pattern>
         </encoder>
     </appender>
 
