@@ -1,6 +1,7 @@
 /target/
 /bin/
 .settings
+/she_files/
 
 ### Java template
 # Compiled class file
