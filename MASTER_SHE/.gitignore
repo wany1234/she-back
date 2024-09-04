@@ -1,6 +1,7 @@
 /target/
 /bin/
 .settings
+.factorypath
 /she_files/
 
 ### Java template
