@@ -1,6 +1,7 @@
 package com.she.config.model;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -29,12 +30,14 @@ public class GlobalException {
 
     // 예외 발생 시간
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
-    private LocalDateTime timestamp;
+    private String timestamp;
 
     // 예외반환코드
     private String returnCode;
 
     private Integer logNo;
+    
+    static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     public static class Builder {
         private ExceptionType code = ExceptionType.INTERNAL_SERVER_ERROR;
@@ -44,7 +47,7 @@ public class GlobalException {
         private String cause = "";
         private String causeDetail = "";
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
-        private LocalDateTime timestamp = LocalDateTime.now();
+        private String timestamp = LocalDateTime.now().format(formatter);
         private String returnCode = "";
         private Integer logNo;
 
@@ -81,7 +84,7 @@ public class GlobalException {
             return this;
         }
 
-        public Builder setTimeStamp(LocalDateTime v) {
+        public Builder setTimeStamp(String v) {
             this.timestamp = v;
             return this;
         }
@@ -142,7 +145,7 @@ public class GlobalException {
         return queryString;
     }
 
-    public LocalDateTime getTimestamp() {
+    public String getTimestamp() {
         return timestamp;
     }
 
