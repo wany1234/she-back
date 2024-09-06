@@ -104,7 +104,7 @@
         left outer join saf_const sc
          on swm.const_no = sc.const_no
         left outer join rsa_risk_assess_plan rrap
-         on swm.assess_plan_no = rrap.assess_plan_no
+         on swm.assess_plan_no = rrap.risk_assess_no
         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'COM_PLANT_CD') plant
          on swm.plant_cd = plant.code
         inner join dbo.LANG_CODE_MASTER(#{defaultParam.lang}, 'SAF_WKOD_WKKD') wkodCls
@@ -314,7 +314,7 @@
          left outer join saf_const sc
            on swm.const_no = sc.const_no
          left outer join rsa_risk_assess_plan rrap
-           on swm.assess_plan_no = rrap.assess_plan_no
+           on swm.assess_plan_no = rrap.risk_assess_no
         where 1=1
           and swm.wkod_no = #{wkodNo}
     </select>
